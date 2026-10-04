@@ -18,53 +18,88 @@
       "0x2525c811ecf22fc5fcde03c67112d34e97da6079"
     ]
   },
-  "summary": "The Cellframe LpMigration contract computes the new-token payout from the pool's current reserves at migration time instead of a fixed snapshot, so skewing the old CELL/WBNB pool with a flash loan first made the migration pay out far more.",
+  "summary": "LpMigration.migrate(uint256) replaces the old CELL returned from burning LP with new CELL priced from the new CELL/WBNB pair's live reserve ratio. The attacker depressed the new CELL price and inflated the WBNB returned by the old pair, causing nine migrations to consume almost all migration inventory.",
   "loss": {
-    "kind": "unspecified",
+    "kind": "gross-assets-lost",
+    "assets": [
+      {
+        "asset": {
+          "chainId": 56,
+          "tokenAddress": "0xd98438889ae7364c7e2a3540547fad042fb24642",
+          "symbol": "CELL"
+        },
+        "amount": "962954.854399062534212397",
+        "usdValue": 121839.4098437761,
+        "valuation": {
+          "method": "realised-proceeds",
+          "timestamp": 1685585275,
+          "unitPriceUsd": 0.12652660640026647,
+          "sourceIds": [
+            "source-1",
+            "source-8",
+            "source-10"
+          ]
+        },
+        "sourceIds": [
+          "source-1",
+          "source-10"
+        ]
+      }
+    ],
+    "confidence": "medium",
+    "notes": "Gross excess migration inventory, after deducting 48.140333737643359359 CELL of ordinary old-LP replacement from the measured 963002.994732800177571756 CELL depletion. The USD amount values that excess at the weighted average realised disposal unit value: 377.447033146283009488 WBNB / 914482.663392996590260795 gross CELL disposed, times historical BNB $306.55. The quantity is exact under the documented pre-manipulation replacement baseline; USD is a medium-confidence valuation, not exact cash proceeds. Liquidity-withdrawal burns and inventory used for loan/fee shortfall receive the same unit valuation; financing costs do not reduce gross loss. Attacker-supplied borrowed CELL and WBNB, recycled LP collateral and the 0.1-BNB preparation input are excluded from inventory quantity. The subsequent owner rescue concerns remaining inventory and does not recover the stolen excess.",
     "usd": {
-      "amount": 75265,
+      "amount": 121839.4098437761,
       "valuationTimestamp": 1685585275,
-      "method": "unspecified",
+      "method": "realised-proceeds",
       "sourceIds": [
-        "source-4"
+        "source-1",
+        "source-8",
+        "source-10"
       ]
-    },
-    "assets": [],
-    "confidence": "unknown",
-    "notes": "Imported from the seed inventory, which did not consistently distinguish gross from net loss or record valuation provenance."
+    }
   },
   "targets": [
     {
       "id": "target-1",
       "executionAddress": "0xb4e47c13db187d54839cd1e08422af57e5348fc1",
-      "relationship": "unknown",
+      "relationship": "direct",
       "deployment": {
         "timestamp": 1668428662,
-        "creatorAddress": "0x65def3ea531fd80354ec11c611ae4faa06068f27"
+        "creatorAddress": "0x65def3ea531fd80354ec11c611ae4faa06068f27",
+        "blockNumber": 23048230,
+        "transactionHash": "0xf5fa6a50aebf620bf1460cf43471b31c07be18bd3cc245adc7cdfe5b25c535f9",
+        "transactionIndex": 238
       },
       "ageReset": {
         "kind": "deployment",
-        "description": "Unreviewed seed-inventory basis: execution-address deployment."
+        "description": "Direct runtime has no executable storage-write, delegatecall or selfdestruct path; its constants and constructor-initialized state cannot change. Funding and pool reserve changes alter exposure or supply attack inputs, rather than install the defective spot-price accounting."
       },
       "codeAgeSeconds": 17156613,
-      "failureModeId": "provisional:eip155:56:0x943c2a5f89bc0c17f3fe1520ec6215ed8c6b897ce7f22f1b207fea3f79ae09a6:failure-1",
+      "failureModeId": "failure:cellframe-lp-migration-live-new-pair-reserve-valuation",
       "evidence": {
         "identitySourceIds": [
+          "source-1",
           "source-2",
-          "source-4"
+          "source-5",
+          "source-6"
         ],
         "ageSourceIds": [
-          "source-4"
+          "source-5",
+          "source-6"
         ]
       },
       "verification": {
-        "tier": "provisional",
-        "curveEligible": false,
-        "limitations": [
-          "Target identity and code history were imported from the seed inventory without independent review.",
-          "The executing code artifact and its code hash have not been established in structured evidence.",
-          "One or more target block, transaction, ordering, or creator anchors remain unresolved."
-        ]
+        "tier": "reviewed",
+        "curveEligible": true,
+        "reviewSourceIds": [
+          "source-6"
+        ],
+        "limitations": []
+      },
+      "codeArtifact": {
+        "address": "0xb4e47c13db187d54839cd1e08422af57e5348fc1",
+        "codeHash": "0x4886799c8f03874d37b3d28a7b892e04402dd245ae749a721e9790118ef5791c"
       }
     }
   ],
@@ -88,16 +123,103 @@
       "url": "https://twitter.com/numencyber/status/1664132985883615235"
     },
     {
-      "id": "source-4",
+      "id": "source-5",
+      "type": "onchain-transaction",
+      "chainId": 56,
+      "transactionHash": "0xf5fa6a50aebf620bf1460cf43471b31c07be18bd3cc245adc7cdfe5b25c535f9"
+    },
+    {
+      "id": "source-6",
       "type": "review-note",
-      "note": "onchain review: LpMigration 0xB4E47c13dB187D54839cd1E08422Af57E5348fc1 created 2022-11-14T12:24:22Z by 0x65def3ea531fd80354ec11c611ae4faa06068f27, unrelated to attack sender 0x2525c811ecf22fc5fcde03c67112d34e97da6079; no EIP-1967 Upgraded events, age measured from deployment. Loss verified onchain: the attack contract 0x1e2a251b29e84e1d6d762c78a9db5113f5ce7c48 netted 245.5228 WBNB; 245.5228 WBNB x $306.55 at incidentTimestamp 1685585275 (DefiLlama coingecko:binancecoin) = $75,265, matching the ~$76k reported."
+      "reviewer": "codex",
+      "reviewedAt": "2026-10-04T08:34:09Z",
+      "note": "Reviewed BscScan verified LpMigration source (https://bscscan.com/address/0xb4e47c13db187d54839cd1e08422af57e5348fc1#code), deployment receipt and exploit callTracer. Source-5 creates the direct contract at block 23048230/index 238. eth_getCode at 23048229 is empty; blocks 23048230 and 28708273 return the same 2,965-byte runtime, hash 0x4886799c8f03874d37b3d28a7b892e04402dd245ae749a721e9790118ef5791c. Runtime disassembly has no SSTORE, DELEGATECALL, CALLCODE or SELFDESTRUCT. The verified source writes WETH, marketingAddress and owner only during construction, exposes no setter, and fixes all token, router and pair addresses as constants; eth_getStorageAt slots 0/1/2 at both endpoints agrees. Exploit trace enters migrate selector 0x454b0608 directly nine successful times, reads getReserves() from NEW pair 0x1c15f4e3fd885a34660829ae692918b4b9c1803d, sets new CELL = floor(CELL reserve/WBNB reserve) * WBNB returned by OLD pair 0x06155034f71811fe0d6568ea8bdf6ec12d04bed2, and gives resulting LP to the caller. A tenth migration attempt reverts. The manipulable pricing defect is in this immutable consumer, not either ordinary AMM pair. Target identity and complete executable/state history reviewed; age to the current anchor is 17,156,613 seconds."
+    },
+    {
+      "id": "source-7",
+      "type": "onchain-transaction-set",
+      "chainId": 56,
+      "transactionHashes": [
+        "0xf180ace58d463177ba99c620e4af413a07cbd82f1818416adaa4aa98f1b94cde",
+        "0x5057891047c46dfd6ad0636a93dd9137da8c82a1cb7c0553c713ede3e41f4e1a",
+        "0x54e5125d8a4cfda84f108798321db95a402bf8b729f9b2ac20ea7b535606897c",
+        "0xcf8c845db1eb01d68cf8dafc3370c55b4328443c5f421ad92aa58ec8de1b1b69",
+        "0xbf318cd3378224e19db6f80b923d48c963d14d271f6e5283aa716d5ef02c114a",
+        "0xc1660a8692d4b168c261a4e78a75084f0c6c8219af16ce3612b10d5ee67b04b5",
+        "0x4e9ccbcc3478e3f818d866e974279c1fe2e8f7c014804dc76ea212bce525d41d",
+        "0x0137cf8a27cb717024c94c31d7d526175afd9bee2558c1adcfe8540ef1e4d2c7",
+        "0x82dd2820cf5861824495c40715df52266786412ab2b2f72ab440ebe90ed7fb91",
+        "0xb8984ff97acf9e6aa2e8f9dc26875250ca3233b9d3f9f79949162eb5f1ae0eb1",
+        "0x21275ca994eb625777191f85766b85525c105bd09e9b3496f97f258bd6594532",
+        "0x0314bf3dd2d75e9f415defd6833cb77892aa30cdd17fa08c63f557a51a90c7c9",
+        "0x9ff7f2baea11aa3fc3210d2e37539f6ef4de50c8bbe01dd4f67b23874690698e",
+        "0x4428bfdd1aab9de305604dadf10cbe87b32b61d4b4334c27fb5b02aad6781835",
+        "0xbf27408dcc5b71d34ab8e532143698ab084849505d9ed483def2d6e7c7e41f86",
+        "0x1225ac01bb062ff08f71de4098302dd0d970b74acfadeeb3846aead6b5330457",
+        "0x26410fb3fc2b0c190381b1e186b39d531d9707d69d1bb60cfb2543b832879482",
+        "0xc8d9a85b20d5727092fd95cd9aa7d3554652c8d7b61eec3a6b52fcf36768cc86",
+        "0xc81ea875af0b5c28c4f44c60274507f95c15f6e9204f322f8379fb5a9985e7d0"
+      ]
+    },
+    {
+      "id": "source-8",
+      "type": "price-data",
+      "provider": "DefiLlama / CoinGecko",
+      "url": "https://coins.llama.fi/prices/historical/1685585275/coingecko:binancecoin",
+      "observedAt": 1791102849
+    },
+    {
+      "id": "source-9",
+      "type": "onchain-transaction",
+      "chainId": 56,
+      "transactionHash": "0xe2d496ccc3c5fd65a55048391662b8d40ddb5952dc26c715c702ba3929158cb9"
+    },
+    {
+      "id": "source-10",
+      "type": "review-note",
+      "reviewer": "codex",
+      "reviewedAt": "2026-10-04T08:54:17Z",
+      "note": "Reviewed source-1 exploit anchor, migration reserve-valuation defect, complete inventory-payout episode and gross excess loss. Reproduce with Etherscan V2 tokentx for migration address, startblock=23048230,endblock=125647700,page=1,offset=1000,sort=asc: 218 transfers, last block 28713703. Coverage was extended on 2026-10-04T08:54:17Z through finalized BSC block 125647700 (timestamp 1791104027); the first page is shorter than 1000, completing pagination. No later token transfers, inventory funding or payouts appear, so no further loss-producing recurrence is found through this bound. Future reviews should repeat the fully paginated transfer scan from block 125647701 through a new finalized block and reconcile any new inventory payouts into this episode. Outgoing new CELL comprises 18 earlier single direct migrations (source-7), nine payouts in source-1 and subsequent owner withdrawCELL source-7 rescuing 35943.702970700667863919 CELL; no later inventory payouts in that history. Each earlier payout callTracer has one migrate and no swaps. For their seven direct callers, txlist from deployment through each caller's last migration returns 169 transactions without truncation; all 56 successful nonempty calls other than approve/migrate were traced, 20 touch either pair (source-11). First 14 migrations have no preceding caller NEW-pair trades. Later four callers acquired old CELL/LP or changed liquidity ordinarily: source-11 NEW-pair swaps within liquidity adds sell small balancing amounts, proportionate removals preserve the ratio, and d62da226's 100.001-CELL purchase before its migration raises the CELL price. Migration NEW-pair prices range 0.0005242453792123579 to 0.0010627024816019341 BNB/CELL; no earlier reserve-manipulation/excess-inventory exercise is found. Source-9 preparation at anchor block/index 2 spends attacker 0.1 BNB to acquire old LP and does not call migrate. Source-1 at block 28708274/index 20 is therefore the first successful exercise identified over the complete payout history.\n\nSource-1 prestateTracer OLD-pair storage slots 0/8/11 establish totalSupply 72536912065476900058, WBNB reserve 2282153855339697120, oldCELL reserve 2886046297287843526526 and kLast equal to the reserve product (no ordinary fee mint due). NEW-pair slot 8 establishes WBNB reserve 58633127806922528249 and CELL reserve 77607810399258401479418, with integer CELL/WBNB ratio 1323. Burning each of the nine 128505254725663051-wei old-LP inputs without reserve manipulation gives floor(LP * WBNB reserve / supply) = 4043027944708437 wei WBNB; sequential proportional burns preserve that value. The consumer's unchanged formula would use 5348925970849262151 wei CELL per migration, or 48.140333737643359359 CELL total. Receipt CELL Transfer logs 87,107,126,145,164,183,202,221,240 actually move 107000.332748088908619084 CELL each from inventory to NEW pair, total 963002.994732800177571756. Deduct ordinary replacement to measure gross excess 962954.854399062534212397 CELL. This baseline deducts legitimate LP consideration; it is not a claim that the entire inventory transfer was stolen.\n\nReceipt order separates borrowing from disposal. The borrowed 500000 CELL are sold at logs 62/63 (25000 transfer tax and 475000 to NEW pair), yielding 50.379526213218158256 WBNB at log 65; this sale manipulates price and is not inventory disposal. The helper's LP burn logs 250/251 destroys 48150.149736640008871637 CELL and returns 914852.844996160168561104 CELL, exactly 95% of the inventory payout. Logs 256/257 then burn 26309.464126149285352615 CELL and deliver 499879.818396836421699691 CELL from the WBNB-funded repurchase. Loan/fee repayment at log 276 is 500250 CELL, hence inventory supplies a 370.181603163578300309-CELL shortfall. Remaining inventory equals 914482.663392996590260795 CELL. Its three later gross disposal inputs are 768165.437250117135819067 CELL (V3, logs 279/280), 94191.714329478648796861 CELL (V2; logs 292/293 split 4709.585716473932439843 tax and 89482.128613004716357018 swap input), and 52125.511813400805644867 CELL (log 299, via BUSD). They yield respectively 247.156148864929476532, 130.290622112481700079 and 0.000262168871832877 WBNB, total 377.447033146283009488. Disposal begins after CELL loan repayment, so borrowed CELL is excluded; all disposal quantity derives from recovered migration inventory, less the loan shortfall.\n\nSource-8 returns BNB $306.55 at historical timestamp 1685585264, eleven seconds before the exploit. Proceeds times that price divided by gross CELL disposal quantity give $0.12652660640026648/CELL; multiply by the measured gross excess to obtain $121839.4098437761. Apply the same realised unit value to the liquidity-withdrawal burned inventory and inventory used for the CELL loan/fee shortfall rather than subtracting those financing losses. The average disposal basis already includes the tax on the V2 disposal input. This is a medium-confidence gross-asset valuation using actual price-moving disposals, not an exact cash-proceeds claim. WBNB loans/collateral and 0.1-BNB attacker preparation are excluded from CELL inventory quantity; later owner rescue does not recover these paid-out tokens. The former imported $75265 instead equals net helper profit, 245.522826177178247245 WBNB times $306.55, and is not used as victim loss. Reviewed incident and target are curve-ready with deployment age 17156613 seconds."
+    },
+    {
+      "id": "source-11",
+      "type": "onchain-transaction-set",
+      "chainId": 56,
+      "transactionHashes": [
+        "0xb160a41579c6b73222ae86c60c1e14084212e0e62a1a21fef483ebb9543da9b0",
+        "0xd73d512ca55ffd8616594e4f2a59ac2114d60a52e3198d0d41004b172bf93261",
+        "0x5f65dab44897eedf8598c03206499c40635e01b4a1a4c17de81942e26e053909",
+        "0x98a3b87bd9ce788e6baa2abd0da511556fb908eba68e7f8c97d22c6505f513c8",
+        "0x93536f60d4fb4c5b37825efee4f205b1cf4ad39d51af90e19e4fdc828dbc4378",
+        "0x7eccf7aede8c0896c12d0aadb02cb12b2cddbb3c9ff1f1a67dcaea28af11a566",
+        "0x8d0c1c6d684962e14dd48bbbd78e6e8bd51ac1910f04d71203e949b261cb413e",
+        "0x8eb5a2cc6bb48ab2d154d696799d089280494d101085ddc3a5472827f0ee0dc3",
+        "0xc772e9157fe2b32e86d3db9e1168ebae6eb58d27e926c59b8805c4b23d33a4ed",
+        "0xd9973509c0d117b9e3e5a7dbdc21feed4e952e8b98601239e7d56c5b3449ebf4",
+        "0xee8fd676c89bc5129c7bcb55969ac2bc910a2dcdfb3c31cae73d5cb287ff0337",
+        "0x3c068f26d02a1a36a678608c82473b61997da93b023b6c732611e7c1745ce322",
+        "0x386d6767481e28c5fe4d54a91819605ad480280aa75c3daa02a8d41a8c4fb3b2",
+        "0xe824bb01fd951111d3dfab2f0850586e7a03bd5ded8b8c1cf5a69600222be2a5",
+        "0xceaaf0065db59b10c680874183c04421434a543d0d2d0b8a2a0864d7d9b396dd",
+        "0x7d0f729246956fb62b83cf737b6796458d3e1f1a2a529019958b7dbb9dfcb5eb",
+        "0xa7cf666e085edb91a605b76d0312e86eaea73b1e0db7efae4d413ed0f9864cd5",
+        "0xf2eda81e806cdda91d412ff5946854cb3aa042bffa9b2f257ee071b26df02fbc",
+        "0xcce3746e8727396ec5c94ecfcf4441f612de577e77a76fe913859dfbc32df762",
+        "0x50a0112b846f21d18d78b13d799f4168079f481e3a05751909cbadeb28531dcb"
+      ]
     }
   ],
   "verification": {
-    "tier": "provisional",
+    "tier": "reviewed",
+    "reviewSourceIds": [
+      "source-10"
+    ],
     "limitations": [
-      "Classification and loss were imported from the seed inventory and await review.",
-      "The imported USD loss lacks structured valuation provenance."
+      "USD values gross excess inventory at the weighted realised disposal unit value; tokens burned or used for financing shortfall are valued at the same rate, so it is a medium-confidence valuation rather than exact cash proceeds."
     ]
-  }
+  },
+  "discovery": [
+    "dfhl:src/test/2023-06/Cellframe_exp.sol",
+    "seed:cellframe:2023-06-01:cellframe-lp-migration-calculation-flaw"
+  ]
 }
