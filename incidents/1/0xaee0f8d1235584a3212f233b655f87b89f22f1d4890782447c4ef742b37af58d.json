@@ -19,47 +19,12 @@
       "0x2f99fb66ea797e7fa2d07262402ab38bd5e53b12"
     ]
   },
-  "summary": "Compound's immutable UniswapAnchoredView accepted Chainlink UNI updates only while they stayed within 15% of a 30-minute Uniswap v3 TWAP. A genuine rapid UNI rally moved the reporter outside that band, so validate() emitted PriceGuarded and retained the stale $8.34 price. The actor supplied stablecoin collateral, borrowed 232,890.987 UNI at that valuation across six transactions, and sold it at the higher market price; liquidations exhausted the collateral and left 28,699.848 UNI of bad debt.",
+  "summary": "UniswapAnchoredView applies an immutable 0.85–1.15 guard to the anchor/reporter price ratio using a 30-minute Uniswap v3 anchor. Rejected updates retain the previous price. Four borrowers executed ten calls against frozen $8.34 UNI pricing, supplied stablecoin collateral and sold borrowed UNI. Earlier same-fault use in other assets and full collateral-adjusted episode loss remain under review.",
   "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 297943.48288385815,
-      "valuationTimestamp": 1708699751,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-2",
-        "source-3",
-        "source-4",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
-          "symbol": "UNI"
-        },
-        "amount": "28699.848014519304045859",
-        "usdValue": 297943.48288385815,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1708699751,
-          "unitPriceUsd": 10.381361,
-          "sourceIds": [
-            "source-4",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The final liquidation transaction records accountBorrows of exactly 28,699.848014519304045859 UNI after the six campaign borrows and all economically useful collateral seizures. The borrower retains no cUNI and only non-economic cUSDC and cDAI dust. The quantity is valued at the $10.381361 UNI price accepted onchain by UniswapAnchoredView 24 seconds before that liquidation; subsequent interest and unrelated same-window borrower campaigns are excluded.",
-    "realizedAt": 1708699775
+    "kind": "unspecified",
+    "assets": [],
+    "confidence": "unknown",
+    "notes": "Full episode principal loss, collateral and liquidation/recovery treatment remain unresolved; see source-9/source-13."
   },
   "targets": [
     {
@@ -110,8 +75,10 @@
       },
       "verification": {
         "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
+        "curveEligible": false,
+        "limitations": [
+          "Artifact identity and activation anchors remain reviewed. Incident earliest exercise/full loss are reopened in source-9/source-13, so this target is temporarily outside the curve."
+        ],
         "reviewSourceIds": [
           "source-8"
         ]
@@ -175,16 +142,197 @@
       "reviewer": "OpenAI Codex",
       "reviewedAt": "2026-08-26T17:45:37Z",
       "note": "The anchor is the first of six successful transactions from EOA 0xe000008459b74a91e306a47c808061dfa372000e to borrower 0x2f99fb66ea797e7fa2d07262402ab38bd5e53b12. Its call trace reaches cUNI, the Comptroller and UniswapAnchoredView, whose getUnderlyingPrice(cUNI) returns the stored $8.34 price; all six transactions supply stablecoin collateral, borrow UNI and sell UNI on market. Immediately before the campaign, the first UNI PriceGuarded event is transaction 0xba0f7e4a1a38475989a1e325073c7099608722fb3d6edb24958a6467a8e17a50 at block 19290889:31: the reporter is $8.617324 while the 30-minute anchor is $7.319215, just outside the immutable 85%-115% band, so the last accepted $8.34 price remains stored while UNI rallies. The six Borrow events leave accountBorrows of 232,890.987234064080019806 UNI. Four later liquidations seize the useful collateral; the last, 0xbc2f51cdf71b8654a3493f368a20ad8b25f0c670f012c1e841c5fe20d5776fb0 at 19290991:0, emits RepayBorrow with accountBorrows 28,699.848014519304045859 UNI. At that block the borrower has zero cUNI and only 7,280 raw cUSDC plus 5,043,870,237 raw cDAI, non-economic dust. Transaction 0x36549474d89cdbeabfdfc6d0fc0d13a1da5bffa8973403d905b8bb09490af544 accepted a $10.381361 UNI price at timestamp 1708699751, the price still stored immediately before the final liquidation, valuing the residual debt at $297,943.48288385815. The oracle is a direct contract deployed at 15640902:2, timestamp 1664477507; its runtime hash 0x6073f62eef16ba34ad127def4c68782b43edd58605066c5c02cfa66da2c526df is identical at deployment and pre-exploit. Constructor state fixes anchorPeriod=1,800 seconds and bounds at 0.85 and 1.15. Proposal 143 execution 0x93d3c9556b2695031fd68b467af90d385cfc8637466ba6ceb810a9b7ecdf8249 emitted NewPriceOracle at log 34, moving the Comptroller pointer from 0x65c816077c29b557bee980ae3cc2dce80204a0c5 to the target at timestamp 1673959715. It is the only NewPriceOracle event through the exploit and there is no FailoverActivated or FailoverDeactivated event, so activation is the last age reset and code age is 34,739,220 seconds. Three other borrower addresses used the same stale window but are independent EOAs and execution contexts; they are excluded from this campaign's loss rather than merged into one actor."
+    },
+    {
+      "id": "source-9",
+      "type": "review-note",
+      "reviewer": "Codex (GPT-6)",
+      "reviewedAt": "2026-10-05T08:19:33Z",
+      "note": "Partial semantic scope review, superseding source-8's single-actor episode and nominal-debt loss assertions. Complete cUNI Borrow history [16426621,20768392], queried in inclusive 250000-block chunks, has 86 events. Oracle logs filtered by topic1=keccak256(\"UNI\") have 18938 events: 34 PriceGuarded and 18904 PriceUpdated, with no UNI failover event. Ordering by block, transaction index and log index identifies exactly ten guarded-window borrows by four borrowers (source-10). All ten successful callTracer traces read getUnderlyingPrice(cUNI)=8340000000000000000. The earliest proven UNI exercise remains source-1, but earlier non-UNI use of the same artifact fault is unresolved in source-13.\n\nUNI actual cashflow reconciliation: ten Borrow amounts total 448809.377438020039926755 UNI; immediate RepayBorrow and matching UNI liquidation inflows through block 19290991 total 393249.364821213210786165 UNI. Actual principal not returned is 55560.012616806829140590 UNI, excluding nominal accrued interest. Per borrower: 0x2f99fb66ea797e7fa2d07262402ab38bd5e53b12 retains 28699.377297527507982120 UNI principal; 0x49bc3cec1fb7978746f742a4e485d0d601831cea 2437.513465588148528417; 0x5968ada261a84e19a6c85830e655647752585ed4 8373.293162477675810298; 0x6980a47bee930a4584b09ee79ebe46484fbdbdd0 16049.828691213496819755. None has another cUNI Borrow event anywhere in the active-artifact scan. Independent actor identity does not separate same-fault recurrences.\n\nComplete cUNI RepayBorrow history [16426621,26124890], in inclusive 500000-block chunks, has 278 events, 23 affecting these four borrowers (source-11). Four late collateral-liquidation transactions return an additional 38.292922886963974767 UNI from borrower 0x49bc at 19657477, 1.506793698801911401 UNI from 0x6980 at 25254578/25584314, and 0.335015395233519314 UNI from 0x2f99 at 25570892. Historical getAssetsIn/getAccountSnapshot at 19290991 shows 0x49bc still holds 1286594859956 raw cUSDC (~303 USDC); the others hold smaller cUSDC/DAI amounts. Thus unreturned principal is not automatically wholly unbacked loss, and nominal debt is not new reserve depletion. Next: reconcile supplied/seized/remaining collateral and liquidation cashflows into a full episode loss basis with explicit recognition time and later-recovery treatment. The superseded source-8 estimate was $297943.48288385815 for 28699.848014519304045859 UNI of nominal debt; these disproved machine-readable loss fields have been removed.\n\nReproduce from cUNI 0x35a18000230da775cac24873d00ff85bccded550 Borrow(address,uint256,uint256,uint256) and RepayBorrow(address,address,uint256,uint256,uint256), and oracle 0x50ce56a3239671ab62f185704caedf626352741e PriceGuarded(bytes32,uint256,uint256) / PriceUpdated(bytes32,uint256), using the stated bounds."
+    },
+    {
+      "id": "source-10",
+      "type": "onchain-transaction-set",
+      "chainId": 1,
+      "transactionHashes": [
+        "0xaee0f8d1235584a3212f233b655f87b89f22f1d4890782447c4ef742b37af58d",
+        "0x842f95c20cd23dfb3223a7e827f2fbe3aeb9fae3ece8ccdf67d5c378d8044805",
+        "0x49e32e02a453500f1dd57d55cb7d70a37365abb9ce3fa111be511c6c222e8246",
+        "0x41427e58388d55cd41e67295587809054fc0ef8098732f8744caa35e37cb3c78",
+        "0x27c1dcf1375779187f7355fd1989460f92d20fed7c0fde19666e9f2aa8079571",
+        "0x50778ee009f15a7acb6302406c5be99801fa414842e7b245c774c9910934e159",
+        "0x5c5582403760d18aecba5189726fada3bf57677619493f7bfab98f5e7ade6213",
+        "0x9dae15389e0b665bf048488a0ef72155ff8207e17b55e3d53e1605f5029f123b",
+        "0xc32c66c16585971c7ce991a81447c5664b87849e4eda065e18d258f38d08f7df",
+        "0x3e575a99c48b035f4319a5fd7a3a0af643287bd89153d18beb0a2f77e15a827c"
+      ]
+    },
+    {
+      "id": "source-11",
+      "type": "onchain-transaction-set",
+      "chainId": 1,
+      "transactionHashes": [
+        "0x7ce709e9a06821825f83bba8c90352fb7c0d935fa54857d0ccc07931198d4728",
+        "0x570faf070daa6d5b758856851bc1df37387d231bb64973385d8b5e161d6ffce9",
+        "0x18e5473668ff80065b31a5622a3301775ce51a0dace34c34803dfd19149ee2c2",
+        "0xfe950cef198e558e52df49dd97ee53ab034cf605175c639727525ec230667c9b",
+        "0xc309fefafb81d51feeaa51a049e14d417fd61ea399f9dd4cb00a51cfc8cc3006",
+        "0x9eb06bb356a39a58e56871b45e9e83a33d1365c3ba66aa86ab5644fdcb6b112a",
+        "0x892d23569a836928f4439a70995110794863974dd3bfd07da0a9c3ed39d34bc8",
+        "0xd56ddfde4aa0a494453af01a9a2a404a585873315d2daca64f6ab9ed53445a4f",
+        "0x7cd90f540edc25eab01635c650b1676164099ebc251564712b52cfa3ccbcb11e",
+        "0xa3a307d2af498b86dbb0622c6587bc00a9b1d638e7816ffa2813fcb80063f789",
+        "0xe3cb8dc343ba6f2f04040ad97d61309afb96762065730405fb63369e308a35d8",
+        "0x3b953b85dad65f7af4289f92dc6d07c978395c9455d00ca2c7dfd5055a85845d",
+        "0xbf08cad3e66040e49897c2ffc904f9a8c623e693bed84ef5c89dbc68e93e731a",
+        "0x42cca5f90f4cb0e301ec48f2ade7c2a302fce80ab48eea5df70e854ce2e0e2e8",
+        "0x2bef3c5eae2b6999fc095f7fb3a94fc3a4ed821e0bb6cec92026c2442439c5d0",
+        "0xfe48540da9c9933ef5f186af94c0c7095f6c8e8901fef6e2f20be5fa3c5463ba",
+        "0xc52dc5caf7dfa219355cc4d3bc6b6bef75e1ef9a8d2e2a4fd3858657a728e352",
+        "0x68d3cbdb0e3164799f93ce25fbe6038134d4f98afb59e786093c24a744767843",
+        "0xbc2f51cdf71b8654a3493f368a20ad8b25f0c670f012c1e841c5fe20d5776fb0",
+        "0xb229b8f883215da725de38b3656d1ddff8c5a1bc87954d37462a129ca24b3dda",
+        "0x864f17d0b4af1b6096a65a987f88683c1274ee3d0b30f34fce65f92d16b1ff97",
+        "0xba2006ab15fa581a1470660aecd8b7deb7bcbbe1abb6103f20428dfcee41bbad",
+        "0x3a47986f5b5e1383c288650a97342d5212078e35dfa9cf57a84529c973ab0d41"
+      ]
+    },
+    {
+      "id": "source-12",
+      "type": "onchain-transaction",
+      "chainId": 1,
+      "transactionHash": "0x8cf7c12fc16e4f61f8f3922c2bf6ad9cb473051a8dd80f66b92f58ca1c4414f9"
+    },
+    {
+      "id": "source-13",
+      "type": "review-note",
+      "reviewer": "Codex (GPT-6)",
+      "reviewedAt": "2026-10-05T09:37:15Z",
+      "note": "Partial full-artifact first-use review; incident remains provisional. Complete NewPriceOracle(address,address) logs on Comptroller 0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b over [16426621,26124890] show activation and source-12 replacement at 20768392:29 only. getAllMarkets() returns the same 20-address array at activation and replacement; complete MarketListed(address) logs over [16426621,20768392] return zero events. Complete PriceGuarded(bytes32,uint256,uint256) oracle logs in inclusive 500000-block chunks yield 3203 events across 13 symbols; getTokenConfigBySymbolHash maps immutable market/reporting configurations. Complete logs filtered to those 13 topic1 hashes in 100000-block chunks total 229728. Initial state is positively established by 40508 similarly filtered logs over [15640902,16426620], prices(bytes32) and getUnderlyingPrice(cToken) at activation: FEI's last prior event at 16426572 is PriceGuarded, its stored price is $1.001094; the other 12 symbols' last events are PriceUpdated. All 13 failover flags are false and no FailoverActivated/Deactivated event occurs in the scanned histories. Chronological (block,transactionIndex,logIndex) ordering, initialized with this state, defines guard windows until an accepted update or failover change.\n\nComplete Borrow(address,uint256,uint256,uint256) logs across all 20 markets in 250000-block chunks total 12590. Non-FEI guard windows join to 68 transactions (source-14). All callTracer results are collected: 36 consume guarded quotes, 32 do not; none changes oracle price state in its transaction. Handler-local snapshots and adverse price direction leave 22 potentially credit-relevant borrows: 12 March 2023 cases and ten proven UNI cases (source-10). No SUSHI borrow survives. Earlier MKR consumer 16803280:110, 0xc48c6cffc21bb18dc111c9fa428193eeeec1b60b79b9018f66b68628bbf401d2, has zero MKR collateral/debt. The FEI-debtor Borrow join below also returns zero, so FEI initialization adds no borrowing candidate.\n\nAll 12 March borrow traces delegate to Comptroller implementation 0xbafe01ff935c7305907c33bf824352ee5979b526; verified source https://etherscan.io/address/0xbafe01ff935c7305907c33bf824352ee5979b526#code, contracts/Comptroller.sol and ExponentialNoError.sol, floors each division by 1e18 in mul_(mul_(collateralFactor,exchangeRate),price), then floors the balance/borrow scalar products separately. Historical NewCollateralFactor(address,uint256,uint256) history and actual snapshots/prices reproduce these limits. Correctly valued post-borrow surplus is positive for all 12, minimum $19990.264800795396642632. Earliest WBTC case 16803430:31, 0x76b6b1e87ff0a2c51c3b3e78fade0c6fa8edbebe0583c15fbaff8a0e84eda95c, has stored-price capacity $1923508.545488702570584554, reporter-price capacity $1903384.092713397717047476, debt $1438859.298446, corrected surplus $464524.794267397717047476. Relevant getAggregators() pointers and latestRoundData() results are identical at each candidate block-1/block; getTokenConfigByCToken confirms scaling floor(answer*reporterMultiplier/baseUnit)=floor(answer/100). BTC reporter/feed are 0x4846efc15cc725456597044e6267ad0b3b51353e/0xae74faa92cb67a95ebcab07358bc222e33a34da7, ETH 0x264bddfd9d93d48d759fbdb0670be1c6fdd50236/0x37bc7498f4ff12c19678ee8fe19d713b87f6a9e6, COMP 0xe270b8e9d7a7d2a7ee35a45e43d17d56b3e272b1/0x6eac850f531d0588c0114f1e93f843b78669e6d2, UNI 0x70f4d236fd678c9db41a52d28f90e299676d9d90/0x68577f915131087199fe48913d8b416b3984fd38. Complete AggregatorUpgraded(address,address) logs for those reporters over [16803429,16803609] return zero. OCR source https://etherscan.io/address/0xae74faa92cb67a95ebcab07358bc222e33a34da7#code increments its latest round on every committed transmission; identical round IDs rule out hidden committed feed updates. These 12 borrow calls are excluded as excess-credit first uses; other calls remain separately reviewed.\n\nRemoval/liquidation population: merging inclusive non-FEI window block ranges yields 22 intervals totaling 6545 blocks. Across the same 20 markets, Transfer(address,address,uint256), Redeem(address,uint256,uint256), and LiquidateBorrow(address,address,uint256,address,uint256) queries over those intervals return 705 events (473/177/55), 348 unique transactions. Derive exact per-symbol coordinates from the bounded oracle history, merge intersecting block ranges, and deduplicate by transactionHash/logIndex. All 348 callTracer results are collected; 245 reach redeemAllowed(address,address,uint256), transferAllowed(address,address,address,uint256), or liquidateBorrowAllowed(address,address,address,address,uint256). Each handler's own subtree supplies its price/snapshot/actor joins; actor equality is checked. Include guarded-high collateral or guarded-low debt for removals, either direction for liquidation eligibility, plus guarded borrowed/collateral prices in liquidateCalculateSeizeTokens(address,address,uint256). This leaves 19 conservative candidate transactions (source-15), 16 before the seed. Failed allowed returns and potentially reverted attempts remain candidates rather than successful-use assertions. cUSDT snapshot ABI decoding is source-backed: CErc20Delegator.delegateToViewAndReturn skips the bytes header but returns the original wrapper length, leaving two trailing words (https://etherscan.io/address/0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9#code). All 59 external cUSDT snapshots across the three candidate populations match their paired implementation's first four words. Re-deriving snapshots from actual market CALL/STATICCALL frames with at least four return words preserves 68->22 Borrow, 348->19 non-FEI, and 18->6 FEI counts. No handler reads a transaction-wide last snapshot and no candidate changes oracle price state.\n\nFEI debt/seizure scope: FEI collateralFactor is zero at activation and has no change in complete NewCollateralFactor history; zero cFEI Borrow events excludes new FEI credit, but existing debt matters. Complete cFEI Borrow history [0,16426620] in inclusive 1000000-block chunks yields 130 events/43 borrowers; borrowBalanceStored(address) at activation leaves 18 nonzero accounts, against totalBorrows() 1614.647387089098364430 FEI. None of these 18 has any Borrow event in the full 12590-event active-period history. Complete LiquidateBorrow logs across all 20 markets over [16426621,20768392], in 250000-block chunks, return 2255 events: zero cFEI collateral seizures and three cFEI-debt liquidations. Transfer logs over the same bounds, topic1 filtered to those 18 debtor sources across all 20 markets, yield 22 events/18 transactions, including all six liquidations of these borrowers. Source-backed redeem/transfer/seizure burns emit these Transfer events. All 18 are traced with initialized FEI price state, leaving six liquidation candidates (source-16), disjoint from source-15: three FEI-dependent eligibility calculations and three direct FEI-debt seizure calculations. The eligibility cases at 17447920,20251134,20651463 remain short by $66.606070667192728381,$81.239635779031837324,$94.463791248069114163 even valuing all FEI debt at zero, so FEI pricing cannot make their liquidation wrongful. Direct FEI-debt seizure sizing at 20409375,20651480,20653622 still needs applicable valuation/invariant and actual repayment/seized-asset treatment; a stale reporter quote alone does not establish fault loss.\n\nCompleted removal-limit findings: seven March removals and the June 17449418 and July 17553573 redeems remain permitted at applicable corrected reporter prices (one full March redeem has zero residual debt/collateral). A concrete earlier anomaly is 17449562:168, 0x3eb5b21d1bc49103bc7866b1caaa65b16638eb83fe643aacb90f59129c037638, account 0x8e445422baa49c7b98645e918577de7d48280384. Its successful redeemAllowed returns zero; receipt status=1, 3982983517 raw cETH units are burned, Redeem emits 0.8 ETH, and a nonreverted cETH CALL pays exactly 0.8 ETH to that account. Its SUSHI collateral quote remains $0.651112 while reporter 0x1a6aa40170118baf36bac82214dc5681af69b0cf selects feed 0x3cf055335b521863a62fb4374972560e3e55a193, whose latestRoundData round 1731/answer 58227300 is identical at block-1/block ($0.582273). Integer limits give corrected pre-redeem surplus $544.140493100539308905, redemption capacity effect $1151.402999862153081286, corrected post-redeem shortfall $607.262506761613772381, versus stored-price post-redeem surplus $377.736320835084240282. This is a reproduced excess-withdrawal limit anomaly, not yet a reviewed exploit anchor: causal attribution to the same guard-staleness vulnerability versus ordinary valuation/market behavior, and loan/collateral/repayment loss accounting, remain unresolved. Later SUSHI liquidation 17937299:34, 0xb588210ec8a7b69d8123d2bb7a52c288a4dec1940dae373c952af10e50321312, likewise has reporter-price liquidity $125.596728367589851331 versus stored-price shortfall $216.713997381989912834; wrongful-liquidation attribution and actual asset/repayment loss remain unreviewed. Numerical differences alone do not establish the security invariant or fault loss.\n\nCurrent unresolved claim/next step: adjudicate the evidenced collateral/credit invariant and causal significance of the June redemption before reanchoring; audit liquidation eligibility separately from seizure size and actual repayment, excluding ordinary allowed liquidations. Historical round ordering for the non-FEI shortlist is measured: differing block-end rounds are joined to NewTransmission(uint32,int192,address,int192[],bytes,bytes32) logs in the exact candidate block and ordered by transaction index (AAVE update index 0 precedes 17447395:8; COMP/UNI indices 70/148 follow it; BAT index 92 follows 17447404:5; SUSHI index 180 follows 18926749:25). Then reconcile all causally admitted earlier/later legs and source-9 UNI principal, supplied/seized/remaining collateral and later recoveries into one nonduplicated loss basis. The first successful fault exercise, full-episode USD and symbol critical-configuration semantics remain provisional; there is no known duplicate primary record for this artifact. Mechanical PASS_ANCHORS does not settle these claims, and the episode USD floor cannot choose the anchor."
+    },
+    {
+      "id": "source-14",
+      "type": "onchain-transaction-set",
+      "chainId": 1,
+      "transactionHashes": [
+        "0x0fe7d57cbf20ed3bdc7873f00dc76b94fea710379cb44a2454bb7cdb96087160",
+        "0xc48c6cffc21bb18dc111c9fa428193eeeec1b60b79b9018f66b68628bbf401d2",
+        "0xa922a58060ef36f695f69df737e89525022e7ecb9f322b9b9c3e5ebb8a628c3f",
+        "0x212a533a6352f6757e79dedb7007ee3206ac45ff8e78707bbab4f7003367f301",
+        "0xc24290a3f287ac9b2484de5d4b973e64bb17e77fcd9129476019b702c9453f05",
+        "0x76b6b1e87ff0a2c51c3b3e78fade0c6fa8edbebe0583c15fbaff8a0e84eda95c",
+        "0xb65609b2cd747e059bb6ff5ec2f5050d3a56bef9925efe992194dd1a25d32f38",
+        "0x190fc21003ea845804d5a013e4b7bf10c31cdfabd6db31d3429c7584b4677983",
+        "0xe539451999a80ee6118b4e3b2d718ecb7c36629d350a59b820857ebc8a3a4205",
+        "0x0d8c5e3f0d7840ec4bbbf80b48cdbeddf189674cbc6dd7e7d893b44174c4c1a4",
+        "0x17c4e54c7a74c6c9f2565b570da1201d58980084a900dc9cdc9c9719208ee4b9",
+        "0xcf7c351dd82d189ea96b7781fbbf509b384714c627f0aa4c54a09281500ffb3f",
+        "0x5e764c092cc758ce3b27b5c47fb55ebfc8c7735c8807635cc95eb3768457e0d0",
+        "0xbc6380918e696c17e72303b82d4800e249e080bc2bf85630e645460cf3a00935",
+        "0xd74ec65ddb23485d81b8906dbec2c147bfb531a9930c432f89b5860892fa0b36",
+        "0x97558a186bd1efb24906e30e1bdddbd56a0988e9231d678c0dd95016dc3f9b1a",
+        "0x7d9af7934b7d04ecefe67272932fab9691afe9cee1e642adfd05c0310fa2fa48",
+        "0x8312d46cca655a6eb433ddd2446caf87473ea901be3d300a639be3c305cd064f",
+        "0xf1a7b82fccb423e25bbeb4b93fa523a1c5aad9b13cc47baed87bd892f0c7b494",
+        "0x182dfe18e6fde73928c74007485d998e740780fe1e36ef5ade5b7af3a8755943",
+        "0xf4478d1b1d21fb68005fd701f98d8c3c48f243e9e0c23946bd07afe1a286def3",
+        "0x222f8b05ed8b1ee4d97f96b0abe3d1c539d0fc68adc4cdabf2f27c307cdd7905",
+        "0x40704d43c5a842a6fe51785666874b9bdc30e78bc7ed8973eed13d74dfc1b629",
+        "0xb26af1259f3c140608e739d281790f077873878374a61f58261e2fcf183f3f87",
+        "0x177b9582418af8033893679f61a70baa2c346a3e8e40354b6018607e3758fbf2",
+        "0xa828d244bbd91879ebd3ad6c8b600cb5598b077b9d16b405907c6dd9580658e4",
+        "0x160f912d6b43129b8d5f4f7ae8f69523e7fe1fc1515f0a81b5495984696d6703",
+        "0x8c8cc071d90d0ab1f85f030bc8db59ca38ff9b1f87049245fd0186e24daff4a3",
+        "0x486213808e82fac1484a7c53a8d4fb89f76549075f5726c8c4feb4a4c76528f7",
+        "0x99ebdc7b147a3ce0d32b5473d92e8537190d0b7f6b63647b5b229c816c54e4ee",
+        "0x00ea7e3fd5d391519b56b47b582d71b160c090fb796400891a7a99d034651a25",
+        "0xb36c5ae6e984e28c890ca8590b37a54345324e9f5b92e8cd941cba4946dbc322",
+        "0x7c64383f0800b046c94edb47ef1fea8c7d64c1e4a2860352aa4fa7b58b0a49e3",
+        "0xee1e9fef9208280ae40bbc3a52a98c9e19e4bdd01abf5247697c11633696a863",
+        "0x0dbdfe69f0f58bd61f5200e4eae8586bc9c6bbd6793c45cb8da6bd84d37d0259",
+        "0xe3c43975fe5230e2a53e7c907a76cdc8dba7e0c662698491a08ea64465ea80f1",
+        "0xade8fc9785c3b74b29f8538c7e77901748971b8241cfbf4a3a246ba568e7d0e9",
+        "0xbf6274c1c532ed8358cd90b9c013976e0095e78f33dd77846902776b890c1b3e",
+        "0x209e5f1e1239be88227df96b0021c85c649ce9d7d285965a92c186d0a0046bdf",
+        "0xaf79204410fe9cebccc642072026dea2043623e427b2e0da00b999a56d992e09",
+        "0x8e23bbf0530648353cfe461a3d82e78438c278f8e8efc8870284fa702de384f5",
+        "0x65bf1cb6a4885ef85fa43a9998f934f7a0cc40176f5c5caf9f06ebe268021b61",
+        "0xf21100f428c86eb9077c1fa9182a248bc459de0f8ebdaad9420fae794500e803",
+        "0xd6cf0aeb768c107380ca18b51bd979bad22939de6765f7ba2f45ac3971fd269b",
+        "0x9b321ad749b08dcfacd692e644b1b14e916b1b30c2bb42cae61d01136976526b",
+        "0xea1a3d6e24bfe0b0f7fe5aab1d28a2763be3a90feb7eb4a629c16cb8ead2e2e9",
+        "0x2e449eb28dd4d18b5d2fae6a9c4a5b7185ea753d77b6e4208eadf0cafbb9080a",
+        "0x86ae2675c81c99a57c5771e3eccb8768a658529646073b9d88e1886e82b60907",
+        "0xbcbdfeaef9f2ff313eebae278172a9c3a760f6939773b31cff548b4a8d9a14fe",
+        "0xc000cd230a2a8ebaee90d02b936ee41fe29cd2908712f66280e386ba5bad2f91",
+        "0x4466e3eb1a0d033ec00b4c4ceb2a307d93b470669ac04b5603737ae056e83d86",
+        "0xb640af31afa03f294191359c1290967279fbf7c956d38e41cf46a7d06f70db34",
+        "0x9c15b66dcc3ab4c5dc6ae3ff1b21891116f5506ed590911ab555b7438410f43a",
+        "0xaee0f8d1235584a3212f233b655f87b89f22f1d4890782447c4ef742b37af58d",
+        "0x842f95c20cd23dfb3223a7e827f2fbe3aeb9fae3ece8ccdf67d5c378d8044805",
+        "0x49e32e02a453500f1dd57d55cb7d70a37365abb9ce3fa111be511c6c222e8246",
+        "0x41427e58388d55cd41e67295587809054fc0ef8098732f8744caa35e37cb3c78",
+        "0x27c1dcf1375779187f7355fd1989460f92d20fed7c0fde19666e9f2aa8079571",
+        "0x50778ee009f15a7acb6302406c5be99801fa414842e7b245c774c9910934e159",
+        "0x5c5582403760d18aecba5189726fada3bf57677619493f7bfab98f5e7ade6213",
+        "0x9dae15389e0b665bf048488a0ef72155ff8207e17b55e3d53e1605f5029f123b",
+        "0xc32c66c16585971c7ce991a81447c5664b87849e4eda065e18d258f38d08f7df",
+        "0x3e575a99c48b035f4319a5fd7a3a0af643287bd89153d18beb0a2f77e15a827c",
+        "0x57ef9d120e827b276cb9d4dffc380d57ebba8eb8e59d5bb9dabe01deef53907a",
+        "0x857309531ba3a5fd3369af56247b0b8d68d2fb13b22eda19224bbdf19da42a0f",
+        "0x84b317a8a51ca8f3266062df63abf7d32098cc76fedab5d31e90f34c9f039f8b",
+        "0xcc5b831a9e2443676c4d1c447ffe47a849612834322491c6bb4a4464f4b06b24",
+        "0xbb76eb412d1cf1ed851ba70f26a9f76bceb9abfa4adc0aa06a33b4d4c43a57d1"
+      ]
+    },
+    {
+      "id": "source-15",
+      "type": "onchain-transaction-set",
+      "chainId": 1,
+      "transactionHashes": [
+        "0xacc1148dc1dddb1d8e8ba6b6497df26999e1f039a1532c47e3b00300bf01a73d",
+        "0x0677aa52542af9480fd02e472dd5622dc7da6cd4636e80b0e775c8838d2c3e81",
+        "0x8addc5c4aaabaa7fd6a7715a8860f5356890c663b7ee00bf48988567fc9435ce",
+        "0x044a742d6aa0ddd7b8a30a18d9aae09f72cd49243552029460b70583e721fe5e",
+        "0xede0f820cdf0d316b4b4eaf52cc2d1761e98c1f64a55a9d6ed3238417f679590",
+        "0xad5576c731a1c10bce33351732dc68f7c9c6d62e6331165cf5d9767f49c6c378",
+        "0x65fe1c0fb0d90de4e41b42fd04c54c0f54d6a4a07d4bb5a9b60a5ba7d487faf3",
+        "0xd1398be3a700c886dde0d40a2e452c8889a53a6696270b2f717108fe0be527b7",
+        "0xd72d53e8e8b6e3455228c71a996610adf01ecb6df98067daabd378f479d8f569",
+        "0x59678aa24c3491890967d8dbe85da16f701c04d660d2fab1829dcb199f245adb",
+        "0x7eb458128899c4dec499ea57107174a5cae0abffca1e3c44c67b5a10f1d833dc",
+        "0x3eb5b21d1bc49103bc7866b1caaa65b16638eb83fe643aacb90f59129c037638",
+        "0x8fa6747ca68cb9e7acea93800cf5f388dc2c4228ef4133cd4ea01420e237cdb0",
+        "0x68b41967f8e40e068930cf0f4370d3059726242f8f1c7b47d63198d3723a9476",
+        "0xb588210ec8a7b69d8123d2bb7a52c288a4dec1940dae373c952af10e50321312",
+        "0xe028842babfecf2c43d96064da937f5229a43107ed23ddc34ac59509c6e86ac1",
+        "0x5c5582403760d18aecba5189726fada3bf57677619493f7bfab98f5e7ade6213",
+        "0x9dae15389e0b665bf048488a0ef72155ff8207e17b55e3d53e1605f5029f123b",
+        "0x2b56c91cece3df82ed0d8651a3e023fb96b008c123fd6ca7751b55d0d6dfd231"
+      ]
+    },
+    {
+      "id": "source-16",
+      "type": "onchain-transaction-set",
+      "chainId": 1,
+      "transactionHashes": [
+        "0xd3cbcfcf36ae4bd96544449484c2acbd5c80842884104802b29191c604611f16",
+        "0x73bf4cbcd795edefb50f16b96cb208f865251a50ba6e6044d873d1bca8ee4da0",
+        "0x058d443f88df806181dca0518aa54f58054b326a694e34323df6a11b7742b431",
+        "0xbb39729a188d3824de498a2b4480b2643da4e431622317751387273073aaa2c5",
+        "0xa8555859062917a97ceffaa66e862065be498b738141815b9d69404a3a089ce0",
+        "0x0c1ce4e1aa1051633ec83ceaba6f6f8c0b1038b2267ebf56d82fcd89a57116e8"
+      ]
     }
   ],
   "discovery": [
-    "adjudication:25"
+    "adjudication:24"
   ],
   "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+    "tier": "provisional",
+    "limitations": [
+      "Source-9 replaces the superseded single-borrower nominal-debt loss. Four UNI borrowers share one fault episode; actual principal, supplied/seized/remaining collateral, later recoveries and full USD loss remain unresolved.",
+      "Sources 13-16 establish initial oracle state and bounded Borrow/removal/liquidation populations. A successful 0.8 ETH redeem at 17449562:168 violates reconstructed contemporaneous reporter-price limits, but its same-fault causal/invariant attribution and loss treatment remain unreviewed. Later non-UNI/FEI liquidation sizing and full critical-configuration scope remain unresolved; the seed anchor is provisional."
     ]
   }
 }
