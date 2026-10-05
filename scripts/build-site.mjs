@@ -47,7 +47,7 @@ const hash = dirty ? `${head}-dirty` : head
 
 const excluded = release.excluded
 const meta = {
-  repo: `https://github.com/${process.env.GITHUB_REPOSITORY ?? 'sekuba/ossification-dataset'}`,
+  repo: `https://github.com/${process.env.GITHUB_REPOSITORY ?? 'l2beat/ossification-dataset'}`,
   generatedAt: new Date().toISOString().slice(0, 10),
   hash,
   commit: hash.slice(0, 7),
