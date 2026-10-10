@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Value DeFi",
   "name": "Value DeFi vStake ProfitSharingRewardPool initializer never sets its initialized flag",
-  "summary": "ProfitSharingRewardPool.initialize(address,address,address,address,uint256) is guarded by a notInitialized modifier that requires !initialized, but the function body never writes initialized = true; the flag is declared bool public initialized = false and no other function in the contract assigns it. The guard is therefore inert for the life of the deployment: any caller can re-run initialize at any time, and the body unconditionally sets operator = msg.sender, stakeToken = _stakeToken, reserveFund = _reserveFund and _locked = 0. governanceRecoverUnsupported(IERC20,uint256,address) is onlyOperator and refuses only the token currently stored in stakeToken, so re-initializing with a substitute stakeToken both hands the caller the operator role and lifts the one restriction on the recovery path. In the anchor the attacker EOA calls the vStake proxy 0xed517fde7f36efeab9d52e569c77491ad964f6e6 with _stakeToken set to the attacker-deployed HACKEDMONEY token 0x732126e7ec26416c31b1d89392966bfd7476e2ce and _startRewardBlock 1000000000000000000000 (satisfying require(block.number < _startRewardBlock)); operator moves from the Value DeFi deployer 0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f to the attacker in that single call, while initialized still reads false afterwards. The violated invariant is that a one-shot initializer must be callable only once on a deployed execution context; no parameter value restores it, because the flag the guard reads is never written by any reachable code path.",
+  "summary": "ProfitSharingRewardPool.initialize() is guarded by notInitialized but never sets initialized, so anyone could re-initialize the vStake proxy and become operator. The attacker did so with a dummy stake token, pulled the staked vBSWAP/BUSD LP via governanceRecoverUnsupported, re-initialized with the real LP and pulled the WBNB and BUSD rewards.",
   "targets": [
     {
       "address": "0xed517fde7f36efeab9d52e569c77491ad964f6e6",
@@ -14,43 +14,43 @@
     }
   ],
   "loss": {
-    "usd": 5856713.136579965,
+    "usd": 5856713.14,
     "assets": [
       {
         "token": "0x4f0ed527e8a95ecaa132af214dfd41f30b361600",
         "symbol": "vBSWAP",
         "amount": "7342.746839157244509784",
-        "usd": 5574371.406839555
+        "usd": 5574371.41
       },
       {
         "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
         "symbol": "BUSD",
         "amount": "222937.639775657661178077",
-        "usd": 222937.63977565765
+        "usd": 222937.64
       },
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
         "amount": "93.680122706081820564",
-        "usd": 59404.0899647528
+        "usd": 59404.09
       }
     ]
   },
   "refs": [
-    "eip155:56:0xdc1f705fe595b2bb2d81f1f65e3febcbf40df1d53f8abb9d283796bdabe2b715",
-    "eip155:56:0x9ba0454c2301ad5780795ae7477e9fa7e38226be16cc282158624479e66389b6",
-    "eip155:56:0x864a04952519f07cc4fc1c5da890b559ae4cd4a99238f956733ce5a841c5dcaf",
-    "eip155:56:0x7d0ac4536e6ff9ffd356889aca1b6c1ebc0fd8630ad2e82c7bd04624020bd29a",
-    "eip155:56:0x796fadf34c240906cf19040d9d3ec392433a5811c92c6feecc5c86622b33831e",
-    "eip155:56:0x77e68d369cae24cbac2e87252f192f7a26fd48c77e71e1b1b48803971d4b932d",
-    "eip155:56:0x9ee8d54da43218126171bcb1615032fb692624f2c9b7f82307d1988df75f296a",
     "https://rekt.news/value-rekt2",
-    "https://medium.com/valuedefi/vstake-pool-incident-post-mortem-4550407c9714"
+    "https://medium.com/valuedefi/vstake-pool-incident-post-mortem-4550407c9714",
+    "eip155:56:0x7d0ac4536e6ff9ffd356889aca1b6c1ebc0fd8630ad2e82c7bd04624020bd29a",
+    "eip155:56:0x796fadf34c240906cf19040d9d3ec392433a5811c92c6feecc5c86622b33831e"
   ],
   "notes": [
-    "The AdminUpgradeabilityProxy constructor wrote ProfitSharingRewardPool 0x7a8ac384d3a9086afcc13eb58e90916f17affc89 into the EIP-1967 implementation slot. The creation transaction emits no logs, so there is no Upgraded event for it, and the only Upgraded log the proxy has ever emitted is the post-exploit fix at block 7148585.",
-    "The vStake pool proxy 0xed517fde7f36efeab9d52e569c77491ad964f6e6 held exactly 10839.160048651271862327 vBSWAPBUSD ValueLiquidPair LP, 93.680122706081820564 WBNB and 17278.422722300487009949 BUSD immediately before the anchor block and zero of all three afterwards, so this is the complete depletion of the pool and no attacker-supplied input is included. The three governanceRecoverUnsupported calls that moved them are 0x9ba0454c2301ad5780795ae7477e9fa7e38226be16cc282158624479e66389b6 (LP), 0x77e68d369cae24cbac2e87252f192f7a26fd48c77e71e1b1b48803971d4b932d (WBNB) and 0x9ee8d54da43218126171bcb1615032fb692624f2c9b7f82307d1988df75f296a (BUSD). The stolen LP is reported through the underlying it released: burning all 10839.160048651271862327 LP in 0x7d0ac4536e6ff9ffd356889aca1b6c1ebc0fd8630ad2e82c7bd04624020bd29a returned exactly 7342.746839157244509784 vBSWAP and 205659.217053357174168128 BUSD, and the BUSD component here is that leg plus the 17278.422722300487009949 BUSD taken directly. vBSWAP had no DefiLlama price series and a very thin market, so it is valued at realised proceeds rather than a spot mark: the attacker sold the whole 7342.746839157244509784 vBSWAP through 1inch in 0x796fadf34c240906cf19040d9d3ec392433a5811c92c6feecc5c86622b33831e for 8790.771775341623850222 WBNB, which at the DefiLlama WBNB observation nearest the incident (634.1162697996361 USD, timestamp 1620185024) is 5574371.41 USD, an implied 759.17 USD per vBSWAP. Because the aggregate mixes realised proceeds with a spot price and par, the incident-level method is other. BUSD par is corroborated onchain: the attacker's own conversion of 205659.217053357174168128 BUSD to 325.70592941962514 WBNB implies 631.43 BUSD per WBNB against a 634.12 USD WBNB price, and 17278.422722300487009949 BUSD converted to 17275.918319362165 USDT. Value DeFi later compensated the affected stakers in full; under the gross-depletion rule that recovery does not reduce this figure. The separate 2021-05-07 Value DeFi vSafe WBNB vault incident and the 2020-11-14 Ethereum MultiStables incident are different campaigns with their own losses and are not included here.",
-    "The campaign continued after the anchor with a second initialize at block 7147072 that reset stakeToken to the real vBSWAPBUSD LP, and with three governanceRecoverUnsupported calls that emptied the pool by block 7147204. The anchor is the first initialize because that is the earliest successful transaction executing the defect, per the unprotected-initializer rule in METHODOLOGY.md.",
-    "This record is disjoint from incidents/1/0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a.json (Value DeFi MultiStables, Ethereum, 2020-11-14) and from the 2021-05-07 Value DeFi vSafe WBNB vault reentrancy on BSC, which is a different attacker, contract and loss."
+    "The proxy constructor set implementation 0x7a8ac384 with no Upgraded event; the only later upgrade is the post-exploit fix, so the proxy's creation is the reset. The anchor is the attacker's first initialize, per the unprotected-initializer rule.",
+    "The stolen vBSWAP/BUSD LP is reported as the underlying its burn released. vBSWAP has no DefiLlama price, so it is valued at the attacker's realised proceeds: the WBNB its 1inch sale returned, at the WBNB price. BUSD is at par.",
+    "The 2021-05-07 vSafe WBNB incident (eip155:56:0xa00def91954ba9f1a1320ef582420d41ca886d417d996362bf3ac3fe2bfb9006) is a different defect, contract and attacker and stays a separate record."
+  ],
+  "campaign": [
+    "eip155:56:0x9ba0454c2301ad5780795ae7477e9fa7e38226be16cc282158624479e66389b6",
+    "eip155:56:0x864a04952519f07cc4fc1c5da890b559ae4cd4a99238f956733ce5a841c5dcaf",
+    "eip155:56:0x77e68d369cae24cbac2e87252f192f7a26fd48c77e71e1b1b48803971d4b932d",
+    "eip155:56:0x9ee8d54da43218126171bcb1615032fb692624f2c9b7f82307d1988df75f296a"
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "GoodDollar",
   "name": "GoodDollar GoodFundManager untrusted staking callback accounting",
-  "summary": "GoodFundManager.collectInterest accepted arbitrary staking-contract addresses and measured reserve balance changes across calls to those untrusted contracts, so attacker-controlled reserve changes during a callback were misclassified as collected staking interest.",
+  "summary": "GoodFundManager.collectInterest called arbitrary caller-supplied staking contracts and counted the reserve's cDAI growth across those calls as interest. A fake staking contract bought G$ from the reserve in the callback, so mintUBI booked the purchase again as interest and inflated the G$ price; selling G$ back drained the reserve.",
   "targets": [
     {
       "address": "0x0c6c80d2061afa35e160f3799411d83bdeea0a5a",
@@ -13,14 +13,17 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb6196db00ae61c75c2ad3c0ea34fed42c721a244876992e5c28531abb5d71d83"
+  ],
   "loss": {
-    "usd": 625140.6767051351,
+    "usd": 626734.66,
     "assets": [
       {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "625140.676705135213042766",
-        "usd": 625140.6767051351
+        "token": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643",
+        "symbol": "cDAI",
+        "amount": "27772856.79575856",
+        "usd": 626734.66
       }
     ]
   },
@@ -31,7 +34,8 @@
     "https://github.com/GoodDollar/GoodProtocol/blob/e221efed2f6bc1dacfe7ef87df3405f4cc2aa8c7/contracts/staking/GoodFundManager.sol"
   ],
   "notes": [
-    "The third and final pre-incident Upgraded event selected GoodFundManager implementation 0x4a37a8d7cdb43d89b4dbd7ecfaeaf9bd39e24929.",
-    "The anchor receipt shows an exact net 625,140.676705135213042766 DAI outflow from Compound's cDAI contract and the same DAI increase at campaign beneficiary 0x6c08f56ff2b15db7ddf2f123f5bffb68e308161b after the reserve's cDAI was redeemed. DAI is valued at stablecoin par. The simultaneously created 14,062,071,177.43 G$ and 10,213,394,244.25 G$X express the accounting failure and inflationary harm but are not added to the DAI reserve loss; later freeze, fee, and burn mitigation is likewise not netted against the transferred DAI."
+    "GoodReserveCDai.mintUBI trusts the starting balance its minter supplies; the defect is GoodFundManager measuring it across untrusted callbacks, so only GoodFundManager is a target. Both proxies were upgraded in the same transaction, so the age is the same either way.",
+    "The campaign transaction is the attacker EOA selling G$ from the anchor at the price the anchor had inflated, which drained the reserve's remaining cDAI.",
+    "Loss is the reserve's cDAI depletion; the G$ and G$X left with the attacker are newly minted claims, not victim assets. The earlier COMP sandwich through the same collectInterest is a different defect and a separate incident."
   ]
 }

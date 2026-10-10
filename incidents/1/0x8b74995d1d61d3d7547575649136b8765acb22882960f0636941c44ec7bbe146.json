@@ -2,38 +2,42 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Conic Finance",
   "name": "Conic ETH omnipool Curve reentrancy guard skipped for WETH-listed pools",
-  "summary": "ConicEthPool guards its Curve interactions by calling CurveHandlerV3.reentrancyCheck(pool) at the end of deposit and withdraw. That function returns immediately unless _isETH(pool) holds, and _isETH asks the CurveRegistryCache whether the pool lists the 0xEeee ETH sentinel directly. For the Curve v2 rETH and cbETH pools in the omnipool the meta-registry reports WETH instead, so the check returned early even though those pools transfer native ETH on withdrawal. The attacker re-entered Conic from inside a Curve remove_liquidity ETH callback and had the omnipool value its Curve LP holdings from mid-update pool balances, halving the exchange rate for existing depositors. The violated invariant is that the omnipool must never price or move its Curve positions while a Curve pool it holds is mid-update; the deployed guard could not detect that state for the pools that most needed it.",
+  "summary": "CurveHandlerV3.reentrancyCheck only probed pools the registry cache lists with the 0xEeee ETH coin, but the Curve v2 rETH and cbETH pools list WETH while paying out native ETH. The attacker re-entered the ConicEthPool from a remove_liquidity ETH callback and ran handleDepeggedCurvePool and withdraw against mid-update Curve balances, draining depositors.",
   "targets": [
     {
-      "address": "0xbb787d6243a8d450659e09ea6fd82f1c859691e9",
-      "code": "0xd775ae26f89bcd89e66485324d8830c0ef1e8b6c",
+      "address": "0xd775ae26f89bcd89e66485324d8830c0ef1e8b6c",
       "reset": {
         "kind": "upgrade",
         "tx": "0x0b1dfe6ee755dc11a9a0d0823e22abcc0cb1f03e5ed0673c1f68183cf84f58e6"
       }
+    },
+    {
+      "address": "0xbb787d6243a8d450659e09ea6fd82f1c859691e9",
+      "reset": {
+        "kind": "config",
+        "tx": "0x69b00199e61f43d3fe61581a1d2174a3666f34de658cf5f9766939904271b062",
+        "address": "0xbb787d6243a8d450659e09ea6fd82f1c859691e9",
+        "call": "0xa1e2849f0000000000000000000000000f3159811670c117c372428d4e69ac32325e4d0f"
+      }
     }
   ],
   "loss": {
-    "usd": 3549199.796961053,
+    "usd": 3554425.79,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "1879.852860118564872820",
-        "usd": 3549199.796961053
+        "usd": 3554425.79
       }
     ]
   },
   "refs": [
-    "eip155:1:0x8631dbfed39219d0c1d9cd6008a8073b9d6ee30009998d51d71eb87459868e20",
     "https://medium.com/@ConicFinance/post-mortem-eth-and-crvusd-omnipool-exploits-c9c7fa213a3d",
-    "https://cryptoslate.com/conic-finance-loses-3-2m-to-reentrancy-attack-on-eth-omnipool/",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Conic_exp.sol"
   ],
   "notes": [
-    "Conic governance repointed Controller.curveHandler from 0x92bffb71bbe241ba9cdfb3a4e56e48dc4f118ed7 to CurveHandlerV3 0xd775ae26f89bcd89e66485324d8830c0ef1e8b6c, installing the defective reentrancyCheck into every Conic pool's executing code. It is the last CurveHandlerSet before the exploit and Controller storage slot 6 confirms the transition at this block.",
-    "Measured as the omnipool's own underlying accounting across the single exploit transaction: getTotalAndPerPoolUnderlying() falls from 3,416.508041001657295625 ETH at block 17740954 to 1,536.655180883092422805 ETH at block 17740955 while cncETH total supply is unchanged at 3,408.790292193721163119, so all 1,879.852860118564872820 ETH is depletion of existing depositors rather than a redemption. The attacker realised 1,723.726595625401118794 ETH net of gas, the widely reported 1,724 ETH / 3.2M USD; the roughly 156 ETH gap is Curve and Balancer slippage and fees paid to third parties, which does not reduce gross victim depletion. The Balancer flash loan principal is an attacker-supplied input and is excluded. The separate crvUSD omnipool loss later the same day belongs to its own incident and is not included.",
-    "The age basis is the module installation that made CurveHandlerV3 the pool's curve handler, not the module's own creation two days earlier (block 17591566, which would give 1,813,992 s) and not the ConicEthPool deployment (block 17592111, 1,807,368 s). The pool's own runtime is byte-identical from creation to the exploit.",
-    "The deployment anchor is ConicEthPool's creation because the verifier ties the deployment anchor to the execution address; the defect-bearing artifact is the installed CurveHandlerV3 module recorded in codeArtifact.",
-    "ConicEthPool.handleDepeggedCurvePool is permissionless and performs no reentrancy check at all. The anchor transaction exercises that gap too, but the incident carries a single loss measurement and a single representative target."
+    "The handler route change installed the skipped check, but the omnipool only became exploitable when its owner listed the WETH-coin rETH and cbETH Curve v2 pools (a market listing the exploit re-entered through), so that listing sets the age.",
+    "Loss is the drop in the omnipool's totalUnderlying across the transaction with cncETH supply unchanged, so none of it is a redemption; transfer logs cannot see the Convex-staked positions. It exceeds the attacker's ~1724 ETH because slippage and fees went to third parties.",
+    "Separate incident from the crvUSD omnipool loss the same day: that one is a sandwich against spot-balance LP marks, not this reentrancy-guard gap."
   ]
 }

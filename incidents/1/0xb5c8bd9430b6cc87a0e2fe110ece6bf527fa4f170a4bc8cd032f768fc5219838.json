@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "bZx",
-  "name": "bZx Fulcrum ETHDenver flash-loan margin trade",
-  "summary": "iTokens_loanOpeningFunctions.takeOrderFromiToken guarded the collateral check with a short-circuiting OR - require((loanDataBytes.length == 0 && sentAmounts[6] == sentAmounts[1]) || !OracleInterface(oracle).shouldLiquidate(...)) - so with empty loanDataBytes the left operand was true and shouldLiquidate() was never called, letting a 5x short open against the iETH pool that was instantly underwater after 5,637 ETH was swapped into 51 WBTC on Uniswap V1.",
+  "name": "bZx Fulcrum margin trade skipped health check",
+  "summary": "bZx's takeOrderFromiToken required (loanDataBytes empty && withdrawal == loan) || !shouldLiquidate(), so Kyber-routed margin loans never ran the health check. The attacker pumped WBTC on Uniswap V1 with WBTC borrowed from Compound, opened a 5x sETHwBTC short whose iETH-funded swap bought WBTC at the inflated price, and left the underwater loan.",
   "targets": [
     {
       "address": "0x1cf226e9413addaf22412a2e182f9c0de44af002",
@@ -14,21 +14,23 @@
     }
   ],
   "loss": {
-    "usd": 339644.2909511765,
+    "usd": 1238459.1,
     "assets": [
       {
-        "symbol": "ETH",
-        "amount": "1193",
-        "usd": 339644.2909511765
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "4337.623771526740977984",
+        "usd": 1238459.1
       }
     ]
   },
   "refs": [
-    "https://www.palkeo.com/en/projets/ethereum/bzx.html"
+    "https://www.palkeo.com/en/projets/ethereum/bzx.html",
+    "https://github.com/zetorange1/bZx-monorepo/commit/cb54efaf6eecdb197bf3dbf84a6f58c6df74daf7"
   ],
   "notes": [
-    "The final pre-incident write to targets(0xb1eac3ad) selected the vulnerable iTokens_loanOpeningFunctions module.",
-    "The 1,193 ETH amount is the attacker's realized net profit after unwinding the Compound position. The earlier 1,271 ETH estimate valued that position before the unwind.",
-    "The protocol reported its loss to whole-ETH precision."
+    "The reset is the write of targets(takeOrderFromiToken) to this module; the skip clause may predate it, but the system ran this code only from that route change.",
+    "Loss is the net WETH that left iETH and the bZx vault, the attacker's 1,300 ETH deposit netted out. The 51 WBTC the loan bought stayed in the vault as the abandoned position's collateral and is not subtracted (rule 14); the attacker's realised profit was about 1,193 ETH.",
+    "Separate incident from the 2020-02-18 sUSD oracle exploit: different defect (skipped health check vs. Kyber spot-price oracle), patched separately."
   ]
 }

@@ -40,9 +40,8 @@ const args = process.argv.slice(2)
 const file = args.find((arg) => arg.endsWith('.json'))
 const watch = args.includes('--watch') ? args[args.indexOf('--watch') + 1].toLowerCase().split(',') : []
 if (!file) throw new Error('usage: node scripts/resets.mjs incidents/<chainId>/<tx>.json [--watch 0xa,0xb]')
-const [chainId, name] = path.relative('incidents', file).split(path.sep)
-const chain = Number(chainId)
-const hash = path.basename(name, '.json')
+const chain = Number(path.basename(path.dirname(path.resolve(file))))
+const hash = path.basename(file, '.json')
 const record = JSON.parse(readFileSync(file, 'utf8'))
 
 const call = (method, ...params) => rpc(chain, method, params)

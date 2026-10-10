@@ -2,24 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Value DeFi",
   "name": "Value DeFi vSafe StrategyAlpacaWBNB in-flight ibBNB valuation",
-  "summary": "StrategyAlpacaWBNB values its ibBNB position at Alpaca Vault totalToken()/totalSupply(), and the vSafe WBNB vault mints shares against that value. Inside Alpaca Vault.work() the lent BNB has left the vault before the debt is booked, so totalToken() reads about half its true value. The attacker opened an Alpaca position through a strategy that calls an attacker-chosen farming token, re-entered vSafe depositFor() from that token's approve() at the depressed share price, and redeemed the excess shares at the true price in later transactions.",
+  "summary": "StrategyAlpacaWBNB values its ibBNB at Alpaca's spot totalToken()/totalSupply(), and vSafe WBNB mints shares against that value. Inside Alpaca Vault.work() the loan leaves before the debt is booked, so the attacker's farming token re-entered vSafe depositFor() from approve() at a depressed share price and redeemed at the true price later, nine times.",
   "targets": [
     {
       "address": "0xb43410a271c71f2fda2d1ed9c1165e924be159d9",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x85f936adadead3bc5683fde3eac81605d007a6365131e6484d53910c92f73dd3"
+        "kind": "config",
+        "tx": "0x7a0bacd598d1b34eb850a72a1ff21243f3f1062b82ba15e76e4fda211f01894f",
+        "address": "0x2b4f87d9d0a32a04b2d045fd5927cb57bedb076e",
+        "call": "0xe860ed49"
       }
     }
   ],
   "loss": {
-    "usd": 3347027.282069235,
+    "usd": 3347027.28,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
         "amount": "5345.314671574220183688",
-        "usd": 3347027.282069235
+        "usd": 3347027.28
       }
     ]
   },
@@ -27,8 +29,27 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-05/ValueDefi_exp.sol"
   ],
   "notes": [
-    "Immutable StrategyAlpacaWBNB runtime holds the totalToken()-based valuation; the controller counted it in the vault balance from 173 seconds after deployment through the exploit, apart from a 66-second list rewrite that restored it.",
-    "Vault WBNB paid to the attacker in nine redemptions minus the attacker's own WBNB deposits in the nine re-entrant deposits: 24267.906010457069055632 - 18922.591338882848871944 WBNB. The attacker's deposits are campaign inputs, not victim loss. Alpaca's lent BNB was repaid within each work() call and is excluded. Reported totals near $11m combine other Value DeFi pools and incidents and are not used.",
-    "Alpaca's PancakeswapV2StrategyAddBaseTokenOnly (proxy 0xe38ebfe8f314dcad61d5adcb29c1a26f41bed0be, implementation 0x77d23aff927f3d46e51d449372c957b3cbbfb40e) accepts an unvalidated farmingToken and supplied the re-entry callback, but Alpaca's own repayment invariant held and it lost nothing, so it is recorded as the entry path, not a target."
+    "The strategy is immutable, but the exploit needed the controller to count it in the vault balance. At block 7152982 the strategist set strategyLength to 0, delisting every strategy; this tx set it back to 3 with the strategy in slot 0, the latest change establishing the exploited state.",
+    "Loss is the WBNB the vault paid out in the nine redemptions minus the attacker's own WBNB in the nine re-entrant deposits; the deposits are attacker inputs, not victim assets. Alpaca's loan was repaid within each work() call and is excluded.",
+    "Alpaca's PancakeswapV2StrategyAddBaseTokenOnly accepted the attacker's farming token and supplied the callback, but Alpaca lost nothing, so it is the entry path, not a target."
+  ],
+  "campaign": [
+    "eip155:56:0xa2351f51fb9ea0a0a1b50336a549ac688be6d5eb375284a2de3e5e8381e64f4a",
+    "eip155:56:0x7fa89e3e9b4e1721774a3a8642a5ca4f69a19118610a965ba451a18f3669c430",
+    "eip155:56:0x06924f186f9bab0408f4b18d104ce003b8bc45ac10824f0d205b831d26e8f3d7",
+    "eip155:56:0x9e2415b6e552efad177407ff2a0c6bb04ce83f10896f88a4b0347af57e4fb580",
+    "eip155:56:0x42d15407a5ad2a00f8cb9c2c65b43be13db7a93441db2729da56d525b64d935b",
+    "eip155:56:0xf70f42b89415971facd839c8ff5d99b964bd6cce8bcd4abc072dd898445ee686",
+    "eip155:56:0x5ee774a1ef98b1c745ac93d09e74a4976de5b86402b6178dc3aa7c9ae2239879",
+    "eip155:56:0x5c378271c66c6f95ad220d1c61d82c4a48384bebb960d825a36ae134206636e1",
+    "eip155:56:0x158c9fe2abde339b689476cee646d63c2f7c605af4b16b4e32d68643d5af6d92",
+    "eip155:56:0x7ea068a585495333db042fb7e5cddeef140cb21e9f99631fc4184a1611b5479a",
+    "eip155:56:0x02a28e429b9cb11927c195c12a8140c4632f890453fb3e4f265964fe7cd1272b",
+    "eip155:56:0xa493449fead99946a14e23e8f68482a12407aa2ca3981794d79b17a56876809d",
+    "eip155:56:0xc00cb16028d112be9f6f6d6fc5e91bb79b2d69c64e8de1a17c4d6f3305041d72",
+    "eip155:56:0x951425a52ba23f350c9cd86e74e56ba8016e2d8f7a3d27ecb05590dc06dd6743",
+    "eip155:56:0x03658a919e0bbf53cb869cefa5b65f1820ba040a227c8b3237b405e0bef4c2ad",
+    "eip155:56:0xd577dd7c25cd31c279d73950ec9a4b2e2a80520760a32e2e319091be3a2e570e",
+    "eip155:56:0x9dab872598ee7a6290ed7d6f3a903f44a8794246c3089cc91d6cfb69be4d58b4"
   ]
 }

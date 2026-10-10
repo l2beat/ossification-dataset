@@ -2,8 +2,17 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Conic Finance",
   "name": "Conic crvUSD omnipool mints and redeems against manipulable Curve LP marks",
-  "summary": "ConicPoolV2.depositFor() and withdraw() convert between cncCRVUSD shares and underlying with _getTotalAndPerPoolUnderlying(), which values every Curve position at CurveLPOracleV2.getUSDPrice(lpToken) = sum(pool.balances(i) * price(coin i)) / lpToken.totalSupply(), i.e. from the Curve pools' instantaneous balances. The Curve add_liquidity and remove_liquidity_one_coin calls that back those conversions are executed by the delegatecalled CurveHandlerV3 with a hardcoded minimum of 0, and the only slippage bound in the whole path is the caller-supplied minLpReceived / minUnderlyingReceived, which an attacker sets to zero. The violated invariant is that the omnipool must not mint or redeem shares against marks that the same transaction can move, and must not trade its own Curve positions at an unbounded price. The attacker flash-borrowed 12M USDC, 9M USDT and 80,000 WETH, minted 93M crvUSD from the crvUSD controller, pushed the crvUSD/USDT and crvUSD/USDC pools off balance, made the omnipool deposit about 47M crvUSD single-sided into the pool it then considered least balanced, unwound the swap, and made the omnipool withdraw single-sided again, repeating the sandwich four times per transaction.",
+  "summary": "ConicPoolV2 minted and redeemed shares at Curve LP marks computed from the pools' instantaneous balances, guarded only by a loose 2% imbalance bound, and traded its own Curve positions with no minimum out. The attacker skewed the crvUSD/USDC and crvUSD/USDT pools, had the omnipool deposit, swapped back and withdrew, four times per transaction.",
   "targets": [
+    {
+      "address": "0x369cbc5c6f139b1132d3b91b87241b37fc5b971f",
+      "reset": {
+        "kind": "config",
+        "tx": "0x9848c63461fab113274963a5458c65976dfc871a503ab1104230ae894c146647",
+        "address": "0x369cbc5c6f139b1132d3b91b87241b37fc5b971f",
+        "call": "0xa1e2849f0000000000000000000000004dece678ceceb27446b35c672dc7d61f30bad69e"
+      }
+    },
     {
       "address": "0x369cbc5c6f139b1132d3b91b87241b37fc5b971f",
       "code": "0xd775ae26f89bcd89e66485324d8830c0ef1e8b6c",
@@ -11,21 +20,18 @@
         "kind": "upgrade",
         "tx": "0x0b1dfe6ee755dc11a9a0d0823e22abcc0cb1f03e5ed0673c1f68183cf84f58e6"
       }
+    },
+    {
+      "address": "0x7b528b4fd3e9f6b1701817c83f2ccb16496ba03e",
+      "reset": {
+        "kind": "config",
+        "tx": "0x10a03e64b0880150c27ce2a13e793576edeb0eebe544806171597afa91908052",
+        "address": "0x013a3da6591d3427f164862793ab4e388f9b587e",
+        "slot": "0x8"
+      }
     }
   ],
-  "loss": {
-    "usd": 932030.3456993,
-    "assets": [
-      {
-        "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
-        "symbol": "crvUSD",
-        "amount": "932840.984514791417383844",
-        "usd": 932030.3456993
-      }
-    ]
-  },
-  "refs": [
-    "eip155:1:0x8631dbfed39219d0c1d9cd6008a8073b9d6ee30009998d51d71eb87459868e20",
+  "campaign": [
     "eip155:1:0x64910b0a07083119403ce1bb30c94503e99e44c334bdb68f3afea09c834bdd9f",
     "eip155:1:0x3af57106166b8568a0ace8d0741cf05355d74d7e7e173f1bab7a4434c6f0ed80",
     "eip155:1:0xcf484ced351166dee819fcf2417e7df6ac826ac6af53c676e28f6bc96f5bcdbd",
@@ -36,16 +42,26 @@
     "eip155:1:0xe7f54acd58bea522f9aac5d18f8765a96a2b41d1aa620f9df5e084e113976080",
     "eip155:1:0x050dec294956f9a036565be9b2c1cfb4e7c74fcdeaed4ae8ef42f42cca17e32c",
     "eip155:1:0xde8e5f61c89d3f488e97dad680d314a347fefa3e55eb00221b70527a7d44cea8",
-    "eip155:1:0xc08bfee8653bdb715144f98bc014eecbab6cf92ddaba16b836f3889fd850a862",
+    "eip155:1:0xc08bfee8653bdb715144f98bc014eecbab6cf92ddaba16b836f3889fd850a862"
+  ],
+  "loss": {
+    "usd": 933064.08,
+    "assets": [
+      {
+        "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+        "symbol": "crvUSD",
+        "amount": "933875.616679702668236683",
+        "usd": 933064.08
+      }
+    ]
+  },
+  "refs": [
     "https://medium.com/@ConicFinance/post-mortem-eth-and-crvusd-omnipool-exploits-c9c7fa213a3d",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Conic02_exp.sol"
   ],
   "notes": [
-    "Conic governance repointed Controller.curveHandler from 0x92bffb71bbe241ba9cdfb3a4e56e48dc4f118ed7 to CurveHandlerV3 0xd775ae26f89bcd89e66485324d8830c0ef1e8b6c. It is the last CurveHandlerSet before the exploit and Controller storage slot 6 confirms the transition at this block; the crvUSD omnipool delegatecalls that address for every Curve deposit and withdrawal, so this is the latest change to the code the omnipool executes.",
-    "Measured as the mark-independent depletion of the omnipool's Curve positions: for each of its four Curve pools, (idle LP + Convex-staked LP) * get_virtual_price() at the block boundaries of the defect-executing transactions. The sum falls from 49,553,618.830634864627661493 at block 17743469 to 48,682,039.404766238059398496 at 17743480 (871,579.425868626568262997) and from 40,924,481.223378674223457560 at 17743530 to 40,863,219.664732509374336713 at 17743531 (61,261.558646164849120847), total 932,840.984514791417383844 crvUSD of pool D-value. The omnipool's own accounting agrees: getTotalAndPerPoolUnderlying() falls 49,551,067.132383105461785002 -> 48,678,526.665747486728361172 and 40,922,092.636477872837352137 -> 40,860,757.486433788902539284, 933,875.616679702668236683 crvUSD in total, a 0.11 percent difference, and cncCRVUSD total supply is unchanged at 49,529,983.483468799349940419 across blocks 17743469-17743491, so none of the depletion is a redemption. Twelve successful transactions execute the defect. The anchored attacker takes 76,615.444126 crvUSD in the anchor transaction and 61,261.558646 in transaction 0xc08bfee8... at block 17743531; a second actor, 0xfde0d1575ed8e06fbf36256bcdfa1f359281455a through 0xd050e0a4838d74769228b49dff97241b4ef3805d, copies the same four-cycle sandwich once per block for the next ten blocks and takes 794,963.981743 crvUSD. All twelve hit the same execution context with the same defect inside 62 seconds and no other record counts them, so they are one campaign here; the split is stated so a reviewer can restrict the figure to the anchored attacker's 137,877.002772 crvUSD if that scope is preferred. Ordinary user withdrawals between blocks 17743480 and 17743530 reduce holdings by 7,891,877.914274652257975570 shares at an unchanged 0.9828 exchange rate and are excluded. The Balancer flash loan principal, the 93M crvUSD minted against the attacker's own WETH collateral, and the Curve and crvUSD-controller fees paid to third parties are attacker-supplied inputs or third-party receipts and are not netted. The separate ETH omnipool loss earlier the same day is its own incident and is not included.",
-    "The age basis is the module installation that made CurveHandlerV3 the omnipool's curve handler, matching the treatment of the Conic ETH omnipool incident. The omnipool's own runtime is byte-identical from creation to the exploit, so a deployment basis would give 3,709,236 s, and CurveHandlerV3's own creation (block 17591566, timestamp 1688121719) would give 1,844,376 s.",
-    "The accounting half of the defect (mint and redeem against CurveLPOracleV2 marks derived from instantaneous Curve balances, with only a caller-supplied slippage bound) is in ConicPoolV2's own immutable runtime 0x369cbc5c6f139b1132d3b91b87241b37fc5b971f, hash 0x6f482d6988d4a6fd6578423f5df59198bad1fb8e6e665cc3276c3b5e56a03bb1, and in CurveLPOracleV2 0x7b528b4fd3e9f6b1701817c83f2ccb16496ba03e, which the omnipool reaches by CALL. Only the delegatecalled artifact is carried as the target so the incident's single loss is attributed once.",
-    "The deployment anchor is the crvUSD omnipool's creation because the verifier ties the deployment anchor to the execution address; the defect-bearing artifact recorded in codeArtifact is the delegatecalled CurveHandlerV3 module.",
-    "This is the second Conic incident of 2023-07-21. The ETH omnipool incident eip155:1:0x8b74995d1d61d3d7547575649136b8765acb22882960f0636941c44ec7bbe146 is a different execution context and a different failure (CurveHandlerV3.reentrancyCheck returning early for WETH-listed Curve v2 pools); the two losses are disjoint. Both targets name the same code artifact, so they collapse in the curve only if the failure identifiers are ever unified, which the evidence does not support."
+    "The LP oracle (spot-balance marks) and CurveHandlerV3 (zero-minimum Curve calls) carry the defect and entered the route through the controller's priceOracle and curveHandler swaps; per rule 11 these route changes reset the age even though the replaced contracts behaved alike.",
+    "The campaign includes ten copies of the same sandwich by 0xfde0d1575ed8e06fbf36256bcdfa1f359281455a in the following blocks; they hit the same pool through the same defect within a minute.",
+    "Loss is the per-transaction drop in the omnipool's totalUnderlying with cncCRVUSD supply unchanged; transfer logs cannot see the Convex-staked positions."
   ]
 }

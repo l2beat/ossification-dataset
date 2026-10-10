@@ -1,0 +1,123 @@
+{
+  "eip155:1:0x1106418384414ed56cd7cbb9fedc66a02d39b663d580abc618f2d387348354ab": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 48736165,
+      "loss": "off-10-50"
+    },
+    "reason": "Separate incident from 0x726459…84d0 (rule 4: different defect). Nothing was double-counted: Compound paid the clone 0x7b7246 its accrued 268.53 COMP once (log 0x7d) and the clone's five collectUBIInterest calls sold it in 0.3%-of-spot-reserve chunks with amountOutMin 0 into the COMP/WETH pair the attacker had loaded with 20,096 COMP, receiving 95.7 DAI in total. The defect is in GoodCompoundStakingV2 (an EIP-1167 clone created in 0x186dadd6, block 14338454), not in the GoodFundManager upgrade 0xe710b21c. A single call was already profitable, so the duplicate entries only scaled the loss. Loss is the gross COMP depletion, $14,796.13, not the attacker's net 250.63 COMP. No earlier non-keeper call to the clone; no campaign. Orchestrator: reset moved to the maxLiquidityPercentageSwap 0->300 change (rule 10 threshold)."
+  },
+  "eip155:1:0x37acd17a80a5f95728459bfea85cb2e1f64b4c75cf4a4c8dcb61964e26860882": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 2130096,
+      "loss": "within-10"
+    },
+    "reason": "Separate incident from the ETH omnipool (sandwich against spot-balance LP marks, not reentrancy). Coordinator adjudication over the fork's blind draft: the defect-bearing LP oracle 0x7b528b4f (reached via GenericOracle 0x286ef89c) and CurveHandlerV3 0xd775ae26 are executed targets, and rule 11 ages them from their route changes even though the replaced contracts behaved alike; the latest is controller.priceOracle (slot 0x8) -> 0x286ef89c in 0x10a03e64 (block 17634814), age 1,319,520s (record 1,578,912s from the handler swap). 11 campaign txs moved from refs into campaign; loss is the omnipool's totalUnderlying drop (933,875.62 crvUSD)."
+  },
+  "eip155:1:0x726459a46839c915ee2fb3d8de7f986e3c7391c605b7a622112161a84c7384d0": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Anchor, target and reset (GoodFundManager upgrade 0xe710b21c) confirmed. Blind also listed GoodReserveCDai 0xa150a8, which was upgraded in the same tx, so the age is unchanged; adjudicated to GoodFundManager only. Added campaign 0xb6196db0 (same EOA 0x6738fa, 201 blocks later): it sold 5,161,400 G$ at the anchor-inflated reserve price (2.237e6 vs 0.816e6 before) and drained the last 115,480 cDAI. Loss is restated as the reserve's cDAI depletion (27,772,856.80 cDAI, $626,734.66) rather than the DAI the beneficiary redeemed from it. Notes are rewritten so they no longer restate amounts."
+  },
+  "eip155:1:0x762881b07feb63c436dee38edd4ff1f7a74c33091e534af56c9f7d49b5ecac15": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": -50220,
+      "loss": "off-50"
+    },
+    "reason": "The oracle's deployment (block 9498957) is not the latest change: bZx oracleAddresses(0xf2572466) read 0xb017c993 at block 9502702 and 0xaa6198fe from 9502703, set by timelocked setOracleReference 0xd7a9e76e, so the system ran this oracle only from then (rule 11); age 75,495s -> 25,275s. Loss changed from attacker proceeds (2,378 ETH, recorded as a floor) to gross depletion: 6,796.01 WETH out of iETH+vault net of the repaid flash loan; sUSD collateral not subtracted (rule 14)."
+  },
+  "eip155:1:0x8b74995d1d61d3d7547575649136b8765acb22882960f0636941c44ec7bbe146": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -261924,
+      "loss": "within-10"
+    },
+    "reason": "Separate incident from the crvUSD omnipool (different bug). The handler route change 0x0b1dfe6e (block 17613432) predates any WETH-listed pool in the ETH omnipool; the rETH/cbETH/stETH pools were only listed by CurvePoolAdded tx 0x69b00199 (block 17635020), and hasCoinDirectly(rETH/cbETH pool, 0xEeee)=false is what skipped the guard, so the listing is the latest needed change. Targets split into handler (reentrancyCheck is CALLed at 0xd775ae26, not delegatecalled) and omnipool; loss unchanged in ETH (totalUnderlying 3416.508->1536.655, supply flat), repriced at loss.mjs ETH price; notes condensed."
+  },
+  "eip155:1:0xb5c8bd9430b6cc87a0e2fe110ece6bf527fa4f170a4bc8cd032f768fc5219838": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-50"
+    },
+    "reason": "Separate incident from the 02-18 sUSD oracle exploit (different defect and code). Target and reset confirmed (targets(0xb1eac3ad) -> 0xf0a42ec4 in 0x7e49e3da, block 9443140; no later route change; campaign scan 9438966-9520000 finds only the anchor). Loss changed from the attacker's 1,193 ETH profit to gross depletion per rule 14: iETH+vault lost 4,337.62 WETH net of the attacker's 1,300 ETH; the 51.35 WBTC position collateral left in the vault is not subtracted."
+  },
+  "eip155:42161:0x025cf2858723369d606ee3abbc4ec01eab064a97cc9ec578bf91c6908679be75": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -11348760,
+      "loss": "off-50"
+    },
+    "reason": "All exploit deposits (e.g. 1 wei USDT + 300k USDC.e into 0x61a7) hit Clearing's single-sided getDepositAmount branch (getTotalAmounts had one side 0) at ~12% spot/TWAP deviation, which only passes with the vault's priceThreshold 200 set in 0x83d90682 (block 145534012); that config postdates Clearing's deployment, so age falls from 196.6 to 65.2 days. The Ramses (0xadb209cc) and gDAI-DAI (0x6116f311) records are the same bug in sibling Clearing deployments hit by the same attacker within 6 minutes and merge here; 13 copycat txs (0xccc599f3, 0x0381d997) join the campaign; loss is measured depletion of the four vaults and their pools (.61M vs a reported .128M for two vaults)."
+  },
+  "eip155:42161:0x6116f311ac199d6f608c52e44c93a0e6961f10380fd379873b8bf27c92402462": {
+    "decision": "merge-into:eip155:42161:0x025cf2858723369d606ee3abbc4ec01eab064a97cc9ec578bf91c6908679be75",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -10484312,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker and same Clearing v1.2.3 exception (sibling Uniswap deployment 0xb8fb4031, gDAI-DAI vault 0x33985ca7, priceThreshold 200 set in 0x5410eb5f) 7 min after anchor 0x025cf285, in one campaign; rule 4 merges it. Its seven txs plus copycat 0x7b704575 are in the merged campaign; the gDAI-DAI pool depletion (2.36M DAI + 0.73M gDAI) is in the merged loss."
+  },
+  "eip155:42161:0xadb209cc735cec128adc9dff43bc4666cf37037efd375970eaf23a2f9fda6e03": {
+    "decision": "merge-into:eip155:42161:0x025cf2858723369d606ee3abbc4ec01eab064a97cc9ec578bf91c6908679be75",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -10885540,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x53515361 exploited the same Clearing v1.2.3 single-sided ratio-check exception (sibling Ramses deployment 0xcfb851b1, vault 0x80709a76 with priceThreshold 200) 65 s after anchor 0x025cf285 in one campaign across four vaults; rule 4 merges sibling-template legs. Its txs and loss are in the merged record's campaign and loss."
+  },
+  "eip155:56:0xa00def91954ba9f1a1320ef582420d41ca886d417d996362bf3ac3fe2bfb9006": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -5271355,
+      "loss": "within-10"
+    },
+    "reason": "Controller 0x2b4f87d9 strategyLength() was 3 at block 7152981, 0 at 7152995-7153003 (setStrategyLength(0) in 0x0982d5f5) and 3 again from 0x7a0bacd5 at block 7153004, with strategies(0) moved to StrategyAlpacaWBNB; the exploit needed that listing (rule 10 modules), so the reset is that config tx, not the strategy deployment (age 5486954 -> 215599 s). Also adds the 8 further depositFor rounds and 9 redemptions as campaign (campaign.mjs confirms the 9 depositFor exercises 7223030-7223344, none earlier in 7140000-7240000); loss 5345.31 WBNB (24267.91 out - 18922.59 attacker deposits) unchanged. Blind draft also listed the vSafe vault (deployment, older) as a target; dropped as its pricing is correct given an honest strategy valuation."
+  },
+  "eip155:56:0xd3382252bc204fdc32a6b3add8c639850882b70a798399d6e00a542cdf769040": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Anchor, target, reset (proxy creation 0xc025c9b6 at block 6298935 with impl 0x7a8ac384 set in the constructor, only Upgraded is the post-exploit fix at 7148585) and loss (LP via realised vBSWAP sale 8790.77 WBNB + 222,937.64 BUSD + 93.68 WBNB) confirmed. Update only adds the four follow-on exploit txs (recover LP, second initialize, recover WBNB, recover BUSD) as campaign instead of refs, and condenses summary and notes. Separate incident from the vSafe record: different defect, contract and attacker (0xef63ad57 vs 0xcb36b1ee)."
+  }
+}

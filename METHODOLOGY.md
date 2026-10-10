@@ -47,7 +47,7 @@ transaction exploited.
      for a metamorphic contract;
    - `upgrade`: the transaction that made the system run the code, through a
      proxy, beacon, diamond cut, module route, or a registry or controller
-     pointing to it;
+     pointing to it, even when the new code behaves like the old;
    - `config`: a state change the exploit needed, named by a storage `slot`
      or a view `call` on `address`;
    - `genesis`: system code present since block zero.
