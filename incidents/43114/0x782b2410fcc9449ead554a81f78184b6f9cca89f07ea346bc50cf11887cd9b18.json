@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ElasticSwap",
-  "name": "ElasticSwap TIC/USDC.e exchange decay accounting",
-  "summary": "ElasticSwap Exchange tracks internal x*y=k reserves separately from live ERC-20 balances to account for elastic-token decay. removeLiquidity calculates both token payouts from the live balances, but reduces the internal base reserve pro rata while subtracting the live-balance-derived quote payout from the internal quote reserve with a zero clamp. Quote tokens transferred directly to the exchange therefore inflate a liquidity withdrawal without ever increasing its internal quote reserve. On Avalanche, the attacker matched the pool balances to mint nearly half the liquidity supply, donated 393,769.263016 USDC.e directly, and withdrew; the internal quote reserve fell from 196,885.131508 USDC.e to 0.5 USDC.e. A 50 USDC.e swap against the damaged curve then returned 41,119.385246751458510447 TIC.",
+  "name": "ElasticSwap Exchange removeLiquidity decay accounting",
+  "summary": "ElasticSwap Exchange.removeLiquidity paid out quote tokens pro rata of the live balance but debited that payout from the internal quote reserve with a zero clamp. Attackers took about half the LP supply, donated quote tokens directly to the exchange, removed liquidity to collapse the internal reserve, then swapped against the broken curve to drain the base token.",
   "targets": [
     {
       "address": "0x4ae1da57f2d6b2e9a23d07e264aa2b3bbcaed19a",
@@ -13,30 +13,47 @@
     }
   ],
   "loss": {
-    "usd": 390354.7095611044,
+    "usd": 1047252.34,
     "assets": [
       {
-        "token": "0x75739a693459f33b1fbcc02099eea3ebcf150cbe",
-        "symbol": "TIC",
-        "amount": "41119.385246748693436063",
-        "usd": 195276.55781910443
+        "chainId": 1,
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "500394.927842",
+        "usd": 500394.93
+      },
+      {
+        "chainId": 1,
+        "token": "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+        "symbol": "AMPL",
+        "amount": "161792.170690922",
+        "usd": 247542.02
       },
       {
         "token": "0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664",
         "symbol": "USDC.e",
         "amount": "195078.151742",
-        "usd": 195078.151742
+        "usd": 194686.82
+      },
+      {
+        "token": "0x75739a693459f33b1fbcc02099eea3ebcf150cbe",
+        "symbol": "TIC",
+        "amount": "41119.385246748693436063",
+        "usd": 104628.57
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0xb36486f032a450782d5d2fac118ea90a6d3b08cac3409d949c59b43bcd6dbb8f"
+  ],
   "refs": [
     "https://quillaudits.medium.com/decoding-elastic-swaps-850k-exploit-quillaudits-9ceb7fcd8d1a",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/ElasticSwap_exp.sol"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/ElasticSwap_exp.sol",
+    "eip155:43114:0x447c5488adb0642c5b56737be6fbc7d2e4f71a16e9827c76fbc0264b2510eddf"
   ],
   "notes": [
-    "Non-upgradeable TIC/USDC.e Exchange created by ElasticSwap ExchangeFactory 0x8b3d780db8842593d8b61632a2f76c4d4f31d7c3 in one CREATE frame. The address has no code at block 13156134 and runtime hash 0x882f35b4aef687a2c0d2c52b72e96b3f9174538b0f85a737c368a7789c24f37c at both block 13156135 and immediately before exploitation at block 23563709. EIP-1967 implementation and beacon slots are zero. The defect is in Exchange.removeLiquidity itself; its DELEGATECALLs are compiler-generated external-library calls to link-time-hardcoded MathLib 0xe3c08c95aa81474f44bee23f8c45d470ddad37be, whose code hash 0xb1f05f46b2061d2cd5a62d70d233d4bf60110a6abe62a0fd7057f30d9178ff59 is unchanged at deployment and pre-exploit.",
-    "This record measures only the Avalanche TIC/USDC.e exchange. The exchange balances fall from 41532.645399984141510552 TIC and 196885.131508 USDC.e at block 23563709 to 413.260153235448074489 TIC and 1806.979766 USDC.e at block 23563710. The exploit receipt's Transfer logs independently sum to the same net deltas: 41119.385246748693436063 TIC and 195078.151742 USDC.e. TIC has no DefiLlama historical observation at the incident timestamp, so its USD value uses the immediately pre-exploit reserves of the onchain TIC/USDC.e pair 0x4cf9dc05c715812fead782dc98de0168029e05c8: 51112.399053176577020730 TIC and 242733.525540 USDC.e imply 4.749014525564799 USDC.e per TIC. USDC.e is valued at par. This is a transparent incident-time spot valuation from TIC's liquid onchain market, but it is only one pool and does not estimate the slippage that liquidating the full stolen TIC quantity would incur. The separate Ethereum AMPL/USDC exchange loss is excluded.",
-    "TIC USD valuation uses the immediately pre-exploit spot ratio of its TIC/USDC.e pool; the pool is a single market and full-loss liquidation would incur material slippage.",
-    "This Avalanche deployment was exploited 582 seconds before the separate Ethereum ElasticSwap exchange. The records share a reviewed failure identity but have distinct execution contexts, loss components, code hashes, and code ages; no Ethereum loss is included here."
+    "Merged: about ten minutes later a different party ran the same exploit on ElasticSwap's Ethereum AMPL/USDC Exchange 0xa0c5aa50 (same factory template, deployed by 0x540b5182, age 18747657 s); it is a campaign entry and its assets carry chainId 1.",
+    "TIC has no market price at the time; it is valued at what the attacker realised, 8015.17 AVAX for 40608.26 TIC in its sale transaction (the refs entry), applied to the full TIC that left the exchange.",
+    "The Ethereum attacker was an AMPL arbitrage bot whose earlier calls through the same contract did not deplete the exchange; only its exploit transaction is counted."
   ]
 }

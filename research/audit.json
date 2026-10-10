@@ -21,6 +21,17 @@
     },
     "reason": "Separate incident from the ETH omnipool (sandwich against spot-balance LP marks, not reentrancy). Coordinator adjudication over the fork's blind draft: the defect-bearing LP oracle 0x7b528b4f (reached via GenericOracle 0x286ef89c) and CurveHandlerV3 0xd775ae26 are executed targets, and rule 11 ages them from their route changes even though the replaced contracts behaved alike; the latest is controller.priceOracle (slot 0x8) -> 0x286ef89c in 0x10a03e64 (block 17634814), age 1,319,520s (record 1,578,912s from the handler swap). 11 campaign txs moved from refs into campaign; loss is the omnipool's totalUnderlying drop (933,875.62 crvUSD)."
   },
+  "eip155:1:0x56e09abb35ff12271fdb38ff8a23e4d4a7396844426a94c4d3af2e8b7a0a2813": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Anchor, target and upgrade reset 0x166b56c5 confirmed (campaign.mjs: 46 earlier batchHarvestMarketRewards calls are keeper harvests without outflow; register-helper grant at 19988338 precedes the reset). Merged the Arbitrum leg 0x67c5400d (same attacker EOA 0x7a2f4d62) and listed campaign 0x42b2ec27, 0x663b55a1. Loss re-measured as PendleStaking LP depletion valued from market reserves: $29,570,156.52 vs record $27.31M (attacker-realised underlying, YT unpriced) and loss.mjs $31.50M (DefiLlama misprices stETH/sUSDe/gUSDC LP by using the yield-token price)."
+  },
   "eip155:1:0x726459a46839c915ee2fb3d8de7f986e3c7391c605b7a622112161a84c7384d0": {
     "decision": "update",
     "compare": {
@@ -54,6 +65,17 @@
     },
     "reason": "Separate incident from the crvUSD omnipool (different bug). The handler route change 0x0b1dfe6e (block 17613432) predates any WETH-listed pool in the ETH omnipool; the rETH/cbETH/stETH pools were only listed by CurvePoolAdded tx 0x69b00199 (block 17635020), and hasCoinDirectly(rETH/cbETH pool, 0xEeee)=false is what skipped the guard, so the listing is the latest needed change. Targets split into handler (reentrancyCheck is CALLed at 0xd775ae26, not delegatecalled) and omnipool; loss unchanged in ETH (totalUnderlying 3416.508->1536.655, supply flat), repriced at loss.mjs ETH price; notes condensed."
   },
+  "eip155:1:0xb36486f032a450782d5d2fac118ea90a6d3b08cac3409d949c59b43bcd6dbb8f": {
+    "decision": "merge-into:eip155:43114:0x782b2410fcc9449ead554a81f78184b6f9cca89f07ea346bc50cf11887cd9b18",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 2720289,
+      "loss": "off-10-50"
+    },
+    "reason": "Ethereum AMPL/USDC Exchange 0xa0c5aa50 is a sibling deployment of the same factory template, drained by the same mechanism 582 s after the Avalanche anchor 0x782b2410; merged as campaign with its $747,936.95 depletion (loss.mjs confirms the bot's other 171 calls through 0xe911519d did not deplete the exchange)."
+  },
   "eip155:1:0xb5c8bd9430b6cc87a0e2fe110ece6bf527fa4f170a4bc8cd032f768fc5219838": {
     "decision": "update",
     "compare": {
@@ -64,6 +86,73 @@
       "loss": "off-50"
     },
     "reason": "Separate incident from the 02-18 sUSD oracle exploit (different defect and code). Target and reset confirmed (targets(0xb1eac3ad) -> 0xf0a42ec4 in 0x7e49e3da, block 9443140; no later route change; campaign scan 9438966-9520000 finds only the anchor). Loss changed from the attacker's 1,193 ETH profit to gross depletion per rule 14: iETH+vault lost 4,337.62 WETH net of the attacker's 1,300 ETH; the 51.35 WBTC position collateral left in the vault is not subtracted."
+  },
+  "eip155:250:0x24770e104ae1f8f47d1c095046379557ba3d17e49d3186e5f46f22d1067a57e9": {
+    "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -447500,
+      "loss": "off-50"
+    },
+    "reason": "Sibling ReaperVaultV2 deployment drained by the same attacker contract 0x8162a5e1 in the same campaign (rule 4); its exploit txs are in the merged record's campaign and its depletion in the merged loss. The incident anchors on the earlier rfETH redeem 0x1077b3d0 by EOA 0x39300e83."
+  },
+  "eip155:250:0x2906c8e15b53ec1fcb1af64a416643e15404339adbf7aa0d2bfa3fc993cbda0a": {
+    "decision": "update",
+    "anchor": "eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": -32358,
+      "loss": "off-50"
+    },
+    "reason": "Earlier exploit found: EOA 0x39300e83 called rfETH redeem(0xba087652) for EOA owner 0xe941eb81 (no Approval ever emitted by any Reaper vault) in 0x1077b3d0, block 44019917 index 0, ~9 h before the main attacker; a copier bot followed at index 2. All six vault records are one incident (one ReaperVaultV2 template, one campaign); campaign = 236 unaffiliated unauthorised-redeem txs from Withdraw logs (caller!=owner) through block 44167191, excluding strategist 0x1e71aee6/co-signer rescue to Safe 0x539ef36c. Loss $1,740,035.42 (CoinGecko hourly for ETH/BTC/FTM, stables at par; DefiLlama rate-limited)."
+  },
+  "eip155:250:0x7f79934a9c2fb01e3f7af57939746cfdc4b3854ecfff712b84a593e60d8e3754": {
+    "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 149867,
+      "loss": "off-50"
+    },
+    "reason": "Sibling ReaperVaultV2 deployment drained by the same attacker contract 0x8162a5e1 in the same campaign (rule 4); its exploit txs are in the merged record's campaign and its depletion in the merged loss. The incident anchors on the earlier rfETH redeem 0x1077b3d0 by EOA 0x39300e83."
+  },
+  "eip155:250:0x9f40542ed53737b6aa0c17a2ab0c1f295b665ed83f9f8e3c66e9161a64d684cc": {
+    "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -118254,
+      "loss": "off-50"
+    },
+    "reason": "Sibling ReaperVaultV2 deployment drained by the same attacker contract 0x8162a5e1 in the same campaign (rule 4); its exploit txs are in the merged record's campaign and its depletion in the merged loss. The incident anchors on the earlier rfETH redeem 0x1077b3d0 by EOA 0x39300e83."
+  },
+  "eip155:250:0xb8d718935fa9d1caa25534fb639af4a5dc8d3ca61363613b528a40486b512bbf": {
+    "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 488134,
+      "loss": "off-50"
+    },
+    "reason": "Sibling ReaperVaultV2 deployment drained by the same attacker contract 0x8162a5e1 in the same campaign (rule 4); its exploit txs are in the merged record's campaign and its depletion in the merged loss. The incident anchors on the earlier rfETH redeem 0x1077b3d0 by EOA 0x39300e83."
+  },
+  "eip155:250:0xb928d338907ad42430a05e9e87d73e2cd5815af0279fe430845265943a2e22ad": {
+    "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 237912,
+      "loss": "off-50"
+    },
+    "reason": "Sibling ReaperVaultV2 deployment drained by the same attacker contract 0x8162a5e1 in the same campaign (rule 4); its exploit txs are in the merged record's campaign and its depletion in the merged loss. The incident anchors on the earlier rfETH redeem 0x1077b3d0 by EOA 0x39300e83."
   },
   "eip155:42161:0x025cf2858723369d606ee3abbc4ec01eab064a97cc9ec578bf91c6908679be75": {
     "decision": "update",
@@ -87,6 +176,28 @@
     },
     "reason": "Same attacker and same Clearing v1.2.3 exception (sibling Uniswap deployment 0xb8fb4031, gDAI-DAI vault 0x33985ca7, priceThreshold 200 set in 0x5410eb5f) 7 min after anchor 0x025cf285, in one campaign; rule 4 merges it. Its seven txs plus copycat 0x7b704575 are in the merged campaign; the gDAI-DAI pool depletion (2.36M DAI + 0.73M gDAI) is in the merged loss."
   },
+  "eip155:42161:0x67c5400da117b906f8c0fc5f5149e4ea10ed6358cd9ea2ec0ed8f559d757b7df": {
+    "decision": "merge-into:eip155:1:0x56e09abb35ff12271fdb38ff8a23e4d4a7396844426a94c4d3af2e8b7a0a2813",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -1053437,
+      "loss": "off-50"
+    },
+    "reason": "Arbitrum leg sent by the same attacker EOA 0x7a2f4d62 that prepared the Ethereum fake markets, ~51 min after the Ethereum anchor 0x56e09abb; same defect in the side-chain PendleStaking. Moves into the Ethereum record as campaign; its LP depletion ($684,792.96 from reserves; record $678,983) is included with chainId 42161."
+  },
+  "eip155:42161:0x6a2f989b5493b52ffc078d0a59a3bf9727d134b403aa6e0bf309fd513a728f7f": {
+    "decision": "merge-into:eip155:43114:0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 340,
+      "loss": "off-50"
+    },
+    "reason": "Arbitrum leg of the same attacker campaign 22 s after the Avalanche anchor 0xece4efbe (same facet code path, same fake-pair contract pattern); its 13 exploit txs and the $754k Arbitrum pool depletion move into the Avalanche record. Its own reset 0xdf204ce6 (age 328007 s) is described in a note."
+  },
   "eip155:42161:0xadb209cc735cec128adc9dff43bc4666cf37037efd375970eaf23a2f9fda6e03": {
     "decision": "merge-into:eip155:42161:0x025cf2858723369d606ee3abbc4ec01eab064a97cc9ec578bf91c6908679be75",
     "compare": {
@@ -97,6 +208,28 @@
       "loss": "off-50"
     },
     "reason": "Same attacker 0x53515361 exploited the same Clearing v1.2.3 single-sided ratio-check exception (sibling Ramses deployment 0xcfb851b1, vault 0x80709a76 with priceThreshold 200) 65 s after anchor 0x025cf285 in one campaign across four vaults; rule 4 merges sibling-template legs. Its txs and loss are in the merged record's campaign and loss."
+  },
+  "eip155:43114:0x782b2410fcc9449ead554a81f78184b6f9cca89f07ea346bc50cf11887cd9b18": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-50"
+    },
+    "reason": "Same Exchange template bug (removeLiquidity pays from live balance, debits internal quote reserve) exploited on Avalanche at ts 1670898185 and on the Ethereum AMPL/USDC sibling 582 s later; merged per rule 4 (copycat on sibling deployment). No earlier exploit: earlier removeLiquidity calls are direct EOA LP exits. TIC re-valued at the attacker's realised 8015.17 AVAX (tx 0x447c5488) instead of pool spot ($104,628.57 vs $195,276.56); total $1,047,252.34."
+  },
+  "eip155:43114:0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Same attacker campaign on two chains: Avalanche 0xece4efbe (ts 1731310543) precedes Arbitrum 0x6a2f989b (ts 1731310565); all 19 attacker txs call claimReward 0xb2af870a and wrapNativeToken 0xd75c7462 (traced). Merged per rule 4: campaign gets 5 Avalanche + 13 Arbitrum txs, loss = pool depletion on both chains $4,879,583.82 (record held only the Avalanche $4.13M). Target/reset confirmed (DiamondCut 0x1c24e72a is the last route change for 0xb2af870a)."
   },
   "eip155:56:0xa00def91954ba9f1a1320ef582420d41ca886d417d996362bf3ac3fe2bfb9006": {
     "decision": "update",

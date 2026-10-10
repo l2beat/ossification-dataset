@@ -53,8 +53,8 @@ export async function rpc(chainId, method, params) {
       if (response.status === 429 || response.status >= 500) throw new Error(`HTTP ${response.status}`)
       body = await response.json()
     } catch (error) {
-      if (attempt === 4) throw error
-      await new Promise((resolve) => setTimeout(resolve, 300 * 2 ** attempt))
+      if (attempt === 7) throw error
+      await new Promise((resolve) => setTimeout(resolve, 300 * 2 ** Math.min(attempt, 5)))
     }
   }
   if (body.error) throw new Error(`${method}: ${body.error.message ?? JSON.stringify(body.error)}`)

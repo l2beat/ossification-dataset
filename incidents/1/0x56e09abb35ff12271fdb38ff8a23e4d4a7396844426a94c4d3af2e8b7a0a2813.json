@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Penpie",
   "name": "Penpie Pendle-market reward reentrancy",
-  "summary": "PendleStaking's batchHarvestMarketRewards() harvested rewards from a permissionlessly registered Pendle market without a shared reentrancy guard or a trusted-market boundary. The attacker registered a market backed by an attacker-controlled SY token, then re-entered depositMarket() during the harvest callback so pre-deposit reward accounting credited its position with the real markets' pending rewards; it then withdrew Penpie's staked Pendle LP as if it were the attacker's reward entitlement.",
+  "summary": "PendleStaking.batchHarvestMarketRewards() had no reentrancy guard and credited reward-token balance increases during a market's redeemRewards() to that pool. The attacker registered a Pendle market with its own SY, re-entered depositMarket() from the harvest to deposit real Pendle LP, so Penpie booked it as rewards, then claimed them and withdrew its deposit.",
   "targets": [
     {
       "address": "0x6e799758cee75dae3d84e09d40dc416ecf713652",
@@ -14,64 +14,55 @@
     }
   ],
   "loss": {
-    "usd": 27311618.384882685,
+    "usd": 29570156.52,
     "assets": [
       {
-        "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
-        "symbol": "wstETH",
-        "amount": "2722.896986125761481022",
-        "usd": 7837196.794040739
+        "token": "0x6010676bc2534652ad1ef5fa8073dcf9ad7ebfbe",
+        "symbol": "PENDLE-LPT (agETH 26DEC2024)",
+        "amount": "1249.318541615374400325",
+        "usd": 10344427.97
       },
       {
-        "token": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
-        "symbol": "sUSDe",
-        "amount": "2522685.569779116882495579",
-        "usd": 2766301.7000037027
+        "token": "0xc374f7ec85f8c7de3207a10bb1978ba104bda3b2",
+        "symbol": "PENDLE-LPT (stETH 25DEC2025)",
+        "amount": "1751.057261156763848727",
+        "usd": 9037728.73
       },
       {
-        "token": "0xe1b4d34e8754600962cd944b535180bd758e6c2e",
-        "symbol": "agETH",
-        "amount": "4100.512911329222524018",
-        "usd": 10025447.925135015
+        "token": "0x038c1b03dab3b891afbca4371ec807edaa3e6eb6",
+        "symbol": "PENDLE-LPT (rswETH 26SEP2024)",
+        "amount": "1370.994542684200225923",
+        "usd": 6733156.43
       },
       {
-        "token": "0xfae103dc9cf190ed75350761e95403b7b8afa6c0",
-        "symbol": "rswETH",
-        "amount": "2695.125694968916318170",
-        "usd": 6682671.965703227
+        "token": "0xd1d7d99764f8a52aff007b7831cc02748b2013b5",
+        "symbol": "PENDLE-LPT (sUSDe 26SEP2024)",
+        "amount": "1333254.449508665456067332",
+        "usd": 2770050.43
       },
       {
-        "token": "0xf3abc972a0f537c1119c990d422463b93227cd83",
-        "symbol": "YT-stETH-25DEC2025",
-        "amount": "3443.396719856716977574"
-      },
-      {
-        "token": "0xdc02b77a3986da62c7a78fed73949c9767850809",
-        "symbol": "YT-sUSDE-26SEP2024",
-        "amount": "400605.306710807408344096"
-      },
-      {
-        "token": "0x3568f1d2e8058f6d99daa17051cb4a2930c83978",
-        "symbol": "YT-agETH-26DEC2024",
-        "amount": "965.157856458076073104"
-      },
-      {
-        "token": "0xd66b560f4e3e85f22c192d91da847886d5c5fd00",
-        "symbol": "YT-rswETH-26SEP2024",
-        "amount": "886.754871291621650154"
+        "chainId": 42161,
+        "token": "0xa877a0e177b54a37066c1786f91a1dab68f094af",
+        "symbol": "PENDLE-LPT (gUSDC 26DEC2024)",
+        "amount": "0.000000330469756983",
+        "usd": 684792.96
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x42b2ec27c732100dd9037c76da415e10329ea41598de453bb0c0c9ea7ce0d8e5",
+    "eip155:1:0x663b55a1ee992603f7636ef23ff5cf19d3b261ab81494d06e218c86482df5342",
+    "eip155:42161:0x67c5400da117b906f8c0fc5f5149e4ea10ed6358cd9ea2ec0ed8f559d757b7df"
+  ],
   "refs": [
     "https://zokyo.io/blog/penpie-postmortem/",
     "https://blog.cube3.ai/2024/09/04/penpie-exploit-postmortem-cube3-web3-hack-detection/",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-09/Penpiexyzio_exp.sol",
-    "eip155:1:0x42b2ec27c732100dd9037c76da415e10329ea41598de453bb0c0c9ea7ce0d8e5",
-    "eip155:1:0x663b55a1ee992603f7636ef23ff5cf19d3b261ab81494d06e218c86482df5342"
+    "eip155:1:0xfda0dde38fa4c5b0e13c506782527a039d3a87f93f9208c104ee569a642172d2"
   ],
   "notes": [
-    "The final pre-incident Upgraded(address) event reselected PendleStaking implementation 0xff51c6b493c1e4df4e491865352353eadff0f9f8 (11th and last Upgraded event before the incident).",
-    "Ethereum-only gross victim depletion, measured from the three successful drain receipts (0x56e09abb, 0x42b2ec27, 0x663b55a1). Each drain is an atomic flash-borrow: the attacker contract borrows the SY-underlying from Balancer, mints Pendle LP, deposits it into PendleStaking, re-enters to double-count its LP entitlement, withdraws twice the deposited LP (its own plus an equal amount of Penpie's staked inventory), redeems all of it, and repays the flash loan. The flash loans and the attacker's own LP net to zero within each receipt, so the attack contract's net positive token balance at the end of each drain equals the value extracted from Penpie. Summed across the three drains the attacker contracts (0x4af4c234, 0x4476b6ca, 0xcde2cd6a) netted the SY-underlying: 2722.896986125761481022 wstETH, 2522685.569779116882495579 sUSDe, 4100.512911329222524018 agETH and 2695.125694968916318170 rswETH; the four Pendle markets drained were the wstETH, sUSDe, agETH and rswETH pools (PENDLE-LPT tokens 0xc374f7ec, 0xd1d7d997, 0x6010676b, 0x038c1b03) whose net outflow from proxy 0x6e799758 reconciles with these redemptions. The USD total 27,311,618 values only those four liquid SY-underlying assets at DefiLlama incident prices (wstETH, sUSDe and rswETH direct-token series). agETH has no DefiLlama series with a pre-loss observation, so it is valued at the WETH incident price 2446.82956672678 (source-11, observed 1725387742, before the anchor) times agETH's on-chain convertToAssets rate 0.999221757635697525, i.e. 2444.925340299725; DefiLlama's kelp-gain series (nearest observation 2450.63 at 1725409884, about six hours later) confirms this to within 0.2 percent. The attacker also kept the paired yield tokens (YT-stETH, YT-sUSDE, YT-agETH, YT-rswETH) whose exact quantities are recorded with null USD because they are decaying, thinly traded and lack a clean price series; they are additional extraction, so the measured figure is a slight lower bound. Confidence is medium because agETH and rswETH are large restaked-ETH quantities spot-marked rather than measured at the attacker's realised disposal, and the yield-token leg is unpriced. Zokyo reports about $27M and CUBE3 about $28M for the combined Ethereum and Arbitrum campaign; the Ethereum leg measured here is essentially that headline, and the separate Arbitrum record (eip155:42161:0x67c5400d...) holds the Arbitrum loss so nothing is double-counted. Later Penpie recovery negotiations are not netted.",
-    "The USD total values only the four liquid SY-underlying assets (wstETH, sUSDe, agETH, rswETH) at DefiLlama incident prices; the paired yield tokens the attacker also kept are recorded with exact quantities but null USD, so the measured figure is a slight lower bound. agETH and rswETH are large restaked-ETH quantities spot-marked rather than measured at the attacker's realised disposal."
+    "Permissionless registration through PendleMarketRegisterHelper was wired into PendleStaking before this upgrade, which re-selected the reentrant implementation; later real-market listings only changed which LP could be drained, i.e. the loss size.",
+    "Merged: about 50 minutes later the same attacker repeated the exploit against Penpie's Arbitrum PendleStakingSideChain 0x6db96bbe (implementation 0xc64b3f60, routed by 0xd7a6dbc9, age 8253869 s); that leg is a campaign entry and its LP carries chainId 42161.",
+    "Victims lost Pendle LP. DefiLlama prices the stETH, sUSDe and gUSDC LP from the yield token instead of the SY asset (10-18% high), so each LP is valued from its market reserves before the exploit: SY at its exchange rate plus PT at the implied rate, times the asset price."
   ]
 }
