@@ -145,10 +145,10 @@ async function token(chain, asset, blockNumber) {
 const CACHE = path.join(os.tmpdir(), 'ossification-prices')
 async function llama(query) {
   const file = path.join(CACHE, `${createHash('sha256').update(query).digest('hex')}.json`)
-  const cached = query.startsWith('historical/')
+  const cached = /^(prices\/historical|batchHistorical)/.test(query)
   if (cached && existsSync(file)) return JSON.parse(readFileSync(file, 'utf8'))
   for (let attempt = 0; ; attempt++) {
-    const response = await fetch(`https://coins.llama.fi/prices/${query}`).catch((error) => ({ ok: false, status: error.message }))
+    const response = await fetch(`https://coins.llama.fi/${query}`).catch((error) => ({ ok: false, status: error.message }))
     if (response.ok) {
       const coins = Object.fromEntries(Object.entries((await response.json()).coins ?? {}).map(([k, v]) => [k.toLowerCase(), v]))
       if (cached) mkdirSync(CACHE, { recursive: true })
@@ -163,7 +163,16 @@ async function llama(query) {
 async function historical(timestamp, coins) {
   const list = [...new Set(coins.filter(Boolean))]
   const out = {}
-  for (let i = 0; i < list.length; i += 40) Object.assign(out, await llama(`historical/${timestamp}/${list.slice(i, i + 40).join(',')}?searchWidth=6h`))
+  for (let i = 0; i < list.length; i += 40) {
+    const part = list.slice(i, i + 40)
+    // batchHistorical often still answers when the historical endpoint rate-limits.
+    const quotes = await llama(`prices/historical/${timestamp}/${part.join(',')}?searchWidth=6h`).catch(async () => {
+      const coins = encodeURIComponent(JSON.stringify(Object.fromEntries(part.map((coin) => [coin, [timestamp]]))))
+      const batch = await llama(`batchHistorical?coins=${coins}&searchWidth=6h`)
+      return Object.fromEntries(Object.entries(batch).filter(([, v]) => v.prices?.length).map(([k, v]) => [k, { symbol: v.symbol, ...v.prices[0] }]))
+    })
+    Object.assign(out, quotes)
+  }
   return out
 }
 
@@ -178,7 +187,7 @@ async function valued(t, assets) {
   const twin = new Map(missing.map(([asset, { symbol }]) => [asset, asset === NATIVE || asset === wrapped ? native : MAJORS[symbol.toUpperCase()]]))
   const candidates = [...twin].filter(([, gecko]) => gecko)
   if (candidates.length) {
-    const now = await llama(`current/${candidates.flatMap(([asset, gecko]) => [id(asset), `coingecko:${gecko}`]).filter(Boolean).join(',')}`)
+    const now = await llama(`prices/current/${candidates.flatMap(([asset, gecko]) => [id(asset), `coingecko:${gecko}`]).filter(Boolean).join(',')}`)
     const then = await historical(t.timestamp, candidates.map(([, gecko]) => `coingecko:${gecko}`))
     for (const [asset, gecko] of candidates) {
       const [own, reference, quote] = [now[id(asset)]?.price, now[`coingecko:${gecko}`]?.price, then[`coingecko:${gecko}`]]
