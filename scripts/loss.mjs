@@ -2,10 +2,10 @@
  * Measure gross victim depletion (METHODOLOGY rules 14-16) for one incident.
  *
  * Flows: receipt Transfer logs, Deposit/Withdrawal of the canonical wrapped native token, and
- * native value in the call tree without reverted frames. Victims net together per asset and
- * transaction, so flash loans and attacker deposits cancel; depletion is the positive part of
- * their net outflow summed over the transactions, other assets' gains not subtracted, while a
- * liability (negative price, e.g. debt tokens) nets both ways. DefiLlama prices at block time.
+ * native value in the call tree without reverted frames. Victims net together per asset within a
+ * transaction, so flash loans repaid in it cancel; depletion sums each transaction's positive net
+ * outflow, never offset by gains in other assets or transactions, while a liability (negative
+ * price, e.g. debt tokens) nets both ways. DefiLlama prices at block time.
  *
  *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb] [--tx eip155:<chain>:<hash>,...] [--json]
  *
@@ -228,12 +228,19 @@ if (!victims) {
   }
 } else {
   const totals = new Map()
+  const gains = new Map()
   for (const t of transactions) {
     const out = new Map()
     for (const victim of victims) for (const [asset, amount] of t.net.get(victim) ?? []) out.set(asset, (out.get(asset) ?? 0n) - amount)
     const assets = await valued(t, [...out.keys()].filter((asset) => out.get(asset)))
     for (const [asset, meta] of assets) {
       const amount = out.get(asset)
+      // A victim's gain in one transaction never offsets its loss in another (rule 14).
+      if (amount < 0n && !(meta.quote?.price < 0)) {
+        const gain = gains.get(`${t.chain}:${asset}`) ?? { chain: t.chain, asset, ...meta, amount: 0n }
+        gains.set(`${t.chain}:${asset}`, { ...gain, amount: gain.amount - amount })
+        continue
+      }
       const total = totals.get(`${t.chain}:${asset}`) ?? { chain: t.chain, asset, ...meta, amount: 0n, usd: 0, legs: [] }
       total.amount += amount
       total.usd = meta.quote && total.usd !== undefined ? total.usd + value(amount, meta) : undefined
@@ -264,7 +271,7 @@ if (!victims) {
       console.log(`${total.liability ? 'liability ' : ''}${decimal(total.amount, total.decimals)} ${total.symbol}${where(total)}  ${usd(total.usd)}`)
       for (const { amount, id, meta, at } of total.legs) console.log(`    ${decimal(amount, total.decimals).padStart(30)}  ${id.slice(0, 22)}…  ${priced(meta, at)}`)
     }
-    for (const total of all.filter((t) => t.amount < 0n && !t.liability)) console.log(`gained, not subtracted: ${decimal(-total.amount, total.decimals)} ${total.symbol}${where(total)}`)
+    for (const gain of gains.values()) console.log(`gained, not subtracted: ${decimal(gain.amount, gain.decimals)} ${gain.symbol}${where(gain)}`)
     console.log(`total ${usd(sum)}${depleted.some((t) => t.usd === undefined) ? ' + unpriced assets' : ''}`)
   }
 }
