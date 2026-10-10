@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Citadel Finance",
   "name": "CitadelRedeem fixed-rate live-route quotation",
-  "summary": "CitadelRedeem converted a fixed USDC-denominated staking entitlement to WETH with CamelotRouter.getAmountsOut against the live WETH/USDC pool. Three linked redemptions used that mutable route quote and depleted the treasury while the pool and flash lender gained fees.",
+  "summary": "CitadelRedeem.redeem converted a fixed-rate stake's USD entitlement into WETH with Camelot's live getAmountsOut on the USDC.e/WETH pair. The attacker staked CIT, flash-borrowed 4,500 WETH, dumped it into the pair so each USDC quoted far more WETH, redeemed for treasury WETH and swapped back, three times.",
   "targets": [
     {
       "address": "0x34b666992fcce34669940ab6b017fe11e5750799",
@@ -14,38 +14,28 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:42161:0x89eafbcd3ce44285c00fae61dc4202dc2d63965ba20bce33ed92e417a23349a2",
+    "eip155:42161:0xe5e60839bbe40153cbb3487e2838da99778106c6e39f9349708c74f3e991ebaa"
+  ],
   "loss": {
-    "usd": 116280.21691475646,
+    "usd": 116730.27,
     "assets": [
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
-        "amount": "24.842391304488882786",
-        "usd": 56193.81498545377
-      },
-      {
-        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-        "symbol": "WETH",
-        "amount": "16.209329538689066771",
-        "usd": 36653.94885310503
-      },
-      {
-        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-        "symbol": "WETH",
-        "amount": "10.567828449326170156",
-        "usd": 23891.21816681414
+        "amount": "51.619549292504119713",
+        "usd": 116730.27
       }
     ]
   },
   "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/CitadelFinance_exp.sol",
     "eip155:42161:0xcf75802229d440e4fbabb4d357fa1886c25e9a6b5c693e9e9573c71c15e2b0d3",
-    "eip155:42161:0x89eafbcd3ce44285c00fae61dc4202dc2d63965ba20bce33ed92e417a23349a2",
-    "eip155:42161:0xe5e60839bbe40153cbb3487e2838da99778106c6e39f9349708c74f3e991ebaa",
-    "eip155:42161:0x09105b771ada0c66f48786260929c0967fc822e037904ced6eac61284b6992d9",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/CitadelFinance_exp.sol"
+    "eip155:42161:0x09105b771ada0c66f48786260929c0967fc822e037904ced6eac61284b6992d9"
   ],
   "notes": [
-    "CitadelRedeem's constructor fixed the treasury, bCIT, USDC.e, WETH and Camelot router, and owner transactions 13-14 seconds later bound CIT and CITStaking. Fixed-rate redemption nevertheless remained disabled because maxRedeemableFixed was zero. This owner call raised slot 0x0a from zero to 20,000 CIT, first activating the fixed path whose USDC-denominated entitlement is converted with the live USDC.e/WETH route quote. No later CIT, staking, treasury, router or fixed-cap setter executed before the campaign; the following max-variable call affects a different branch.",
-    "Across the three successful redemption receipts, treasury 0x5ed32847e33844155c18944ae84459404e432620 sends 24.842391304488882786 + 16.209329538689066771 + 10.567828449326170156 = 51.619549292504119713 WETH to the helper with no WETH return. Archive balances reconcile each component exactly: 72.668070516983737917 -> 47.825679212494855131 -> 31.616349673805788360 -> 21.048521224479618204 WETH. The linked deposit supplies exactly 2,653 CIT; the three redemptions burn 30.951666666666666666 + 20.265972222222222222 + 13.269386574074074074 CIT, and the withdrawal returns 2,411.306998087592149132 CIT. The exact 241.693001912407850868-CIT net consideration equals 205.187178472222222222 CIT retained by the token contract plus 36.505823440185628646 net burned after a 27.981202022777334316-CIT withdrawal reward mint. CIT is the verified 18-decimal Citadel token. Immediately before the first linked purchase, Camelot CIT/WETH pool 0x73d31c0b326a27a92bdacc7d46f4219c47a022ea held 30,858.676994450283426965 CIT and 25.914525972692246359 WETH, and the EOA held zero CIT. The reserve-implied price is 0.00083978084923578519117074409216673495894624855512076249886196087913167322817030897 WETH per CIT; the consideration is therefore 0.20296915440034811929674252951339791056958896839176185986689155741402339819266159 WETH, worth exactly $458.76509061647484360284823718324789532312485758684757900133898047619466623292721 at the $2,260.27 ETH observation 88 seconds before the purchase. That credit is less than one percent of the pool's WETH-side depth. The three gross WETH products are exactly $56,193.814985453764543677728197041894, $36,653.948853105031488162364539857095 and $23,891.21816681413918017700. Their $116,738.982005372935212017092736898989 sum minus the CIT credit is exact net loss $116,280.21691475646036841424449971574110467687514241315242099866101952380533376707; the shorter numeric fields are IEEE-754 renderings only. In every redemption the quote pool sends and receives the same USDC.e amount exactly (474,961.669570; 475,492.089296; 476,907.393537), gains 1.265909302277494528 + 1.271238817402037529 + 1.274439752872321937 = 3.811587872551853994 WETH, and the external Uniswap V3 lender gains 2.25 WETH per receipt. CitadelRedeem, treasury, staking, owner, EOA and helper each held zero quote-pool LP at anchor minus one; its external LPs therefore incurred no inventory loss. EOA nonces 7-11 are respectively the CIT deposit, three losses and the CIT withdrawal. Nonces 12-21 only approve, dispose, unwrap or forward already measured assets. Separate protocol-owner transactions rescued the treasury's remaining WETH; no attacker or helper transaction ever returned WETH to the treasury. The imported approximately $93,000 figure measured proceeds rather than entity-level loss."
+    "maxRedeemableFixed (slot 0x0a) was zero until this owner call, so the fixed-rate branch that prices with the live Camelot quote could not pay out before it; the CIT, staking and treasury bindings came ~13 s after deployment, and the staking startEpoch is an activation, not a HIGH field.",
+    "Loss is the treasury's gross WETH outflow over the three redemptions; the CIT the attacker staked and burned (the refs' deposit and withdrawal) is not subtracted (rule 14)."
   ]
 }

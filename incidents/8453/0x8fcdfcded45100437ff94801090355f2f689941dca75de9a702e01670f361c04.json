@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "CloberDEX",
-  "name": "CloberDEX",
-  "summary": "Rebalancer invoked an untrusted strategy burnHook before reducing its recorded pool reserves. A callback could reenter burn while the stale reserves remained available, causing the same WETH liquidity to be counted and withdrawn twice.",
+  "name": "CloberDEX Rebalancer burn reentrancy",
+  "summary": "Rebalancer._burn computed a burner's share and called the pool strategy's burnHook before writing down the pool's reserves. The attacker opened a pool with its own token and itself as strategy, minted with flash-loaned WETH, and re-entered burn from the hook so the stale reserves paid out twice, taking WETH held for other pools.",
   "targets": [
     {
       "address": "0x6a0b87d6b74f7d5c92722f6a11714dbeda9f3895",
@@ -12,13 +12,26 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:8453:0x009b93e4af8813d3990734d3c5f91b9191fc4ff864166951e61a5aa25e89a129",
+    "eip155:8453:0x14f5bc7f09e69f753f48e6fd71bfb7b2732ce27271217d47661e8c37487ce2e0",
+    "eip155:8453:0x0ed7dd904cf2dbfbb7b9b40444d2b9975525fef16819b8112ac3a8d4f69f99e1",
+    "eip155:8453:0x42675cd1f1b9a0e6f3f28f52836bb39bd856ad1323fb69ccc6f0945b1896923d"
+  ],
   "loss": {
-    "usd": 501279,
+    "usd": 499117.76,
     "assets": [
       {
         "token": "0x4200000000000000000000000000000000000006",
         "symbol": "WETH",
-        "amount": "133.7"
+        "amount": "134.068075552010687475",
+        "usd": 499097.72
+      },
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "20.044965",
+        "usd": 20.04
       }
     ]
   },
@@ -29,8 +42,6 @@
     "https://blog.solidityscan.com/cloberdex-liquidity-vault-hack-analysis-f22eb960aa6f"
   ],
   "notes": [
-    "Direct immutable Rebalancer runtime deployed in this transaction and unchanged through the exploit; its pre-exploit and current runtime hashes match, and the runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction.",
-    "Exact pre-recovery victim depletion is 133.7 WETH: Rebalancer's WETH balance fell from 133.707875556674808577 immediately before the anchor transaction to 0.007875556674808577 afterward. The receipt records 267.4 WETH supplied to Rebalancer from flash-loan proceeds, 401.1 WETH returned across the nested burns, repayment of the 267.4 WETH principal, and retention of the 133.7 WETH victim depletion. Published analysis values 133.7 WETH at approximately $501,279; the USD total is therefore reported rather than independently price-reproduced.",
-    "The 133.7 WETH victim depletion is exact, but the approximately $501,279 USD total is retained from published incident-time reporting rather than an independently reproduced historical price observation."
+    "The campaign is every other tx with a nested Burn on the Rebalancer: the attacker's repeat and copycats (0xb1a5dd36, an MEV bot) within ~2 hours, found by scanning all Burn events from deployment to head."
   ]
 }

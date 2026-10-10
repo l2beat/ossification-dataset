@@ -2,29 +2,67 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Convergence Finance",
   "name": "CvxRewardDistributor claimMultipleStaking",
-  "summary": "claimMultipleStaking() did not check that entries of the claimContracts array were registered staking contracts, so a caller-supplied fake contract was invoked as a staking service and returned reward amounts that minted 58M CVG to the attacker.",
+  "summary": "CvxRewardDistributor.claimMultipleStaking accepted caller-supplied staking contracts without checking them, minted CVG for whatever claimable amount they returned and paid out other reward tokens. The attacker passed its own contract, minted 58.7M CVG and dumped it into the CVG/WETH and CVG/crvFRAX Curve pools; a copycat later used the same call to take the distributor's reward tokens.",
   "targets": [
     {
       "address": "0x2b083beaac310cc5e190b1d2507038ccb03e7606",
       "code": "0x47c69e8c909ce626af73c955a5e34a20b7c71f19",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0xf52827a8730c83fb015e18063db9800dbd600f38b63872d67b9db08f78ee4c8f"
+        "kind": "config",
+        "tx": "0x6c99697ef524a1b40e5874d335c596fbca8a0f87ed986d9d4c7a850954d07002",
+        "address": "0xb0afc8363b8f36e0cce5d54251e20720ffaeaee7",
+        "call": "0x06df27190000000000000000000000002b083beaac310cc5e190b1d2507038ccb03e7606"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xec625fa7b775f14eda874f61754d265dcbe26f918f85af43962f19809bcfbf7c",
+    "eip155:1:0xe0ab65fae16ecbfee825295ae2a55853fa24af56a4102d81df3435fb848ccae4"
+  ],
   "loss": {
-    "usd": 210000,
+    "usd": 207566.67,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "60.058285738671884767"
+        "amount": "60.058285738671884767",
+        "usd": 189032.85
       },
       {
         "token": "0x3175df0976dfa876431c2e9ee6bc45b65d3473cc",
         "symbol": "crvFRAX",
-        "amount": "15925.234299672041310152"
+        "amount": "15925.234299672041310152",
+        "usd": 15910.65
+      },
+      {
+        "token": "0x4591dbff62656e7859afe5e45f6f47d3669fbb28",
+        "symbol": "mkUSD",
+        "amount": "948",
+        "usd": 943.92
+      },
+      {
+        "token": "0x2191df768ad71140f9f3e96c1e4407a4aa31d082",
+        "symbol": "cvgCVX",
+        "amount": "238",
+        "usd": 721.34
+      },
+      {
+        "token": "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+        "symbol": "CVX",
+        "amount": "147",
+        "usd": 480.69
+      },
+      {
+        "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "symbol": "CRV",
+        "amount": "1160",
+        "usd": 317.56
+      },
+      {
+        "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+        "symbol": "crvUSD",
+        "amount": "160",
+        "usd": 159.66
       }
     ]
   },
@@ -33,8 +71,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/Convergence_exp.sol"
   ],
   "notes": [
-    "The proxy's sole pre-exploit Upgraded event selected the defect-bearing implementation during proxy deployment.",
-    "Gross swap proceeds transferred to the attacker in the exploit transaction. Asset amounts are exact token Transfer events; the aggregate USD value is reported by Verichains.",
-    "The USD value is reported rather than independently reconstructed from incident-time prices."
+    "The mint went through CVG.mintStaking, which requires ControlTower.isStakingContract(distributor); the multisig set that grant 13,104 s after the proxy's deployment, so the mint grant is the reset.",
+    "Victims are the two Curve pools the minted CVG was dumped into (their CVG gain not subtracted) and the distributor, whose reward tokens copycat 0x98250d30 took with the same call and sold."
   ]
 }

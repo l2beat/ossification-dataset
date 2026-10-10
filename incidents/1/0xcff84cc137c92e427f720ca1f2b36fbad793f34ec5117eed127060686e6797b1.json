@@ -2,24 +2,24 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Compounder Finance",
   "name": "Compounder StrategyDAICurve permissionless deposit manipulation",
-  "summary": "StrategyDAICurve exposed a permissionless deposit() that converted its entire loose DAI balance and added the resulting yDAI to Curve with every minimum-output amount set to zero. The attacker imbalanced Curve, routed 40,000 DAI into the strategy through Compounder's share-accounting flow, and forced this unslippaged deposit before reversing the Curve trades for a net DAI profit.",
+  "summary": "StrategyDAICurve let anyone call deposit(), which added its loose DAI to the thin Curve y pool as yDAI with zero minimum output, and valued its yyCRV through the same pool's spot quote. The attacker unbalanced the pool, cycled DAI through the cVault and the strategy, forced deposit() and reversed the Curve trades for profit.",
   "targets": [
     {
       "address": "0xaf274e912243b19b882f02d731dacd7cd13072d0",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x847b85734c342b706454c9b79e126eaa0e54bcacf437b1180be92c04df109e5b"
+        "kind": "upgrade",
+        "tx": "0xf1a9507dbbf52edf6553afca44f77a012ff10fd287b481f71ae48a71a0d93617"
       }
     }
   ],
   "loss": {
-    "usd": 27146.69349363824,
+    "usd": 32669.55,
     "assets": [
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
-        "amount": "27146.693493638241032728",
-        "usd": 27146.69349363824
+        "amount": "32636.917796108185967118",
+        "usd": 32669.55
       }
     ]
   },
@@ -28,7 +28,7 @@
     "https://eigenphi.substack.com/p/use-antique-contract-to-manipulate-price"
   ],
   "notes": [
-    "Direct deployment of the StrategyDAICurve runtime executed in the exploit.",
-    "The successful transaction ends with an exact 27,146.693493638241032728 DAI transfer to the attacker EOA. This is the attacker's net revenue from the composed Compounder and Curve sequence, valued at DAI's one-dollar par value."
+    "The cVault paid the attacker through controller.strategies(DAI) and this strategy's balanceOf; the controller's setStrategy, 30 minutes after deployment, made that route, so it is the reset.",
+    "Loss is the cVault's net DAI outflow (attacker deposits netted). The yDAI/yyCRV position the strategy bought with the forced deposit is an asset gain not subtracted; the attacker's own net was 27,146.69 DAI."
   ]
 }
