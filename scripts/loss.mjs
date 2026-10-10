@@ -11,7 +11,10 @@
  *
  * Transactions: the anchor, the campaign and --tx. Without --victims, lists net flows to pick victims.
  */
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { callTrace, hexInt, rpc, traceFrames } from './rpc.mjs'
 
 const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
@@ -135,14 +138,25 @@ async function token(chain, asset, blockNumber) {
   return metadata.set(key, { decimals, symbol }).get(key)
 }
 
-async function llama(path) {
+// Historical responses are cached on disk; DefiLlama rate-limits bursts.
+const CACHE = path.join(os.tmpdir(), 'ossification-prices')
+async function llama(query) {
+  const file = path.join(CACHE, `${createHash('sha256').update(query).digest('hex')}.json`)
+  const cached = query.startsWith('historical/')
+  if (cached && existsSync(file)) return JSON.parse(readFileSync(file, 'utf8'))
   for (let attempt = 0; ; attempt++) {
-    const response = await fetch(`https://coins.llama.fi/prices/${path}`).catch((error) => ({ ok: false, status: error.message }))
-    if (response.ok) return Object.fromEntries(Object.entries((await response.json()).coins ?? {}).map(([k, v]) => [k.toLowerCase(), v]))
-    if (attempt === 4) throw new Error(`DefiLlama ${response.status}`)
-    await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt))
+    const response = await fetch(`https://coins.llama.fi/prices/${query}`).catch((error) => ({ ok: false, status: error.message }))
+    if (response.ok) {
+      const coins = Object.fromEntries(Object.entries((await response.json()).coins ?? {}).map(([k, v]) => [k.toLowerCase(), v]))
+      if (cached) mkdirSync(CACHE, { recursive: true })
+      if (cached) writeFileSync(file, JSON.stringify(coins))
+      return coins
+    }
+    if (attempt === 7) throw new Error(`DefiLlama ${response.status}`)
+    await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** Math.min(attempt, 5)))
   }
 }
+
 async function historical(timestamp, coins) {
   const list = [...new Set(coins.filter(Boolean))]
   const out = {}
