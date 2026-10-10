@@ -4,7 +4,7 @@
  * come from logs, each is confirmed by its trace. Normal use calls the same
  * selectors, so the target's outflow is printed for the researcher to judge.
  *
- *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..]
+ *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..] [--also 0x..,0x..]
  *
  * The range runs from the earliest target reset (or creation, on other chains)
  * to the latest block; log scanning stops early past --max candidates (2000).
@@ -30,7 +30,7 @@ const option = (name) => {
   return i < 0 ? undefined : args[i + 1]
 }
 const file = args.find((arg) => arg.endsWith('.json'))
-if (!file) throw new Error('usage: node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from n] [--to n] [--chains 1,56] [--max n] [--selectors 0x..]')
+if (!file) throw new Error('usage: node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from n] [--to n] [--chains 1,56] [--max n] [--selectors 0x..] [--also 0x..]')
 const chainId = Number(path.basename(path.dirname(file)))
 const anchorHash = path.basename(file, '.json')
 const record = JSON.parse(readFileSync(file, 'utf8'))
@@ -228,9 +228,18 @@ for (const target of record.targets) {
 const resets = await Promise.all(record.targets.map((target) =>
   target.reset.kind === 'genesis' ? 0 : rpc(chainId, 'eth_getTransactionByHash', [target.reset.tx]).then((reset) => hexInt(reset.blockNumber)),
 ))
+// --also: sibling deployments (clones, other pools of one template) the anchor did not execute,
+// searched with the selectors the anchor used on the record's targets.
+const siblings = (option('also') ?? '').toLowerCase().split(',').filter(Boolean).flatMap((address) =>
+  record.targets.map((target) => {
+    const sibling = { address, ...(target.code ? { code: target.code } : {}) }
+    selectors.set(sibling, selectors.get(target))
+    return sibling
+  }),
+)
 const from = Number(option('from') ?? Math.min(...resets))
 const to = Number(option('to') ?? (await latest(chainId)))
-const found = await scan(chainId, record.targets, selectors, from, to, anchor)
+const found = await scan(chainId, [...record.targets, ...siblings], selectors, from, to, anchor)
 
 // Step 5: the same code at the same address on other chains. Code differing in under 5% of its bytes,
 // at equal length, is taken as the same source with other immutables (token addresses, chain constants).
