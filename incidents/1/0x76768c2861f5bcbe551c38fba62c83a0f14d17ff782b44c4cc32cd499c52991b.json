@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "thirdweb",
   "name": "thirdweb legacy Bridge approval misuse",
-  "summary": "The active implementation behind an obsolete thirdweb Bridge proxy improperly authorized ERC20 orders, allowing one caller to consume a wallet's prior unlimited USDC approval in three transactions.",
+  "summary": "The legacy thirdweb Bridge implementation executed a caller-chosen forward call from the bridge's own context after 'collecting' a caller-chosen token. With a codeless fake token the collection was a no-op and the forward call was USDC.transferFrom(victim, attacker), spending wallets' standing approvals to the bridge.",
   "targets": [
     {
       "address": "0x81d57dd01a15bc1c19563693902df621500d4d2a",
@@ -13,39 +13,29 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xde72ae4a9b76cc381afe78cf8d4d61b591e2e231cce39bef7631e92c26ba6547",
+    "eip155:1:0x34d5f8bea781c060aa35844fb490e06f8674eb2681f65dd4edf72e719e166e8c",
+    "eip155:1:0x6ac06580856f0995ddf9f6e3a24a64f6977d1e9eb15b89b48e91b8d9dd8d28e4",
+    "eip155:1:0x65d8d603f382018ad9c188c9db46228bef33f61c00ba26c1066b094cc7f26d88"
+  ],
   "loss": {
-    "usd": 33629.9896,
+    "usd": 43044.06,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "865.989600",
-        "usd": 865.9896
-      },
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "1770",
-        "usd": 1770
-      },
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "30994",
-        "usd": 30994
+        "amount": "43052.982482",
+        "usd": 43044.06
       }
     ]
   },
   "refs": [
     "https://blog.thirdweb.com/smart-contract-incident-report-legacy-bridge-vulnerability/",
-    "eip155:1:0x6ac06580856f0995ddf9f6e3a24a64f6977d1e9eb15b89b48e91b8d9dd8d28e4",
-    "eip155:1:0x65d8d603f382018ad9c188c9db46228bef33f61c00ba26c1066b094cc7f26d88",
-    "eip155:1:0x851fb17f4f6d6b084f1b91bf7f5b1cda0c656573375fd0e9b0de45214f9fa9a0",
-    "eip155:1:0xe9fafceebdf9c0aa080c472323210646a1d832f036d9352a684721ce7c31fede",
     "eip155:1:0x808b1909b03e036cf5003f11ddaa078d3cd8404355b2dafe9ee382e68630cf86"
   ],
   "notes": [
-    "The proxy's CREATE2 constructor selected implementation 0xe9bdfbd98b29ea1358f2a9d8cfbd5eb6b5e43c91. Its EIP-1967 implementation slot retained that address from creation through all three loss receipts, no Upgraded event preceded the campaign, and every loss trace delegated to the same byte-identical runtime.",
-    "Gross victim depletion is 865.989600 + 1,770 + 30,994 = 33,629.989600 USDC across three receipts from one attacker, victim, proxy, and call selector. Receipt transfers have no victim inflow or return, and archive balances reconcile respectively as 865.989600 to zero, 1,770.134760 to 0.134760, and 30,994.049120 to 0.049120 USDC. A preceding victim-initiated bridge transaction transferred 0.015080 USDC as a fee and 5.026752 USDC to the proxy; it is legitimate use, not victim depletion from the incident. Transactions after each loss receipt dispose of already-counted proceeds without touching the victim and are excluded. USDC is valued at par."
+    "The proxy was created already pointing at the vulnerable implementation, so its creation is the reset; the implementation's own earlier deployment ran in no system before that. The only later Upgraded event is the fix, after the last campaign transaction.",
+    "Campaign includes an unaffiliated MEV bot that copied the call through its own contract, besides the original attacker's later repeats; no rescue or third-party pull exists before the anchor or on other chains where the proxy address is deployed."
   ]
 }

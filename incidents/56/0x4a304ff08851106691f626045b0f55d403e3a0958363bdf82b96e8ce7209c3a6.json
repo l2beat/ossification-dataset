@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Midas Capital",
   "name": "Midas Capital fsAMM-HAY-BUSD cToken rounding loss",
-  "summary": "Midas CToken.redeemFresh converted an exact requested underlying amount to the cTokens to burn with divScalarByExpTruncate, rounding the burn down. After reducing the fsAMM-HAY-BUSD market to 1,001 wei of cToken supply and donating underlying to inflate its exchange rate, the attacker repeatedly requested about 1.998 wei of underlying while burning only 1 wei; the remaining-supply guard did not activate because each redemption left exactly 1,000 wei. The inflated collateral position was then used to borrow and liquidate cash from three other Midas markets.",
+  "summary": "Midas CToken.redeemFresh converts a requested underlying amount into cTokens to burn with truncating division. The attacker cut the empty fsAMM-HAY-BUSD market to 1,001 wei of supply, donated LP to inflate the exchange rate, borrowed three markets' cash against it, then redeemed ~2 wei of underlying per 1 wei burned to withdraw it, leaving bad debt.",
   "targets": [
     {
       "address": "0xf8527dc5611b589cbb365acacaac0d1dc70b25cb",
@@ -13,34 +13,7 @@
       }
     }
   ],
-  "loss": {
-    "usd": 332253.2031984049,
-    "assets": [
-      {
-        "token": "0xf307910a4c7bbc79691fd374889b36d8531b08e3",
-        "symbol": "ANKR",
-        "amount": "685999.702783572563751254",
-        "usd": 13851.081738876364
-      },
-      {
-        "token": "0x52f24a5e03aee338da5fd9df68d2b6fae1178827",
-        "symbol": "ankrBNB",
-        "amount": "1148.264532617591819152",
-        "usd": 293106.0045959665
-      },
-      {
-        "token": "0x0782b6d8c4551b9760e74c0545a9bcd90bdc41e5",
-        "symbol": "HAY",
-        "amount": "25296.116863562095022654",
-        "usd": 25296.116863562096
-      }
-    ]
-  },
-  "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/MidasCapitalXYZ_exp.sol",
-    "https://medium.com/midas-capital/midas-exploit-post-mortem-1ae266222994",
-    "https://github.com/Midas-Protocol/contracts/blob/9939efc7884efae48ee6da81112f5d4cc0a0dc08/contracts/compound/CToken.sol",
-    "https://github.com/Midas-Protocol/contracts/blob/532bae69ae7bc5d3ae317b4a63783189d2ec4e48/contracts/compound/CToken.sol",
+  "campaign": [
     "eip155:56:0x1ebc03f0f2257c275f4990b4130e6c3e451125aa98ee8bbde8aba5dc0320c659",
     "eip155:56:0xc2ab2a24aa173f3ec435ccb1b0d86992e541e85c088773a756546024f82a3996",
     "eip155:56:0x79895a834406f1a2f26622b45a2b2e129bd3bc7ced9b2c8cf53d84c9e3dab720",
@@ -55,12 +28,39 @@
     "eip155:56:0xde124024945771a45c6901bebe4796b024282ddb7b79fb33ad2e3b956f5d5d51",
     "eip155:56:0xd365df94a47db6ab3f3856270dee474e6f9d01ff5bdf3d378738b0e4fca6dd90",
     "eip155:56:0xa1d32afd43ac9277504aaa9a51fdbc20bcf22ed9534b5987867e0ff0b2da4ed3",
-    "eip155:56:0x66654f116cd26ddf72b25ac9a2be5bdf2bed99201bba8e5bddac375eebec2537",
-    "eip155:56:0xe9e7e7d57a35f80421ef36bf52cbf045e8fd934660f4c1aeb0622f09144a4b7f",
-    "eip155:56:0x134ea72112bc857fea3cb624efce6023082812506a16b08d32ae99e76570b569"
+    "eip155:56:0x66654f116cd26ddf72b25ac9a2be5bdf2bed99201bba8e5bddac375eebec2537"
+  ],
+  "loss": {
+    "usd": 331701.25,
+    "assets": [
+      {
+        "token": "0x52f24a5e03aee338da5fd9df68d2b6fae1178827",
+        "symbol": "ankrBNB",
+        "amount": "1148.264532617591819152",
+        "usd": 292612.25
+      },
+      {
+        "token": "0x0782b6d8c4551b9760e74c0545a9bcd90bdc41e5",
+        "symbol": "HAY",
+        "amount": "25296.116863562095022654",
+        "usd": 25283.24
+      },
+      {
+        "token": "0xf307910a4c7bbc79691fd374889b36d8531b08e3",
+        "symbol": "ANKR",
+        "amount": "685999.702783572563751254",
+        "usd": 13805.76
+      }
+    ]
+  },
+  "refs": [
+    "https://medium.com/midas-capital/midas-exploit-post-mortem-1ae266222994",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/MidasCapitalXYZ_exp.sol",
+    "https://github.com/Midas-Protocol/contracts/blob/9939efc7884efae48ee6da81112f5d4cc0a0dc08/contracts/compound/CToken.sol",
+    "https://github.com/Midas-Protocol/contracts/blob/532bae69ae7bc5d3ae317b4a63783189d2ec4e48/contracts/compound/CToken.sol"
   ],
   "notes": [
-    "The market's sixth and last NewImplementation(address,address) event before the incident changed CDelegationStorage slot 0 from 0x1d48efba40d11c22315dd278e69268bca9dd5d7d to 0xf3c870b7c201515e2552d018ec2a15910fd35909. Slot 0 retains 0xf3c870b7c201515e2552d018ec2a15910fd35909 immediately before the anchor, and the anchor trace shows the market delegate-calling that artifact for the vulnerable redeemUnderlying and redeem paths.",
-    "Gross loss is the exact pre-recovery depletion of external token balances in the three victim debt markets over the 17 value-bearing campaign transactions: fANKR 0x13ae975c5a1198e4f47c68c31c1230694dc44a57 lost 685999.702783572563751254 ANKR, fankrBNB 0xb2b01d6f953a28ba6c8f9e22986f5bddb7653aea lost 1148.264532617591819152 ankrBNB, and fHAY 0x10b6f851225c203ee74c369ce876beb56379fca3 lost 25296.116863562095022654 HAY. This excludes the attacker's flash liquidity and donated fsAMM-HAY-BUSD collateral rather than treating those circular inputs as victim loss. It also excludes later swaps and proceeds handling, and nets no recovery. The project post-mortem's approximately USD 340,000 pool-drain estimate corroborates this USD 332,253.20 component valuation; the seed row's USD 600,000 figure described attacker proceeds/profit and is not a comparable victim-depletion measure."
+    "Victims are the fankrBNB, fHAY and fANKR markets, all depleted in the anchor. The campaign txs repeat the fsAMM redeem rounding to pull back the attacker's own donated LP and move no victim assets; the LP the attacker left in fsAMM is not subtracted (rule 14).",
+    "The comptroller extension registered three blocks after the reset is not on the redeem-rounding path and does not reset the age."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Aave V3",
   "name": "Aave V3 wstETH CAPO snapshot ratio/timestamp misalignment",
-  "summary": "WstETHPriceCapAdapter caps the wstETH/stETH ratio at snapshotRatio plus a growth allowance accrued since snapshotTimestamp. A Chaos Labs risk-oracle update through AaveCapoAgent raised snapshotRatio only to the rate-limited 1.1919 while moving snapshotTimestamp to a 7-day-old point meant for 1.2282, so the cap fell to about 1.1939 against a live ratio of 1.2288. The 2.85% underpricing of wstETH collateral on Aave Core and Prime made 36 healthy E-Mode positions liquidatable, and liquidators seized 10,938.59 wstETH.",
+  "summary": "WstETHPriceCapAdapter caps the wstETH ratio at snapshotRatio grown since snapshotTimestamp. An automated update wrote a rate-limited snapshotRatio 1.1919 with a 7-day-old snapshotTimestamp meant for 1.2282, capping the ratio near 1.194 vs a live 1.229. Underpriced ~2.85%, wstETH collateral made healthy Core and Prime E-Mode positions liquidatable.",
   "targets": [
     {
       "address": "0xe1d97bf61901b075e9626c8a2340a7de385861ef",
@@ -10,15 +10,11 @@
         "kind": "config",
         "tx": "0x32c64151469cf2202cbc9581139c6de7b34dae2012eba9daf49311265dfe5a1e",
         "address": "0xe1d97bf61901b075e9626c8a2340a7de385861ef",
-        "call": "0x50d25bcd"
+        "call": "0xdeb8c641"
       }
     }
   ],
-  "loss": {
-    "usd": 1004900.99,
-    "assets": []
-  },
-  "refs": [
+  "campaign": [
     "eip155:1:0x8f47b5e821530e9b9fc2262cde6dbb7427311f13116de995650fd7709df2fa67",
     "eip155:1:0x6b9c0d3292b51fc1612fba7cc26258357b2b705ab2699d2a4f0014c09a9b96cc",
     "eip155:1:0x60f3fd66c0f13927ff8b827228dcf209d6f2a5501ec5050e119f0c09300992db",
@@ -60,9 +56,23 @@
     "eip155:1:0x0fb57c3cba7aaedcd7b3033be6ab17e354cd78883b241d93dce11cb17229b5ce",
     "eip155:1:0xa6367dca45597724f06d499bec95a86bea0475243bca975331ecf2338fa20452"
   ],
+  "loss": {
+    "usd": 1004900.99,
+    "assets": [
+      {
+        "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+        "symbol": "wstETH",
+        "amount": "396.818553612456135767",
+        "usd": 1004900.99
+      }
+    ]
+  },
+  "refs": [
+    "eip155:1:0x5fc1591814a2591ab0b7945ed429baa4d1eed78b51790880b58f4842b0f139a6"
+  ],
   "notes": [
-    "CapParametersUpdated set snapshotRatio 1157209899495068171 -> 1191926196478762900 and snapshotTimestamp 1708004591 -> 1772535647; latestAnswer() fell from 2534.75871245 to 2462.76569349 USD as isCapped() turned true.",
-    "Borrower net loss: collateral removed (liquidatedCollateralAmount plus protocol fee) valued at the market wstETH price minus debt repaid. 10949.42795971905436333 wstETH x $2532.3941577119963 = $27,728,267.40, less 12943.591932140673786512 WETH x $2064.601277371386, 0.003485279480993781 cbETH x $2321.4657190935527 and 0.000855546946009702 osETH x $2198.374477556695 = $26,723,366.41; net $1,004,900.99 (486.73 ETH). Valuing wstETH at its 1.2288 redemption ratio instead gives about 512 ETH, the post-mortem's figure. BuilderNet refunds, fee recapture and DAO compensation do not reduce incident-time loss.",
-    "AaveCapoAgent 0xcc18be380838956aad41fd22466085ed66aabb46 range-checks snapshotRatio and maxYearlyRatioGrowthPercent but not snapshotTimestamp against the constrained ratio; the liquidations never executed it, so it is described, not targeted."
+    "Reset is the CAPO parameter write itself (rule 10: price-source parameter writable only by RISK_ADMIN). The adapter's parameters had not changed since deployment; this was AaveCapoAgent's first update, 15,408 s after governance granted it RISK_ADMIN in the ref tx.",
+    "AaveCapoAgent 0xcc18be38 range-checks snapshotRatio but not snapshotTimestamp; the liquidations did not execute it, so it is described, not targeted.",
+    "Loss: 10,949.43 wstETH collateral removed from liquidated borrowers (incl. protocol fee) at market, minus the WETH, cbETH and osETH debt it repaid, netted as liabilities (rule 16) and stated as the net wstETH equivalent. Refunds and DAO compensation are not subtracted."
   ]
 }

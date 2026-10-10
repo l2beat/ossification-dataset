@@ -10,6 +10,17 @@
     },
     "reason": "Separate incident from 0x726459…84d0 (rule 4: different defect). Nothing was double-counted: Compound paid the clone 0x7b7246 its accrued 268.53 COMP once (log 0x7d) and the clone's five collectUBIInterest calls sold it in 0.3%-of-spot-reserve chunks with amountOutMin 0 into the COMP/WETH pair the attacker had loaded with 20,096 COMP, receiving 95.7 DAI in total. The defect is in GoodCompoundStakingV2 (an EIP-1167 clone created in 0x186dadd6, block 14338454), not in the GoodFundManager upgrade 0xe710b21c. A single call was already profitable, so the duplicate entries only scaled the loss. Loss is the gross COMP depletion, $14,796.13, not the attacker's net 250.63 COMP. No earlier non-keeper call to the clone; no campaign. Orchestrator: reset moved to the maxLiquidityPercentageSwap 0->300 change (rule 10 threshold)."
   },
+  "eip155:1:0x1f1aba5bef04b7026ae3cb1cb77987071a8aff9592e785dd99860566ccad83d1": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Deployment reset and anchor confirmed (earlier CFFWithdraw events are normal; attacker 0xdf31f4c8's earlier calls to its contract 0x140cca42 did not touch the vault). Campaign added: 0x160c5950 (268.90 ETH to 0xde9b7b6f; proceeds went to Tornado, unaffiliated) and 0x5b8ca093 (0.126 ETH). Gross loss via loss.mjs (victim vault, incl. the attacker's separate 0.1 ETH deposit tx 0xa59c6b0f netted since it is the attacker's own asset): $995,320.26 vs reported 750 ETH $996,846.76; ref 0x46af2b13 is the 2021 SafeMath library deployment and was dropped."
+  },
   "eip155:1:0x37acd17a80a5f95728459bfea85cb2e1f64b4c75cf4a4c8dcb61964e26860882": {
     "decision": "update",
     "compare": {
@@ -20,6 +31,18 @@
       "loss": "within-10"
     },
     "reason": "Separate incident from the ETH omnipool (sandwich against spot-balance LP marks, not reentrancy). Coordinator adjudication over the fork's blind draft: the defect-bearing LP oracle 0x7b528b4f (reached via GenericOracle 0x286ef89c) and CurveHandlerV3 0xd775ae26 are executed targets, and rule 11 ages them from their route changes even though the replaced contracts behaved alike; the latest is controller.priceOracle (slot 0x8) -> 0x286ef89c in 0x10a03e64 (block 17634814), age 1,319,520s (record 1,578,912s from the handler swap). 11 campaign txs moved from refs into campaign; loss is the omnipool's totalUnderlying drop (933,875.62 crvUSD)."
+  },
+  "eip155:1:0x4d341ef4ef5c86b74f0c373c030e2f807421d6dfa9b73932ef85f355267c9cbe": {
+    "decision": "update",
+    "anchor": "eip155:137:0x9eee7bddbcfd83eaf28414e98572791a97767b11529088c6ff92c58cd559660e",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": -50628,
+      "loss": "off-50"
+    },
+    "reason": "Full scan (UniV3 Swap logs with sender=Augustus, every tx traced for a uniswapV3SwapCallback not nested under an Augustus->pool.swap) on all 7 chains with V6 code (ETH, OP, BSC, Polygon, Base, Arbitrum, Avalanche; Fantom has code but no V3 swaps) finds 321 victim-depleting exploit txs. The earliest is Polygon 0x9eee7bdd (block 54817425 idx 0, 2024-03-18 21:50Z, MEV bot 0x0f465dcb pulling DIMO from 0x5f1d3f70), ~20.6 h before Ethereum 0x35a73969, so the anchor moves to Polygon; target = Polygon Augustus V6 (identical-length runtime, 620 immutable bytes differ), reset = its deployment 0x56107806 (age 539,273 s = 6.24 d vs 591,768 s). On Ethereum the method reproduces spot-B's 15 trace_filter hits to block 19.8M. Loss is gross victim depletion over anchor + 320 campaign txs (ETH 20, OP 32, BSC 9, Polygon 15, Base 6, Arbitrum 232, Avalanche 6) = $1,148,402.67 (largest: 409,887.5 USDT.e on Avalanche by MEV bot 0x0000000000d67e5d), consistent with the post-mortem's $24k initial + $1.1M follow-up. Excluded: ParaSwap's admin-facet white-hat rescue (e.g. eip155:1:0x9476dbdf, affiliated, not the callback), 259 bot txs (0xd6b298dd/0x9112772b) moving only a 2-unit test token minted by exploiter 0xe6e83f9d among their own contracts, and 8 txs pulling only valueless spam tokens. c0ffeebabe's two Arbitrum pulls (~$250) are kept: no evidence their proceeds went back. Prices: DefiLlama batchHistorical (loss.mjs hit DefiLlama 429s; flows computed from receipts with the same victim-net method), bridged majors/LSTs via CoinGecko ids, OPSEC at the 6.4633 WETH realised. research/queue.json lead seed:paraswap:2024-03-19 and leads.json web:2024-03-20:paraswap-augustus-v6 should point at the new id."
   },
   "eip155:1:0x56e09abb35ff12271fdb38ff8a23e4d4a7396844426a94c4d3af2e8b7a0a2813": {
     "decision": "update",
@@ -54,6 +77,28 @@
     },
     "reason": "The oracle's deployment (block 9498957) is not the latest change: bZx oracleAddresses(0xf2572466) read 0xb017c993 at block 9502702 and 0xaa6198fe from 9502703, set by timelocked setOracleReference 0xd7a9e76e, so the system ran this oracle only from then (rule 11); age 75,495s -> 25,275s. Loss changed from attacker proceeds (2,378 ETH, recorded as a floor) to gross depletion: 6,796.01 WETH out of iETH+vault net of the repaid flash loan; sUSD collateral not subtracted (rule 14)."
   },
+  "eip155:1:0x76768c2861f5bcbe551c38fba62c83a0f14d17ff782b44c4cc32cd499c52991b": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Target/reset confirmed (proxy created pointing at 0xe9bd..., only Upgraded is the fix at 23991801, after the last pull). campaign.mjs finds exactly four further third-party pulls via 0xd632d1e2: MEV bot 0x...bb1b11 (0xde72ae4a 7,501.88 USDC; 0x34d5f8be 1,921.11 USDC; proceeds swapped to ETH, unaffiliated) and the original attacker (0x6ac06580, 0x65d8d603); none earlier, none on Arbitrum/Base/OP/Polygon/BSC/Avalanche. Record missed the bot txs: loss 33,629.99 -> 43,044.06 (43,052.98 USDC at DefiLlama USDC prices)."
+  },
+  "eip155:1:0x8af9b5fb3e2e3df8659ffb2e0f0c1f4c90d5a80f4f6fccef143b823ce673fb60": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Target and upgrade reset confirmed by resets.mjs (route changed only at 18413660; later slot changes are withdrawal counters). Loss switched from the attacker's realised 127.7975 ETH to gross market value of the drained stETH/rETH/cbETH per rule 14 (loss.mjs, victim = Astrid proxy): 228,749.86 -> 228,717.64. No earlier or later exploit (contract paused 253 blocks later)."
+  },
   "eip155:1:0x8b74995d1d61d3d7547575649136b8765acb22882960f0636941c44ec7bbe146": {
     "decision": "update",
     "compare": {
@@ -64,6 +109,17 @@
       "loss": "within-10"
     },
     "reason": "Separate incident from the crvUSD omnipool (different bug). The handler route change 0x0b1dfe6e (block 17613432) predates any WETH-listed pool in the ETH omnipool; the rETH/cbETH/stETH pools were only listed by CurvePoolAdded tx 0x69b00199 (block 17635020), and hasCoinDirectly(rETH/cbETH pool, 0xEeee)=false is what skipped the guard, so the listing is the latest needed change. Targets split into handler (reentrancyCheck is CALLed at 0xd775ae26, not delegatecalled) and omnipool; loss unchanged in ETH (totalUnderlying 3416.508->1536.655, supply flat), repriced at loss.mjs ETH price; notes condensed."
+  },
+  "eip155:1:0x9064b507f16bd8b85fb5aea0185153b01fa23b3205f7153f986e5107ce988a9c": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Config reading (chosen): setCapParameters in 0x32c64151 (blk 24626860 idx0, same block as anchor idx1) -> age 0 s. Live-value reading: the latest HIGH change otherwise needed is the governance payload 0x5fc15918 (blk 24625585, ts 1773127763) that registered AaveCapoAgent in AgentHub and granted it RISK_ADMIN on Core and Prime ACLManagers -> age 15,408 s (4.28 h); adapter deployment would give 29,079,288 s (336.6 d). Chosen config because the CAPO snapshot is an oracle/price-source parameter gated by RISK_ADMIN and had never changed since deployment (CapParametersUpdated only at 22219918 and 24626860), so it was not yet a value updated in normal operation. Campaign: 40 further txs with LiquidationCall on Core (24626860-24626867) and Prime (24626861-24626864); none after, none on L2 CAPO adapters (no CapParametersUpdated on Arbitrum, Base, OP, Avalanche, Polygon, Scroll, Gnosis within +-1 day). Loss unchanged ($1,004,900.99) but now with an asset row; config call changed from latestAnswer() (a live price) to getSnapshotTimestamp(). QUESTION for maintainers: is a keeper/agent-pushed CAPO snapshot (oracle cap parameter written by an automated RISK_ADMIN agent) 'configuration' (oracles and price sources, HIGH) or a 'value updated in normal operation'? If the latter, the reset becomes the RISK_ADMIN grant to the agent (15,408 s); does the answer change once such updates are routine?"
   },
   "eip155:1:0xb36486f032a450782d5d2fac118ea90a6d3b08cac3409d949c59b43bcd6dbb8f": {
     "decision": "merge-into:eip155:43114:0x782b2410fcc9449ead554a81f78184b6f9cca89f07ea346bc50cf11887cd9b18",
@@ -86,6 +142,17 @@
       "loss": "off-50"
     },
     "reason": "Separate incident from the 02-18 sUSD oracle exploit (different defect and code). Target and reset confirmed (targets(0xb1eac3ad) -> 0xf0a42ec4 in 0x7e49e3da, block 9443140; no later route change; campaign scan 9438966-9520000 finds only the anchor). Loss changed from the attacker's 1,193 ETH profit to gross depletion per rule 14: iETH+vault lost 4,337.62 WETH net of the attacker's 1,300 ETH; the 51.35 WBTC position collateral left in the vault is not subtracted."
+  },
+  "eip155:1:0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-50"
+    },
+    "reason": "Target/reset confirmed: facetAddress(vote, emergencyCommit) at 14602789 = 0xf480ee81, and none of the 5 later DiamondCuts touch governance selectors. Loss restated as gross depletion via loss.mjs (victims diamond + its three pools): 3CRV 43.04M + WETH 10,883.1 + LUSD 1.255M = $78,357,617.84, BEAN 36.4M at realised $0 (rule 15, crashed by the attack); record's $75.92M netted Aave premiums/slippage, blind's $184.3M marked BEAN and BEAN-LP at the pre-crash peg."
   },
   "eip155:250:0x24770e104ae1f8f47d1c095046379557ba3d17e49d3186e5f46f22d1067a57e9": {
     "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
@@ -165,6 +232,17 @@
     },
     "reason": "All exploit deposits (e.g. 1 wei USDT + 300k USDC.e into 0x61a7) hit Clearing's single-sided getDepositAmount branch (getTotalAmounts had one side 0) at ~12% spot/TWAP deviation, which only passes with the vault's priceThreshold 200 set in 0x83d90682 (block 145534012); that config postdates Clearing's deployment, so age falls from 196.6 to 65.2 days. The Ramses (0xadb209cc) and gDAI-DAI (0x6116f311) records are the same bug in sibling Clearing deployments hit by the same attacker within 6 minutes and merge here; 13 copycat txs (0xccc599f3, 0x0381d997) join the campaign; loss is measured depletion of the four vaults and their pools (.61M vs a reported .128M for two vaults)."
   },
+  "eip155:42161:0x0e29dcf4e9b211a811caf00fc8294024867bffe4ab2819cc1625d2e9d62390af": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Reset moves from pETH deployment to the comptroller's pETH collateral factor 0 -> 0.825 (tx 0x4a6b4a3b, blk 74259903; markets(pETH) changes there and is unchanged at 79308097), a rule-10 HIGH field the reentrant borrows needed; resets.mjs shows only live accruals afterwards; age 1277632 -> 1277496 s. Loss now gross: pUSDT borrow 50,122.071155 USDT without subtracting the attacker's 30,000 USDT collateral left in pUSDT (rule 14); 200 ETH supplied and redeemed in-tx excluded. campaign.mjs: earlier exercises are ordinary user calls, the only later hit is the admin pause, so no campaign."
+  },
   "eip155:42161:0x6116f311ac199d6f608c52e44c93a0e6961f10380fd379873b8bf27c92402462": {
     "decision": "merge-into:eip155:42161:0x025cf2858723369d606ee3abbc4ec01eab064a97cc9ec578bf91c6908679be75",
     "compare": {
@@ -209,6 +287,17 @@
     },
     "reason": "Same attacker 0x53515361 exploited the same Clearing v1.2.3 single-sided ratio-check exception (sibling Ramses deployment 0xcfb851b1, vault 0x80709a76 with priceThreshold 200) 65 s after anchor 0x025cf285 in one campaign across four vaults; rule 4 merges sibling-template legs. Its txs and loss are in the merged record's campaign and loss."
   },
+  "eip155:42161:0xf5e753d3da60db214f2261343c1e1bc46e674d2fa4b7a953eaf3c52123aeebd2": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Target/reset confirmed: resets.mjs watching AggregatorOracle, Comptroller and pNFT shows after 0x19860d8f only a liquidation, a redeem and setV3SupportedPair(0x92d06120) for another pool (0x92ac4dff, blk 295695965). Loss restated gross per rule 14: the record netted the attacker's NFT collateral ($13,160) to $75,056.64; loss.mjs over the four reserves (0xaffd4378, 0x1c762e00, 0xfc2737a7, 0xfb1dcfc6) = $88,379.86. No further exploit txs."
+  },
   "eip155:43114:0x782b2410fcc9449ead554a81f78184b6f9cca89f07ea346bc50cf11887cd9b18": {
     "decision": "update",
     "compare": {
@@ -219,6 +308,17 @@
       "loss": "off-50"
     },
     "reason": "Same Exchange template bug (removeLiquidity pays from live balance, debits internal quote reserve) exploited on Avalanche at ts 1670898185 and on the Ethereum AMPL/USDC sibling 582 s later; merged per rule 4 (copycat on sibling deployment). No earlier exploit: earlier removeLiquidity calls are direct EOA LP exits. TIC re-valued at the attacker's realised 8015.17 AVAX (tx 0x447c5488) instead of pool spot ($104,628.57 vs $195,276.56); total $1,047,252.34."
+  },
+  "eip155:43114:0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Anchor, target and deployment reset confirmed (resets.mjs: only a user accumulator slot changed later; SetPoolLimitation/AddAuthorization bound leverage borrowing, not flashLoan/deposit). The record counted only the anchor's attacker net; all 167 FlashLoan txs on the vault (first = anchor, none by deployer 0x3cd5854f) depleted it: loss.mjs gives 198,075.27 aAvaUSDC = $198,253.93 vs $173,637.63."
   },
   "eip155:43114:0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e": {
     "decision": "update",
@@ -231,6 +331,28 @@
     },
     "reason": "Same attacker campaign on two chains: Avalanche 0xece4efbe (ts 1731310543) precedes Arbitrum 0x6a2f989b (ts 1731310565); all 19 attacker txs call claimReward 0xb2af870a and wrapNativeToken 0xd75c7462 (traced). Merged per rule 4: campaign gets 5 Avalanche + 13 Arbitrum txs, loss = pool depletion on both chains $4,879,583.82 (record held only the Avalanche $4.13M). Target/reset confirmed (DiamondCut 0x1c24e72a is the last route change for 0xb2af870a)."
   },
+  "eip155:56:0x4a304ff08851106691f626045b0f55d403e3a0958363bdf82b96e8ce7209c3a6": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Anchor, target and upgrade reset 0x4885a0b1 confirmed (resets.mjs: no route change after 29067669; later comptroller extension 0xece485c8 and NewAdmin are off-path / role holder). campaign.mjs: 3 earlier exercises are the upgrade, an interest accrual and normal use; the attacker's 15 follow-ups (29185800-29185979) re-ran the fsAMM rounding but loss.mjs shows no victim depletion outside the anchor. Loss via loss.mjs (DefiLlama) $331,701.25 vs record $332,253.20 (0.17%); refs trimmed, campaign added."
+  },
+  "eip155:56:0x9c919da34696425913f32587f00d2838031a8726a2c5ddfa39e33a45b36e6427": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Target and deployment reset confirmed (no proxy, only fee/limit-exemption owner calls after). No RWC Transfer pair->DEAD before the exploit (getLogs deploy..exploit-1: 131 pair outflows, none to DEAD), so no earlier exercise. Loss restated via loss.mjs (victim = pair 0x05320770): 109,460.85 USDT at DefiLlama $0.99975 = $109,433.06 plus 38,680.52 burned RWC unpriced; summary/notes trimmed."
+  },
   "eip155:56:0xa00def91954ba9f1a1320ef582420d41ca886d417d996362bf3ac3fe2bfb9006": {
     "decision": "update",
     "compare": {
@@ -242,6 +364,17 @@
     },
     "reason": "Controller 0x2b4f87d9 strategyLength() was 3 at block 7152981, 0 at 7152995-7153003 (setStrategyLength(0) in 0x0982d5f5) and 3 again from 0x7a0bacd5 at block 7153004, with strategies(0) moved to StrategyAlpacaWBNB; the exploit needed that listing (rule 10 modules), so the reset is that config tx, not the strategy deployment (age 5486954 -> 215599 s). Also adds the 8 further depositFor rounds and 9 redemptions as campaign (campaign.mjs confirms the 9 depositFor exercises 7223030-7223344, none earlier in 7140000-7240000); loss 5345.31 WBNB (24267.91 out - 18922.59 attacker deposits) unchanged. Blind draft also listed the vSafe vault (deployment, older) as a target; dropped as its pricing is correct given an honest strategy valuation."
   },
+  "eip155:56:0xb4a29409cbd018956746f90d285f427175070c735c36ff3bc2f3c4a4bbaae705": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Rule 10: CraftToken.mint checks Registry 0x840ebdce.isVerifiedSender(msg.sender) (all 5 anchor tokens call this registry; trace shows isVerifiedSender(NLAMM)=true); NLAMM was added only in 0xd11038cf (blk 80240472), later than the upgrade (79644556) and every addToken (last 80216846), so the reset moves from the upgrade to this mint grant: age 1,112,048 s -> 843,838 s (9.77 d). Campaign gets the 7 copycat overflow/sell txs (buys at 82117789-82142171, GOLDORE sells 82119577-82119663); loss.mjs over the 6 pairs = 48,476.69 USDT = $48,468.43 (DefiLlama, record had par)."
+  },
   "eip155:56:0xd3382252bc204fdc32a6b3add8c639850882b70a798399d6e00a542cdf769040": {
     "decision": "update",
     "compare": {
@@ -252,5 +385,126 @@
       "loss": "within-10"
     },
     "reason": "Anchor, target, reset (proxy creation 0xc025c9b6 at block 6298935 with impl 0x7a8ac384 set in the constructor, only Upgraded is the post-exploit fix at 7148585) and loss (LP via realised vBSWAP sale 8790.77 WBNB + 222,937.64 BUSD + 93.68 WBNB) confirmed. Update only adds the four follow-on exploit txs (recover LP, second initialize, recover WBNB, recover BUSD) as campaign instead of refs, and condenses summary and notes. Separate incident from the vSafe record: different defect, contract and attacker (0xef63ad57 vs 0xcb36b1ee)."
+  },
+  "eip155:8453:0x075fcdd02922b7c502dff3441ab947e874eee2ab0bf31231770b10508d4258d8": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 45204,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0x075fcdd0 at block 2031811, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0x0bbc4c363f31485bdaeeca37fa248f48f688f18ddbc59e3fa9f016a093df687c": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 85120,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0x0bbc4c36 at block 2031833, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0x4db0b2516f5e98083cea14d3d0f356c94e20942604a2a3116dd860effbbadc29": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 46954,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0x4db0b251 at block 2031972, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0x5005ac22398b82d22d89f3f4e55ebf62bb2e437b21482c0de581f69b1cdb6a94": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -40416,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0x5005ac22 at block 2031948, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0x8d19071832c3027e67826249676380263a6c9821e01c2512ad46a810f2d29b03": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -15874,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0x8d190718 at block 2031881, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0xaa648913d80d746d69c740c04b3d573e0fb6d07779dc19588e5a942cfcd66032": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 44708,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0xaa648913 at block 2032038, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0xb1d37bfad3730434c68e318c98e0a9bfb7797ad0309af75f14ed0f59608e016f": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 76778,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0xb1d37bfa at block 2031992, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss."
+  },
+  "eip155:8453:0xb4647281edc4df48d209b668f0debb0e56d94ebf892df24bb05f0664508483c3": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 15502,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0xb4647281 at block 2032016, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-50"
+    },
+    "reason": "Rule 4 merge of the 11 per-pair Leetswap records. Trace scan of every factory pair (blocks 1,290,600-3,499,999) finds this tx as the first external _transferFeesSupportingTaxTokens call. Attacker 0x705f7361 made 12 drains on 11 pairs (0x226fa717 is a second drain of 0x83097b68, no record); 838 further third-party drains follow. Team (0xd40846a1) and whitehat 0xba8fa7a2/0x0d1b7532 drains (111 txs, $1.48M) excluded as rescues. Loss $222,530 -> $1,596,662 (attacker's 12 txs $855,017 incl. 216,583 axlUSDC locked in the fees contract)."
+  },
+  "eip155:8453:0xee9ee6773b82495511ee2a6679f0acd57def85256b156cd898830b7d65fbdc1d": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": 15372,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0xee9ee677 at block 2032051, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0xf0c2ed12a446713d6e38e7a4f0e05d45360ee9305b7d6e0b796fc44f848f6052": {
+    "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -26578,
+      "loss": "off-50"
+    },
+    "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0xf0c2ed12 at block 2032097, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
   }
 }

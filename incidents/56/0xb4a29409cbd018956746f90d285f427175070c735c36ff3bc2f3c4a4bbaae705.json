@@ -2,48 +2,44 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "PearlDriver",
   "name": "PearlDriver NLAMM unchecked buy() cost overflow",
-  "summary": "NLAMM.buy(token,index,amount) runs inside an unchecked block and charges amount * currentPrice in USDT, then mints amount * 1e18 game tokens. Choosing amount so the product wraps let the attacker pay fractions of a cent for up to 1e63 tokens of five craft resources, which it sold into their PearlDEX USDT pairs in the same transaction; two later actors repeated the overflow before the implementation was replaced.",
+  "summary": "NLAMM.buy(token,index,amount) computes the USDT cost amount * currentPrice inside an unchecked block and then mints amount * 1e18 craft tokens. Choosing amount so the product wraps bought up to 1e63 tokens of five resources for fractions of a cent, sold into their PearlDEX USDT pairs; two copycats repeated it before the fix.",
   "targets": [
     {
       "address": "0x5340a7278848ee51d35c30693d6fbff06d1a0d73",
       "code": "0x1903d672c821bdf7cabfde1fb4dc9ebff0494563",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x372fd23e9df148ba74713508407742c848d6d8417ff35ad790b34e0b3fac9267"
+        "kind": "config",
+        "tx": "0xd11038cf16936abf594a064cfb999dcd2a8fcb50b08445d6b8b69785a9bc7af1",
+        "address": "0x840ebdceb76336a18ff21d5b2d677c0021ea1d46",
+        "call": "0xf7d3e7450000000000000000000000005340a7278848ee51d35c30693d6fbff06d1a0d73"
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x5829dfb2347779f52baa9162d203f0894ace87a62c853b2099c1ab875d5bbf5f",
+    "eip155:56:0x64a8cf385f190d853faf47f63c7ea707b42fd0b9dcf7239969914ea80a33331c",
+    "eip155:56:0xe8d38fb423a8860d1ad16d1be968969a0c749ea9a3bd9c7e7fdbe57f474e721a",
+    "eip155:56:0x3d16ab69d5ef6471f18f740964c74b506e69497d68081f88db22e4f83de90f0c",
+    "eip155:56:0xcc329caeb107e0c1d2387b4557435473825f919f7b02d05b4735086da8a18e18",
+    "eip155:56:0x210a22db1b44b055bffa60d811015f955825b78ef15ec8576cd9ff993cb20901",
+    "eip155:56:0x0e62cc9d37be09ffa9096f3d66b7579ac90da39a9a8c0eca7e5dda3bf14fb0b9"
+  ],
   "loss": {
-    "usd": 48476.691332548,
+    "usd": 48468.43,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "40335.501544613174067363",
-        "usd": 40335.50154461317
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "8139.166445804216456316",
-        "usd": 8139.166445804217
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "2.023342130622017605",
-        "usd": 2.0233421306220176
+        "amount": "48476.691332548012541284",
+        "usd": 48468.43
       }
     ]
   },
   "refs": [
-    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-16-feb-22-2026",
-    "eip155:56:0xe8d38fb423a8860d1ad16d1be968969a0c749ea9a3bd9c7e7fdbe57f474e721a",
-    "eip155:56:0x0e62cc9d37be09ffa9096f3d66b7579ac90da39a9a8c0eca7e5dda3bf14fb0b9",
-    "eip155:56:0xd2877641b0c6aec567848733366e3a569c7ca8edbc6e61465944219fe88d4e69"
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-16-feb-22-2026"
   ],
   "notes": [
-    "ProxyAdmin 0xf07fe21037556a27a33a0662a49373f1a3bb092d upgrade (0x99a88ec4) by 0xbc9d5a23f2e55286650aae5573c524703aeb4724 replaced the initial implementation 0x5bb5e880479b3a39b10baf04f724e1d8ceb2021e with NLAMM 0x1903d672; the next upgrade (block 82160602) came after the exploit.",
-    "USDT paid out of PearlDEX pairs (factory 0x73a0ba8bac1b6ae00de1e9cf767cdb98075ab92e) for overflow-minted tokens, per campaign; no USDT flowed into those pairs from the attackers in these transactions. The fractional USDT paid to NLAMM for the mints is attacker input and is not subtracted. BSC-USD valued at par."
+    "CraftToken.mint is onlyVerifiedContract against Registry 0x840ebdce; NLAMM became a verified minter in the reset tx, after the NLAMM upgrade 0x372fd23e and the addToken listings of all five tokens, so buy() could only mint from then on (rule 10 mint grant).",
+    "Campaign: 0x2db1ab08 overflow-bought GOLDORE and NAIL and sold GOLDORE into pair 0x28f7d275 (the sells realise the minted tokens), and 0x9c862444 repeated the overflow buy. Loss is the USDT the six pairs paid out."
   ]
 }

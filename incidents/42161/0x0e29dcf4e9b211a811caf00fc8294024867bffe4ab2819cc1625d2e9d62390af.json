@@ -2,47 +2,46 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Paribus",
   "name": "Paribus pETH redeem reentrancy",
-  "summary": "The Paribus native-ETH market sent ether to the redeemer before the comptroller's collateral bookkeeping was updated, so the receive hook re-entered the protocol and borrowed against collateral that had already been withdrawn.",
+  "summary": "PEther.redeemFresh sent ether to the redeemer before reducing its pETH balance and totalSupply, so the receive hook re-entered the comptroller and borrowed from other markets against pETH collateral that was being withdrawn. The attacker supplied ETH and USDT, borrowed, then redeemed and borrowed USDT and WBTC inside the callback.",
   "targets": [
     {
       "address": "0x375ae76f0450293e50876d0e5bdc3022cab23198",
       "code": "0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xc472b813c28862b4792c295bee2fd7432f12226e7da865cf87f65c26c8cdfcc4"
+        "kind": "config",
+        "tx": "0x4a6b4a3b8ec942045a9110d23ff687538e3b97d08d7f38147fbd18867c0032f2",
+        "address": "0x2130c88fd0891ea79430fb490598a5d06bf2a545",
+        "call": "0x8e8f294b000000000000000000000000375ae76f0450293e50876d0e5bdc3022cab23198"
       }
     }
   ],
   "loss": {
-    "usd": 67937.3707330498,
+    "usd": 97956.87,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "13.075471156453514228",
-        "usd": 25103.989337409796
+        "usd": 25106.6
       },
       {
         "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
         "symbol": "USDT",
-        "amount": "20122.071155",
-        "usd": 20122.071155
+        "amount": "50122.071155",
+        "usd": 50172.19
       },
       {
         "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
         "symbol": "WBTC",
         "amount": "0.75523112",
-        "usd": 22711.31024064
+        "usd": 22678.08
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Paribus_exp.sol",
-    "eip155:42161:0xd669314923c9d6213d8e581855d5703810c6907b3b3c1b70e818b969a2ddf3f2",
-    "eip155:42161:0x84c0b7ee108e4c6cdffe2517f2e2f45226963d1da03c4e6e460299e7186db95d",
-    "eip155:42161:0x54ed79a3fc30d0b1f051343735024068a4fd481f45ebc206b3bea0c976ceaad3"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Paribus_exp.sol"
   ],
   "notes": [
-    "pETH is a Compound-style delegator whose implementation is stored in nonstandard slot 18. Its creation receipt emits NewImplementation(0x0, 0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7); slot 18 is zero one block earlier and selects that implementation at creation and immediately before the incident. No later NewImplementation event exists before the incident, and both delegator and implementation runtimes are unchanged. Proxy creation is therefore the implementation's canonical activation and latest age reset for this market.",
-    "Gross loss is exact net depletion of the three implicated Paribus markets in the successful anchor receipt. pETH receives 200 ETH and sends 213.075471156453514228 ETH, for 13.075471156453514228 ETH net depletion; its archive balance falls from 13.075471156463824220 ETH to 0.000000000010309992 ETH. pUSDT receives 30,000 USDT and sends 50,122.071155 USDT, for 20,122.071155 USDT net depletion; pWBTC receives no WBTC and sends its full 0.75523112 WBTC balance. Both token archive balances fall exactly to zero. Flash-liquidity inputs are included in the market inflows; repayments and downstream swaps occur outside the victim markets and return no value to them. USDT is valued at par. The closest preceding DefiLlama points are ETH at $1,919.93 at 1681207964, 168 seconds before the anchor, and BTC at $30,072 at 1681207971, 161 seconds before it. Exact component values total $67,937.3707330498, replacing the seed's rounded $86,000 estimate."
+    "The pETH delegator was created already pointing at the vulnerable implementation; the comptroller set pETH's collateral factor shortly afterwards. Borrowing against pETH needed that HIGH-rated setting (rule 10), so it, not the deployment, is the reset.",
+    "USDT is the gross amount borrowed from pUSDT: the 30,000 USDT the attacker supplied as collateral and left in the market is not subtracted (rule 14). The 200 ETH the attacker supplied to pETH and redeemed within the transaction is excluded."
   ]
 }

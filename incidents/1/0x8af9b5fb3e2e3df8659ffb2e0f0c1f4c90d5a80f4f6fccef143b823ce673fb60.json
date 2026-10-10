@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Astrid",
   "name": "Astrid unvalidated restaked-token withdrawal",
-  "summary": "AstridProtocol.withdraw accepted any caller-supplied restaked-token contract without requiring it to match a whitelisted stakedTokens entry. Fake tokens reported attacker-chosen stakedTokenAddress and scaledBalanceToBalance values, so withdrawal processing recorded the protocol's real stETH, rETH and cbETH reserves as claimable and claim transferred them to the attacker.",
+  "summary": "AstridProtocol.withdraw accepted any contract as the restaked token. Withdrawal processing trusted the fake token's stakedTokenAddress() and scaledBalanceToBalance(), so attacker-deployed tokens booked the protocol's real stETH, rETH and cbETH as claimable and claim() paid them out.",
   "targets": [
     {
       "address": "0xbaa87546cf87b5de1b0b52353a86792d40b8ba70",
@@ -14,12 +14,25 @@
     }
   ],
   "loss": {
-    "usd": 228749.85550315294,
+    "usd": 228717.64,
     "assets": [
       {
-        "symbol": "ETH",
-        "amount": "127.797499079942863577",
-        "usd": 228749.85550315294
+        "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "symbol": "stETH",
+        "amount": "64.176037513415148812",
+        "usd": 114760.23
+      },
+      {
+        "token": "0xae78736cd615f374d3085123a210448e74fc6393",
+        "symbol": "rETH",
+        "amount": "39.165842900855519099",
+        "usd": 76324.04
+      },
+      {
+        "token": "0xbe9895146f7af43049ca1c1ae358b0541ea49704",
+        "symbol": "cbETH",
+        "amount": "20.000407064566313222",
+        "usd": 37633.37
       }
     ]
   },
@@ -27,8 +40,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-10/Astrid_exp.sol"
   ],
   "notes": [
-    "The proxy's second and last pre-exploit Upgraded event selected AstridProtocol implementation 0x4d5b4b9ccf52bbcfe7b71b3038d8577293779e0c.",
-    "The receipt shows 64.176037513415148812 stETH, 39.165842900855519099 rETH and 20.000407064566313222 cbETH leaving Astrid. The attack contract liquidated all three inside its constructor and forwarded exactly 127.797499079942863577 ETH to the attacker EOA. At the nearest pre-incident DefiLlama ETH price of 1,789.94 USD, those exact realised proceeds are worth 228,749.85550315292923101538 USD. Gas is not deducted and no recovery is netted.",
-    "The exact figure is the attacker's realised ETH proceeds rather than a gross incident-time mark of the stETH, rETH and cbETH victim basket."
+    "The proxy's first implementation was equally exploitable (it checked the whitelist entry of the token the fake contract reported), but the code the system ran at the exploit was installed by the recorded upgrade, so rule 9 ages from it.",
+    "Loss is the victim basket at market price when it moved (rule 14), not the attacker's realised ETH, which differs by under 0.1%."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "RWC Token",
   "name": "RWC deferred sell burn removes pair RWC and syncs on demand",
-  "summary": "RWC._transfer queues 40% of every sold amount (first 100M-token tier) as pendingPoolBurn and, on the next sell or through the permissionless executePendingPoolBurn(), subtracts that amount from the PancakeSwap pair's own RWC balance, credits DEAD and calls pair.sync(). The burn is paid by the pool's reserve rather than by the seller and can be triggered by anyone at any time, including by a zero-amount transfer to the pair. A flash-loan attacker looped buy, sell and executePendingPoolBurn 29 times, burning 38657.98 of the pair's 52156.45 RWC, ratcheting the RWC price up and selling back, and drained 109460.85 USDT from the RWC/USDT pair in one transaction.",
+  "summary": "RWC._transfer queues part of every sell as pendingPoolBurn, and the permissionless executePendingPoolBurn() later debits it from the PancakeSwap pair's own RWC balance and calls sync(), so the pool pays the burn. A flash-loan attacker looped buy, sell and burn to shrink the RWC reserve, ratchet the price and sell back for the pair's USDT.",
   "targets": [
     {
       "address": "0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c",
@@ -13,13 +13,19 @@
     }
   ],
   "loss": {
-    "usd": 109460.8547612256,
+    "usd": 109433.06,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "109460.854761225592889657",
-        "usd": 109460.8547612256
+        "usd": 109433.06
+      },
+      {
+        "token": "0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c",
+        "symbol": "RWC",
+        "amount": "38680.521458396349384008",
+        "usd": 0
       }
     ]
   },
@@ -27,7 +33,8 @@
     "https://x.com/TenArmorAlert/status/2101925758214316524"
   ],
   "notes": [
-    "Non-proxy RWC token created directly by an EOA; its constructor computes and stores swapPair and the 40%/1% burn tiers. Runtime hash is identical at the deployment block and immediately before the exploit, and the owner's only later configuration calls were setFeeExempt/setLimitExempt on unrelated wallets.",
-    "Exact USDT depletion of the RWC/USDT pair 0x053207705669538a2b3851bcd1279572c0f55e40 in the single exploit transaction (pair balance 155361.577596537419707755 at block 123134629, 45900.722835311826818098 at block 123134630). Destination split from the receipt: 39964.071600905055157624 USDT to the attacker EOA, 62547.104844288483958918 to companyWallet 0xde2f6153f49e3134b88e98e3e86c0ae0411cc11b and 6949.678316032053773115 to platformWallet/deployer 0x911ea5a98fb8f238ffcb86c8a531d69afc7b4cde through the token's own sell-fee swap. The fee-routed part is counted because it left the pool only through the attacker's manipulated sells; the pool's liquidity had been added by 0x3aefe6c935131e6b853deacad9e566603eec0223 and its LP tokens sent to DEAD, so the depleted USDT was the backing of RWC holders. The 2495286.020489131224935440 USDT flash loan from 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c was repaid within the transaction and is not loss."
+    "Non-proxy token; the owner's only later calls set fee and limit exemptions for team wallets, which the exploit did not need.",
+    "USDT routed to companyWallet and the deployer by the token's own sell-fee swap is counted: it left the pool only through the attacker's manipulated sells.",
+    "RWC burned from the pair has no market price after the attack; its realised value is the USDT drained, so it carries no separate USD value (rule 15)."
   ]
 }

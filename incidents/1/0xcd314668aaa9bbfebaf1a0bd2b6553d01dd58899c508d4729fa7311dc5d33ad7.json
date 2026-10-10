@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Beanstalk",
   "name": "Beanstalk GovernanceFacet emergencyCommit on unsnapshotted voting power",
-  "summary": "GovernanceFacet.emergencyCommit(uint32) executes a BIP's arbitrary LibDiamond.diamondCut once bipVotePercent(bip) = rootsFor(bip) / totalRoots() reaches the two-thirds supermajority. Both terms are read at call time, Silo deposits mint Roots synchronously through recordVote's balanceOfRoots(msg.sender), and the only temporal guard is C.getGovernanceEmergencyPeriod() (86,400 s) measured from BIP submission rather than from the acquisition of voting weight. The facet neither snapshots weight at proposal time nor imposes any holding period between minting Roots and voting them, so the supermajority authorization is satisfiable by state that exists only inside the authorizing transaction. In transaction 0xcd314668 the attacker took roughly USD 1 billion of Aave and Uniswap V3 flash loans, deposited 795,425,740.813818200295323741 BEAN3CRV-f (BDV 789,265,388.807140) and 58,924,887.872471876761750555 BEANLUSD-f (BDV 57,932,975.182545) into the Silo, minted 386,865,631,100,312,806,110,485,288,529 Roots, voted them onto BIP-18 (log 64) and emergency-committed at 387,487,298,354,313,289,142,728,288,490 / 485,851,957,499,334,104,135,968,761,599 = 79.75 percent, delegatecalling the attacker's init contract 0xe5ecf73603d98a0128f05ed30506ac7a663dbb69 to transfer every Silo-held token out of the diamond. The thresholds are private compile-time constants inside the facet runtime, not owner-settable parameters, and no value of the emergency period, the supermajority ratio or the proposal threshold makes the deployed code correct, because none of them constrain when the voting weight was acquired.",
+  "summary": "GovernanceFacet.vote and emergencyCommit read voting power (Roots) at call time with no snapshot or holding period, so Silo deposits made in the same transaction count. The attacker flash-borrowed liquidity, deposited it, voted its own BIP to the two-thirds supermajority and emergency-committed it; the BIP's init delegatecall moved the Silo's assets out.",
   "targets": [
     {
       "address": "0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5",
@@ -14,39 +14,42 @@
     }
   ],
   "loss": {
-    "usd": 75923910.25026375,
+    "usd": 78357617.84,
     "assets": [
+      {
+        "token": "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490",
+        "symbol": "3Crv",
+        "amount": "43043401.256710036550983795",
+        "usd": 43933620.15
+      },
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "24830.116910462326232315",
-        "usd": 75673910.25026375
+        "amount": "10883.105341079068109889",
+        "usd": 33165460.98
       },
       {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "250000",
-        "usd": 250000
+        "token": "0x5f98805a4e8be255a32880fdec7f6728c6568ba0",
+        "symbol": "LUSD",
+        "amount": "1255121.165448307654022661",
+        "usd": 1258536.71
       },
       {
         "token": "0xdc59ac4fefa32293a95889dc396682858d52e5db",
         "symbol": "BEAN",
-        "amount": "36398226.924163"
+        "amount": "36398126.924163",
+        "usd": 0
       }
     ]
   },
   "refs": [
-    "eip155:1:0x6118d177b2995e3dcb64e2d23264b36fc067c7909e032c952bc27cc0a76709dc",
     "eip155:1:0x68cdec0ac76454c3b0f7af0b8a3895db00adf6daaf3b50a99716858c4fa54c6f",
     "https://bean.money/blog/beanstalk-governance-exploit",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-04/Beanstalk_exp.sol",
-    "eip155:1:0x677660ce489935b94bf5ac32c494669a71ee76913ffabe623e82a7de8226b460"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-04/Beanstalk_exp.sol"
   ],
   "notes": [
-    "DiamondCut replaced the 18 governance selectors, including vote(uint32) 0x9094c763 and emergencyCommit(uint32) 0x73015684, with GovernanceFacet 0xf480ee81a54e21be47aa02d0f9e29985bc7667c4, whose 17,045-byte runtime differs from the 17,279-byte predecessor facet 0xdbc8cbd2af1e22f4e9e3ad0ea7f51433f7f31328.",
-    "Measured from the exploit receipt. Netting every ERC-20 Transfer log, the Beanstalk diamond 0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5 lost 79,238,241.423601190873232684 BEAN3CRV-f, 1,637,956.191657208904972868 BEANLUSD-f, 36,084,584.376516 BEAN and 0.540716100968756904 BEAN:ETH Uniswap V2 LP after the attacker's own same-transaction Silo deposits (795,425,740.813818200295323741 BEAN3CRV-f and 58,924,887.872471876761750555 BEANLUSD-f, both flash-loan funded and therefore attacker-supplied inputs) are removed. Redeeming those positions took 10,883.105341079068109889 WETH and 32,414,493.174334 BEAN out of the BEAN:ETH pair, 43,043,401.256710036550983795 3CRV net out of the BEAN:3CRV metapool and 1,255,121.165448307654022661 LUSD net out of the BEAN:LUSD pool. The structured components are instead the attack contract 0x79224bc0bf70ec34f0ef56ed8251619499a59def's exact end-of-transaction net position (24,830.116910462326232315 WETH and 36,398,226.924163 BEAN) plus the 250,000 USDC it sent to the Ukraine donation address 0x165cd37b4c644c2921454429e7f9358d18a45e14 inside the same transaction; this avoids marking BEAN or BEAN-paired LP at the pre-attack quote. The measurement is therefore net: the 315,000 DAI, 450,000 USDC and 135,000 USDT Aave premiums and the Curve/Uniswap slippage were paid out of the extracted assets and are not added back; adding the 900,000 USD of premiums reconciles to Beanstalk's own figure of about 77 million USD of non-Beanstalk user assets stolen. BEAN carries a 1.0142914155592448 USD DefiLlama quote at the incident timestamp, but that quote is the pre-collapse peg: BEAN fell roughly 75-90 percent within hours, the attacker never sold the 36.4 million BEAN, and the quantity could not have been sold at spot, so it is recorded without a USD value. The widely reported 182 million USD figure is Beanstalk's total value locked with BEAN and BEAN-denominated LP marked at peg, not the value of assets that left the system.",
-    "The 36,398,226.924163 BEAN the attacker retained is recorded as a quantity without a USD value, because the only contemporaneous quote is the pre-collapse peg and the position could not have been sold at it.",
-    "The same emergencyCommit logic path existed in the predecessor governance facets back to the diamond's August 2021 genesis cut, but the executable code the diamond ran on 2022-04-17 was installed on 2022-04-01 and its runtime differs from the predecessor's, so the measured age is that of the deployed artifact, not of the design.",
-    "BIP-18 was submitted 91,771 seconds before the commit, clearing C.getGovernanceEmergencyPeriod()'s 86,400-second guard; the attacker's malicious diamondCut init contract 0xe5ecf73603d98a0128f05ed30506ac7a663dbb69 was CREATE2-deployed one transaction earlier in the exploit block, so the proposal remained inspectable as a codeless init address for the whole emergency period."
+    "Victims are the diamond and the BEAN:3CRV, BEAN:LUSD and BEAN:ETH pools whose LP it held almost entirely; the LP tokens are looked through to the non-BEAN assets drained from those pools, so they are not listed separately.",
+    "The attack itself crashed BEAN and the attacker never sold the BEAN it kept, so BEAN is valued at what it realised, nothing (rule 15). Aave premiums, slippage and the USDC donation came out of the drained assets and are not subtracted.",
+    "Later diamond cuts before the exploit replaced other facets (BDV functions, LUSD whitelisting) but not the governance selectors; the attacker's supermajority did not depend on them."
   ]
 }
