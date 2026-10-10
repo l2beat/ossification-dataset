@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ATM (0xa595)",
   "name": "ATM transfer-triggered fee auto-swap manipulation",
-  "summary": "ATM synchronously sold its own token inventory into the ATM/WBNB pair before each non-whitelisted transfer to that pair. The sell amount followed the triggering transfer, the threshold was zero, and both internal swaps accepted zero minimum output, so a flash-funded attacker repeatedly transferred ATM to the pair and skimmed it back to trigger 34 protocol dumps before unwinding against the depleted pool.",
+  "summary": "ATM sold its own token inventory into the ATM/WBNB pair before each non-whitelisted transfer to the pair, sized by that transfer, with no threshold and zero minimum output. A flash-funded attacker repeatedly transferred ATM to the pair and skimmed it back, triggering dozens of protocol dumps, then unwound against the depleted pool.",
   "targets": [
     {
       "address": "0xa5957e0e2565dc93880da7be32abcbdf55788888",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 230111.04687454784,
+    "usd": 353930.29,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "400.946206569814328228",
-        "usd": 230111.04687454784
+        "amount": "616.377537075372449387",
+        "usd": 353930.29
       }
     ]
   },
@@ -28,8 +28,12 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/ATM_exp.sol"
   ],
   "notes": [
-    "The direct deployment fixed the transfer-triggered auto-swap, zero swap threshold, transfer-sized inventory sale, and zero minimum outputs. Later launch, whitelist, fund-address, transfer-fee, ownership-renunciation, liquidity, and inventory changes exposed or sized the defect but did not create or alter it.",
-    "The exploit receipt records 148.244121844478847692 WBNB entering and 549.190328414293175920 WBNB leaving the ATM/WBNB pair, for an exact 400.946206569814328228 WBNB net LP depletion. This excludes the attacker's pair inputs. The USD value uses the nearest DefiLlama BNB observation preceding the transaction.",
-    "Replaces the seed row's rounded $182,000 attacker-profit estimate with the transaction-exact ATM/WBNB LP depletion and a pre-incident BNB price."
+    "The deployment fixed the transfer-triggered auto-swap, zero threshold and zero minimum outputs. Later changes (launch(), which only opened trading, the fund address, whitelist entries) gated or sized the exploit without creating the defect.",
+    "A second attacker (0xd070490b) repeated the transfer-and-skim loop against the same pair twice within the next 500 blocks; both are campaign.",
+    "Loss is the ATM/WBNB pair's WBNB depletion over the three transactions; the ATM it received is not subtracted."
+  ],
+  "campaign": [
+    "eip155:56:0x2c110663cbce4aef8bfbe2f729de5f18ca1ae50bada00bc35584ed354d2fde20",
+    "eip155:56:0x458ea2d7e6c5953b0d927aabc1c6a144df276d6ffa55b236087763396ee57067"
   ]
 }

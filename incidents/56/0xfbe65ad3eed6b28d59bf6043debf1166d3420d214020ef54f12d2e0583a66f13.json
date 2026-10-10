@@ -2,13 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "AutoShark",
   "name": "AutoShark SharkMinter mints on donated balances (May 2021)",
-  "summary": "SharkMinter.mintFor, a PancakeBunny-style minter, converts its entire LP, SHARK and WBNB balances (balanceOf(this)) into SHARK-BNB liquidity and mints SHARK in proportion to that value, so tokens donated to the minter inflate the reward. The attacker flash-borrowed WBNB, sent WBNB and SHARK to the minter, and claimed a tiny vault reward that minted 138M SHARK, which it sold into the SHARK/WBNB and SHARK/BUSD pairs.",
+  "summary": "SharkMinter.mintFor, a PancakeBunny-style minter, zaps its whole LP, SHARK and WBNB balance (balanceOf(this)) into SHARK-BNB liquidity and mints SHARK in proportion to that value, so donated tokens inflate the reward. The attacker sent flash-borrowed WBNB and SHARK to the minter, claimed a tiny vault reward that minted a huge SHARK amount, and sold it.",
   "targets": [
     {
       "address": "0x37ee638d85e420532e35cd9dd831166514855e6d",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xe439362df414ca6baa618e7480d09d955f0674987263bbdc917b7fcf7aa80726"
+        "kind": "config",
+        "tx": "0x6258faa53b91c7ab9226e0a237a89cf44ae432d8ec232a83555c67d5d0552a87",
+        "address": "0x37ee638d85e420532e35cd9dd831166514855e6d",
+        "slot": "0x9ca3e168f2f245ec52f928302f6d5677803eb96f3d9ce6a723ee2a7228aee035"
       }
     }
   ],
@@ -33,7 +35,7 @@
     "https://rekt.news/autoshark-rekt/"
   ],
   "notes": [
-    "Direct SharkMinter runtime with the balanceOf-based mint valuation; the owner wired it in within minutes (vault setMinter at block 7683063, minter setMinter(vault) at 7683065, setSharkPerProfitBNB at 7683039), which makes it operational without changing the defect.",
-    "Net depletion of the two SHARK liquidity pools that bought the unbacked mint: SHARK/WBNB pair 0x1fd789fa513871cb89aa655f11ec777cad1784a0 lost 1361.653259072555291801 WBNB and SHARK/BUSD pair 0xea0d470d4af27123ca870c70cf41853a6e6e8313 lost 415820.823404016329197845 BUSD in the anchor transaction; the SHARK they received was freshly minted. The flash-loan pair 0x58f876857a02d6762e0101bb5c46a8c1ed44dc16 was repaid and is not a victim."
+    "The reset is SharkMinter.setMinter(vault, true), the last of the owner's wiring txs (SHARK ownership to the minter, vault setMinter, minter whitelist). mintFor is onlyMinter, so the exploit needed this grant (rule 10); setSharkPerProfitBNB only sizes the mint.",
+    "Loss is the depletion of the SHARK/WBNB and SHARK/BUSD pairs that bought the unbacked mint; the SHARK they received is not subtracted and the flash-loan pair was repaid."
   ]
 }

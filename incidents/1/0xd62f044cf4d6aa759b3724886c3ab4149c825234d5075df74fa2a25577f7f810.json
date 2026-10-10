@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Akutar NFT",
   "name": "AkuAuction refund-counter mismatch permanently locks project funds",
-  "summary": "claimProjectFunds() required refundProgress to reach totalBids, but processRefunds() advanced refundProgress once per bidder entry while totalBids counted auction units. After the refund sweep processed all 3,668 bidder entries, refundProgress equalled bidIndex at 3,669 while totalBids remained 5,495, making the project withdrawal condition permanently unsatisfiable and locking the residual auction balance.",
+  "summary": "claimProjectFunds() required refundProgress to reach totalBids, but processRefunds() advanced refundProgress once per bidder entry while totalBids counted auction units. Once the refund sweep processed every bidder entry, refundProgress stopped at bidIndex below totalBids, so the withdrawal condition can never hold and the auction proceeds stay locked.",
   "targets": [
     {
       "address": "0xf42c318dbfbaab0eee040279c6a2588fa01a961d",
@@ -36,8 +36,8 @@
     "eip155:1:0x3ea60a6fe816ef4b21b310f71cfc64a8bc2033a32c3c5bd6b98ce48ea1368f14"
   ],
   "notes": [
-    "This transaction directly deployed the immutable AkuAuction runtime containing processRefunds() and the unreachable claimProjectFunds() condition.",
-    "The selected final refund batch exhausted every bidder entry and left exactly 11,539.5 ETH in AkuAuction (5,495 auction units at the 2.1 ETH closing Dutch price), equal to its balance at review time to the wei. Bidder refunds that succeeded are not loss, and the temporary refund-griefing episode caused no permanent loss and is context only. The valuation uses the last DefiLlama ETH observation before that transaction.",
-    "The seed record used the first successful refund batch. This record uses the final batch that exhausts every bidder entry and establishes the irrecoverable counter mismatch onchain: only after it does emergencyWithdraw() stop being an escape hatch for the remaining balance, so it is the transaction that makes the permanent loss final."
+    "The immutable AkuAuction runtime contains both processRefunds() and the unreachable claimProjectFunds() condition; nothing changed after deployment.",
+    "Loss is the balance left after the final refund batch (5,495 units at the 2.1 ETH closing price), unchanged since. Successful bidder refunds are not loss, and the temporary refund-griefing episode caused no permanent loss.",
+    "Anchored on the final refund batch: only once it exhausts every bidder entry is the counter mismatch irreversible and emergencyWithdraw() no longer an escape for the remaining balance."
   ]
 }

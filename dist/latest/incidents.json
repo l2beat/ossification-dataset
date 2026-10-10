@@ -803,7 +803,7 @@
     "tx": "0xd62f044cf4d6aa759b3724886c3ab4149c825234d5075df74fa2a25577f7f810",
     "protocol": "Akutar NFT",
     "name": "AkuAuction refund-counter mismatch permanently locks project funds",
-    "summary": "claimProjectFunds() required refundProgress to reach totalBids, but processRefunds() advanced refundProgress once per bidder entry while totalBids counted auction units. After the refund sweep processed all 3,668 bidder entries, refundProgress equalled bidIndex at 3,669 while totalBids remained 5,495, making the project withdrawal condition permanently unsatisfiable and locking the residual auction balance.",
+    "summary": "claimProjectFunds() required refundProgress to reach totalBids, but processRefunds() advanced refundProgress once per bidder entry while totalBids counted auction units. Once the refund sweep processed every bidder entry, refundProgress stopped at bidIndex below totalBids, so the withdrawal condition can never hold and the auction proceeds stay locked.",
     "lossUsd": 34144874.577195555,
     "codeAgeSeconds": 16344,
     "exploit": {
@@ -1402,9 +1402,9 @@
     "tx": "0xfbe65ad3eed6b28d59bf6043debf1166d3420d214020ef54f12d2e0583a66f13",
     "protocol": "AutoShark",
     "name": "AutoShark SharkMinter mints on donated balances (May 2021)",
-    "summary": "SharkMinter.mintFor, a PancakeBunny-style minter, converts its entire LP, SHARK and WBNB balances (balanceOf(this)) into SHARK-BNB liquidity and mints SHARK in proportion to that value, so tokens donated to the minter inflate the reward. The attacker flash-borrowed WBNB, sent WBNB and SHARK to the minter, and claimed a tiny vault reward that minted 138M SHARK, which it sold into the SHARK/WBNB and SHARK/BUSD pairs.",
+    "summary": "SharkMinter.mintFor, a PancakeBunny-style minter, zaps its whole LP, SHARK and WBNB balance (balanceOf(this)) into SHARK-BNB liquidity and mints SHARK in proportion to that value, so donated tokens inflate the reward. The attacker sent flash-borrowed WBNB and SHARK to the minter, claimed a tiny vault reward that minted a huge SHARK amount, and sold it.",
     "lossUsd": 882759.000412,
-    "codeAgeSeconds": 47170,
+    "codeAgeSeconds": 46948,
     "exploit": {
       "block": 7698696,
       "index": 62,
@@ -1415,13 +1415,13 @@
       "codeHash": "0x9bf5e24cf1ea8a8734f3cf2aa23440c2b709f70ee159f0be3a41f6527348e45e"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xe439362df414ca6baa618e7480d09d955f0674987263bbdc917b7fcf7aa80726",
-      "block": 7682992,
-      "index": 36,
-      "timestamp": 1621845339
+      "kind": "config",
+      "tx": "0x6258faa53b91c7ab9226e0a237a89cf44ae432d8ec232a83555c67d5d0552a87",
+      "block": 7683065,
+      "index": 3,
+      "timestamp": 1621845561
     },
-    "claimsSha256": "5ea1e5fbe08e0975da8e87fad7982b701315a094f07b239f3d5748a33bc1e878"
+    "claimsSha256": "53a111dd5028b1e610cb878656a8bcd94cc96053fbd95a74cf3cd2027a81abe1"
   },
   {
     "id": "eip155:1:0xaa14164b3c0759274b9b430ffa88c56389aa6fd28602f3d8e81fcdd8365eb3cf",
@@ -1808,9 +1808,9 @@
     "chainId": 1,
     "tx": "0xcdd93e37ba2991ce02d8ca07bf6563bf5cd5ae801cbbce3dd0babb22e30b2dbe",
     "protocol": "BTC20",
-    "name": "BTC20 presale proxy claim exploit",
-    "summary": "The presale priced BTC20 from a manipulable Uniswap spot quote, allowing a flash-loan-funded price manipulation to buy the remaining presale inventory below its market value.",
-    "lossUsd": 30463.05222926348,
+    "name": "BTC20 presale dynamic-price manipulation",
+    "summary": "PresaleV4.buyWithEthDynamic priced BTC20 from the spot reserves of the BTC20/WETH Uniswap V2 pair. The attacker flash-borrowed BTC20 from V3 pools, dumped it into the V2 pair to crash the quote, bought the presale's remaining allocation for 12.19 ETH, and sold it back through the pools.",
+    "lossUsd": 96535.28,
     "codeAgeSeconds": 85596,
     "exploit": {
       "block": 17949215,
@@ -1829,7 +1829,7 @@
       "index": 25,
       "timestamp": 1692367295
     },
-    "claimsSha256": "25131b2dfea596a5992a2f22604726f3ea4a62595797403e5c5a022bc21d4a9e"
+    "claimsSha256": "dfa754f36e237fcd3c98c375409a77f69d122ed64262e9fafc0a051433acd9b5"
   },
   {
     "id": "eip155:56:0xeab946cfea49b240284d3baef24a4071313d76c39de2ee9ab00d957896a6c1c4",
@@ -5031,8 +5031,8 @@
     "tx": "0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a",
     "protocol": "ATM (0xa595)",
     "name": "ATM transfer-triggered fee auto-swap manipulation",
-    "summary": "ATM synchronously sold its own token inventory into the ATM/WBNB pair before each non-whitelisted transfer to that pair. The sell amount followed the triggering transfer, the threshold was zero, and both internal swaps accepted zero minimum output, so a flash-funded attacker repeatedly transferred ATM to the pair and skimmed it back to trigger 34 protocol dumps before unwinding against the depleted pool.",
-    "lossUsd": 230111.04687454784,
+    "summary": "ATM sold its own token inventory into the ATM/WBNB pair before each non-whitelisted transfer to the pair, sized by that transfer, with no threshold and zero minimum output. A flash-funded attacker repeatedly transferred ATM to the pair and skimmed it back, triggering dozens of protocol dumps, then unwound against the depleted pool.",
+    "lossUsd": 353930.29,
     "codeAgeSeconds": 807952,
     "exploit": {
       "block": 37483301,
@@ -5050,7 +5050,7 @@
       "index": 158,
       "timestamp": 1711179777
     },
-    "claimsSha256": "e24286405124b8016f57111e698f3e7db730f975994b257ca116ba4c398d151c"
+    "claimsSha256": "1cf5a232dbc8812f3f4841adcbbca2f9650449c176dd64cdbe5a5ff41664c9b3"
   },
   {
     "id": "eip155:56:0x50da0b1b6e34bce59769157df769eb45fa11efc7d0e292900d6b0a86ae66a2b3",
@@ -7801,8 +7801,8 @@
     "tx": "0x8f28a7f604f1b3890c2275eec54cd7deb40935183a856074c0a06e4b5f72f25a",
     "protocol": "Aperture Finance",
     "name": "Aperture Finance arbitrary call approval drain",
-    "summary": "The closed-source Aperture router forwarded caller-supplied call targets and calldata without validation, letting the attacker make the contract invoke ERC-20 transferFrom() and ERC-721 transfers against the standing token and Uniswap V3 position approvals users had granted it.",
-    "lossUsd": 3670000,
+    "summary": "Aperture's closed-source router executed a caller-supplied call target and calldata from its swap path without validation, so anyone could make it call ERC-20 transferFrom() or the Uniswap V3 position manager against the token and position approvals users had granted it, moving those assets to themselves.",
+    "lossUsd": 4082061.13,
     "codeAgeSeconds": 3534156,
     "exploit": {
       "block": 24313234,
@@ -7820,7 +7820,7 @@
       "index": 222,
       "timestamp": 1765826879
     },
-    "claimsSha256": "59ff9e1fe897b11786d1ce8b7aaf81e22c8d72f6764474935790cc50f76ac9b8"
+    "claimsSha256": "5bfc108ad405c4743272e78d72afabfbc303bc3743af170d403b1c4ccff809e5"
   },
   {
     "id": "eip155:1:0xa5fe9d044e4f3e5aa5bc4c0709333cd2190cba0f4e7f16bcf73f49f83e4a5460",
@@ -12398,9 +12398,9 @@
     "chainId": 1,
     "tx": "0x26a83db7e28838dd9fee6fb7314ae58dcc6aee9a20bf224c386ff5e80f7e4cf2",
     "protocol": "Abracadabra",
-    "name": "Abracadabra (CauldronV4)",
-    "summary": "CauldronV4 (yvcrvSTETH): rounding drift in userBorrowPart accounting exploited to zero out borrow shares.",
-    "lossUsd": 6500000,
+    "name": "Abracadabra CauldronV4 borrow-share rounding (yvCrv3Crypto and magicAPE cauldrons)",
+    "summary": "CauldronV4 rounds totalBorrow elastic/base conversions so repeated tiny borrow and repay calls skew the ratio once the debt is nearly cleared. The attacker repaid every borrower and called repayForAll, looped 1-wei borrow/repay until new borrows recorded zero borrow parts, then borrowed the cauldron's MIM against dust collateral.",
+    "lossUsd": 6720181.29,
     "codeAgeSeconds": 31517148,
     "exploit": {
       "block": 19118660,
@@ -12419,7 +12419,7 @@
       "index": 40,
       "timestamp": 1675092527
     },
-    "claimsSha256": "5517acc87a8b9c33c306a1ae115c55748710a0a880a457fc278869d6810025ac"
+    "claimsSha256": "4f8dde8e4447e8c94f38fcb65aa405968bd24036bd4a360dedbe4e28d94fff9a"
   },
   {
     "id": "eip155:56:0x3dcb26a1f49eb4d02ca29960b4833bfb2e83d7b5d9591aed1204168944c8c9b3",
@@ -14209,8 +14209,8 @@
     "tx": "0x8a8793963c0ef443b9a396665c3c185ded132d5f99daf7c99e87125597016e64",
     "protocol": "Ajna",
     "name": "Ajna ERC20Pool liquidation accounting campaign",
-    "summary": "Two Ajna ERC20Pool master lineages permitted a campaign-controlled borrower to compose drawDebt/addQuoteToken/kick with bucketTake/removeCollateral/take/settle/repay so that liquidation accounting released scarce quote assets without matching debt repayment. The violated invariant is that collateral or quote released during an auction must remain covered by repaid debt or equivalent scarce consideration. Eleven immutable pool clones were affected in one coordinated campaign. The legacy and newer masters have different runtimes but implement the same failure; the legacy lineage first reached in the campaign supplies its canonical curve knot while the later newer-lineage recurrence remains reviewed supporting evidence.",
-    "lossUsd": 734105.014815599,
+    "summary": "Ajna ERC20 pools let one actor control a borrower and the bucket deposit its liquidation settles against. Attackers drew debt and kicked their own loan, then settled the auction through bucketTake, take and repayDebt so the pledged collateral came back while the drawn quote stayed with them, leaving the debt to other lenders.",
+    "lossUsd": 791307.19,
     "codeAgeSeconds": 98920644,
     "exploit": {
       "block": 25854585,
@@ -14229,7 +14229,7 @@
       "index": 34,
       "timestamp": 1689009671
     },
-    "claimsSha256": "20eb071c02720c8dbb712385c8aad0af070a4a3395b0740f818c02b491641c07"
+    "claimsSha256": "9f7a35c6e074a04cf1b0ff66d80e3de2a3b6b7c33a8e092b518bfe54dd7c32f3"
   },
   {
     "id": "eip155:1:0xd55e43c1602b28d4fd4667ee445d570c8f298f5401cf04e62ec329759ecda95d",
@@ -14758,7 +14758,7 @@
     "protocol": "Alkemi",
     "name": "Alkemi Earn self-liquidation collateral inflation",
     "summary": "AlkemiEarn.liquidateBorrow() let a borrower liquidate their own position with the borrowed asset also serving as the collateral asset, crediting more supply than the repayment consumed, so a flash-loaned supply/borrow/self-liquidate/withdraw sequence walked out with more ETH than was deposited.",
-    "lossUsd": 89577.027033056,
+    "lossUsd": 111839.54,
     "codeAgeSeconds": 135273351,
     "exploit": {
       "block": 24626979,
@@ -14777,7 +14777,7 @@
       "index": 325,
       "timestamp": 1637871260
     },
-    "claimsSha256": "ebdb49a2165ecfe083d8746cad3249420a3c671abf979f4cf9b7e0dd9867fc24"
+    "claimsSha256": "b455a6cc9edb3324bbac56d0bba2150382a517ad7622f72881a387183699c4af"
   },
   {
     "id": "eip155:1:0xfdb93e00f3b1d24303db7f43eaa5ef50d3fde957ddeec7c0feb8c5497ba11182",
