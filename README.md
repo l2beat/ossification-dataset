@@ -14,6 +14,9 @@ research/queue.json                   leads and unfinished records awaiting rese
 research/excluded.json                leads outside the cohort, with reasons
 research/leads.json                   discovery leads mapped to the record that answers them
 scripts/derive.mjs                    derive and check one record's facts onchain
+scripts/resets.mjs                    every change before the exploit that could reset the age
+scripts/campaign.mjs                  earlier exploits and further campaign transactions
+scripts/loss.mjs                      gross victim depletion, priced
 scripts/build.mjs                     write dist/latest, deriving only changed claims
 scripts/check.mjs                     validate everything offline
 ```
@@ -24,8 +27,10 @@ scripts/check.mjs                     validate everything offline
 2. Write `incidents/<chainId>/<exploitTx>.json` for its earliest exploit:
    the summary, every target with its reset, the loss by asset, refs, and a
    note for each choice a reader could question.
-3. Run `npm run derive -- <file>` until it reports no failures, then
-   `npm run build` and `npm test`.
+3. Check it with the tools: `resets.mjs` for the latest reset,
+   `campaign.mjs` for the earliest exploit and the campaign, `loss.mjs` for
+   the loss. Run `npm run derive -- <file>` until it reports no failures,
+   then `npm run build` and `npm test`.
 4. Remove the lead from `research/queue.json`, point its entry in
    `research/leads.json` at the new id, and open a pull request.
 
@@ -38,6 +43,9 @@ archive node; without them a check is listed as unverified, not failed.
 ```bash
 npm test                      # offline: schema, research files, dist freshness
 npm run derive -- <file>      # onchain facts and contradictions for one record
+node scripts/resets.mjs <file> [--watch 0x..]
+node scripts/campaign.mjs <file> [--chains 1,56]
+node scripts/loss.mjs <file> [--victims 0x..] [--json]
 npm run build                 # update dist/latest
 npm run build -- --all        # re-derive every record
 ```

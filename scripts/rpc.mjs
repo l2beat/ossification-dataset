@@ -80,14 +80,14 @@ export async function callTrace(chainId, hash) {
     const flat = await rpc(chainId, 'trace_transaction', [hash]).catch(() => null)
     if (!Array.isArray(flat) || flat.length === 0) throw debugError
     const frames = new Map()
-    for (const { action = {}, result, type, traceAddress } of flat) {
-      const create = type === 'create'
-      frames.set(traceAddress.join(','), {
-        type: create ? String(action.creationMethod ?? 'create').toUpperCase() : String(action.callType ?? type).toUpperCase(),
-        from: action.from,
-        to: create ? result?.address : (action.to ?? action.address),
-        calls: [],
-      })
+    for (const { action: a = {}, result, type, traceAddress, error } of flat) {
+      const frame =
+        type === 'suicide'
+          ? { type: 'SELFDESTRUCT', from: a.address, to: a.refundAddress, value: a.balance }
+          : type === 'create'
+            ? { type: String(a.creationMethod ?? 'create').toUpperCase(), from: a.from, to: result?.address, value: a.value }
+            : { type: String(a.callType ?? type).toUpperCase(), from: a.from, to: a.to, value: a.value, input: a.input }
+      frames.set(traceAddress.join(','), { ...frame, ...(error ? { error } : {}), calls: [] })
     }
     for (const { traceAddress } of flat)
       if (traceAddress.length > 0)

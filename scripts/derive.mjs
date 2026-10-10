@@ -5,7 +5,7 @@
  * answer (traces, historical state) is listed as unverified; it never blocks
  * the age, which only needs transactions and block timestamps.
  *
- *   node scripts/derive.mjs incidents/1/<tx>.json [...]
+ *   node scripts/derive.mjs incidents/1/<tx>.json [...]   (any path ending in <chainId>/<tx>.json)
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -186,8 +186,8 @@ export async function derive(chainId, hash, record) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   for (const file of process.argv.slice(2)) {
-    const [chainId, name] = path.relative('incidents', file).split(path.sep)
-    const result = await derive(Number(chainId), path.basename(name, '.json'), JSON.parse(readFileSync(file, 'utf8')))
+    const chainId = Number(path.basename(path.dirname(path.resolve(file))))
+    const result = await derive(chainId, path.basename(file, '.json'), JSON.parse(readFileSync(file, 'utf8')))
     console.log(JSON.stringify({ file, ...result }, null, 2))
     if (result.report.failures.length) process.exitCode = 1
   }
