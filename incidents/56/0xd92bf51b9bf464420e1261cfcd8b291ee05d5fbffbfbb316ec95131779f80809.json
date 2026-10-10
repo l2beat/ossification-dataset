@@ -1,163 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd92bf51b9bf464420e1261cfcd8b291ee05d5fbffbfbb316ec95131779f80809",
-  "protocol": {
-    "name": "DDCoin",
-    "slug": "ddcoin"
-  },
+  "protocol": "DDCoin",
   "name": "DDCoin Marketplace sellItem pays the seller twice",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd92bf51b9bf464420e1261cfcd8b291ee05d5fbffbfbb316ec95131779f80809",
-      "blockNumber": 28714108,
-      "transactionIndex": 40,
-      "timestamp": 1685602814
-    },
-    "attackerAddresses": [
-      "0x0398ff1010193bfdab61d4e676d5e82d45bf1662",
-      "0x0a3fee894eb8fcb6f84460d5828d71be50612762",
-      "0x105e9b0266ae0ae670b7fe9af08cf32049f0dd21",
-      "0x2d9cb2b02870c6afcf457c14e38fbf8b74ead8d0",
-      "0xff35b6e50aa6ef37b897a7a91e2879a2d13d6960"
-    ]
-  },
   "summary": "Marketplace.sellItem transfers the sale amount of escrowed USDT to the seller and also calls usdt.approve(seller, amount), so the seller can pull the same amount again with transferFrom. The attacker placed buy orders from helper contracts to gain sell credit, then repeatedly filled the queued buy orders with cheaply bought DD and pulled each sale's USDT a second time.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 158100.0,
-      "valuationTimestamp": 1685602814,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-3"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "158100",
-        "usdValue": 158100.0,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1685602814,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Only the second, approval-based payout of each sale is counted; the first payout is the designed exchange for DD delivered to the order's buyer. The reported ~$300k is the attacker's total USDT receipt from the Marketplace.",
-    "realizedAt": 1685604611
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb3a636ac4c271e6cd962cad98eae9cf71f5a49c8",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xb3a636ac4c271e6cd962cad98eae9cf71f5a49c8",
-        "codeHash": "0x1d545295cabf3658325635a3dc0be4c47e549e1f7645dab24d7247443eab5fe8"
-      },
-      "deployment": {
-        "timestamp": 1685458228,
-        "blockNumber": 28665994,
-        "transactionHash": "0x847d0a4c41400aada06f3dc93612f09d2b8691a84fb050f039abe3d6a2fa8f49",
-        "transactionIndex": 76,
-        "creatorAddress": "0x53d0901023c1736c2ab8a8a0e7c676384c825d1e"
-      },
-      "ageReset": {
+      "address": "0xb3a636ac4c271e6cd962cad98eae9cf71f5a49c8",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable Marketplace runtime; owner setters only tune prices, limits and fees."
-      },
-      "codeAgeSeconds": 144586,
-      "failureModeId": "failure:ddcoin-marketplace-sellitem-double-payout",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x847d0a4c41400aada06f3dc93612f09d2b8691a84fb050f039abe3d6a2fa8f49"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd92bf51b9bf464420e1261cfcd8b291ee05d5fbffbfbb316ec95131779f80809"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0xd92bf51b9bf464420e1261cfcd8b291ee05d5fbffbfbb316ec95131779f80809",
-        "0x325c657b22c4ffabafd7628bb0e7bf88008adfa23ea69b5286a0d9b018bd83ea",
-        "0x9ba6723c2f529f3e5c1d7673da7258f24713330f6f51a6493d64a0f13e7ee75a",
-        "0x0df2eea85a150e5e039b5a8c0d2cfd6b4de59cb476a92238b74f243b03ecc22b"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:53:14Z",
-      "note": "Loss. For every transaction touching the Marketplace from its creation (block 28665994) to block 28900000 (2123 transactions), sum USDT 0x55d398326f99059ff775485246999027b3197955 Transfer logs out of the Marketplace and ItemSell(address,address,uint256,uint256) amounts. Ordinary sales pay out at most the sold amount (charge is 0). Exactly four transactions, all sent by 0x0a3fee894eb8fcb6f84460d5828d71be50612762 (source-2, blocks 28714108..28714707), pay out twice the sold amount: 132000 vs 66000, 42200 vs 21100, 103200 vs 51600 and 38800 vs 19400 USDT. The excess is 158100 USDT."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:53:14Z",
-      "note": "Root cause, anchor and age. Verified source (Etherscan V2 getsourcecode, Marketplace): sellItem executes usdt.approve(msg.sender, _amount) and usdt.transfer(msg.sender, _amount * (1000 - charge) / 1000) for the same sale; the DeFiHackLabs PoC (source-6) reproduces the loop of sellItem followed by transferFrom(Marketplace, attacker, allowance). Source-1 (block 28714108, index 40) is the attacker's first transaction with a double payout; its earlier successful call 0x309705a18353d36a333580488042ea00fdad391b5fd3e3194f1b5d4d0beeb829 pays nothing out. Age: eth_getCode is empty at block 28665993 and keccak256 of the runtime is the recorded hash at blocks 28665994 and 28714107; source-5 is a top-level creation by 0x53d0901023c1736c2ab8a8a0e7c676384c825d1e at index 76, which later only transferred ownership (block 28666166). The contract has no upgrade path."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x847d0a4c41400aada06f3dc93612f09d2b8691a84fb050f039abe3d6a2fa8f49"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-06/DDCoin_exp.sol"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 158100,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "158100",
+        "usd": 158100
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-06/DDCoin_exp.sol",
-    "seed:ddcoin:2023-06-01:ddcoin"
+  "refs": [
+    "eip155:56:0x325c657b22c4ffabafd7628bb0e7bf88008adfa23ea69b5286a0d9b018bd83ea",
+    "eip155:56:0x9ba6723c2f529f3e5c1d7673da7258f24713330f6f51a6493d64a0f13e7ee75a",
+    "eip155:56:0x0df2eea85a150e5e039b5a8c0d2cfd6b4de59cb476a92238b74f243b03ecc22b",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/DDCoin_exp.sol"
+  ],
+  "notes": [
+    "Immutable Marketplace runtime; owner setters only tune prices, limits and fees.",
+    "Only the second, approval-based payout of each sale is counted; the first payout is the designed exchange for DD delivered to the order's buyer. The reported ~$300k is the attacker's total USDT receipt from the Marketplace."
   ]
 }

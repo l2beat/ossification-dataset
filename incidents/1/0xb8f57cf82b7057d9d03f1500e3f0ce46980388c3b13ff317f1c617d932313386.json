@@ -1,193 +1,45 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xb8f57cf82b7057d9d03f1500e3f0ce46980388c3b13ff317f1c617d932313386",
-  "protocol": {
-    "name": "SushiSwap",
-    "slug": "sushiswap"
-  },
+  "protocol": "SushiSwap",
   "name": "SushiSwap RouteProcessor2 unvalidated route pool",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xb8f57cf82b7057d9d03f1500e3f0ce46980388c3b13ff317f1c617d932313386",
-      "blockNumber": 17007838,
-      "transactionIndex": 23,
-      "timestamp": 1681007711
-    },
-    "attackerAddresses": [
-      "0xfde0d1575ed8e06fbf36256bcdfa1f359281455a",
-      "0x719cdb61e217de6754ee8fc958f2866d61d565cf",
-      "0xc9c5b86993b1a72dca6082b2d34210afe19c7ccf",
-      "0xcff8bdf57f4e62c1d4f82420b8a1cad70d5bf383",
-      "0x869238b19ea39a1943ef8ebbc10f25682dc7c47a",
-      "0xc0ffeebabe5d496b2dde509f9fa189c25cf29671"
-    ]
-  },
   "summary": "RouteProcessor2.processRoute() never checked that the pool address encoded in the caller-supplied `route` was a genuine UniswapV3 pool. The router called swap() on that address and then trusted whoever called back into uniswapV3SwapCallback(), whose implementation transfers `tokenIn` from the address recorded in the router's transient `lastCalledPool`/msg.sender state instead of from the caller. An attacker-controlled contract posing as a pool could therefore make the router execute transferFrom against any wallet that had granted RouteProcessor2 an ERC20 allowance.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 3347028,
-      "valuationTimestamp": 1681007567,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "1800",
-        "usdValue": 3347028,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1681007567,
-          "unitPriceUsd": 1859.46,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The depleted assets were not protocol-held funds. RouteProcessor2 custodies nothing; every wei taken came out of an external wallet that had previously granted the router an ERC20 allowance. Reconstructed from WETH Transfer receipts rather than from the post-mortem estimate: across eleven successful transactions between blocks 17007838 and 17007856, exactly eighteen 100 WETH transferFrom calls left the single approving wallet 0x31d3243cfb54b34fc9c73e1cb1137124bd6b13e1 for eight different searcher contracts, totalling exactly 1800.000000000000000000 WETH. Ten transactions moved 100 WETH each; 0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32 batched eight callbacks for 800 WETH. Sweeping every WETH inflow of all eight receiving contracts over blocks 16990000-17020000 turns up no other victim wallet, so the campaign's gross depletion is exactly the 1800 WETH the post-mortem approximates. Financing, gas, builder payments and any later whitehat returns are not netted.",
-    "realizedAt": 1681007927
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x044b75f554b886a065b9567891e45c79542d7357",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x044b75f554b886a065b9567891e45c79542d7357",
-        "codeHash": "0xf9b86791ebacf39275775bec89c170be417ccc86a6b0d41bf020058f117337b8"
-      },
-      "deployment": {
-        "timestamp": 1680677219,
-        "blockNumber": 16980905,
-        "transactionHash": "0x9a89d2f5528bf07661e92f3f78a3311396f11f15da19e3ec4d880be1ad1a4bec",
-        "transactionIndex": 131,
-        "creatorAddress": "0xf87bc5535602077d340806d71f805ea9907a843d"
-      },
-      "ageReset": {
+      "address": "0x044b75f554b886a065b9567891e45c79542d7357",
+      "reset": {
         "kind": "deployment",
-        "description": "The non-upgradeable RouteProcessor2 runtime was installed by this direct CREATE and remained the exploit-executed code."
-      },
-      "codeAgeSeconds": 330492,
-      "failureModeId": "failure:routeprocessor2-unvalidated-v3-pool-callback",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4",
-          "source-8"
-        ]
+        "tx": "0x9a89d2f5528bf07661e92f3f78a3311396f11f15da19e3ec4d880be1ad1a4bec"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb8f57cf82b7057d9d03f1500e3f0ce46980388c3b13ff317f1c617d932313386"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://www.sushi.com/blog/routeprocessor2-post-mortem"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-04/Sushi_Router_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T12:57:26Z",
-      "note": "Reviewed the exploit receipt and call trace, RouteProcessor2 creation trace and historical runtime, Sushi's official post-mortem, and the commit-pinned reproduction. The exploit contract calls processRoute on 0x044b75f554b886a065b9567891e45c79542d7357 with an attacker-selected pool, then repeatedly calls the router's uniswapV3SwapCallback selector. The router directly executes the failure-bearing callback code and performs eight 100 WETH transferFrom calls against the approved wallet. The 11,861-byte direct runtime has hash 0xf9b86791ebacf39275775bec89c170be417ccc86a6b0d41bf020058f117337b8 both at deployment block 16980905 and immediately before the exploit; the exploit trace contains no delegatecall. The creation transaction is an EOA CREATE, and Sushi describes RouteProcessor2 as non-upgradeable, establishing deployment as the complete code-selection history."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9a89d2f5528bf07661e92f3f78a3311396f11f15da19e3ec4d880be1ad1a4bec"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1681007711/coingecko:ethereum",
-      "observedAt": 1787687969
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0xea3480f1f1d1f0b32283f8f282ce16403fe22ede35c0b71a732193e56c5c45e8",
-        "0x8e28bc58897f35e71b727f3066ae57b4d597014db6778bbf70838347c112e0e1",
-        "0x542838429f32b49d71264cc1036bb7cfd66824613ba0c437f7ce4269edb58f74",
-        "0x3610d3e3f2381c73f4bd128df9be90de87482802f30712dd555619b8bf3462a4",
-        "0x43ff7e01423044cfb501b4fe9ef1386725c0ddc117dadd6e6620cb68bdeaf4f9",
-        "0xbb9aac794415b2fbe2c947fe37ebb29c75526c150d33dd408ccddbcb52534828",
-        "0x6ac2d60c8f48144f2adb10ab161efdd491a791c6a666c450d4b33c6889fc0925",
-        "0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32",
-        "0x40be81f859227aa952e70fe1f5e8c84feed6aa3c2a4d6bf38125cd6bc222560a",
-        "0x11d069cbe4490cc483b1ae2e77c9c79493213347b42a8dec2ded25724e2f1835"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T20:33:40Z",
-      "note": "Re-review that re-anchored the record and rebuilt the loss from receipts. Anchor: the previously recorded anchor 0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32 sits at 17007842:0 and was sent by the searcher 0xc0ffeebabe5d496b2dde509f9fa189c25cf29671, but four blocks earlier 0xb8f57cf82b7057d9d03f1500e3f0ce46980388c3b13ff317f1c617d932313386 at 17007838:23, timestamp 1681007711, status 1, already runs the identical pattern: 0xfde0d1575ed8e06fbf36256bcdfa1f359281455a -> 0xd050e0a4838d74769228b49dff97241b4ef3805d -> RouteProcessor2.processRoute (0x2646478b) -> the fake pool's swap -> RouteProcessor2.uniswapV3SwapCallback (0xfa461e33) -> WETH.transferFrom of exactly 100e18 out of 0x31d3243cfb54b34fc9c73e1cb1137124bd6b13e1. That is the campaign's earliest successful defect-executing transaction, so it is now the anchor and codeAgeSeconds = 1681007711 - 1680677219 = 330492 (3.83 d). Code history unchanged and re-checked: the router's runtime hashes to 0xf9b86791ebacf39275775bec89c170be417ccc86a6b0d41bf020058f117337b8 in the pre-anchor state, the contract is a plain EOA CREATE at 16980905:131 by 0xf87bc5535602077d340806d71f805ea9907a843d, and it has no proxy or upgrade mechanism. Loss: enumerated every WETH Transfer out of the victim wallet over blocks 17000000-17030000, classified each by transaction target, and separated the victim's own processRoute swap at 17005308 and his CoW settlement at 17005318 from the exploit. Eleven exploit transactions between 17007838 and 17007856 move eighteen exact 100e18 WETH transfers, 1800 WETH in total, to eight searcher contracts; sweeping the WETH inflows of all eight over blocks 16990000-17020000 shows no second victim wallet. Valued at the DefiLlama ETH observation 1859.46 USD at 1681007567, giving 3347028 USD."
-    }
-  ],
-  "discovery": [
-    "seed:sushiswap:2023-04-09:sushiswap-routeprocessor2-unvalidated-route-pool",
-    "web:2023-04-09:sushiswap-routerprocessor2"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-8"
+  "loss": {
+    "usd": 3347028,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "1800",
+        "usd": 3347028
+      }
     ]
   },
+  "refs": [
+    "https://www.sushi.com/blog/routeprocessor2-post-mortem",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Sushi_Router_exp.sol",
+    "eip155:1:0xea3480f1f1d1f0b32283f8f282ce16403fe22ede35c0b71a732193e56c5c45e8",
+    "eip155:1:0x8e28bc58897f35e71b727f3066ae57b4d597014db6778bbf70838347c112e0e1",
+    "eip155:1:0x542838429f32b49d71264cc1036bb7cfd66824613ba0c437f7ce4269edb58f74",
+    "eip155:1:0x3610d3e3f2381c73f4bd128df9be90de87482802f30712dd555619b8bf3462a4",
+    "eip155:1:0x43ff7e01423044cfb501b4fe9ef1386725c0ddc117dadd6e6620cb68bdeaf4f9",
+    "eip155:1:0xbb9aac794415b2fbe2c947fe37ebb29c75526c150d33dd408ccddbcb52534828",
+    "eip155:1:0x6ac2d60c8f48144f2adb10ab161efdd491a791c6a666c450d4b33c6889fc0925",
+    "eip155:1:0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32",
+    "eip155:1:0x40be81f859227aa952e70fe1f5e8c84feed6aa3c2a4d6bf38125cd6bc222560a",
+    "eip155:1:0x11d069cbe4490cc483b1ae2e77c9c79493213347b42a8dec2ded25724e2f1835"
+  ],
   "notes": [
+    "The non-upgradeable RouteProcessor2 runtime was installed by this direct CREATE and remained the exploit-executed code.",
+    "The depleted assets were not protocol-held funds. RouteProcessor2 custodies nothing; every wei taken came out of an external wallet that had previously granted the router an ERC20 allowance. Reconstructed from WETH Transfer receipts rather than from the post-mortem estimate: across eleven successful transactions between blocks 17007838 and 17007856, exactly eighteen 100 WETH transferFrom calls left the single approving wallet 0x31d3243cfb54b34fc9c73e1cb1137124bd6b13e1 for eight different searcher contracts, totalling exactly 1800.000000000000000000 WETH. Ten transactions moved 100 WETH each; 0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32 batched eight callbacks for 800 WETH. Sweeping every WETH inflow of all eight receiving contracts over blocks 16990000-17020000 turns up no other victim wallet, so the campaign's gross depletion is exactly the 1800 WETH the post-mortem approximates. Financing, gas, builder payments and any later whitehat returns are not netted.",
     "The same defect was exploited against RouteProcessor2 deployments on other chains on the same day; those are separate deployments and separate campaigns."
   ]
 }

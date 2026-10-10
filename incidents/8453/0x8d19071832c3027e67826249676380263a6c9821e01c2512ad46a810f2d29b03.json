@@ -1,150 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x8d19071832c3027e67826249676380263a6c9821e01c2512ad46a810f2d29b03",
-  "protocol": {
-    "name": "Leetswap",
-    "slug": "leetswap"
-  },
+  "protocol": "Leetswap",
   "name": "LeetSwap WETH/DEBASED pair fee-transfer drain",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x8d19071832c3027e67826249676380263a6c9821e01c2512ad46a810f2d29b03",
-      "blockNumber": 2031881,
-      "transactionIndex": 1,
-      "timestamp": 1690853109
-    },
-    "attackerAddresses": [
-      "0x705f736145bb9d4a4a186f4595907b60815085c3",
-      "0xea8f89f47f3d4293897b4fe8cb69b5c233b9f560"
-    ]
-  },
   "summary": "LeetSwapV2Pair exposed its fee-transfer helper publicly without caller, token, or amount authorization. An unprivileged caller could move a pair's counterpart-token balance into its fees contract, synchronize the depleted reserve, and drain WETH through the resulting reserve distortion.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 36072.35793113945,
-      "valuationTimestamp": 1690853109,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x4200000000000000000000000000000000000006",
-          "symbol": "WETH"
-        },
-        "amount": "19.362407035463818643",
-        "usdValue": 36072.35793113945,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1690853109,
-          "unitPriceUsd": 1863.01,
-          "sourceIds": [
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The pair sent 19.363407035463818643 WETH to the attack helper. Excluding the helper's identifiable 0.001 WETH setup-swap input leaves exact pre-recovery victim depletion of 19.362407035463818643 WETH, valued at DefiLlama's nearest observation of $1,863.01. The public fee-transfer call also moved the counterpart token into the pair's fees contract; that internal transfer is excluded because claim allocation and recoverability cannot be isolated from the receipts, so no speculative counterpart-token value is assigned."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5744b56c440700830fe8bcea1098a07244523068",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5744b56c440700830fe8bcea1098a07244523068",
-        "codeHash": "0xa692b7d0ee2687bded4ed271372210e762f8bb92331b7cc55088f73293a564ac"
-      },
-      "deployment": {
-        "timestamp": 1690747935,
-        "blockNumber": 1979294,
-        "transactionHash": "0xdbb84cf884281fb50eb7708ba33f5f1156eca9afbb758572427f1281b285b859",
-        "transactionIndex": 7,
-        "creatorAddress": "0x169c06b4cfb09bfd73a81e6f2bb1eb514d75bb19"
-      },
-      "ageReset": {
+      "address": "0x5744b56c440700830fe8bcea1098a07244523068",
+      "reset": {
         "kind": "deployment",
-        "description": "LeetSwap factory CREATE2 deployment of this immutable-bearing pair runtime. Archival code is absent in block 1979293 and hashes to 0xa692b7d0ee2687bded4ed271372210e762f8bb92331b7cc55088f73293a564ac at deployment and immediately before the incident; the pair has no proxy code-selection path."
-      },
-      "codeAgeSeconds": 105174,
-      "failureModeId": "failure:leetswap-pair-public-fee-transfer",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xdbb84cf884281fb50eb7708ba33f5f1156eca9afbb758572427f1281b285b859"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x8d19071832c3027e67826249676380263a6c9821e01c2512ad46a810f2d29b03"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-08/Leetswap_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1690853109/coingecko:ethereum",
-      "observedAt": 1787656423
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T10:57:08Z",
-      "note": "Campaign boundary: calldata enumeration of the original EOA's successful transactions shows 0x8d19071832c3027e67826249676380263a6c9821e01c2512ad46a810f2d29b03 is the sole defect-executing drain transaction against pair 0x5744b56c440700830fe8bcea1098a07244523068; other LeetSwap pair deployments are separate records with separate losses and ages. Verified LeetSwapV2Pair source exposes _transferFeesSupportingTaxTokens(address,uint256) as a public function with no caller, token, or amount authorization. The transaction trace calls it for the counterpart-token balance, calls sync(), and then swaps the setup tokens for WETH at the corrupted reserves. Code history: factory 0x169c06b4cfb09bfd73a81e6f2bb1eb514d75bb19 CREATE2-deployed the pair in 0xdbb84cf884281fb50eb7708ba33f5f1156eca9afbb758572427f1281b285b859 at block 1979294:7; archival code is empty in the preceding block and the immutable-bearing direct runtime hashes to 0xa692b7d0ee2687bded4ed271372210e762f8bb92331b7cc55088f73293a564ac at creation and before the anchor. Loss: receipt Transfer logs show exactly 19.363407035463818643 WETH leaving this pair for helper 0xea8f89f47f3d4293897b4fe8cb69b5c233b9f560. The counterpart-token transfer goes to the pair's own fees contract and is not valued because its claim allocation/recoverability is not isolated."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xdbb84cf884281fb50eb7708ba33f5f1156eca9afbb758572427f1281b285b859"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 36072.35793113945,
+    "assets": [
+      {
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "19.362407035463818643",
+        "usd": 36072.35793113945
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-08/Leetswap_exp.sol"
+  ],
   "notes": [
+    "LeetSwap factory CREATE2 deployment of this immutable-bearing pair runtime. Archival code is absent in block 1979293 and hashes to 0xa692b7d0ee2687bded4ed271372210e762f8bb92331b7cc55088f73293a564ac at deployment and immediately before the incident; the pair has no proxy code-selection path.",
+    "The pair sent 19.363407035463818643 WETH to the attack helper. Excluding the helper's identifiable 0.001 WETH setup-swap input leaves exact pre-recovery victim depletion of 19.362407035463818643 WETH, valued at DefiLlama's nearest observation of $1,863.01. The public fee-transfer call also moved the counterpart token into the pair's fees contract; that internal transfer is excluded because claim allocation and recoverability cannot be isolated from the receipts, so no speculative counterpart-token value is assigned.",
     "This pair-specific record is part of a coordinated same-attacker LeetSwap umbrella. Loss is partitioned by pair deployment and is not duplicated across sibling records."
   ]
 }

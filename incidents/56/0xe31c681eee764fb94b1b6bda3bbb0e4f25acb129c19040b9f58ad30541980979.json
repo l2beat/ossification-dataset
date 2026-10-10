@@ -1,182 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xe31c681eee764fb94b1b6bda3bbb0e4f25acb129c19040b9f58ad30541980979",
-  "protocol": {
-    "name": "BYToken",
-    "slug": "bytoken"
-  },
+  "protocol": "BYToken",
   "name": "BYToken permissionless auto-burn of the pair reserve",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xe31c681eee764fb94b1b6bda3bbb0e4f25acb129c19040b9f58ad30541980979",
-      "blockNumber": 102329719,
-      "transactionIndex": 17,
-      "timestamp": 1780605489
-    },
-    "attackerAddresses": [
-      "0x047547a4fa4a67c1032d249b49ec1a79c0460bad",
-      "0xc08106a36bfa9cfad264f0d64fc45b93543485ec"
-    ]
-  },
   "summary": "BYToken._autoBurn, callable by anyone through triggerAutoBurn(), burns DAILY_BURN_RATE of totalSupply (1% per elapsed interval) from the pool address whenever the token contract holds too little BY, then calls pair.sync(). The amount is independent of the pair's own reserve, so a caller who first shrinks the pair's BY reserve can have the burn remove all but 1 wei of it. With a flash-borrowed 422,497 WBNB the attacker bought 6.31M BY to the router (the from == pool && to == router liquidity-removal branch skips the trading gate), donated WBNB and synced to reach the 40,000 WBNB auto-enable threshold, bought exactly 62,868 BY so 67,800 BY + 1 wei remained, called triggerAutoBurn() the second the first interval elapsed, then sold dust BY for the pair's entire 146.6 WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 88566.56515931265,
-      "valuationTimestamp": 1780605489,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "146.602850775618057369",
-        "usdValue": 88566.56515931265,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1780605481,
-          "unitPriceUsd": 604.1258044488342,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact WBNB depletion of BY/WBNB PancakeSwap pair 0x1f358e18e0db68ff33c2319c8dad328edf9b7059, whose liquidity the deployer seeded before trading opened: WBNB balanceOf(pair) 146602850775618057371 at block 102329718 and 2 at block 102329719, equal to the attacker contract's net WBNB gain (withdrawn in receipt log 60). The 422,497 WBNB flash loan and every WBNB swap and donation leg are attacker inputs returned within the transaction and are netted out. The pair's BY loss (6,441,732.97 to 62,868 BY, 67,800 BY burned) is not added: it is the same liquidity already realised as WBNB. The 7 BNB builder payment is not deducted. Later pair activity is dust trading; no second AutoBurn exists."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6f50cffecd4e00ecf7e442774c08c089450b62ca",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x6f50cffecd4e00ecf7e442774c08c089450b62ca",
+      "reset": {
+        "kind": "config",
+        "tx": "0x9cb08261a5e9053bda8211130e64e9093a6fcd19b06890444ed334475859d7d9",
         "address": "0x6f50cffecd4e00ecf7e442774c08c089450b62ca",
-        "codeHash": "0x3b67c25f6261ce39f36f0b521f9deadc07350eb321883ccaba79e45798e3b229"
-      },
-      "deployment": {
-        "timestamp": 1780519089,
-        "blockNumber": 102137979,
-        "transactionHash": "0xf961d6266aac7fcd7d595ab0d96721c03fc8b09f2726d477cd5508af9e3ac09c",
-        "transactionIndex": 35,
-        "creatorAddress": "0xa1819e27da8e69b1126aa9766f8ae649bc0ddba6"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1780519167,
-        "blockNumber": 102138152,
-        "transactionHash": "0x9cb08261a5e9053bda8211130e64e9093a6fcd19b06890444ed334475859d7d9",
-        "transactionIndex": 59,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x6f50cffecd4e00ecf7e442774c08c089450b62ca",
-          "callData": "0x16f0115b",
-          "valueBefore": "0x000000000000000000000000a1819e27da8e69b1126aa9766f8ae649bc0ddba6",
-          "valueAfter": "0x0000000000000000000000001f358e18e0db68ff33c2319c8dad328edf9b7059"
-        },
-        "description": "setPool(0x1f358e18e0db68ff33c2319c8dad328edf9b7059) by the admin replaced the constructor placeholder pool (the deployer EOA) with the BY/WBNB pair. The pool pointer is what _autoBurn burns from and syncs, and what the from == pool && to == router gate bypass keys on, so the exploitable burn-the-pair-reserve condition came into existence with this write; pool() changes from the deployer to the pair across block 102138152."
-      },
-      "codeAgeSeconds": 86322,
-      "failureModeId": "failure:bytoken-autoburn-pair-reserve-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "call": "0x16f0115b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe31c681eee764fb94b1b6bda3bbb0e4f25acb129c19040b9f58ad30541980979"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://hacked.slowmist.io/?c=BSC"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-06/BYToken_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Verified source: Etherscan V2 contract.getsourcecode chainid=56 for 0x6f50cffecd4e00ecf7e442774c08c089450b62ca, BYToken, v0.8.20+commit.a1b79de6, optimizer 1 run, file contracts/core/BYToken.sol: _autoBurn computes burnAmount = totalSupply * DAILY_BURN_RATE * intervalsPassed / 10000, takes the shortfall over balanceOf(this) from pool via _burn(pool, remaining) and IUniswapV2Pair(pool).sync(); triggerAutoBurn() calls _autoBurn(true) with no access control; _transferWithTax returns early with a plain transfer when from == pool && to == router, before the tradingEnabled gate; _checkAndEnableTrading enables trading once the pair's stored WBNB reserve >= TRADING_ENABLE_BNB_THRESHOLD. View calls at block 102329718: tradingEnabled false, lastBurnTimestamp 1780519089, BURN_INTERVAL 86400, DAILY_BURN_RATE 100, TRADING_ENABLE_BNB_THRESHOLD 40000e18, totalSupply 6780000e18, balanceOf(token) 0, taxExempt(router) false, pair token0 = BY, reserves 6441732971510890055395186 BY / 146602850775618057371 WBNB. Receipt of source-1 (status 1): log 13 flash 422497.064287754654 WBNB (0x59779c9b8c5441a338af) from 0x8f73b65b; log 15 pair sends 6311064.97 BY (0x5386b848415deec8ce777) to router 0x10ed43c7 during a 7098.44 WBNB buy; log 18 32754.96 WBNB donation, log 19 Sync reserve1 = 40000e18; log 21 TradingEnabled, log 22 62868 BY to the attacker contract, log 23 Sync reserve0 = 67800e18 + 1 after a 37183.22 WBNB buy (log 20); debug_traceTransaction(callTracer) shows the attacker contract calling triggerAutoBurn() (0xec5f265b); log 25 Transfer pair -> 0x0 of 67800e18 BY, log 26 Sync reserve0 = 1, log 27 AutoBurn(67800e18, 6712200e18); logs 29-58 six sells (five 1-wei) drain the pair WBNB to 2 wei; log 59 repays the flash loan. Earliest exercise: the first pool burn was possible only at lastBurnTimestamp + BURN_INTERVAL = 1780605489, the exploit block's timestamp; paginated Etherscan V2 logs.getLogs for the token, blocks 0..999999999 (2465 unique logs to block 124545224), contain exactly one AutoBurn (0x95954142) and one TradingEnabled (0x79966345), both in source-1. Identity: eth_getCode empty at block 102137978; keccak256(eth_getCode) = 0x3b67c25f6261ce39f36f0b521f9deadc07350eb321883ccaba79e45798e3b229 at 102137979 and 102329718; creation receipt source-5 (block 102137979, index 35) from 0xa1819e27da8e69b1126aa9766f8ae649bc0ddba6, to null. No DELEGATECALL or SELFDESTRUCT in the runtime and the EIP-1967 slot is 0. Age: Etherscan V2 account.txlist for the token (44 transactions) holds 17 admin transactions from the deployer, blocks 102137979..102138602: creation, setTaxDistributor, 5 setTaxExempt, setPool (source-8), 3 distribute, 4 grantRole, 3 revokeRole; the rest are holder approve calls. setPool emits no event; eth_call pool() (0x16f0115b) returns the deployer 0xa1819e27 at blocks 102137979 and 102138151 and the pair 0x1f358e18 at 102138152, where source-8 (index 59, calldata 0x4437152a + pair) succeeds. The pair was created by the deployer through PancakeFactory 0xca143ce32fe78f1f7019d7d551a6402fc5350c73 at block 102138116 (0x26b9943307dfd0e817838d79476aafc283337f8ab2dc687c3acb8266a15779c4, Etherscan getcontractcreation). Before setPool, the pool burn would target the deployer EOA and sync() on it reverts, so the reset is setPool; the later role grants/revokes and earlier tax-exempt writes are not used by the exploit (router remains non-exempt). Router, thresholds, rate and interval are constructor values or immutables. Attacker EOA was funded at block 97888745 by 0xe2d60cfe..., with no transaction with the deployer.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:43:21Z"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf961d6266aac7fcd7d595ab0d96721c03fc8b09f2726d477cd5508af9e3ac09c"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed loss. eth_call WBNB 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c balanceOf(pair 0x1f358e18e0db68ff33c2319c8dad328edf9b7059) = 146602850775618057371 at block 102329718 and 2 at block 102329719; getReserves agrees (146602850775618057371 before, 2 after). Depletion 146602850775618057369 wei equals receipt log 60 WBNB Withdrawal by the attacker contract (0x7f285f40b94507499) after log 59 repays the flash loan in full (0x59779c9b8c5441a338af). The callTracer top-level frame then sends 7 BNB (0x6124fee993bc0000) to 0x4848489f0b2bedd788c696e2d79b6b69d7484848, a builder payment not deducted. Etherscan V2 account.tokentx for the pair's WBNB after block 102329719 shows only dust swaps; the token's single AutoBurn is in source-1.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:43:21Z"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1780605489/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790620871
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x9cb08261a5e9053bda8211130e64e9093a6fcd19b06890444ed334475859d7d9"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-6"
+  "loss": {
+    "usd": 88566.56515931265,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "146.602850775618057369",
+        "usd": 88566.56515931265
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2026-06/BYToken_exp.sol",
-    "seed:bytoken:2026-06-04:bytoken-permissionless-triggerautoburn",
-    "web:2026-06-04:bytoken"
+  "refs": [
+    "https://hacked.slowmist.io/?c=BSC",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/BYToken_exp.sol"
+  ],
+  "notes": [
+    "setPool(0x1f358e18e0db68ff33c2319c8dad328edf9b7059) by the admin replaced the constructor placeholder pool (the deployer EOA) with the BY/WBNB pair. The pool pointer is what _autoBurn burns from and syncs, and what the from == pool && to == router gate bypass keys on, so the exploitable burn-the-pair-reserve condition came into existence with this write; pool() changes from the deployer to the pair across block 102138152.",
+    "Exact WBNB depletion of BY/WBNB PancakeSwap pair 0x1f358e18e0db68ff33c2319c8dad328edf9b7059, whose liquidity the deployer seeded before trading opened: WBNB balanceOf(pair) 146602850775618057371 at block 102329718 and 2 at block 102329719, equal to the attacker contract's net WBNB gain (withdrawn in receipt log 60). The 422,497 WBNB flash loan and every WBNB swap and donation leg are attacker inputs returned within the transaction and are netted out. The pair's BY loss (6,441,732.97 to 62,868 BY, 67,800 BY burned) is not added: it is the same liquidity already realised as WBNB. The 7 BNB builder payment is not deducted. Later pair activity is dust trading; no second AutoBurn exists."
   ]
 }

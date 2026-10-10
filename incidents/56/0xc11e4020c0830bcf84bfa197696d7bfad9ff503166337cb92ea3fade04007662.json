@@ -1,148 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xc11e4020c0830bcf84bfa197696d7bfad9ff503166337cb92ea3fade04007662",
-  "protocol": {
-    "name": "BH",
-    "slug": "bh"
-  },
+  "protocol": "BH",
   "name": "BH farm redeems LP from the pair's spot token balances",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xc11e4020c0830bcf84bfa197696d7bfad9ff503166337cb92ea3fade04007662",
-      "blockNumber": 32512074,
-      "transactionIndex": 119,
-      "timestamp": 1697033673
-    },
-    "attackerAddresses": [
-      "0xfdbfceea1de360364084a6f37c9cdb7aaea63464",
-      "0x216ccfd4fb3f2267677598f96ef1ff151576480c"
-    ]
-  },
   "summary": "The BH farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a holds the protocol's whole BUSDT/BH PancakeSwap LP position and lets anyone redeem it by burning BH. Its withdraw function 0x4e290832(uint256 bhAmount) burns the caller's BH and then computes the LP it removes as bhAmount * sqrt(BUSDT.balanceOf(pair) * BH.balanceOf(pair)) / BH.balanceOf(pair), i.e. it derives the redemption share from the pair's live token balances instead of from its own share ledger. Both balances are freely movable by the caller inside the same transaction. The attacker pushed 22,000,000 flash-loaned BUSDT through the pair, cutting BH.balanceOf(pair) from 251,272,454 to 42,011,431 and raising BUSDT.balanceOf(pair) from 4,405,698 to 26,405,698, and then called the withdraw function ten times, each time redeeming ~55% of the whole LP position for BH that was worth a fraction of it, until the pair held 47,126 BUSDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1346340.8223597505,
-      "valuationTimestamp": 1697033673,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "BUSDT"
-        },
-        "amount": "1346340.822359750672220700",
-        "usdValue": 1346340.8223597505,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1697033673,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The BUSDT/BH PancakeSwap pair 0x2371e4ad771020ce3d8252f1db3e5559fba8eeb5 holds 1393467.010169397021655925 BUSDT at block 32512073 and 47126.187809646349435225 BUSDT at block 32512074; the 1346340.822359750672220700 BUSDT difference is the loss, and the farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a held 13628344.132032127262454971 of the pair's 13630848.563049281529836047 LP tokens (99.98%) before the exploit. The outflow reconciles exactly: 1275981.822359750672220700 BUSDT to the attacker EOA 0xfdbfceea1de360364084a6f37c9cdb7aaea63464, 60000 BUSDT of PancakeSwap V2 flash-swap fee to 0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae, 9000 BUSDT of PancakeSwap V3 flash fee to 0x4f31fa980a675570939b737ebdde0471a4be40eb, and 1359 BUSDT to the project's own fee contract 0xc9fc938bcf691affa79c9fec3d1719f6297fa20e. The widely reported ~$1.27M is the attacker EOA's net take alone. All of it is in the single exploit transaction; the DODO flash loans that funded it were repaid interest-free in the same transaction. BUSDT (BSC-USD) is valued at par; DefiLlama has no bsc:0x55d398326f99059ff775485246999027b3197955 observation at this timestamp and prices Tether at 0.999384 at the nearest observation 1697033700. The residual BH left in the pair is not counted. Nothing was recovered."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8ca7835aa30b025b38a59309dd1479d2f452623a",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8ca7835aa30b025b38a59309dd1479d2f452623a",
-        "codeHash": "0xfe857864a02bd86364010f1c788ca2fe8bce86c8140f0ca5478d99fcb2b33065"
-      },
-      "deployment": {
-        "timestamp": 1696517348,
-        "blockNumber": 32340670,
-        "transactionHash": "0xfba0cb958d30113aa8e03f9082df2834c19713b56de5297ceec61cba8c6f3c85",
-        "transactionIndex": 91,
-        "creatorAddress": "0x59a8082bc047de76209ca00d2e2c1856aaf791b5"
-      },
-      "ageReset": {
+      "address": "0x8ca7835aa30b025b38a59309dd1479d2f452623a",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-upgradeable contract created directly by an EOA. Its runtime code hash is 0xfe857864a02bd86364010f1c788ca2fe8bce86c8140f0ca5478d99fcb2b33065 both at the creation block 32340670 and at block 32512073, the address has no code at block 32340669, and its EIP-1967 implementation and beacon slots and its EIP-1822 proxiable slot all read zero at block 32512073, so no code change occurred between deployment and the exploit."
-      },
-      "codeAgeSeconds": 516325,
-      "failureModeId": "failure:bh-farm-lp-redemption-from-spot-pair-balances",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0xfba0cb958d30113aa8e03f9082df2834c19713b56de5297ceec61cba8c6f3c85"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc11e4020c0830bcf84bfa197696d7bfad9ff503166337cb92ea3fade04007662"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-10/BH_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xfba0cb958d30113aa8e03f9082df2834c19713b56de5297ceec61cba8c6f3c85"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1697033673/coingecko:tether",
-      "observedAt": 1787647058
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T11:30:00Z",
-      "note": "Triaged as a code bug, not price manipulation. The BH token 0xcc61cc9f2632314c9d452aca79104ddf680952b5, which DeFiHackLabs and the v1 snapshot named as the vulnerable contract, is verified on BscScan as a plain whitelist-gated ERC20 with no transfer hook, rebase, or reserve mutation, so the target was moved to the unverified farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a that the exploit actually calls. The farm's withdraw function, selector 0x4e290832, was reconstructed from the trace: it pulls and burns the caller's BH, reads BH.balanceOf(pair) and BUSDT.balanceOf(pair), and approves the router for lp = bhAmount * isqrt(usdtPair * bhPair) / bhPair before calling removeLiquidity. That formula reproduces the LP approval of all ten withdrawals in the exploit transaction to within 1 wei (18318725611309696944043921, 9225736686047882643896757, 4646093653388051077919827, 2339677337207703728875049, 1178162180518183807884828, 593246636011152523499720, 298707815015966968045519, 150396931960313578836273, 75720322755522345345574, 38121240148200729068425), so the redemption share is computed from spot balances the caller moves in the same transaction rather than from a share ledger; the attacker's 22,000,000 BUSDT swap is the manipulation input, not the defect. The pair 0x2371e4ad771020ce3d8252f1db3e5559fba8eeb5 is not on the BH whitelist, which is why the attacker had to route the swapped BH to the project contract 0x5b9dd1de70320b1ea6c8bbeba12bf4e246227999. Anchor kept: the attacker EOA's five earlier successful transactions (0x2766b931, 0xf3cef757, 0x4be97271, 0x76d1f27e, 0xf8eb8058) never touch 0x8ca7835a, so 0xc11e4020 is the first and only transaction that executes the defect. The farm is not a proxy: EIP-1967 implementation and beacon slots and the EIP-1822 slot are zero at block 32512073, the address is empty at block 32340669, and the runtime code hash is 0xfe857864a02bd86364010f1c788ca2fe8bce86c8140f0ca5478d99fcb2b33065 at both its creation block 32340670 and block 32512073, giving a code age of 516325s (5d 23h 25m 25s). Its creator 0x59a8082bc047de76209ca00d2e2c1856aaf791b5 is the BH project deployer, which also deployed the token and the pair, and is not an attacker address. Loss is the pair's BUSDT balance delta across the exploit block, 1346340.822359750672220700 BUSDT, which reconciles exactly against the attacker EOA's 1275981.822359750672220700 BUSDT, 69000 BUSDT of flash-loan fees, and 1359 BUSDT to the project fee contract 0xc9fc938bcf691affa79c9fec3d1719f6297fa20e."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 1346340.8223597505,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "BUSDT",
+        "amount": "1346340.822359750672220700",
+        "usd": 1346340.8223597505
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-10/BH_exp.sol"
+  ],
   "notes": [
+    "Non-upgradeable contract created directly by an EOA. Its runtime code hash is 0xfe857864a02bd86364010f1c788ca2fe8bce86c8140f0ca5478d99fcb2b33065 both at the creation block 32340670 and at block 32512073, the address has no code at block 32340669, and its EIP-1967 implementation and beacon slots and its EIP-1822 proxiable slot all read zero at block 32512073, so no code change occurred between deployment and the exploit.",
+    "The BUSDT/BH PancakeSwap pair 0x2371e4ad771020ce3d8252f1db3e5559fba8eeb5 holds 1393467.010169397021655925 BUSDT at block 32512073 and 47126.187809646349435225 BUSDT at block 32512074; the 1346340.822359750672220700 BUSDT difference is the loss, and the farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a held 13628344.132032127262454971 of the pair's 13630848.563049281529836047 LP tokens (99.98%) before the exploit. The outflow reconciles exactly: 1275981.822359750672220700 BUSDT to the attacker EOA 0xfdbfceea1de360364084a6f37c9cdb7aaea63464, 60000 BUSDT of PancakeSwap V2 flash-swap fee to 0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae, 9000 BUSDT of PancakeSwap V3 flash fee to 0x4f31fa980a675570939b737ebdde0471a4be40eb, and 1359 BUSDT to the project's own fee contract 0xc9fc938bcf691affa79c9fec3d1719f6297fa20e. The widely reported ~$1.27M is the attacker EOA's net take alone. All of it is in the single exploit transaction; the DODO flash loans that funded it were repaid interest-free in the same transaction. BUSDT (BSC-USD) is valued at par; DefiLlama has no bsc:0x55d398326f99059ff775485246999027b3197955 observation at this timestamp and prices Tether at 0.999384 at the nearest observation 1697033700. The residual BH left in the pair is not counted. Nothing was recovered.",
     "The farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a is not source-verified on BscScan; the defect was established from the execution trace and reproduced arithmetically against every withdrawal in the exploit transaction."
   ]
 }

@@ -1,183 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x16a99aef4fab36c84ba4616668a03a5b37caa12e2fc48923dba4e711d2094699",
-  "protocol": {
-    "name": "Nalakuvara",
-    "slug": "nalakuvara"
-  },
+  "protocol": "Nalakuvara",
   "name": "LotteryTicketSwap50 live-reserve redemption misprices LP",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x16a99aef4fab36c84ba4616668a03a5b37caa12e2fc48923dba4e711d2094699",
-      "blockNumber": 30001613,
-      "transactionIndex": 25,
-      "timestamp": 1746792573
-    },
-    "attackerAddresses": [
-      "0x3026c464d3bd6ef0ced0d49e80f171b58176ce32",
-      "0x080a4047f76afff8e5efc53349c567f595aa770a"
-    ]
-  },
   "summary": "LotteryTicketSwap50 sized each ticket redemption's LP burn from the NATA/USDC pair's live reserves. A flash-financed reserve skew let one helper mint 2,600 tickets and redeem them in 130 calls while destroying too much protocol-owned LP, depleting the protocol entity's native Base USDC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 107214.21012,
-      "valuationTimestamp": 1746792544,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-          "symbol": "USDC"
-        },
-        "amount": "107220",
-        "usdValue": 107214.21012,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1746792544,
-          "unitPriceUsd": 0.999946,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The victim entity is LotteryTicketSwap50 0x172119155a48de766b126de95c2cb331d3a5c7c2, its NATA/USDC pair 0xadcaab077f636d74fd50fda7f44ad41e20a21fee and the owner/deployer's LP position. At anchor-1 the pair had 170.154260915765325861 LP outstanding: 99.415567080707983861 (58.42672792%) held by LotteryTicketSwap50 and 70.738693835057341000 (41.57327207%) held by its owner/deployer 0x66d9748e58f3bbfb4e400b3c6991bd578dabbeb2. Exhaustive LP Transfer history leaves no external holder. The pair sent 3037219.668858 and received 2929805 USDC, losing 107414.668858, while the swap contract received 259219.668858 and sent 259025, recovering 194.668858 internally. Entity loss is therefore exactly 107220 USDC: 105470 reached the attacker EOA and 1750 was the fee paid to external Uniswap V3 WETH/USDC 0.05% pool 0xd0b53d9277642d899df5c87a3966a349a798f224. Archive USDC balances agree: pair 291143.873072 -> 183729.204214 and swap 413.324943 -> 607.993801. Base USDC returns name USD Coin, symbol USDC and 6 decimals at anchor-1. DefiLlama observed $0.999946 29 seconds before the receipt; exact decimal multiplication is $107214.21012."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x172119155a48de766b126de95c2cb331d3a5c7c2",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x172119155a48de766b126de95c2cb331d3a5c7c2",
+      "reset": {
+        "kind": "config",
+        "tx": "0xe845313d3fb267bfa9c8b63ce370d69353c7c935aebc4c7819a8936c0a3f5978",
         "address": "0x172119155a48de766b126de95c2cb331d3a5c7c2",
-        "codeHash": "0xcc7e2d4c47247e5d62c1182d8fbd4a5c1227ad032974dff936600c5eed560bf1"
-      },
-      "deployment": {
-        "timestamp": 1746713359,
-        "blockNumber": 29962006,
-        "transactionHash": "0xbbcb936486398ce590212bb4fe09f043a0063245089564abc0274e915a44a3f5",
-        "transactionIndex": 68,
-        "creatorAddress": "0x66d9748e58f3bbfb4e400b3c6991bd578dabbeb2"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1746713941,
-        "blockNumber": 29962297,
-        "transactionHash": "0xe845313d3fb267bfa9c8b63ce370d69353c7c935aebc4c7819a8936c0a3f5978",
-        "transactionIndex": 53,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x172119155a48de766b126de95c2cb331d3a5c7c2",
-          "storageSlot": "0x000000000000000000000000000000000000000000000000000000000000000b",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "The constructor bound Base USDC, NATA, the ticket token and their pair, but flag1 initially prevented transferToken() from adding liquidity to LotteryTicketSwap50. The owner set flag1 true here, activating the intended deposit path that accumulated the contract-owned LP inventory consumed by the defective redemption calculation. The value stays true through the incident. A later whitelist addition for unrelated 0xc7c8c2a3c30fa626de7f4c88511b1f4a494674f7 does not affect the attacker's non-whitelisted branch, and no other token, ticket, flag or ownership setter executed before the loss."
-      },
-      "codeAgeSeconds": 78632,
-      "failureModeId": "failure:nalakuvara-live-reserve-lp-redemption",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+        "slot": "0x000000000000000000000000000000000000000000000000000000000000000b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x16a99aef4fab36c84ba4616668a03a5b37caa12e2fc48923dba4e711d2094699"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 8453,
-      "transactionHashes": [
-        "0x0e36754069bae195e412d601b23776a59617183e57c22dd32206198fb687787c",
-        "0x6955af10acba174ba62da9da12516531569c616f26661d4116b5d50f2c4f9e35",
-        "0x16a99aef4fab36c84ba4616668a03a5b37caa12e2fc48923dba4e711d2094699",
-        "0x355d7fd57fc077b48b88edc246c8bd4126bccaf1941748b95f01659ba0f6c917",
-        "0xb4a9c9b95ae5d33ddfbc878c603e456503ab2b5625c894c2bc1e8631dffd42f7",
-        "0x3e30a6e7627f37db0abbf81db1a27f0481cee6f84429ebe339d972f92544a2df"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xbbcb936486398ce590212bb4fe09f043a0063245089564abc0274e915a44a3f5"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xe845313d3fb267bfa9c8b63ce370d69353c7c935aebc4c7819a8936c0a3f5978"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x31e48320183d3d67437ed80c680dd30182254a2507df9d06101044f58b9ff45d"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1746792573/base:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "observedAt": 1788199953
-    },
-    {
-      "id": "source-7",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-05/Nalakuvara_LotteryTicket50_exp.sol"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-31T18:12:33Z",
-      "note": "Reviewed the complete Base receipt, archive balances and LP Transfer history, the six-transaction EOA nonce 0-5 campaign, verified LotteryTicketSwap50 source, direct deployment receipt, runtime history, every pre-incident admin call and flag1 storage transition. transferToken() accepted 130000 USDC, minted 2600 tickets, swapped and added liquidity; the receipt then contains exactly 130 ticket burns of 20 tickets and 130 calls to DestructionOfLotteryTickets. The 71500000000-NATA manipulation transfer out of the pair is returned exactly before redemption. Across the receipt the pair sends 16532136308.160273748995931399 NATA to the swap contract, receives 16512828990.860336632051863390 from it and burns 32720081258.016852628000378466 to the dead address; the entity's net NATA movement is exactly that endogenous burn, with no attacker balance. LP accounting also closes in integer units: 170154260915765325861 pre-supply + 3500600814380293158 minted to the swap + 448188666661168512 minted to the owner - 40772017457694520751 burned = 133331032939112266780 post-supply. The helper ends with zero USDC, NATA, ticket and LP balances after repaying 2931750 USDC against the 2930000-USDC flash. EOA nonce 0 creates an unused helper, nonce 1 creates the executing helper, nonce 2 is the sole loss, nonces 3-4 approve the proceeds and nonce 5 disposes exactly 105470 USDC to an external aggregator; none returns assets to the victim entity. No later EOA transaction exists in the explorer history. The direct runtime is absent one block before creation and has the same 0xcc7e2d... hash at creation and anchor-1, with no proxy slot or delegatecall path."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 107214.21012,
+    "assets": [
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "107220",
+        "usd": 107214.21012
+      }
     ]
-  }
+  },
+  "refs": [
+    "eip155:8453:0x0e36754069bae195e412d601b23776a59617183e57c22dd32206198fb687787c",
+    "eip155:8453:0x6955af10acba174ba62da9da12516531569c616f26661d4116b5d50f2c4f9e35",
+    "eip155:8453:0x355d7fd57fc077b48b88edc246c8bd4126bccaf1941748b95f01659ba0f6c917",
+    "eip155:8453:0xb4a9c9b95ae5d33ddfbc878c603e456503ab2b5625c894c2bc1e8631dffd42f7",
+    "eip155:8453:0x3e30a6e7627f37db0abbf81db1a27f0481cee6f84429ebe339d972f92544a2df",
+    "eip155:8453:0x31e48320183d3d67437ed80c680dd30182254a2507df9d06101044f58b9ff45d",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-05/Nalakuvara_LotteryTicket50_exp.sol"
+  ],
+  "notes": [
+    "The constructor bound Base USDC, NATA, the ticket token and their pair, but flag1 initially prevented transferToken() from adding liquidity to LotteryTicketSwap50. The owner set flag1 true here, activating the intended deposit path that accumulated the contract-owned LP inventory consumed by the defective redemption calculation. The value stays true through the incident. A later whitelist addition for unrelated 0xc7c8c2a3c30fa626de7f4c88511b1f4a494674f7 does not affect the attacker's non-whitelisted branch, and no other token, ticket, flag or ownership setter executed before the loss.",
+    "The victim entity is LotteryTicketSwap50 0x172119155a48de766b126de95c2cb331d3a5c7c2, its NATA/USDC pair 0xadcaab077f636d74fd50fda7f44ad41e20a21fee and the owner/deployer's LP position. At anchor-1 the pair had 170.154260915765325861 LP outstanding: 99.415567080707983861 (58.42672792%) held by LotteryTicketSwap50 and 70.738693835057341000 (41.57327207%) held by its owner/deployer 0x66d9748e58f3bbfb4e400b3c6991bd578dabbeb2. Exhaustive LP Transfer history leaves no external holder. The pair sent 3037219.668858 and received 2929805 USDC, losing 107414.668858, while the swap contract received 259219.668858 and sent 259025, recovering 194.668858 internally. Entity loss is therefore exactly 107220 USDC: 105470 reached the attacker EOA and 1750 was the fee paid to external Uniswap V3 WETH/USDC 0.05% pool 0xd0b53d9277642d899df5c87a3966a349a798f224. Archive USDC balances agree: pair 291143.873072 -> 183729.204214 and swap 413.324943 -> 607.993801. Base USDC returns name USD Coin, symbol USDC and 6 decimals at anchor-1. DefiLlama observed $0.999946 29 seconds before the receipt; exact decimal multiplication is $107214.21012."
+  ]
 }

@@ -1,153 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x22300140e7c44899c2602382a6e7a4a34a70f47f9736721744bc6434c07171dc",
-  "protocol": {
-    "name": "RWT Token",
-    "slug": "rwt-token"
-  },
+  "protocol": "RWT Token",
   "name": "RWT privileged sell reserve burn",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x22300140e7c44899c2602382a6e7a4a34a70f47f9736721744bc6434c07171dc",
-      "blockNumber": 110827952,
-      "transactionIndex": 52,
-      "timestamp": 1784432030
-    },
-    "attackerAddresses": [
-      "0x84dd3a5d4de44c8ad0ce032beab8bc3f01d1dcf7"
-    ]
-  },
   "summary": "The role-authorized RWT sell contract exposed sell() without caller authorization and each call burned tokens from the AMM pair before sync, letting anyone repeatedly inflate the pool price and drain USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 158616.47439173932,
-      "valuationTimestamp": 1784432030,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "158616.474391739315146216",
-        "usdValue": 158616.47439173932,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1784432030,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is exact net USDT depletion from RWT/USDT PancakePair 0xc1c2ef25372f12ce18d35044446064b720c4aa27 in the single successful incident receipt. The pair receives 371,491.198973571309200329 USDT and sends 530,107.673365310624346545 USDT, losing 158,616.474391739315146216 USDT. Archive balances fall from 158,742.652464146663510787 to 126.178072407348364571 USDT across block 110827952, reproducing the receipt arithmetic exactly. All seven other transactions in the sender's complete nonce history have zero pair-USDT flow and are excluded. USDT is valued at par; financing and downstream proceeds do not reduce gross pair depletion."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8812bb5fb89d69d35ac84d2c37b55769395b9f90",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8812bb5fb89d69d35ac84d2c37b55769395b9f90",
-        "codeHash": "0x6ab4f077948f10e304abef2548501dd05dc00b5c80ab7f1c1909cc33a9eaf7c3"
-      },
-      "deployment": {
-        "timestamp": 1784088328,
-        "blockNumber": 110064404,
-        "transactionHash": "0x84ca5b565014f5484f3a4b9bad46fc383fa78f705bae76026e0f4b75b7c5a53c",
-        "transactionIndex": 20,
-        "creatorAddress": "0x17eb8c8510a2a88b690efa9fbe671db7de44e6fe"
-      },
-      "ageReset": {
+      "address": "0x8812bb5fb89d69d35ac84d2c37b55769395b9f90",
+      "reset": {
         "kind": "deployment",
-        "description": "The sell contract is directly deployed. Its 7,420-byte runtime is absent one block before creation and has code hash 0x6ab4f077948f10e304abef2548501dd05dc00b5c80ab7f1c1909cc33a9eaf7c3 at creation and immediately before the incident; the EIP-1967 implementation, admin, and beacon slots are zero. The unprotected sell path is in this unchanged runtime."
-      },
-      "codeAgeSeconds": 343702,
-      "failureModeId": "failure:rwt-sell-contract-unprotected-pair-reserve-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The sell contract is not source-verified on BscScan; its role and vulnerable behavior were established from the deployed runtime's incident execution, cross-read against the commit-pinned technical reproduction and published analysis."
-        ],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x84ca5b565014f5484f3a4b9bad46fc383fa78f705bae76026e0f4b75b7c5a53c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x22300140e7c44899c2602382a6e7a4a34a70f47f9736721744bc6434c07171dc"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://www.panewslab.com/ko/articles/019f92da-d10d-745b-b1e2-1d6e3f8b495a"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-07/RWT_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T11:32:40Z",
-      "note": "Reviewed the successful incident receipt and call trace, commit-pinned technical reproduction, published analysis, pair identity and archive balances, the sender's complete nonce history, direct creation receipt, archive runtime code, and EIP-1967 slots. The anchor succeeds at block 110827952 index 52, timestamp 1784432030. Its trace executes direct sell contract 0x8812bb5fb89d69d35ac84d2c37b55769395b9f90, and the runtime execution, reproduction, and analysis establish that its unrestricted sell path exercises the contract's RWT owner privilege against the pair. Pair 0xc1c2ef25372f12ce18d35044446064b720c4aa27 reports token0 USDT and token1 RWT before the incident. Across the sole incident receipt, the pair receives 371,491.198973571309200329 USDT and sends 530,107.673365310624346545 USDT, exact gross depletion 158,616.474391739315146216 USDT. Archive pair balances from block 110827951 to 110827952 fall from 158,742.652464146663510787 to 126.178072407348364571 USDT, reproducing the same loss. All seven other transactions in the sender's complete nonce-0-through-7 history, including the helper deployment 183 seconds before the anchor and both later transfers, have zero pair-USDT flow. Financing and downstream proceeds are not deducted from gross LP depletion. The sell contract was directly created by 0x17eb8c8510a2a88b690efa9fbe671db7de44e6fe in 0x84ca5b56...a53c at block 110064404 index 20, timestamp 1784088328. Code is absent one block earlier, and the 7,420-byte runtime hashes to 0x6ab4f077948f10e304abef2548501dd05dc00b5c80ab7f1c1909cc33a9eaf7c3 at creation and immediately before the incident. The EIP-1967 implementation, admin, and beacon slots are zero. Deployment is therefore the latest age reset, 1784432030 - 1784088328 = 343,702 seconds. This exact stablecoin gross-depletion boundary replaces the seed's rounded $118,000 attacker-proceeds estimate."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x84ca5b565014f5484f3a4b9bad46fc383fa78f705bae76026e0f4b75b7c5a53c"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2026-07/RWT_exp.sol",
-    "seed:rwt-token:2026-07-19:rwt-privileged-sell-reserve-burn"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 158616.47439173932,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "158616.474391739315146216",
+        "usd": 158616.47439173932
+      }
     ]
   },
+  "refs": [
+    "https://www.panewslab.com/ko/articles/019f92da-d10d-745b-b1e2-1d6e3f8b495a",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/RWT_exp.sol"
+  ],
   "notes": [
+    "The sell contract is directly deployed. Its 7,420-byte runtime is absent one block before creation and has code hash 0x6ab4f077948f10e304abef2548501dd05dc00b5c80ab7f1c1909cc33a9eaf7c3 at creation and immediately before the incident; the EIP-1967 implementation, admin, and beacon slots are zero. The unprotected sell path is in this unchanged runtime.",
+    "Gross loss is exact net USDT depletion from RWT/USDT PancakePair 0xc1c2ef25372f12ce18d35044446064b720c4aa27 in the single successful incident receipt. The pair receives 371,491.198973571309200329 USDT and sends 530,107.673365310624346545 USDT, losing 158,616.474391739315146216 USDT. Archive balances fall from 158,742.652464146663510787 to 126.178072407348364571 USDT across block 110827952, reproducing the receipt arithmetic exactly. All seven other transactions in the sender's complete nonce history have zero pair-USDT flow and are excluded. USDT is valued at par; financing and downstream proceeds do not reduce gross pair depletion.",
+    "The sell contract is not source-verified on BscScan; its role and vulnerable behavior were established from the deployed runtime's incident execution, cross-read against the commit-pinned technical reproduction and published analysis.",
     "Replaces the seed's rounded $118,000 proceeds estimate with exact gross victim-pair depletion."
   ]
 }

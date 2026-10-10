@@ -1,225 +1,86 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x9ac08d865feefeb644d34533fe59fbf144e55fa2def302ede1e966a6b8ab025a",
-  "protocol": {
-    "name": "The Idols NFT",
-    "slug": "idols-nft"
-  },
+  "protocol": "The Idols NFT",
   "name": "Idols NFT self-transfer reward double-credit",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x9ac08d865feefeb644d34533fe59fbf144e55fa2def302ede1e966a6b8ab025a",
-      "blockNumber": 21624128,
-      "transactionIndex": 151,
-      "timestamp": 1736874575
-    },
-    "attackerAddresses": [
-      "0xe546480138d50bb841b204691c39cc514858d101",
-      "0x9d6c0db5978f80152ea700cc20b62c2f5bb189b6",
-      "0xd7447eb70e60cf6a88445e26684ebe03ee9936bb"
-    ]
-  },
   "summary": "IdolMain._beforeTokenTransfer settles stETH rewards twice for the same holder when the sender and the receiver are the same address. It first calls _claimEthRewards(_from), which pays balanceOf(_from) * (rewardPerGod - claimedSnapshots[_from]) and writes claimedSnapshots[_from] = rewardPerGod, and then, because the sender will hold one fewer token, executes delete claimedSnapshots[_from] whenever balanceOf(_from) == 1. It then evaluates the receiver branch, where balanceOf(_to) > 0 still holds, and calls _claimEthRewards(_to) against a snapshot that has just been zeroed, paying the whole cumulative rewardPerGod again. Calling safeTransferFrom(self, self, tokenId) in a loop therefore mints one full rewardPerGod payout per iteration while the token never leaves the caller. The onlyAllowedContracts(_to) guard, which relies on Address.isContract, does not stop it because the loop runs inside the exploit contract's constructor, when its code size is still zero.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 346780.41406602797,
-      "valuationTimestamp": 1736902487,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
-          "symbol": "stETH"
-        },
-        "amount": "107.685747932188918815",
-        "usdValue": 346780.41406602797,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1736902487,
-          "unitPriceUsd": 3220.3,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion: the sum of every stETH Transfer log emitted with IdolMain 0x439cac149b935ae1d726569800972e1669d17094 as sender to an attacker-controlled address between blocks 21624128 and 21626433, 107.685747932188918815 stETH over 51 transactions. A further 0.114227 stETH left IdolMain to four unrelated addresses in the same window and is excluded as ordinary user claims. None of the extracted amount was the attacker's entitlement: each exploit contract received its Idol immediately beforehand, which set claimedSnapshots[contract] = rewardPerGod, so its legitimate pending reward was zero. stETH is deeply liquid and was not sold through a thin market, so it is marked at the DefiLlama stETH price for the campaign-end timestamp rather than at realised proceeds. Gas is not deducted; the attacker kept the Idol NFTs, which are not part of this measurement.",
-    "realizedAt": 1736902487
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x439cac149b935ae1d726569800972e1669d17094",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x439cac149b935ae1d726569800972e1669d17094",
-        "codeHash": "0x50e83ed5daa99f894289865080daed9b0361e1f994eb2916f017dbe036180b65"
-      },
-      "deployment": {
-        "timestamp": 1646180663,
-        "blockNumber": 14304371,
-        "transactionHash": "0x2bb2234438c3123c1b793c3a8bf3e406d81d53c533c537fd4d500348d15844d8",
-        "transactionIndex": 102,
-        "creatorAddress": "0x1a898355c4939e1e4b15330d4da1fc028a8dad66"
-      },
-      "ageReset": {
+      "address": "0x439cac149b935ae1d726569800972e1669d17094",
+      "reset": {
         "kind": "deployment",
-        "description": "IdolMain is a plain non-upgradeable ERC721Enumerable contract. Its 24,062-byte runtime is byte-identical at its creation block and at block 21624127, immediately before the exploit, so deployment is the last executable-code change."
-      },
-      "codeAgeSeconds": 90693912,
-      "failureModeId": "failure:idols-self-transfer-reward-snapshot-reset",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x2bb2234438c3123c1b793c3a8bf3e406d81d53c533c537fd4d500348d15844d8"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9ac08d865feefeb644d34533fe59fbf144e55fa2def302ede1e966a6b8ab025a"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://rekt.news/theidolsnft-rekt"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-01/IdolsNFT_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2bb2234438c3123c1b793c3a8bf3e406d81d53c533c537fd4d500348d15844d8"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Re-anchored. The snapshot row pointed at 0x5e989304...5284c, the attacker EOA's nonce-24 transaction at block 21624240. Walking 0xe546480138d50bb841b204691c39cc514858d101 from nonce 0 shows the campaign starts twelve blocks earlier: 0x9ac08d865feefeb644d34533fe59fbf144e55fa2def302ede1e966a6b8ab025a, nonce 0, block 21624128, transactionIndex 151, timestamp 1736874575, status 1, creating exploit contract 0xd7447eb70e60cf6a88445e26684ebe03ee9936bb. Its 1,154-frame callTracer trace already executes the defect: 151 CALLs of safeTransferFrom(address,address,uint256) (0x42842e0e) on IdolMain 0x439cac149b935ae1d726569800972e1669d17094, every one with from == to == 0xd7447eb7...36bb and tokenId 940, interleaved with 5 updateRewardPerGod() calls and 169 stETH balance reads. Idol 940 had been moved to that counterfactual address at block 21623518 in 0x321c0038...71c12, while it was still codeless, so the ERC721 Transfer log at 21624128 is the first self-transfer. Root cause read from the Etherscan-verified IdolMain source (solc 0.8.9): _beforeTokenTransfer pays _claimEthRewards(_from), then deletes claimedSnapshots[_from] under 'if (balanceOf(_from) == 1)', then falls into the receiver branch where balanceOf(_to) > 0 and pays _claimEthRewards(_to) against the zeroed snapshot, so a self-transfer yields balanceOf * rewardPerGod a second time; the onlyAllowedContracts(_to) modifier is inert because Address.isContract returns false during the exploit contract's own construction. Target: relationship direct, no proxy and no delegatecall in the trace; the 24,062-byte runtime hashes to 0x50e83ed5daa99f894289865080daed9b0361e1f994eb2916f017dbe036180b65 identically at its creation block 14304371 and at block 21624127. Created by 0x1a898355c4939e1e4b15330d4da1fc028a8dad66 in 0x2bb22344...844d8 at 14304371:102, timestamp 1646180663; that address is not the attacker. Code age 1736874575 - 1646180663 = 90693912 s (1049.7 days). Loss recomputed from stETH Transfer logs rather than from the reported figure: 107.685747932188918815 stETH left IdolMain to the nineteen attacker-controlled addresses across 51 transactions between blocks 21624128 and 21626433 (campaign end timestamp 1736902487), against the seed row's 97 stETH. IdolMain's own stETH balance fell from 2806.7176 to 2704.9313 over the same window, consistent after the positive Lido rebase. Priced at the DefiLlama stETH quote 3220.3 for 1736902487, giving 346,780.41 USD instead of the seed row's 310,658. Outflows after block 21627000 (55.98 stETH) go to unrelated claimant addresses and are not counted."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0xbffcf01e5aef5d5fc82f9ab7bf78110e3479dffc8f4dc503f663c6b47b9992a4",
-        "0x61092c396208c4c74430967e6061e9031ef80adcbb4cf64e58598a9e6b608302",
-        "0x1aaa35712784713d9ef40bf4848132cc031ce04611d7837649a7f0bf3e03bbf5",
-        "0xa64b650d1f3fbdbc6cabe439caf3bd9d375f45b02f5cba77f24285b300017692",
-        "0xa194eb8e4cfb8e25a01f15d8ef98c49998b89d336f99a3de5108bd57c580fd02",
-        "0xa8289dbe3e49e9c5decaabd3777d9ad60a7b06863539b4948dd17e58a65f3e15",
-        "0x45d93aa6b24ac2c6606d81ecae3d8ec5609772cfab3839661d3ae7319e3763b4",
-        "0x1a595d10be428e49dd3558859743fe4bc4570545a55d357f405bd630061c6be0",
-        "0x14ae447e0dce7cc6e5a0256a91cc16e1a85104f96590ff23fc72c58b57165162",
-        "0x45bf5d11f27e0ac56f893d45bf5b02fb0f0e9d5e0d2e7af60f2a01c40e3c761d",
-        "0x2bda71f5b6c6a22a8d74bfd96fb7a9f5b820c707120b2a43f1698b3603767e7a",
-        "0x5e989304b1fb61ea0652db4d0f9476b8882f27191c1f1d2841f8977cb8c5284c",
-        "0xd9870068e40f8d7c4d58b87802c4fc830acbd90ff3e44460747c3a0727dfd3df",
-        "0xcd335c1bf78b26a226fd583289c32d726d060d62b5f6e04c55b2ef1866558582",
-        "0x554300c9576400fb8d2c66efc51442ff46e1d18b0fa461f58644b10b669efbf8",
-        "0x0d1f54624365a91fa6c19a28f07bf11c674e856ff3ec36b9006641c09398f405",
-        "0x23f73d3194e1ba9413ec80decc5e7c08a8b037dbc887ccfe79393e01d1e1a4d6",
-        "0xba0e2e5ac8d463e43cd8f8af682285ae12f83f0f649373c8b1e884d7c5f09d6e",
-        "0x11dc29ffe83d9e18450c4449f8a732803855e6f8210dc1511017fbbef901d183",
-        "0x3e5f4ccd1c7fd2ad94224b78d17c63d83c05235365f5bd2f265fd8ae0c9921a2",
-        "0x175320607f10268df8096598abccc8dda7d54b926181c17f571390c72ab345db",
-        "0xfa0ef53d21783c2c2550fc9e281ff1fab28ed57876ae001e7a912ca62043fc02",
-        "0xf26b287d6dbcfcbdd8f863a1e5690a41616023c30ad50e35dd5f2e5866d3bd83",
-        "0x897e38563dd2a786e4ef086e2b1efebd463fcc953dc7e144ab285a07959fef87",
-        "0xc6b9451b46354101e15566fb5474d56f3f98f7a691987d664b1636a289658e56",
-        "0xf730a50a96250e70853e64ad18b332cef80c8946f7f3dc2ee5a063f1812feb62",
-        "0xa16e7d6faa8a89633437efd732d0f451b7083c0838546ae269ac1a4f87975868",
-        "0xe80665e41c68b2bebb5a96fbaed9d310808c4c2c48bf5846807c139d694e8c1d",
-        "0x8a0b573bb93a411fee8c43651fde19a9bc2b5e475a2e254bbb437fb6507a8945",
-        "0x2191ad8afe17e6d2d69b1d6d35feb467464afb97bcd5c0b94b6bb8cc8a879ef8",
-        "0x08a4cba1bdc377896d0f24b5cd20d467c50defd95cbf19a690af3e03fa4cc335",
-        "0xb4ad367ce5b97e78ce382d41d2f30e6aea99dbfa2a3638eed92e3d9224858024",
-        "0x90e4a833f3102ba910315b76160e54d85d67f3bbe747c4f9abaaf59b9b01e9e9",
-        "0x72a35dae979aa3068c1f10093c2e270ef0556175b59eddc063deb2b8c050a47d",
-        "0xe91c9f8ca3be6e789b71cb158f9dc0cfd878be1cf39bd43612f9270208fc75f1",
-        "0xb289cdc490a5987b885e42dda856ce9347b7ad6a168e00b4fb29b2c1fb8054d7",
-        "0x837d76d8c83e237e5db6434921e1e8fc0fa4732788e7eb0be4afd129ed304822",
-        "0xb69a00c61c9b65a0b3d80fec8bf4c736111b9472ada77f550472808bbb4d9f8f",
-        "0xe433b44cb30dc0c256193d51d62d0ac4638b9bd8661d3bd7c338e1007b18f9ab",
-        "0x94d81182153a1b8b4a34e0e1e4316cd7fef78191c6585298bfdceda357feab06",
-        "0xe635feff7a8f15310eff74055866d20a28ddf2dea06f49e01a55a06415695542",
-        "0x9e79da8fb5e6e228b16d5aa4bb4db48586416948a82612e74913be949a030784",
-        "0x191be6fd169267911c44cf3b3b926028660412008d3360ca74c32dabef0fb3a6",
-        "0xec8219a0ab3188338f91b95816c3f99487ab53efb27b35f0a9a8890eb36d8e4b",
-        "0x3d66d46fbe0530c6c4ccbfad723c4beedef19f2649cb79e559fe88817ee14a94",
-        "0x5a06f77e4210794fe436f1e545ee55e8cf88e821ec08176eeaf01ddb2fdf2873",
-        "0xc3b58d27882d994179eec848538310169c6300f0412088702a317f8366e1b769",
-        "0x017237ed8eb0c2d3695b20706aa5781460fdb216ad7e57d1f3689719bf909e1b",
-        "0xc44b242ac385633bcbe40461a0316b7628fc2fcf8302af1826956449405d1247",
-        "0x5cc6d66f8c8ec8d2eadb2918c3382350189cb9e8f57b6087c823fb37831ecf5f"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1736902487/ethereum:0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
-      "observedAt": 1787705428
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x321c0038331065107aea06985e0c2d5ebec5bcad6605cc74fc6840fe8de71c12"
-    }
-  ],
-  "discovery": [
-    "seed:idols-nft:2025-01-14:idols-nft-self-transfer-reward-double-credit"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 346780.41406602797,
+    "assets": [
+      {
+        "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "symbol": "stETH",
+        "amount": "107.685747932188918815",
+        "usd": 346780.41406602797
+      }
     ]
   },
+  "refs": [
+    "https://rekt.news/theidolsnft-rekt",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-01/IdolsNFT_exp.sol",
+    "eip155:1:0xbffcf01e5aef5d5fc82f9ab7bf78110e3479dffc8f4dc503f663c6b47b9992a4",
+    "eip155:1:0x61092c396208c4c74430967e6061e9031ef80adcbb4cf64e58598a9e6b608302",
+    "eip155:1:0x1aaa35712784713d9ef40bf4848132cc031ce04611d7837649a7f0bf3e03bbf5",
+    "eip155:1:0xa64b650d1f3fbdbc6cabe439caf3bd9d375f45b02f5cba77f24285b300017692",
+    "eip155:1:0xa194eb8e4cfb8e25a01f15d8ef98c49998b89d336f99a3de5108bd57c580fd02",
+    "eip155:1:0xa8289dbe3e49e9c5decaabd3777d9ad60a7b06863539b4948dd17e58a65f3e15",
+    "eip155:1:0x45d93aa6b24ac2c6606d81ecae3d8ec5609772cfab3839661d3ae7319e3763b4",
+    "eip155:1:0x1a595d10be428e49dd3558859743fe4bc4570545a55d357f405bd630061c6be0",
+    "eip155:1:0x14ae447e0dce7cc6e5a0256a91cc16e1a85104f96590ff23fc72c58b57165162",
+    "eip155:1:0x45bf5d11f27e0ac56f893d45bf5b02fb0f0e9d5e0d2e7af60f2a01c40e3c761d",
+    "eip155:1:0x2bda71f5b6c6a22a8d74bfd96fb7a9f5b820c707120b2a43f1698b3603767e7a",
+    "eip155:1:0x5e989304b1fb61ea0652db4d0f9476b8882f27191c1f1d2841f8977cb8c5284c",
+    "eip155:1:0xd9870068e40f8d7c4d58b87802c4fc830acbd90ff3e44460747c3a0727dfd3df",
+    "eip155:1:0xcd335c1bf78b26a226fd583289c32d726d060d62b5f6e04c55b2ef1866558582",
+    "eip155:1:0x554300c9576400fb8d2c66efc51442ff46e1d18b0fa461f58644b10b669efbf8",
+    "eip155:1:0x0d1f54624365a91fa6c19a28f07bf11c674e856ff3ec36b9006641c09398f405",
+    "eip155:1:0x23f73d3194e1ba9413ec80decc5e7c08a8b037dbc887ccfe79393e01d1e1a4d6",
+    "eip155:1:0xba0e2e5ac8d463e43cd8f8af682285ae12f83f0f649373c8b1e884d7c5f09d6e",
+    "eip155:1:0x11dc29ffe83d9e18450c4449f8a732803855e6f8210dc1511017fbbef901d183",
+    "eip155:1:0x3e5f4ccd1c7fd2ad94224b78d17c63d83c05235365f5bd2f265fd8ae0c9921a2",
+    "eip155:1:0x175320607f10268df8096598abccc8dda7d54b926181c17f571390c72ab345db",
+    "eip155:1:0xfa0ef53d21783c2c2550fc9e281ff1fab28ed57876ae001e7a912ca62043fc02",
+    "eip155:1:0xf26b287d6dbcfcbdd8f863a1e5690a41616023c30ad50e35dd5f2e5866d3bd83",
+    "eip155:1:0x897e38563dd2a786e4ef086e2b1efebd463fcc953dc7e144ab285a07959fef87",
+    "eip155:1:0xc6b9451b46354101e15566fb5474d56f3f98f7a691987d664b1636a289658e56",
+    "eip155:1:0xf730a50a96250e70853e64ad18b332cef80c8946f7f3dc2ee5a063f1812feb62",
+    "eip155:1:0xa16e7d6faa8a89633437efd732d0f451b7083c0838546ae269ac1a4f87975868",
+    "eip155:1:0xe80665e41c68b2bebb5a96fbaed9d310808c4c2c48bf5846807c139d694e8c1d",
+    "eip155:1:0x8a0b573bb93a411fee8c43651fde19a9bc2b5e475a2e254bbb437fb6507a8945",
+    "eip155:1:0x2191ad8afe17e6d2d69b1d6d35feb467464afb97bcd5c0b94b6bb8cc8a879ef8",
+    "eip155:1:0x08a4cba1bdc377896d0f24b5cd20d467c50defd95cbf19a690af3e03fa4cc335",
+    "eip155:1:0xb4ad367ce5b97e78ce382d41d2f30e6aea99dbfa2a3638eed92e3d9224858024",
+    "eip155:1:0x90e4a833f3102ba910315b76160e54d85d67f3bbe747c4f9abaaf59b9b01e9e9",
+    "eip155:1:0x72a35dae979aa3068c1f10093c2e270ef0556175b59eddc063deb2b8c050a47d",
+    "eip155:1:0xe91c9f8ca3be6e789b71cb158f9dc0cfd878be1cf39bd43612f9270208fc75f1",
+    "eip155:1:0xb289cdc490a5987b885e42dda856ce9347b7ad6a168e00b4fb29b2c1fb8054d7",
+    "eip155:1:0x837d76d8c83e237e5db6434921e1e8fc0fa4732788e7eb0be4afd129ed304822",
+    "eip155:1:0xb69a00c61c9b65a0b3d80fec8bf4c736111b9472ada77f550472808bbb4d9f8f",
+    "eip155:1:0xe433b44cb30dc0c256193d51d62d0ac4638b9bd8661d3bd7c338e1007b18f9ab",
+    "eip155:1:0x94d81182153a1b8b4a34e0e1e4316cd7fef78191c6585298bfdceda357feab06",
+    "eip155:1:0xe635feff7a8f15310eff74055866d20a28ddf2dea06f49e01a55a06415695542",
+    "eip155:1:0x9e79da8fb5e6e228b16d5aa4bb4db48586416948a82612e74913be949a030784",
+    "eip155:1:0x191be6fd169267911c44cf3b3b926028660412008d3360ca74c32dabef0fb3a6",
+    "eip155:1:0xec8219a0ab3188338f91b95816c3f99487ab53efb27b35f0a9a8890eb36d8e4b",
+    "eip155:1:0x3d66d46fbe0530c6c4ccbfad723c4beedef19f2649cb79e559fe88817ee14a94",
+    "eip155:1:0x5a06f77e4210794fe436f1e545ee55e8cf88e821ec08176eeaf01ddb2fdf2873",
+    "eip155:1:0xc3b58d27882d994179eec848538310169c6300f0412088702a317f8366e1b769",
+    "eip155:1:0x017237ed8eb0c2d3695b20706aa5781460fdb216ad7e57d1f3689719bf909e1b",
+    "eip155:1:0xc44b242ac385633bcbe40461a0316b7628fc2fcf8302af1826956449405d1247",
+    "eip155:1:0x5cc6d66f8c8ec8d2eadb2918c3382350189cb9e8f57b6087c823fb37831ecf5f",
+    "eip155:1:0x321c0038331065107aea06985e0c2d5ebec5bcad6605cc74fc6840fe8de71c12"
+  ],
   "notes": [
+    "IdolMain is a plain non-upgradeable ERC721Enumerable contract. Its 24,062-byte runtime is byte-identical at its creation block and at block 21624127, immediately before the exploit, so deployment is the last executable-code change.",
+    "Exact victim depletion: the sum of every stETH Transfer log emitted with IdolMain 0x439cac149b935ae1d726569800972e1669d17094 as sender to an attacker-controlled address between blocks 21624128 and 21626433, 107.685747932188918815 stETH over 51 transactions. A further 0.114227 stETH left IdolMain to four unrelated addresses in the same window and is excluded as ordinary user claims. None of the extracted amount was the attacker's entitlement: each exploit contract received its Idol immediately beforehand, which set claimedSnapshots[contract] = rewardPerGod, so its legitimate pending reward was zero. stETH is deeply liquid and was not sold through a thin market, so it is marked at the DefiLlama stETH price for the campaign-end timestamp rather than at realised proceeds. Gas is not deducted; the attacker kept the Idol NFTs, which are not part of this measurement.",
     "The snapshot row anchored on the attacker's thirteenth exploit transaction. The anchor here is the first one, twelve blocks earlier; the later transaction remains part of the campaign and appears in the loss transaction set."
   ]
 }

@@ -1,158 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1f1aba5bef04b7026ae3cb1cb77987071a8aff9592e785dd99860566ccad83d1",
-  "protocol": {
-    "name": "EFLeverVault",
-    "slug": "ef-lever-vault"
-  },
+  "protocol": "EFLeverVault",
   "name": "EFLeverVault flash-loan balance inflation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1f1aba5bef04b7026ae3cb1cb77987071a8aff9592e785dd99860566ccad83d1",
-      "blockNumber": 15746200,
-      "transactionIndex": 0,
-      "timestamp": 1665748727
-    },
-    "attackerAddresses": [
-      "0x26bce6ecb5b10138e4bf14ac0ffcc8727fef3b2e",
-      "0x0e113904cb1d53cabb324927dffae2f8f6705111",
-      "0x56178a0d5f301baf6cf3e1cd53d9863437345bf9"
-    ]
-  },
   "summary": "EFLeverVault authenticated receiveFlashLoan() only by requiring Balancer as caller, so anyone could ask Balancer to invoke its withdrawal branch and release leveraged collateral as ETH. withdraw() then sent the vault's entire ETH balance to one share holder instead of that holder's proportional amount.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 996846.7575320589,
-      "valuationTimestamp": 1665748346,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-3",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "750",
-        "usdValue": 996846.7575320589,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1665748346,
-          "unitPriceUsd": 1329.1290100427452,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The reported incident total is 750 ETH across the two same-block transactions using the same vault defect, valued at $996,846.76 with the incident-time ETH price. The selected front-run transaction independently establishes 480.008083265872754211 ETH of net vault loss onchain."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe39fd820b58f83205db1d9225f28105971c3d309",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe39fd820b58f83205db1d9225f28105971c3d309",
-        "codeHash": "0x68bbf717b56e4776e5ba348817e28aeb5aeb05aca428a925cd1d6f843d6cef12"
-      },
-      "deployment": {
-        "timestamp": 1653628352,
-        "blockNumber": 14852275,
-        "transactionHash": "0x823ff437ad09fc5cd33c418de7d8fe5a47f5066adcdbffc00c22ddd7a7205bf2",
-        "transactionIndex": 26,
-        "creatorAddress": "0xbf58e21b232ceea012122dd1fd60daad5791aa2e"
-      },
-      "ageReset": {
+      "address": "0xe39fd820b58f83205db1d9225f28105971c3d309",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct EFLeverVault runtime was deployed in this transaction and is byte-identical immediately before the incident; its linked SafeMath library predates the vault and is also byte-identical across the interval."
-      },
-      "codeAgeSeconds": 12120375,
-      "failureModeId": "failure:eflever-unbound-flash-callback-balance-sweep",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x823ff437ad09fc5cd33c418de7d8fe5a47f5066adcdbffc00c22ddd7a7205bf2"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1f1aba5bef04b7026ae3cb1cb77987071a8aff9592e785dd99860566ccad83d1"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-10/EFLeverVault_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/danielvf/status/1580936010556661761"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:11:23Z",
-      "note": "Reviewed the selected transaction receipt and call trace, EFLeverVault and linked-library creation receipts, bytecode at deployment and immediately before the incident, verified source, and commit-pinned reproduction. EFLeverVault 0xe39fd820b58f83205db1d9225f28105971c3d309 is a direct contract with byte-identical runtime at both anchors. Its exploit trace delegates only arithmetic calls to link-time SafeMath 0x071108ad85d7a766b41e0f5e5195537a8fc8e74d, which was deployed earlier and is itself byte-identical across the measurement interval. An external Balancer flash loan invokes receiveFlashLoan(userData=0x2), releasing collateral as ETH because the callback validates Balancer but not who initiated the loan. A subsequent withdraw sends address(this).balance to the helper. The selected transaction withdraws 480.108083265872754211 ETH after a 0.1 ETH seed, establishing a 480.008083265872754211 ETH net loss; the historical 750 ETH figure combines more than this selected transaction."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x46af2b13c148a58447618007a83c67d83e2d9a695b7280b649c9421fb2622327"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x823ff437ad09fc5cd33c418de7d8fe5a47f5066adcdbffc00c22ddd7a7205bf2"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1665748500/coingecko:ethereum",
-      "observedAt": 1787577083
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 996846.7575320589,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "750",
+        "usd": 996846.7575320589
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/EFLeverVault_exp.sol",
+    "https://twitter.com/danielvf/status/1580936010556661761",
+    "eip155:1:0x46af2b13c148a58447618007a83c67d83e2d9a695b7280b649c9421fb2622327"
+  ],
+  "notes": [
+    "The direct EFLeverVault runtime was deployed in this transaction and is byte-identical immediately before the incident; its linked SafeMath library predates the vault and is also byte-identical across the interval.",
+    "The reported incident total is 750 ETH across the two same-block transactions using the same vault defect, valued at $996,846.76 with the incident-time ETH price. The selected front-run transaction independently establishes 480.008083265872754211 ETH of net vault loss onchain."
+  ]
 }

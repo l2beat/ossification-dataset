@@ -1,291 +1,57 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0xb067efae73637f3564f58af7f6027afc497e81e47624b0048636085c678858c0",
-  "protocol": {
-    "name": "Nimiq",
-    "slug": "nimiq"
-  },
+  "protocol": "Nimiq",
   "name": "Nimiq HTLC handler GSN execute verification bypass",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0xb067efae73637f3564f58af7f6027afc497e81e47624b0048636085c678858c0",
-      "blockNumber": 93930784,
-      "transactionIndex": 42,
-      "timestamp": 1789601209
-    },
-    "attackerAddresses": [
-      "0x2258491525c21f334c5a2dc22ce55e55023fc45d",
-      "0x4b0e8b2c38b0044405e24db481d00be7d5419e04",
-      "0xfa20e2bd6cc9c41218d9811ffd984ae333fca618"
-    ]
-  },
   "summary": "Nimiq's ERC20PermitHTLCHandler and ERC20MetaHTLCHandler are each their own OpenGSN forwarder, paymaster and recipient. Their forwarder execute() (onlyRelayHub) discards the signature, domain and type hash, skips checkOpen/checkRefund, and opens or closes an HTLC for request.from; signature, nonce and business checks live only in the handler's own preRelayedCall. RelayHub lets a staked relay name any paymaster, so a relay naming its own always-accept paymaster made the handlers pull a liquidity wallet's approved USDC, USDT0 and USDC.e into attacker-recipient HTLCs, and a later actor refunded other users' expired HTLCs to itself.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 50468.31070087532,
-      "valuationTimestamp": 1789601209,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7",
-        "source-8",
-        "source-9",
-        "source-10"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-          "symbol": "USDC"
-        },
-        "amount": "26135.182841",
-        "usdValue": 26126.97922720388,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789600900,
-          "unitPriceUsd": 0.9996861084215086,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
-          "symbol": "USDT0"
-        },
-        "amount": "24360.270785",
-        "usdValue": 24340.67054938086,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789600900,
-          "unitPriceUsd": 0.999195401570363,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-          "symbol": "USDC.e"
-        },
-        "amount": "0.661117",
-        "usdValue": 0.6609242905842216,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789600590,
-          "unitPriceUsd": 0.9997085093625208,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Campaign 1 (attacker 0x2258491525c21f334c5a2dc22ce55e55023fc45d, source-1): the liquidity wallet 0x24cb173ae221aea93369f34bdcf0ddb35b436773 loses its full balances, 26130.641710 USDC, 24332.489269 USDT0 and 0.661117 USDC.e; source-11 later redeems the three HTLCs to 0x4b0e8b2c38b0044405e24db481d00be7d5419e04 (payout of already-counted assets). Campaign 2 (0xfa20e2bd6cc9c41218d9811ffd984ae333fca618, source-7, about 48 minutes later): two relayed refund() calls through the same execute path send 27.781516 USDT0 and 4.541131 USDC from other users' expired HTLCs to that actor instead of their refund addresses. Component amounts sum both campaigns. realizedAt is the last campaign-2 transaction.",
-    "realizedAt": 1789604083
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x0cfd862be942846cebad797d7c1bc6e47714959b",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x0cfd862be942846cebad797d7c1bc6e47714959b",
-        "codeHash": "0x0e8af5785fdef25c90ed5c165d5eb2c20fe66eec1ce5110e92dd8343ef7176c0"
-      },
-      "deployment": {
-        "timestamp": 1709838063,
-        "blockNumber": 54383444,
-        "transactionHash": "0xab827b175e2e4cb407dd402c7f7a51c7d42d995d9c4cefdf33c68767c27f8dac",
-        "transactionIndex": 118,
-        "creatorAddress": "0xdb88bf6328d4778bd8ce653adf51e079b5bf9dda"
-      },
-      "ageReset": {
+      "address": "0x0cfd862be942846cebad797d7c1bc6e47714959b",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable direct ERC20PermitHTLCHandler runtime contains execute() without verification; the owner's setRelayHub to the standard OpenGSN RelayHub 480 blocks later is ordinary initial wiring, and token registration is not checked on the execute path."
-      },
-      "codeAgeSeconds": 79763146,
-      "failureModeId": "failure:nimiq-htlc-gsn-execute-unverified",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xab827b175e2e4cb407dd402c7f7a51c7d42d995d9c4cefdf33c68767c27f8dac"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0xf615bd7ea00c4cc7f39faad0895db5f40891359f",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xf615bd7ea00c4cc7f39faad0895db5f40891359f",
-        "codeHash": "0xfc951a2e11d2968df8672ef370f202472c519385941fab784b0633ccdb8cc21a"
-      },
-      "deployment": {
-        "timestamp": 1678230943,
-        "blockNumber": 40086681,
-        "transactionHash": "0x0f388c1122bb5a94184397f919113bcbbe9ae17e938a215185c04141c01a14e0",
-        "transactionIndex": 30,
-        "creatorAddress": "0xdb88bf6328d4778bd8ce653adf51e079b5bf9dda"
-      },
-      "ageReset": {
+      "address": "0xf615bd7ea00c4cc7f39faad0895db5f40891359f",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable direct ERC20MetaHTLCHandler runtime carries the same execute() without verification; setRelayHub 16 blocks later and later token registrations do not bear on the defect."
-      },
-      "codeAgeSeconds": 111370266,
-      "failureModeId": "failure:nimiq-htlc-gsn-execute-unverified",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-12"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Older sibling handler (2023-03-07) with the same execute() defect exercised in the same anchor transaction; target-1 has the later deployment and supplies the knot."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x0f388c1122bb5a94184397f919113bcbbe9ae17e938a215185c04141c01a14e0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xb067efae73637f3564f58af7f6027afc497e81e47624b0048636085c678858c0"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/Nimiq_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:28:12Z",
-      "note": "Anchor, root cause, first exercise, identity and age. Source-1: status 1, block 93930784 index 42, ts 1789601209, sent by EIP-7702 EOA 0x2258491525c21f334c5a2dc22ce55e55023fc45d to itself; it stakes/authorizes a relay manager (StakeManager 0x15c7b7ce10f3a9ae63554bce7c54d0a818e967c7 logs 0x214-0x217) and registers a worker at RelayHub 0x6c28afc105e65782d9ea6f2ca68df84c9e7d750d (log 0x218), then makes three relayCall (0x10c45431). debug_traceTransaction(callTracer): for each, the hub calls preRelayedCall (0x00be5dd4) on the attacker-named paymaster 0x2258... and then execute (0xe024dc7f) on handler 0x0cfd862be942846cebad797d7c1bc6e47714959b (once) and 0xf615bd7ea00c4cc7f39faad0895db5f40891359f (twice), each calling token.transferFrom(victim, handler). Receipt Transfer logs 0x219/0x21b/0x21e debit 0x24cb173ae221aea93369f34bdcf0ddb35b436773; TransactionRelayed logs 0x21a/0x21d/0x220 carry from=victim, paymaster=0x2258..., selector 0x3878a2a3 open, status 0. Handlers' own preRelayedCall/verifyCallPrivate (signature, nonce, checkOpen) never runs. Verified source (Etherscan V2 contract.getsourcecode chainid=137; SHA-256 of SourceCode string: 0x0cfd... ERC20PermitHTLCHandler a7440771c22b0b36108097a2600836243d9b88783b9b5aa23655889ea2099282, 0xf615... ERC20MetaHTLCHandler c76c695ef807c06c851270b9e5c3c13c5bb3a4b43ea35be42e6d9f5deef565a4, v0.8.17, 200 runs): both execute() bodies (lines 222/221) discard all verification inputs and call openPrivate(request.from) or closePrivate; BaseCombinedGsnHandler (identical in both) makes the handler its own trustedForwarder. Earliest exercise: Etherscan logs.getLogs on the hub, topic0 0xc9aa709786a3d5fe2cc947abc1ba8cbb0f6decb57aa74b84eb7f558125fee454 (TransactionRelayed), block-range paginated 40086681..94612306: 160424 events; relays with to in {handlers} total 7988 through source-1, and exactly 3 have paymaster != to, all in source-1; after it only the two source-7 refunds. Identity/age: both handlers are direct non-proxy runtimes (Proxy=0) created top-level by 0xdb88bf6328d4778bd8ce653adf51e079b5bf9dda (source-5, block 54383444 index 118; source-12, block 40086681 index 30); eth_getCode empty at the block before each; keccak runtime 0x0e8af578...76c0 (22487 bytes) and 0xfc951a2e...c21a (22271 bytes) at deployment and at block 93930783. Etherscan txlist for each handler through block 93930854 (4667 and 3943 txs): successful owner calls are setRelayHub 0x7bb05264 once each to the same hub (0xda699c7e153729f70556bca71a70aea8c37260df5fbefd4af94047e130c26bc0 at 54383924; 0x0db7f5ea84c5883e52c5daed92088babe398cc82ba009708e08246e2e1d0507d at 40086697), setWrappedChainToken, token registration 0x4739f7e5, setGasAndDataLimits 0x89903b5e and 0xcdc602db; getHubAddr() returns the hub at 93930783. None changes execute(); hub wiring is the standard OpenGSN hub, not an erroneous value, and token registration is enforced only in checkOpenPrivate, which execute skips. Deployment supplies each age: target-1 1789601209 - 1709838063 = 79763146 s (2.53 y), target-2 111370266 s (3.53 y); the later deployment, target-1, is the knot."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Verified sources: https://polygonscan.com/address/0x0cfd862be942846cebad797d7c1bc6e47714959b#code (ERC20PermitHTLCHandler) and https://polygonscan.com/address/0xf615bd7ea00c4cc7f39faad0895db5f40891359f#code (ERC20MetaHTLCHandler). Inspect execute(), preRelayedCall()/verifyCallPrivate(), checkOpen()/checkRefund() and BaseCombinedGsnHandler.isTrustedForwarder()."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xab827b175e2e4cb407dd402c7f7a51c7d42d995d9c4cefdf33c68767c27f8dac"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:28:12Z",
-      "note": "Loss. eth_call balanceOf(0x24cb173ae221aea93369f34bdcf0ddb35b436773) at blocks 93930783 -> 93930784: USDC 0x3c499c54... 26130641710 -> 0, USDT0 0xc2132d05... 24332489269 -> 0, USDC.e 0x2791bca1... 661117 -> 0 (6 decimals each), matching source-1 logs 0x219 (0x61581f32e), 0x21b (0x5aa545235), 0x21e (0xa167d). Source-11 (block 93930854 index 64) CREATE2-deploys the recipient via 0x4e59b44847b379578588920ca78fbf26c0b4956c and redeems the three HTLCs: handler -> 0x4b0e8b2c38b0044405e24db481d00be7d5419e04 logs 0x31f/0x321/0x323 with the same amounts. Campaign 2 (source-7): 0x5868d4aba1562b7eea3ac9dfc9fa119d413df516c3f6d8383674f22408c73b16 (block 93932697) and 0x15cc67b04020c4ce9bfd3ab75de1a04cb6fd4793f96b402d484d97d84c868a63 (block 93932700, ts 1789604083), from 0xfa20e2bd6cc9c41218d9811ffd984ae333fca618, relayCall with paymasters 0x821e11e98334f99027aff6fef94c6bd6d09faf47 / 0xcdc62dd43a0799fe04cb24bfc72e039ac21ca2cb and request.data refund(id, target=0xfa20..., 0) for ids 0x52df369a...0fbd7 on 0xf615 and 0x0ba92931...86c7bf on 0x0cfd. htlcs(id) one block earlier: USDT0 27781516, refund 0x9db8c021407755f5537ca90c8a34dcbb0197b1c4, timeout 1756873740; USDC 4541131, refund 0xc45101224affe424c8528304a174ccf0479fa5bc, timeout 1756844185. Transfers go to 0xfa20..., not the refund addresses: unauthorized depletion of third-party HTLC escrow through the same execute() skip of checkRefund. Totals: USDC 26135.182841, USDT0 24360.270785, USDC.e 0.661117."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 137,
-      "transactionHashes": [
-        "0x5868d4aba1562b7eea3ac9dfc9fa119d413df516c3f6d8383674f22408c73b16",
-        "0x15cc67b04020c4ce9bfd3ab75de1a04cb6fd4793f96b402d484d97d84c868a63"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789600900/polygon:0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-      "observedAt": 1790623654
-    },
-    {
-      "id": "source-9",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789600900/polygon:0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
-      "observedAt": 1790623654
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789600900/polygon:0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-      "observedAt": 1790623654
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xb2ca76dfbfe571742b4b66465b777ab1e06988a8632be1631bef9654cc64d169"
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x0f388c1122bb5a94184397f919113bcbbe9ae17e938a215185c04141c01a14e0"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 50468.31070087532,
+    "assets": [
+      {
+        "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "symbol": "USDC",
+        "amount": "26135.182841",
+        "usd": 26126.97922720388
+      },
+      {
+        "token": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        "symbol": "USDT0",
+        "amount": "24360.270785",
+        "usd": 24340.67054938086
+      },
+      {
+        "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "symbol": "USDC.e",
+        "amount": "0.661117",
+        "usd": 0.6609242905842216
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-16:nimiq"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/Nimiq_exp.sol",
+    "eip155:137:0x5868d4aba1562b7eea3ac9dfc9fa119d413df516c3f6d8383674f22408c73b16",
+    "eip155:137:0x15cc67b04020c4ce9bfd3ab75de1a04cb6fd4793f96b402d484d97d84c868a63",
+    "eip155:137:0xb2ca76dfbfe571742b4b66465b777ab1e06988a8632be1631bef9654cc64d169"
+  ],
+  "notes": [
+    "Immutable direct ERC20PermitHTLCHandler runtime contains execute() without verification; the owner's setRelayHub to the standard OpenGSN RelayHub 480 blocks later is ordinary initial wiring, and token registration is not checked on the execute path.",
+    "Immutable direct ERC20MetaHTLCHandler runtime carries the same execute() without verification; setRelayHub 16 blocks later and later token registrations do not bear on the defect.",
+    "Campaign 1 (attacker 0x2258491525c21f334c5a2dc22ce55e55023fc45d, source-1): the liquidity wallet 0x24cb173ae221aea93369f34bdcf0ddb35b436773 loses its full balances, 26130.641710 USDC, 24332.489269 USDT0 and 0.661117 USDC.e; source-11 later redeems the three HTLCs to 0x4b0e8b2c38b0044405e24db481d00be7d5419e04 (payout of already-counted assets). Campaign 2 (0xfa20e2bd6cc9c41218d9811ffd984ae333fca618, source-7, about 48 minutes later): two relayed refund() calls through the same execute path send 27.781516 USDT0 and 4.541131 USDC from other users' expired HTLCs to that actor instead of their refund addresses. Component amounts sum both campaigns. realizedAt is the last campaign-2 transaction.",
+    "Older sibling handler (2023-03-07) with the same execute() defect exercised in the same anchor transaction; target-1 has the later deployment and supplies the knot."
   ]
 }

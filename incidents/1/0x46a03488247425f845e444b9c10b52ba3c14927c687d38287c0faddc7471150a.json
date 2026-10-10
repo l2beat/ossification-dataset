@@ -1,230 +1,46 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a",
-  "protocol": {
-    "name": "Value DeFi",
-    "slug": "value-defi"
-  },
+  "protocol": "Value DeFi",
   "name": "Value DeFi MultiStables vault share value from manipulable Curve 3pool quote",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a",
-      "blockNumber": 11256673,
-      "transactionIndex": 59,
-      "timestamp": 1605368190
-    },
-    "attackerAddresses": [
-      "0xa773603b139ae1c52d05b35796df3ee76d8a9a2f",
-      "0x675bd0a0b03096c5ead734cfa00c7620538c7c6f"
-    ]
-  },
   "summary": "MultiStablesVault prices a share against IMultiVaultController.balanceOf(3CRV, _sell), which converts every non-3CRV strategy holding through ShareConverter.convert_shares_rate. That function quotes the holding as StableSwap3Pool.calc_token_amount([0, usdc, 0], true), a spot, fee-free, single-transaction-manipulable pool quantity. Because mint uses balance() before the transfer and redemption uses balance_to_sell() computed at the same instant, an attacker who deposits, imbalances the Curve 3pool and redeems inside one transaction is paid at an inflated share price. In the anchor the identical BUSD-pool holding of 1,988,683.965709684903991584 BCrv quoted 2,100,754.566072978362359769 3CRV before the imbalance and 11,140,592.572211842856711915 3CRV after it, so 24,923,202.990614843737795018 shares redeemed for 33,089,069.045892566308558644 3CRV. withdrawFor carries no contract-depositor guard at all, and the deposit-side checkContract guard was satisfied because the whitelisted ValueVaultBank 0x8764f2c305b79680cfcc3398a96aedea9260f7ff forwards any caller's deposit.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 8168339.829743055,
-      "valuationTimestamp": 1605366587,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490",
-          "symbol": "3Crv"
-        },
-        "amount": "8132993.965848305428414002",
-        "usdValue": 8168339.829743055,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1605366587,
-          "unitPriceUsd": 1.0043459842762914,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion measured as the change in 3CRV backing the vault across the single exploit block. Immediately before block 11256673 the vault proxy held 15,481.012004745341988972 3CRV and its Curve 3pool strategy 0x467e9f2caa9b7678ddc29b248cb9fb181907bf3e held 8,907,642.635740816269236890 3CRV in gauge 0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a, a total of 8,923,123.647745561611225862 3CRV; immediately after, the totals are 0 and 790,129.681897256182811860 3CRV. Vault share totalSupply is unchanged at 11,306,867.172450486840394244 because the attacker burned exactly the shares it minted, and the BUSD-pool and sUSD-pool strategy holdings are unchanged, so the entire delta of 8,132,993.965848305428414002 3CRV is uncompensated depletion. The attacker's own 25,000,000 DAI deposit is an attacker-supplied input and is already netted out by this measurement, as is the 24,956,075.080044260880144642 3CRV the vault received for it. The attacker's realised proceeds were smaller than the depletion: 5,410,161.951405400704050092 DAI was sent to the attacker EOA and 2,000,000 DAI was sent back to Value DeFi deployer 0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f inside the same transaction, with the remaining difference consumed by Curve and Uniswap slippage and the 72 ETH Aave flash-loan fee. Under the gross-depletion rule the same-transaction 2,000,000 DAI return is a recovery and does not reduce this figure; Value DeFi's post-mortem quotes roughly 6,000,000 USD, which is this depletion net of that return. 3Crv is valued at the DefiLlama observation nearest the exploit, 1.0043459842762914 USD, which matches the pool's own pre-exploit get_virtual_price of 1.004346861769940042."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x55bf8304c78ba6fe47fd251f37d7beb485f86d26",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xddd7df28b1fb668b77860b473af819b03db61101",
-        "codeHash": "0x4e4b8f472c7985421ee3449feaebc26dffa5d8bd4ba54585062e2c6a2a076776"
-      },
-      "deployment": {
-        "timestamp": 1604921710,
-        "blockNumber": 11223057,
-        "transactionHash": "0x25a3423137d4a43ed3dbf0652de4e3e4435258e909fd7109693cf708919a3fd4",
-        "transactionIndex": 138,
-        "creatorAddress": "0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1604921710,
-        "blockNumber": 11223057,
-        "transactionHash": "0x25a3423137d4a43ed3dbf0652de4e3e4435258e909fd7109693cf708919a3fd4",
-        "transactionIndex": 138,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x55bf8304c78ba6fe47fd251f37d7beb485f86d26",
-          "storageSlot": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x000000000000000000000000ddd7df28b1fb668b77860b473af819b03db61101"
-        },
-        "description": "The AdminUpgradeabilityProxy constructor wrote MultiStablesVault 0xddd7df28b1fb668b77860b473af819b03db61101 into the EIP-1967 implementation slot. This proxy version does not emit Upgraded on construction, and no Upgraded log has ever been emitted by the proxy, so this write is the only implementation selection before the exploit."
-      },
-      "codeAgeSeconds": 446480,
-      "failureModeId": "failure:vault-share-value-from-manipulable-curve-pool-quote",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-2 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-2",
-          "source-8"
-        ]
+      "address": "0x55bf8304c78ba6fe47fd251f37d7beb485f86d26",
+      "code": "0xddd7df28b1fb668b77860b473af819b03db61101",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x25a3423137d4a43ed3dbf0652de4e3e4435258e909fd7109693cf708919a3fd4"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x57cda125d0c7b146a8320614ccd6c55999d15bf2",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x57cda125d0c7b146a8320614ccd6c55999d15bf2",
-        "codeHash": "0xa221ddc90029c2fa67862d77c8ba5616325cb7919df03a5adb34aeda402d49ff"
-      },
-      "deployment": {
-        "timestamp": 1604939906,
-        "blockNumber": 11224431,
-        "transactionHash": "0x5e2fe0ec8cbe392661dfb085557f0a937afc704bcbbc036f5887c16ed37d04ba",
-        "transactionIndex": 35,
-        "creatorAddress": "0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f"
-      },
-      "ageReset": {
+      "address": "0x57cda125d0c7b146a8320614ccd6c55999d15bf2",
+      "reset": {
         "kind": "deployment",
-        "description": "The ShareConverter runtime is immutable and was deployed in this transaction. Its runtime hash is identical at deployment and immediately before the exploit."
-      },
-      "codeAgeSeconds": 428284,
-      "failureModeId": "failure:vault-share-value-from-manipulable-curve-pool-quote",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "This target carries the same failureModeId as target-1 because it is the same defect realised in a second contract, so curve construction keeps only one observation for the incident."
-        ],
-        "reviewSourceIds": [
-          "source-2",
-          "source-8"
-        ]
+        "tx": "0x5e2fe0ec8cbe392661dfb085557f0a937afc704bcbbc036f5887c16ed37d04ba"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T19:11:43Z",
-      "note": "Reviewed the exploit receipt and its 809-line call trace, the verified sources of MultiStablesVault, ShareConverter, MultiStablesVaultController, StableSwap3PoolConverter, ValueMultiVaultMaster and AdminUpgradeabilityProxy, the creation receipts of the proxy, its implementation and the ShareConverter, the proxy's complete log history, and Value DeFi's post-mortem. Anchor 0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a is status 1 at block 11256673, transaction index 59, timestamp 1605368190 (the previous block 11256672 has timestamp 1605368121, which is not the anchor timestamp). It is the only exploit transaction of the campaign: EOA 0xa773603b139ae1c52d05b35796df3ee76d8a9a2f deployed helper 0x675bd0a0b03096c5ead734cfa00c7620538c7c6f five blocks earlier at 11256668 and sent it no further exploit call. The helper flash-loans 80,000 ETH from Aave v1, flash-swaps 116,000,000 DAI from Uniswap pair 0xa478c2975ab1ea89e8196811f51a7b7ade33eb11, buys 31,000,000 USDT, deposits 25,000,000 DAI through whitelisted bank 0x8764f2c305b79680cfcc3398a96aedea9260f7ff into vault proxy 0x55bf8304c78ba6fe47fd251f37d7beb485f86d26 (minting 24,923,202.990614843737795018 shares), imbalances Curve 3pool 0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7 with exchange(0,1,91,000,000 DAI) and exchange(2,1,31,000,000 USDT), then calls withdrawFor directly on the proxy. Inside the same trace, ShareConverter 0x57cda125d0c7b146a8320614ccd6c55999d15bf2 convert_shares_rate (selector 0x8b494708) quotes the unchanged 1,988,683.965709684903991584 BCrv strategy holding through stableSwap3Pool.calc_token_amount([0, 2114707432665, 0], true): 2,100,754.566072978362359769 3CRV at deposit time and 11,140,592.572211842856711915 3CRV after the imbalance, with the sUSD leg moving 300,393.249405403907146375 to 3,103,571.069925464398090543. The redemption therefore paid 33,089,069.045892566308558644 3CRV. StableSwap3PoolConverter 0x8c2f33b3a580baeb2a1f2d34bcc76e020a54338d also calls calc_token_amount, but only inside a convert_rate sanity check whose result the vault discards in favour of the realised add_liquidity output, so it is not a defect-bearing target here. Verified acceptContractDepositor is false while whitelistedContract[0x8764f2c3...] is true at block 11256672, and that withdrawFor has no contract guard. Code history: implementation 0xddd7df28b1fb668b77860b473af819b03db61101 was created at block 11223029 index 38 and the proxy at block 11223057 index 138, both by 0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f; the proxy creation emitted no logs and the EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc went from zero to 0x...ddd7df28 in that transaction's state diff and still holds that value today; eth_getLogs for topic 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b on the proxy from creation to latest returns zero entries. Runtime hashes 0x4e4b8f472c7985421ee3449feaebc26dffa5d8bd4ba54585062e2c6a2a076776 (implementation) and 0xa221ddc90029c2fa67862d77c8ba5616325cb7919df03a5adb34aeda402d49ff (ShareConverter) are identical at deployment and at block 11256672. Loss: the vault's 3CRV backing fell from 8,923,123.647745561611225862 to 790,129.681897256182811860 across the exploit block while share totalSupply and the BCrv and sCrv strategy holdings were unchanged, and the exploit transaction is the only transaction touching the proxy in block 11256673, giving an exact depletion of 8,132,993.965848305428414002 3CRV."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x25a3423137d4a43ed3dbf0652de4e3e4435258e909fd7109693cf708919a3fd4"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8974b53299311214f427e97800f25c2d4bfaca03c489247ee662c00067aaced3"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5e2fe0ec8cbe392661dfb085557f0a937afc704bcbbc036f5887c16ed37d04ba"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1605368190/ethereum:0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490",
-      "observedAt": 1787685103
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://valuedefi.medium.com/multistables-vault-exploit-post-mortem-d11b0635788f"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T09:00:00Z",
-      "note": "Knot selection. 2 sibling targets share failure:vault-share-value-from-manipulable-curve-pool-quote and one loss, so the incident contributes one observation. target-2 (0x57cda125d0c7b146a8320614ccd6c55999d15bf2) carries the latest age reset among them and supplies the knot; target-1 remain reviewed evidence."
-    }
-  ],
-  "discovery": [
-    "web:2020-11-14:value-defi",
-    "web:2020-12-14:value-defi-multistables"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 8168339.829743055,
+    "assets": [
+      {
+        "token": "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490",
+        "symbol": "3Crv",
+        "amount": "8132993.965848305428414002",
+        "usd": 8168339.829743055
+      }
     ]
   },
+  "refs": [
+    "eip155:1:0x8974b53299311214f427e97800f25c2d4bfaca03c489247ee662c00067aaced3",
+    "https://valuedefi.medium.com/multistables-vault-exploit-post-mortem-d11b0635788f"
+  ],
   "notes": [
+    "The AdminUpgradeabilityProxy constructor wrote MultiStablesVault 0xddd7df28b1fb668b77860b473af819b03db61101 into the EIP-1967 implementation slot. This proxy version does not emit Upgraded on construction, and no Upgraded log has ever been emitted by the proxy, so this write is the only implementation selection before the exploit.",
+    "The ShareConverter runtime is immutable and was deployed in this transaction. Its runtime hash is identical at deployment and immediately before the exploit.",
+    "Exact victim depletion measured as the change in 3CRV backing the vault across the single exploit block. Immediately before block 11256673 the vault proxy held 15,481.012004745341988972 3CRV and its Curve 3pool strategy 0x467e9f2caa9b7678ddc29b248cb9fb181907bf3e held 8,907,642.635740816269236890 3CRV in gauge 0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a, a total of 8,923,123.647745561611225862 3CRV; immediately after, the totals are 0 and 790,129.681897256182811860 3CRV. Vault share totalSupply is unchanged at 11,306,867.172450486840394244 because the attacker burned exactly the shares it minted, and the BUSD-pool and sUSD-pool strategy holdings are unchanged, so the entire delta of 8,132,993.965848305428414002 3CRV is uncompensated depletion. The attacker's own 25,000,000 DAI deposit is an attacker-supplied input and is already netted out by this measurement, as is the 24,956,075.080044260880144642 3CRV the vault received for it. The attacker's realised proceeds were smaller than the depletion: 5,410,161.951405400704050092 DAI was sent to the attacker EOA and 2,000,000 DAI was sent back to Value DeFi deployer 0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f inside the same transaction, with the remaining difference consumed by Curve and Uniswap slippage and the 72 ETH Aave flash-loan fee. Under the gross-depletion rule the same-transaction 2,000,000 DAI return is a recovery and does not reduce this figure; Value DeFi's post-mortem quotes roughly 6,000,000 USD, which is this depletion net of that return. 3Crv is valued at the DefiLlama observation nearest the exploit, 1.0043459842762914 USD, which matches the pool's own pre-exploit get_virtual_price of 1.004346861769940042.",
+    "Not the knot: sibling instance of the same template and failure; target-2 carries the latest age reset and supplies the incident's single observation.",
+    "This target carries the same failureModeId as target-1 because it is the same defect realised in a second contract, so curve construction keeps only one observation for the incident.",
     "Value DeFi's post-mortem quotes a net loss of roughly 6,000,000 USD, which is the onchain depletion recorded here minus the 2,000,000 DAI the attacker returned to the deployer inside the same transaction.",
     "The web-list lead web:2020-12-14:value-defi-multistables is a misdated duplicate of this incident, not a second campaign. Value DeFi titles this event the MultiStables Vault Exploit and reports its net loss as roughly 6,000,000 USD, which is the amount and name that lead carries. No December 2020 drain exists onchain: between blocks 11256673 and 11500000 the vault proxy holds no 3CRV outside settlement and the Curve 3pool strategy gauge balance and vault share supply decline smoothly with ordinary user withdrawals (730,580.93 3CRV / 2,565,136.66 shares on 2020-12-14 at block 11455000, unchanged through 11465000), with no single-transaction step."
   ]

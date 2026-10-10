@@ -1,142 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x8ff764dde572928c353716358e271638fa05af54be69f043df72ad9ad054de25",
-  "protocol": {
-    "name": "NGFS",
-    "slug": "ngfs"
-  },
+  "protocol": "NGFS",
   "name": "NGFS public proxy initialization",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x8ff764dde572928c353716358e271638fa05af54be69f043df72ad9ad054de25",
-      "blockNumber": 38167373,
-      "transactionIndex": 111,
-      "timestamp": 1714043885
-    },
-    "attackerAddresses": [
-      "0xd03d360dfc1dac7935e114d564a088077e6754a0"
-    ]
-  },
   "summary": "NGFSToken left its single-use proxy initializer public, letting the attacker appoint its own contract as both privileged proxy and library, credit itself an unbacked NGFS balance, and sell it against the NGFS/USDT pool.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 190138.75799031075,
-      "valuationTimestamp": 1714043885,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "190138.757990310758328686",
-        "usdValue": 190138.75799031075,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1714043885,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The NGFS/USDT pair's USDT balance fell from 192,044.910952619638111430 to 1,906.152962308879782744 in the exploit transaction. Its only USDT transfer was the exact 190,138.757990310758328686 payout to the attacker contract, which began with zero USDT and retained the full amount. Stablecoin-par valuation therefore equals the exact gross LP depletion."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa608985f5b40cdf6862bec775207f84280a91e3a",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa608985f5b40cdf6862bec775207f84280a91e3a",
-        "codeHash": "0x8c762803c5fc682129dc13bfd5d3dc14ac3d6f122757f8cb50243c1a0262cae2"
-      },
-      "deployment": {
-        "timestamp": 1713865554,
-        "blockNumber": 38108028,
-        "transactionHash": "0xada415135ab3cd4e2784ecbc024fc0500ca3907159023a4dfe6d874f46819eed",
-        "transactionIndex": 33,
-        "creatorAddress": "0xf18c604dbed9bb0f94eb389237d5141b9586dd6b"
-      },
-      "ageReset": {
+      "address": "0xa608985f5b40cdf6862bec775207f84280a91e3a",
+      "reset": {
         "kind": "deployment",
-        "description": "NGFSToken is direct non-proxy code. Its public first-caller-wins delegateCallReserves initializer and reserveMultiSync's unbacked balance addition were present at deployment and remained executable until the exploit. Liquidity and trading changes only altered exposure; the attacker claimed the latent initializer inside the exploit transaction, so that attacker-installed state is the exploit rather than an age reset."
-      },
-      "codeAgeSeconds": 178331,
-      "failureModeId": "failure:ngfs-public-proxy-initializer-unbacked-balance-credit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xada415135ab3cd4e2784ecbc024fc0500ca3907159023a4dfe6d874f46819eed"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8ff764dde572928c353716358e271638fa05af54be69f043df72ad9ad054de25"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-04/NGFS_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xada415135ab3cd4e2784ecbc024fc0500ca3907159023a4dfe6d874f46819eed"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T06:46:55Z",
-      "note": "Reviewed the successful exploit receipt and full call trace, explorer-verified solc 0.8.24 NGFSToken source, the commit-pinned reproduction, archive token balances and code, creation transaction, proxy slots and pre-exploit direct-call history. The exploit EOA called helper 0xc73781107d086754314f7720ca14ab8c5ad035e4, which first called permissionless delegateCallReserves(). Verified code requires only that its private one-shot flag is false, then assigns _uniswapV2Proxy = msg.sender and consumes the flag; the successful call establishes that it remained unclaimed immediately before exploitation. The helper then passed setProxySync's only check because it had just become _uniswapV2Proxy, setting itself as _uniswapV2Library and fee-excluding itself. reserveMultiSync authorizes that mutable library address and performs _balances[syncAddr] = _balances[syncAddr].air(syncAmount) without debiting another balance or increasing totalSupply. The onchain helper supplied 191,955,211,775.067737892184621300 NGFS, exactly 100 times the pair's pre-transaction NGFS balance, received that unbacked balance, and sold all of it through PancakeSwap. The pair paid 190,138.757990310758328686 USDT to the helper, reducing its balance from 192,044.910952619638111430 to 1,906.152962308879782744 USDT; helper USDT rose from zero by the same exact amount. Artifact history: 0xa608985f5b40cdf6862bec775207f84280a91e3a was directly created by 0xf18c604dbed9bb0f94eb389237d5141b9586dd6b in block 38108028 index 33, timestamp 1713865554. Code is absent at block 38108027, and its 12,120-byte runtime hashes to 0x8c762803c5fc682129dc13bfd5d3dc14ac3d6f122757f8cb50243c1a0262cae2 at deployment and immediately before exploitation. Explorer metadata marks it non-proxy, both EIP-1967 implementation and beacon slots are zero, and its runtime contains no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT. Owner-set fees, lists and trading state neither authorize nor alter the public initializer and unbacked balance-credit path. The initializer's attacker claim occurred inside the anchored exploit and is attack machinery, so deployment is the latest victim-code age reset, 178,331 seconds before exploitation."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-04/NGFS_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 190138.75799031075,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "190138.757990310758328686",
+        "usd": 190138.75799031075
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-04/NGFS_exp.sol"
+  ],
+  "notes": [
+    "NGFSToken is direct non-proxy code. Its public first-caller-wins delegateCallReserves initializer and reserveMultiSync's unbacked balance addition were present at deployment and remained executable until the exploit. Liquidity and trading changes only altered exposure; the attacker claimed the latent initializer inside the exploit transaction, so that attacker-installed state is the exploit rather than an age reset.",
+    "The NGFS/USDT pair's USDT balance fell from 192,044.910952619638111430 to 1,906.152962308879782744 in the exploit transaction. Its only USDT transfer was the exact 190,138.757990310758328686 payout to the attacker contract, which began with zero USDT and retained the full amount. Stablecoin-par valuation therefore equals the exact gross LP depletion."
+  ]
 }

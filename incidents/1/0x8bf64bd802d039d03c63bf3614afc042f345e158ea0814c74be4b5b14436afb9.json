@@ -1,128 +1,29 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x8bf64bd802d039d03c63bf3614afc042f345e158ea0814c74be4b5b14436afb9",
-  "protocol": {
-    "name": "Furucombo",
-    "slug": "furucombo"
-  },
+  "protocol": "Furucombo",
   "name": "Furucombo Proxy delegatecall context hijack",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x8bf64bd802d039d03c63bf3614afc042f345e158ea0814c74be4b5b14436afb9",
-      "blockNumber": 11940588,
-      "transactionIndex": 4,
-      "timestamp": 1614445632
-    },
-    "attackerAddresses": [
-      "0xb624e2b10b84a41687caec94bdd484e48d76b212"
-    ]
-  },
   "summary": "Proxy._exec() used one registry validity check for both callback callers and delegatecall targets. Because Aave V2's lending-pool proxy was marked valid, the attacker delegatecalled its initialize function in Furucombo's context, wrote a malicious implementation into Furucombo's colliding EIP-1967 slot, and then used that implementation to drain tokens users had approved to Furucombo.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 15000000,
-      "valuationTimestamp": 1614445632,
-      "method": "reported",
-      "sourceIds": [
-        "source-5"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Furucombo reported that 21 assets worth approximately $15 million were stolen from 22 users."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x17e8ca1b4798b97602895f63206afcd1fc90ca5f",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x17e8ca1b4798b97602895f63206afcd1fc90ca5f",
-        "codeHash": "0xd662630506386b13c533a6391c0358735d432a8c482f3cc3785a534c92b96ed2"
-      },
-      "deployment": {
-        "timestamp": 1610165837,
-        "blockNumber": 11618386,
-        "transactionHash": "0x1de6abfe8bab4a33bb31b4ccf68adb94de55ea4c90332ad0de38b1ff53cf2c71",
-        "transactionIndex": 90,
-        "creatorAddress": "0xbcb909975715dc8fde643ee44b89e3fd6a35a259"
-      },
-      "ageReset": {
+      "address": "0x17e8ca1b4798b97602895f63206afcd1fc90ca5f",
+      "reset": {
         "kind": "deployment",
-        "description": "The vulnerable handler-validation and delegatecall boundary is part of the Furucombo proxy's immutable direct runtime."
-      },
-      "codeAgeSeconds": 4279795,
-      "failureModeId": "failure:furucombo-handler-proxy-storage-collision",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x1de6abfe8bab4a33bb31b4ccf68adb94de55ea4c90332ad0de38b1ff53cf2c71"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8bf64bd802d039d03c63bf3614afc042f345e158ea0814c74be4b5b14436afb9"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://slowmist.medium.com/slowmist-analysis-of-the-furucombo-hack-28c9ae558db9"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T00:00:00Z",
-      "note": "Reviewed the exploit and Furucombo creation traces, the attacker's setup transaction, Furucombo's commit-pinned proxy source, verified runtime, technical analysis, official post-mortem, and reported loss. The Furucombo runtime validates a handler address and then delegatecalls it without separating ordinary handlers from external proxy contracts. The attacker's setup transaction 0x6a14869266a1dcf3f51b102f44b7af7d0a56f1766e5b1908ac80a6a23dbaf449 used the allowed Aave proxy to write Furucombo's colliding EIP-1967 implementation slot; the anchored transaction then reached the malicious implementation through that path. This setup write is exploitation of the pre-existing defect, not a protocol code change. The direct Furucombo runtime hash is unchanged from deployment through the exploit and contains no SELFDESTRUCT."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1de6abfe8bab4a33bb31b4ccf68adb94de55ea4c90332ad0de38b1ff53cf2c71"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://medium.com/furucombo/furucombo-post-mortem-march-2021-ad19afd415e"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/dinngo/furucombo-contract",
-      "commit": "e9100b4af2620b65fc87996656bb88d4794ef2b4",
-      "path": "contracts/Proxy.sol"
-    }
+  "loss": {
+    "usd": 15000000,
+    "assets": []
+  },
+  "refs": [
+    "https://slowmist.medium.com/slowmist-analysis-of-the-furucombo-hack-28c9ae558db9",
+    "https://medium.com/furucombo/furucombo-post-mortem-march-2021-ad19afd415e",
+    "https://github.com/dinngo/furucombo-contract/blob/e9100b4af2620b65fc87996656bb88d4794ef2b4/contracts/Proxy.sol"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Furucombo reports an approximate aggregate USD value for 21 assets rather than per-asset quantities."
-    ],
-    "reviewSourceIds": [
-      "source-3"
-    ]
-  }
+  "notes": [
+    "The vulnerable handler-validation and delegatecall boundary is part of the Furucombo proxy's immutable direct runtime.",
+    "Furucombo reported that 21 assets worth approximately $15 million were stolen from 22 users.",
+    "Furucombo reports an approximate aggregate USD value for 21 assets rather than per-asset quantities."
+  ]
 }

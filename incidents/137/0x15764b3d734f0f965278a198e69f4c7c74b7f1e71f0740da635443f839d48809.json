@@ -1,170 +1,44 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0x15764b3d734f0f965278a198e69f4c7c74b7f1e71f0740da635443f839d48809",
-  "protocol": {
-    "name": "PolyDEX",
-    "slug": "polydex"
-  },
+  "protocol": "PolyDEX",
   "name": "PolyDEX PLX Locker (vMToken) claimUnlocked ERC777 reentrancy",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0x15764b3d734f0f965278a198e69f4c7c74b7f1e71f0740da635443f839d48809",
-      "blockNumber": 15952325,
-      "transactionIndex": 32,
-      "timestamp": 1624222200
-    },
-    "attackerAddresses": [
-      "0x8a0a1eb0bae23e4e95608e3aad7fa25b0d907c6c",
-      "0xf1a75608fbf9ed3a400877863883be9a8af04bf8",
-      "0x287f8cf077666e60e2d238bf77a525051481d769"
-    ]
-  },
   "summary": "vMToken.claimUnlocked (the fPLX token locker) transfers the claimable PLX before increasing _released. PLX is an ERC777-style token that calls the recipient's tokensReceived hook, so an attacker contract re-entered unlockAll()/claimUnlocked 40 times per transaction and was paid the same vested amount repeatedly. Eleven transactions with growing lock sizes drained 59.6M net PLX from the locker, which the attacker sold for USDC and WETH.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 394168.538146,
-      "valuationTimestamp": 1624223036,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x7a5dc8a09c831251026302c93a778748dd48b4df",
-          "symbol": "PLX"
-        },
-        "amount": "59632682.482001077631052782",
-        "usdValue": 394168.538146,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1624223036,
-          "unitPriceUsd": 0.006609941423731389,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Net PLX depletion of the locker across the eleven reentrant transactions (88,158,559.597 out minus 28,525,877.115 locked in by the attacker contracts). Valued by the attacker's disposal: 25 sales of 59,534,251.04 PLX between blocks 15952778 and 15953416 returned 127,336.874416 USDC.e plus 119.239910666 WETH, swapped for 266,831.663730 USDC.e; total 394,168.538146 USD. The disposal crashed the PLX price, so this is a lower bound; PolyDEX reported about 500,000 USD.",
-    "realizedAt": 1624223036
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x28151ba48963019ddb509fbb6d5761f3494b3828",
-      "relationship": "proxy",
-      "deployment": {
-        "timestamp": 1622027872,
-        "blockNumber": 14949746,
-        "transactionHash": "0x15809f4ef76cdd6be5d1bc8bc1941eee13bf9ca287a88b66791a3967ab2b27f8",
-        "transactionIndex": 19,
-        "creatorAddress": "0xf08f25bf1fc4bb4e7cbe19239dbfe454bcd53814"
-      },
-      "ageReset": {
+      "address": "0x28151ba48963019ddb509fbb6d5761f3494b3828",
+      "code": "0xac8c06c3b3032af783508fad9107d3165ef3fcb8",
+      "reset": {
         "kind": "deployment",
-        "description": "The UChildERC20Proxy constructor stored vMToken implementation 0xac8c06c3b3032af783508fad9107d3165ef3fcb8 in the matic.network.proxy.implementation slot (no ProxyUpdated event); the slot and implementation runtime are unchanged until after the exploit (first ProxyUpdated at block 16281056)."
-      },
-      "codeAgeSeconds": 2194328,
-      "failureModeId": "failure:polydex-vmtoken-claimunlocked-erc777-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0xac8c06c3b3032af783508fad9107d3165ef3fcb8",
-        "codeHash": "0xf0b5ce62f8ed07ae40ff64a3abe241d7a09c13dd12bb2b509616fc206c29383c"
+        "tx": "0x15809f4ef76cdd6be5d1bc8bc1941eee13bf9ca287a88b66791a3967ab2b27f8"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x15764b3d734f0f965278a198e69f4c7c74b7f1e71f0740da635443f839d48809"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://polydex.medium.com/plx-locker-smart-contract-incident-post-mortem-75342124a3e8"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T05:07:56Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Verified vMToken source (source-5): claimUnlocked() computes canUnlockAmount(msg.sender), calls IERC20(plx).safeTransfer(msg.sender, amount) and only then adds amount to _released; unlock(amount) burns fPLX, adds to _locks and calls claimUnlocked; unlockAll() calls unlock(balanceOf(msg.sender)); there is no reentrancy guard. PLX 0x7a5dc8a09c831251026302c93a778748dd48b4df invokes ERC1820 getInterfaceImplementer (0xaabbb8ca on 0x1820a4b7618bde71dce8cdc73aab6c95905fad24) and the recipient's tokensReceived (0x0023de29) on transfer (debug_traceTransaction callTracer of the post-mortem tx 0x6b3f057683083d7f0a25e4d3898ca68308cfe2335878143466f84b3003ebe3a2). Earliest exercise: eth_getLogs PLX Transfer with from = locker 0x28151ba48963019ddb509fbb6d5761f3494b3828 (Etherscan V2 logs, block-bisected), blocks 14949746..15952324: 4161 logs in 4161 distinct transactions, none with more than one locker outflow; blocks 15952325..16281056: eleven transactions each emit 41 locker outflows (one claim plus 40 re-entered claims), all sent by 0x8a0a1eb0bae23e4e95608e3aad7fa25b0d907c6c through fresh contracts, first source-1 (block 15952325, index 32, contract 0xf1a75608fbf9ed3a400877863883be9a8af04bf8, 56431.205315183839174212 PLX out vs 18263.270352331927318184 locked), last 0x8552cee977833edba8221cb1259eab07e050aac23b2535e78a5d600d5e7f0073 (block 15952731). Identity/age: the proxy is Matic UpgradableProxy (verified UChildERC20Proxy); its constructor writes the implementation to slot keccak256('matic.network.proxy.implementation') = 0xbaab7dbf64751104133af04abc7d9979f0fda3b059a322a8333f533d3f32bf7f without an event. eth_getCode of the proxy is empty at block 14949745 and hashes to 0x171a2f20ff8db38b3eaf5af88cac8bd82aa2cb081a2f772c889fa11befae4407 at 14949746 and 15952324; eth_getStorageAt of that slot is 0 at 14949745 and 0x...ac8c06c3b3032af783508fad9107d3165ef3fcb8 at 14949746 and 15952324; the implementation runtime is empty at 14949676 and hashes to 0xf0b5ce62f8ed07ae40ff64a3abe241d7a09c13dd12bb2b509616fc206c29383c at 14949746 and 15952324 (created at block 14949677 index 127 by 0xf08f25bf1fc4bb4e7cbe19239dbfe454bcd53814 in 0xe59b391f2f91441d502ee4e55795eda6ea303f28557c5c4282d31f818cf12315). eth_getLogs ProxyUpdated(address,address) (0xd32d24edea94f55e932d9a008afc425a8561462d1b1f57bc6e508e9a6b9509e1) on the proxy, blocks 14949746..16300000, returns only the post-exploit patches at 16281056 and 16281329. Etherscan V2 txlist of the proxy (7692 txs): admin calls before the exploit are initialize (block 14949820, PLX and release blocks), transferProxyOwnership (14972538) and burn (14972668), none touching the claim logic. Callback-capable PLX is a proxy whose implementation 0xd4a7d5ca5232976ebf9c28b7231bfdbf4c4eee95 was created at block 14942470, before the locker, with no ProxyUpdated event through block 15952325, so it cannot be a later reset. Proxy deployment activated the defective implementation and supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T05:07:56Z",
-      "note": "Reviewed loss from receipts. For each of the eleven reentrant transactions (source-6 set) sum PLX Transfer logs from and to the locker: outflows 88158559.596672466 PLX, inflows (attacker locks) 28525877.114671394 PLX, net 59632682.482001077631052782 PLX. Largest single leg is 0x6b3f057683083d7f0a25e4d3898ca68308cfe2335878143466f84b3003ebe3a2 (net 32844500.606080731804365702). Disposal: Etherscan V2 account.tokentx for the attacker EOA, blocks 15952778..15953416, shows 25 transactions sending 59534251.042762423713551622 PLX to 0xd33992a7367523b04949c7693d6506d4a7e19446 and receiving 127336.874416 USDC.e and 119.239910666441950160 WETH; tx 0x09c37e8d412f697ea7c2371156762e8263c99464dc0c621bbce2d8552712da64 (block 15953466) swaps all 119.239910666441950160 WETH for 266831.663730 USDC.e; the EOA then bridges 511147.664724 USDC.e in 0xe02124b1a2fa3c4d7f0bad162f06c96688f5911951010063ac7f65ef4b6bd1ad (named in source-2). Realised proceeds 394168.538146 USD (USDC.e at par)."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified vMToken (flattened) at https://polygonscan.com/address/0xac8c06c3b3032af783508fad9107d3165ef3fcb8#code; reproduce Etherscan V2 contract.getsourcecode chainid=137. Compiler v0.6.12+commit.27d51765, optimizer 9999 runs. SHA-256 of returned SourceCode: 98a37b1c0ed41f3f896052ff477e294f5da589ada47c24c547656ae475a0cfa4. Inspect lock, unlock, unlockAll, canUnlockAmount and claimUnlocked."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 137,
-      "transactionHashes": [
-        "0x15764b3d734f0f965278a198e69f4c7c74b7f1e71f0740da635443f839d48809",
-        "0x657e11cdacc153fdfad30af3888cb76287f4353cc4981eea97dcbe0630cc0eca",
-        "0xc778a7cfb716ccc2d755e511127e2ae8f8e0acc71ca2d3a7d4d6c89b584332ac",
-        "0xed5fc6a562d88f13bda32d490c86e21040f24cb597ad5e31b50614a5b48199d0",
-        "0xf82daddd49d582f464d26cf880cff7c0f402ccbede2e221c322898b250a890f5",
-        "0x557a405514b64e90c54fb06981829b7fefd089e0e2cb34d29576b9e20dc684b6",
-        "0x6b3f057683083d7f0a25e4d3898ca68308cfe2335878143466f84b3003ebe3a2",
-        "0x733b018df821083b752e0e47ab13ca10b059908b34b3e83dfc3603e95ca5e33d",
-        "0x58b779616d90ff03d07c0a1dfbd46a44fcf9ce55789e26142ed582a871ee51bf",
-        "0x35636e66c83fe0d0262374e811d183e67ce3b1c7e3e81f3e024d51e2282a8050",
-        "0x8552cee977833edba8221cb1259eab07e050aac23b2535e78a5d600d5e7f0073"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x15809f4ef76cdd6be5d1bc8bc1941eee13bf9ca287a88b66791a3967ab2b27f8"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 394168.538146,
+    "assets": [
+      {
+        "token": "0x7a5dc8a09c831251026302c93a778748dd48b4df",
+        "symbol": "PLX",
+        "amount": "59632682.482001077631052782",
+        "usd": 394168.538146
+      }
     ]
   },
-  "discovery": [
-    "web:2021-06-20:polydex"
+  "refs": [
+    "https://polydex.medium.com/plx-locker-smart-contract-incident-post-mortem-75342124a3e8",
+    "eip155:137:0x657e11cdacc153fdfad30af3888cb76287f4353cc4981eea97dcbe0630cc0eca",
+    "eip155:137:0xc778a7cfb716ccc2d755e511127e2ae8f8e0acc71ca2d3a7d4d6c89b584332ac",
+    "eip155:137:0xed5fc6a562d88f13bda32d490c86e21040f24cb597ad5e31b50614a5b48199d0",
+    "eip155:137:0xf82daddd49d582f464d26cf880cff7c0f402ccbede2e221c322898b250a890f5",
+    "eip155:137:0x557a405514b64e90c54fb06981829b7fefd089e0e2cb34d29576b9e20dc684b6",
+    "eip155:137:0x6b3f057683083d7f0a25e4d3898ca68308cfe2335878143466f84b3003ebe3a2",
+    "eip155:137:0x733b018df821083b752e0e47ab13ca10b059908b34b3e83dfc3603e95ca5e33d",
+    "eip155:137:0x58b779616d90ff03d07c0a1dfbd46a44fcf9ce55789e26142ed582a871ee51bf",
+    "eip155:137:0x35636e66c83fe0d0262374e811d183e67ce3b1c7e3e81f3e024d51e2282a8050",
+    "eip155:137:0x8552cee977833edba8221cb1259eab07e050aac23b2535e78a5d600d5e7f0073"
+  ],
+  "notes": [
+    "The UChildERC20Proxy constructor stored vMToken implementation 0xac8c06c3b3032af783508fad9107d3165ef3fcb8 in the matic.network.proxy.implementation slot (no ProxyUpdated event); the slot and implementation runtime are unchanged until after the exploit (first ProxyUpdated at block 16281056).",
+    "Net PLX depletion of the locker across the eleven reentrant transactions (88,158,559.597 out minus 28,525,877.115 locked in by the attacker contracts). Valued by the attacker's disposal: 25 sales of 59,534,251.04 PLX between blocks 15952778 and 15953416 returned 127,336.874416 USDC.e plus 119.239910666 WETH, swapped for 266,831.663730 USDC.e; total 394,168.538146 USD. The disposal crashed the PLX price, so this is a lower bound; PolyDEX reported about 500,000 USD."
   ]
 }

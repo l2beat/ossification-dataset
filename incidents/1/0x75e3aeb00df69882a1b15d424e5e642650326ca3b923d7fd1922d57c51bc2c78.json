@@ -1,182 +1,45 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x75e3aeb00df69882a1b15d424e5e642650326ca3b923d7fd1922d57c51bc2c78",
-  "protocol": {
-    "name": "Miner (ERC-X)",
-    "slug": "miner-ercx"
-  },
+  "protocol": "Miner (ERC-X)",
   "name": "MINER ERC-X self-transfer balance duplication",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x75e3aeb00df69882a1b15d424e5e642650326ca3b923d7fd1922d57c51bc2c78",
-      "blockNumber": 19226600,
-      "transactionIndex": 22,
-      "timestamp": 1707918503
-    },
-    "attackerAddresses": [
-      "0xea75aec151f968b8de3789ca201a2a3a7faeefba",
-      "0xbff51c9c3d50d6168dfef72133f5dbda453ebf29"
-    ]
-  },
   "summary": "The MINER ERC-X token's _transfer rejects only the zero address for sender and receiver, and the _update it calls caches uint256 fromBalance = _balances[from] and uint256 toBalance = _balances[to] before writing _balances[from] = fromBalance - value and _balances[to] = toBalance + value. When from == to the second write restores the pre-transfer balance and adds value on top, so a transfer to one's own address is a pure credit of value out of nothing while _totalSupply is unchanged. The attacker's contract looped this self-transfer 2000 times inside a Uniswap V3 swap callback, minting the MINER it owed the pool and paying for 999.999999999999998 MINER of output it never held. No parameter value repairs this: the write order is wrong for every amount.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 464103.5613250894,
-      "valuationTimestamp": 1707918591,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "168.607972696358826905",
-        "usdValue": 464103.5613250894,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1707918591,
-          "unitPriceUsd": 2752.56,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "realizedAt": 1707919847,
-    "notes": "Exact depletion of the MINER/WETH Uniswap V3 pool 0x732276168b421d4792e743711e1a48172ea574a2, measured by summing every WETH Transfer from that pool to the exploit contract 0xbff51c9c3d50d6168dfef72133f5dbda453ebf29 across the eleven campaign transactions in blocks 19226600 to 19226707: 168607972696358826905 wei, all of which the contract forwarded to the attacker EOA in two withdrawals. The attacker's only campaign input was 0.1 WETH spent 27 minutes earlier in transaction 0xe9d68078bbee1d5a0fa6ff683d59928828d162d2b4502182f82dcc0d894b6d4c buying the 3.572592720467130237 MINER seed at market price; netting it would give 168.507972696358826905 WETH. Realised WETH proceeds are used rather than any MINER mark: the exploit minted MINER without limit and the pool's MINER reserve rose from 20,760.445641193926256214 to 31,070.707215523730649876 while its WETH reserve fell from 292.675662175650830997 to 8.339688812255084036, so no spot mark on the minted tokens would be realisable. The pool's WETH balance fell by 284.335973363395746961 between blocks 19226599 and 19226717, so a further 115.728000667036920056 WETH net left it over the same span through liquidity withdrawals and unrelated holders selling into the collapse; that is market exit rather than value taken by this campaign and is excluded."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe77ec1bf3a5c95bfe3be7bdbacfe3ac1c7e454cd",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe77ec1bf3a5c95bfe3be7bdbacfe3ac1c7e454cd",
-        "codeHash": "0x806c7839ff3be9720decf1330f2b4a5f354717f753320fbdb2796b3791bbcbfc"
-      },
-      "deployment": {
-        "timestamp": 1707680423,
-        "blockNumber": 19206955,
-        "transactionHash": "0x160b3291d1e5e14a1abf91f2495e8523cec389b29a8a8500f5942a9d19ce77bc",
-        "transactionIndex": 74,
-        "creatorAddress": "0x2bb152c4a84f91bb5eb740a36ce6bae45c97a1d7"
-      },
-      "ageReset": {
+      "address": "0xe77ec1bf3a5c95bfe3be7bdbacfe3ac1c7e454cd",
+      "reset": {
         "kind": "deployment",
-        "description": "The token runtime was created by top-level CREATE in this transaction and is byte-identical at block 19206955, at block 19226599 immediately before the exploit, and today; the address holds no EIP-1967 implementation pointer and the exploit calls it directly, so the deployment is the only executable-code change."
-      },
-      "codeAgeSeconds": 238080,
-      "failureModeId": "failure:miner-ercx-self-transfer-balance-credit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+        "tx": "0x160b3291d1e5e14a1abf91f2495e8523cec389b29a8a8500f5942a9d19ce77bc"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x75e3aeb00df69882a1b15d424e5e642650326ca3b923d7fd1922d57c51bc2c78"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://medium.com/neptune-mutual/analysis-of-the-miner-exploit-cf4dccd48f11"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-02/Miner_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x160b3291d1e5e14a1abf91f2495e8523cec389b29a8a8500f5942a9d19ce77bc"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x92406300fd4446459b18fc17cdd775808bfc7ed1782bd4c8674a2bbe95610ad9"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1707918503/coingecko:ethereum",
-      "observedAt": 1787700157
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x75e3aeb00df69882a1b15d424e5e642650326ca3b923d7fd1922d57c51bc2c78",
-        "0x4b9de8c56c8919e8598181449a3cc02df40435eb641eaec08ecce12d2342237f",
-        "0xfc0b7f6182e6aae54f7fd91054c3913b7894dbc32656d8cc43e04990b9c7d8b5",
-        "0xea367cdb0066e88a1ee66c97124616e8aa3181deb0f61215b4dca3fbd526bb8a",
-        "0xb9302afb238d440f083b6fa9af858b53651c7b68553d07c5e723731dfcdf4939",
-        "0xd22b05fffe2fc29fa7e0c9d7d9d4151ed9cde9361bb4f7127d56abd7c8cde1b2",
-        "0xddacdc06b84e572754011faa35add7445cd0f547d351aeee36556df89d53e8db",
-        "0x5cc93e9d5adec2b432ddf8052ed77a052e07671db36954675d6f55df28bdb8c0",
-        "0x0509face343b1d08ca29f5db3111f5c598bd30bd8a065ef80bd5cfa71d2f9544",
-        "0x6a4af133b0dada00a446768edac72f00e5150d95e63a54a644af498b115200cd",
-        "0xc799592dbd191922909cf54ffe51f33e45f6cfc0e94cd6484470d78969d374fe"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Re-reviewed the seed MINER row from chain data. Anchor: 0x75e3aeb00df69882a1b15d424e5e642650326ca3b923d7fd1922d57c51bc2c78 is status 1 at 19226600:22, timestamp 1707918503, and is nonce 49 of attacker EOA 0xea75aec151f968b8de3789ca201a2a3a7faeefba. Every earlier nonce of that account touching this token was checked by trace and none executes the defect: nonce 41 is an ordinary 0.1 WETH buy through the Uniswap V3 router, nonces 39 and 44 are approvals on the discarded helper contracts 0x9fb32ec72fe3597f949297a2c7e57f8bafa19824 and 0x589daf36284f48bf783d53f45ed5915af24091d2, and nonces 45 and 48 are ordinary transfers of the 3.572592720467130237 MINER seed to those contracts with distinct sender and recipient. The anchor is the first transaction whose trace contains Transfer(from == to). Root cause read from the verified ERC_X source: _transfer reverts only on the zero address, and _update caches fromBalance and toBalance before writing, so a from == to transfer credits value with no debit; the anchor's trace shows the exploit contract calling ERC_X::transfer(0xbff51c9c3d50d6168dfef72133f5dbda453ebf29, 499999999999999999) against itself and ERC_X::transfer(pool, 499999999999999999) alternately inside uniswapV3SwapCallback until it has paid the pool 999999999999999998000 MINER for 28.210613620184568130 WETH it did not fund. The seed row's note's victim address 0x732276168b421d4792e743711e1a48172ea574a2 is the MINER/WETH Uniswap V3 pool; the defect-bearing contract is the token 0xe77ec1bf3a5c95bfe3be7bdbacfe3ac1c7e454cd, confirmed direct and non-proxy: its runtime hashes to 0x806c7839ff3be9720decf1330f2b4a5f354717f753320fbdb2796b3791bbcbfc at creation block 19206955, at block 19226599 immediately before the exploit, and at head, the empty-code hash appears at block 19206954, and EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc is zero. Creation transaction 0x160b3291d1e5e14a1abf91f2495e8523cec389b29a8a8500f5942a9d19ce77bc at 19206955:74 was sent by 0x2bb152c4a84f91bb5eb740a36ce6bae45c97a1d7, not by the attacker. Code age is 1707918503 - 1707680423 = 238080 s (2.76 d), confirming the seed row's value. Loss re-measured: WETH Transfer logs from the pool to the exploit contract over blocks 19226600 to 19226707 total 168607972696358826905 wei across eleven transactions (28.210613620184567, 25.40255622176122, 20.70818066299119, 20.115069116869215, 17.660883481484664, 17.369328284799646, 15.38239726675751, 12.556869132411531, 10.878366462233828, 0.016681922833464303 and 0.30702652403199526 ETH), and the same total left the contract to the attacker EOA in 0x3a4e3e1adc822240a97a5d132d97d51e1d051f516d1569b5d6993807d17f38c9 and 0x92406300fd4446459b18fc17cdd775808bfc7ed1782bd4c8674a2bbe95610ad9. At the DefiLlama ETH price 2752.56 for timestamp 1707918591 that is 464103.56 USD, close to the seed row's 470000 estimate. The same EOA went on to exploit a second token, DAWN 0x863e894fabe51783849e16df657e7e8f1180506c, from block 19226869 onward; that campaign is a different code artifact and is deliberately outside this record."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-02/Miner_exp.sol",
-    "web:2024-02-14:miner-miner"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 464103.5613250894,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "168.607972696358826905",
+        "usd": 464103.5613250894
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://medium.com/neptune-mutual/analysis-of-the-miner-exploit-cf4dccd48f11",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/Miner_exp.sol",
+    "eip155:1:0x92406300fd4446459b18fc17cdd775808bfc7ed1782bd4c8674a2bbe95610ad9",
+    "eip155:1:0x4b9de8c56c8919e8598181449a3cc02df40435eb641eaec08ecce12d2342237f",
+    "eip155:1:0xfc0b7f6182e6aae54f7fd91054c3913b7894dbc32656d8cc43e04990b9c7d8b5",
+    "eip155:1:0xea367cdb0066e88a1ee66c97124616e8aa3181deb0f61215b4dca3fbd526bb8a",
+    "eip155:1:0xb9302afb238d440f083b6fa9af858b53651c7b68553d07c5e723731dfcdf4939",
+    "eip155:1:0xd22b05fffe2fc29fa7e0c9d7d9d4151ed9cde9361bb4f7127d56abd7c8cde1b2",
+    "eip155:1:0xddacdc06b84e572754011faa35add7445cd0f547d351aeee36556df89d53e8db",
+    "eip155:1:0x5cc93e9d5adec2b432ddf8052ed77a052e07671db36954675d6f55df28bdb8c0",
+    "eip155:1:0x0509face343b1d08ca29f5db3111f5c598bd30bd8a065ef80bd5cfa71d2f9544",
+    "eip155:1:0x6a4af133b0dada00a446768edac72f00e5150d95e63a54a644af498b115200cd",
+    "eip155:1:0xc799592dbd191922909cf54ffe51f33e45f6cfc0e94cd6484470d78969d374fe"
+  ],
+  "notes": [
+    "The token runtime was created by top-level CREATE in this transaction and is byte-identical at block 19206955, at block 19226599 immediately before the exploit, and today; the address holds no EIP-1967 implementation pointer and the exploit calls it directly, so the deployment is the only executable-code change.",
+    "Exact depletion of the MINER/WETH Uniswap V3 pool 0x732276168b421d4792e743711e1a48172ea574a2, measured by summing every WETH Transfer from that pool to the exploit contract 0xbff51c9c3d50d6168dfef72133f5dbda453ebf29 across the eleven campaign transactions in blocks 19226600 to 19226707: 168607972696358826905 wei, all of which the contract forwarded to the attacker EOA in two withdrawals. The attacker's only campaign input was 0.1 WETH spent 27 minutes earlier in transaction 0xe9d68078bbee1d5a0fa6ff683d59928828d162d2b4502182f82dcc0d894b6d4c buying the 3.572592720467130237 MINER seed at market price; netting it would give 168.507972696358826905 WETH. Realised WETH proceeds are used rather than any MINER mark: the exploit minted MINER without limit and the pool's MINER reserve rose from 20,760.445641193926256214 to 31,070.707215523730649876 while its WETH reserve fell from 292.675662175650830997 to 8.339688812255084036, so no spot mark on the minted tokens would be realisable. The pool's WETH balance fell by 284.335973363395746961 between blocks 19226599 and 19226717, so a further 115.728000667036920056 WETH net left it over the same span through liquidity withdrawals and unrelated holders selling into the collapse; that is market exit rather than value taken by this campaign and is excluded."
+  ]
 }

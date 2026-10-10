@@ -1,332 +1,73 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:250:0x5118df23e81603a64c7676dd6b6e4f76a57e4267e67507d34b0b26dd9ee10eac",
-  "protocol": {
-    "name": "Polter Finance",
-    "slug": "polter-finance"
-  },
+  "protocol": "Polter Finance",
   "name": "Polter Finance BOO price adapter pool-balance ratio",
-  "incident": {
-    "chainId": 250,
-    "exploit": {
-      "transactionHash": "0x5118df23e81603a64c7676dd6b6e4f76a57e4267e67507d34b0b26dd9ee10eac",
-      "blockNumber": 97508839,
-      "transactionIndex": 3,
-      "timestamp": 1731780030
-    },
-    "attackerAddresses": [
-      "0x511f427cdf0c4e463655856db382e05d79ac44a6",
-      "0xa21451ac32372c123191b3a4fc01deb69f91533a"
-    ]
-  },
   "summary": "The deployed contract that computes the BOO price is the SpookySwap pool adapter at 0x875d564a6a86f6154592b88f7a107a517f00cc17 (and its byte-identical twin 0x2ceca12a53e428d37a62448fc818bf2e15b7e462), which Polter's price feed 0x80663edff11e99e8e0b34cb9c3e1ff32e82a80fe aggregates and the Aave-fork oracle 0x6808b5ce79d44e89883c5393b487c4296abb69fe serves to lending pool 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 through getAssetPrice(address). Its latestRoundData() answer is exactly IERC20(WFTM).balanceOf(pool) * chainlinkFtmUsd / IERC20(BOO).balanceOf(pool), reproduced to the wei in the anchor trace: 1,828,570.941372594816969307 WFTM times 0.75128777 divided by 0.000000000001 BOO equals the reported 137,378,298,483,061,759,618,513,154. It reads the pool's raw ERC-20 balances at call time rather than a time-weighted or cumulative observation, and validates nothing: no TWAP window, no minimum-liquidity floor, no deviation cap against the previous answer, no staleness or sanity bound on the ratio. A SpookySwap flash loan that removes every BOO from pool 0xec7178f4c41f346b2721907f5cf7628e388a7a58 except 1,000,000 wei, leaving its WFTM balance untouched, therefore lifts the adapter's answer from about 1.19 USD to 1.37e19 USD per BOO inside one transaction. The attacker deposited 1.000000000000000000 BOO as collateral at that price and drew every other Polter market to zero. No parameter value makes this code correct: the pool, token and Chainlink feed addresses are configuration, but a raw balance ratio is manipulable under every configuration of them.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 8719125.22839623,
-      "valuationTimestamp": 1731780030,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7",
-        "source-8",
-        "source-9",
-        "source-10",
-        "source-11",
-        "source-12"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
-          "symbol": "WFTM"
-        },
-        "amount": "9134844.118945021990073601",
-        "usdValue": 6848547.928323104,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731779895,
-          "unitPriceUsd": 0.749717,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0xd7028092c830b5c8fce061af2e593413ebbc1fc1",
-          "symbol": "sFTMX"
-        },
-        "amount": "1997342.444872152375623648",
-        "usdValue": 1723211.188998339,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731779935,
-          "unitPriceUsd": 0.862752,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x2f733095b80a04b38b0d10cc884524a3d09b836a",
-          "symbol": "USDC.e"
-        },
-        "amount": "56881.017750",
-        "usdValue": 56868.276402024,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731779849,
-          "unitPriceUsd": 0.999776,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x695921034f0387eac4e11620ee91b1b15a6a09fe",
-          "symbol": "WETH"
-        },
-        "amount": "10.960867221404812339",
-        "usdValue": 34600.93681851407,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731776273,
-          "unitPriceUsd": 3156.77,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x1b6382dbdea11d97f24495c9a90b7c88469134a4",
-          "symbol": "axlUSDC"
-        },
-        "amount": "26002.496452",
-        "usdValue": 25993.863623177935,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731779914,
-          "unitPriceUsd": 0.999668,
-          "sourceIds": [
-            "source-11"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0xf1648c50d2863f780c57849d812b4b7686031a3d",
-          "symbol": "WBTC"
-        },
-        "amount": "0.23379639",
-        "usdValue": 21174.9390423,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731780030,
-          "unitPriceUsd": 90570,
-          "sourceIds": [
-            "source-12"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x82f0b8b456c1a451378467398982d4834b6829c1",
-          "symbol": "MIM"
-        },
-        "amount": "8763.798905510696167658",
-        "usdValue": 8728.095188769645,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731776250,
-          "unitPriceUsd": 0.995926,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Components are the exact ERC-20 quantities the eight Borrow events of the anchor transaction moved out of Polter's reserves, read from the receipt: 9,134,844.118945021990073601 WFTM (of which 9,130,844.118945021990073601 reached the attacker EOA and 4,000 went to SpookySwap pool 0xec7178f4c41f346b2721907f5cf7628e388a7a58 as the cost of the manipulation, a financing cost that does not reduce gross depletion), 1,997,342.444872152375623648 sFTMX, 56,881.017750 USDC.e, 10.960867221404812339 WETH, 26,002.496452 axlUSDC, 0.23379639 WBTC and 8,763.798905510696167658 MIM. A further 475.247372561 units of the Multichain-bridged SOL token 0xd99021c2a33e4cf243010539c9e9b7c52e0236c1 were drawn in the same transaction but are excluded from the USD total: DefiLlama publishes no historical or current price for that bridged asset, whose backing did not survive Multichain's 2023 failure, so marking it at the 215.76 USD native SOL price would not be a price it could be sold at. Marking it there would add about 102,539 USD. The attacker's own inputs are not counted: they supplied 601.734430161888206376 BOO net and 1.000000000000000000 BOO of collateral that Polter retains. Published estimates of about 7 million USD are early approximations; this reconstruction from the receipt gives 8.72 million USD excluding the bridged SOL. WBTC's nearest DefiLlama datapoint is stamped 1731780063, 33 seconds after the anchor; its valuation timestamp records the anchor time that was queried."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x875d564a6a86f6154592b88f7a107a517f00cc17",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x875d564a6a86f6154592b88f7a107a517f00cc17",
-        "codeHash": "0x35c3a370d450d608534856fa964eaad4d4c697e3019f420a477cd7ed03ad5263"
-      },
-      "deployment": {
-        "timestamp": 1731761652,
-        "blockNumber": 97491949,
-        "transactionHash": "0xd50cd2b9ca600e8839cccc5d4139cb782d253b6de40346cbd78848abaad34de9",
-        "transactionIndex": 1,
-        "creatorAddress": "0x0159f847e62ee65b7e11ba3210ec767eedbced25"
-      },
-      "ageReset": {
+      "address": "0x875d564a6a86f6154592b88f7a107a517f00cc17",
+      "reset": {
         "kind": "deployment",
-        "description": "The adapter runtime is immutable: 2,095 bytes with no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT opcode, byte-identical at its deployment block and at the block immediately before the exploit five hours later."
-      },
-      "codeAgeSeconds": 18378,
-      "failureModeId": "failure:polter-pool-balance-ratio-price-adapter",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0xd50cd2b9ca600e8839cccc5d4139cb782d253b6de40346cbd78848abaad34de9"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0x5118df23e81603a64c7676dd6b6e4f76a57e4267e67507d34b0b26dd9ee10eac"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T16:10:00Z",
-      "note": "Reviewed the anchor receipt and its 1,106-frame callTracer trace, the adapter creation transaction, historical runtimes and pool balances, and the Polter oracle call chain. The anchor 0x5118df23e81603a64c7676dd6b6e4f76a57e4267e67507d34b0b26dd9ee10eac is status 1 at block 97508839 index 3, timestamp 1731780030, sent by 0x511f427cdf0c4e463655856db382e05d79ac44a6 to attack contract 0xa21451ac32372c123191b3a4fc01deb69f91533a. It is the only campaign transaction: an eth_getLogs scan of Aave Borrow events on the pool 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 over blocks 97480000-97560000 returns 36 events, and only this transaction carries more than one, carrying eight. The trace shows lending pool 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 delegating to implementation 0xd47ae558623638f676c1e38dad71b53054f54273 and calling oracle 0x6808b5ce79d44e89883c5393b487c4296abb69fe getAssetPrice(0x841fad6eae12c286d1fd18d1d525dffa75c7effe) selector 0xb3596f07, the oracle calling BOO feed 0x80663edff11e99e8e0b34cb9c3e1ff32e82a80fe selector 0x0fdb11cf, and that feed reading two byte-identical adapters, 0x875d564a6a86f6154592b88f7a107a517f00cc17 over SpookySwap pool 0xec7178f4c41f346b2721907f5cf7628e388a7a58 and 0x2ceca12a53e428d37a62448fc818bf2e15b7e462 over pool 0xed23be0cc3912808ec9863141b96a9748bc4bd89. Each adapter reads WFTM.balanceOf(pool), BOO.balanceOf(pool) and the Chainlink FTM/USD proxy 0xf4766552d15ae4d256ad41b6cf2933482b0680dc, and I reproduced its answer exactly by integer arithmetic: 1828570941372594816969307 wei WFTM times 75128777 divided by 1000000 wei BOO equals 137378298483061759618513154, the value the trace returns, and the twin returns 29774727250792768470538102 from 396315878412246300000000 wei WFTM over the same 1000000 wei BOO. At block 97508838 those pools still held 1,154,788.112860552 and 269,042.228515627 BOO with unchanged WFTM balances, so BOO stood near 1.58 and 1.47 WFTM; the flash loan left 0.000000000001 BOO in each while the WFTM balances did not move at all. The feed then reports 1373782984830617596185131540000000000 for BOO in 18 decimals. The two adapters share codeHash 0x35c3a370d450d608534856fa964eaad4d4c697e3019f420a477cd7ed03ad5263 for a 2,095-byte runtime at block 97508838, so the representative-target rule applies and 0x875d564a6a86f6154592b88f7a107a517f00cc17, the one the trace reaches first, is the target. Code history: eth_getCode binary search places first code for it at block 97491949; that block holds two transactions and 0xd50cd2b9ca600e8839cccc5d4139cb782d253b6de40346cbd78848abaad34de9 at index 1 has no `to` and a receipt contractAddress equal to the adapter, created top level by 0x0159f847e62ee65b7e11ba3210ec767eedbced25, timestamp 1731761652, unrelated to the attacker; the runtime hash is identical at blocks 97491949 and 97508838 and the runtime holds no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT opcode, so deployment is the last code change and the defect-bearing code was 18,378 seconds, about 5.1 hours, old. This corrects the seed row, which measured the 292-day-old lending-pool proxy rather than the code that computed the manipulated price. Loss was taken from the anchor receipt's ERC-20 Transfer logs into the attacker EOA plus the 4,000 WFTM the pool paid to SpookySwap, and valued with DefiLlama historical prices at the anchor for 8,719,125.23 USD excluding the unpriceable bridged SOL component."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0xd50cd2b9ca600e8839cccc5d4139cb782d253b6de40346cbd78848abaad34de9"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-11/PolterFinance_exploit.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Bcpaintball26/status/1857865758551805976"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
-      "observedAt": 1787668169
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0xd7028092c830b5c8fce061af2e593413ebbc1fc1",
-      "observedAt": 1787668169
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0x82f0b8b456c1a451378467398982d4834b6829c1",
-      "observedAt": 1787668169
-    },
-    {
-      "id": "source-9",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0x695921034f0387eac4e11620ee91b1b15a6a09fe",
-      "observedAt": 1787668169
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0x2f733095b80a04b38b0d10cc884524a3d09b836a",
-      "observedAt": 1787668169
-    },
-    {
-      "id": "source-11",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0x1b6382dbdea11d97f24495c9a90b7c88469134a4",
-      "observedAt": 1787668169
-    },
-    {
-      "id": "source-12",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731780030/fantom:0xf1648c50d2863f780c57849d812b4b7686031a3d",
-      "observedAt": 1787668169
-    }
-  ],
-  "discovery": [
-    "seed:polter-finance:2024-11-16:polter-finance-boo-spot-price-manipulation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Fantom has no Etherscan v2 explorer API, so contract source is unavailable and the root cause rests on the executed call trace, the deployed runtimes, reproduced adapter arithmetic and the DeFiHackLabs reproduction; the deployment anchor was located by eth_getCode binary search plus a per-transaction receipt scan of the deployment block rather than by an explorer creation endpoint.",
-      "The seed inventory measured the Aave-fork lending-pool proxy 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 and reported a 292-day code age. That proxy and its implementation 0xd47ae558623638f676c1e38dad71b53054f54273 are correct for any sound oracle, so the boundary test places the defect in the price adapter instead and the measured age drops to 18,378 seconds.",
-      "475.247372561 units of the Multichain-bridged SOL token 0xd99021c2a33e4cf243010539c9e9b7c52e0236c1 were also drained but have no evidenced sellable price and are excluded from loss.usd."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 8719125.22839623,
+    "assets": [
+      {
+        "token": "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
+        "symbol": "WFTM",
+        "amount": "9134844.118945021990073601",
+        "usd": 6848547.928323104
+      },
+      {
+        "token": "0xd7028092c830b5c8fce061af2e593413ebbc1fc1",
+        "symbol": "sFTMX",
+        "amount": "1997342.444872152375623648",
+        "usd": 1723211.188998339
+      },
+      {
+        "token": "0x2f733095b80a04b38b0d10cc884524a3d09b836a",
+        "symbol": "USDC.e",
+        "amount": "56881.017750",
+        "usd": 56868.276402024
+      },
+      {
+        "token": "0x695921034f0387eac4e11620ee91b1b15a6a09fe",
+        "symbol": "WETH",
+        "amount": "10.960867221404812339",
+        "usd": 34600.93681851407
+      },
+      {
+        "token": "0x1b6382dbdea11d97f24495c9a90b7c88469134a4",
+        "symbol": "axlUSDC",
+        "amount": "26002.496452",
+        "usd": 25993.863623177935
+      },
+      {
+        "token": "0xf1648c50d2863f780c57849d812b4b7686031a3d",
+        "symbol": "WBTC",
+        "amount": "0.23379639",
+        "usd": 21174.9390423
+      },
+      {
+        "token": "0x82f0b8b456c1a451378467398982d4834b6829c1",
+        "symbol": "MIM",
+        "amount": "8763.798905510696167658",
+        "usd": 8728.095188769645
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-11/PolterFinance_exploit.sol",
+    "https://twitter.com/Bcpaintball26/status/1857865758551805976"
+  ],
+  "notes": [
+    "The adapter runtime is immutable: 2,095 bytes with no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT opcode, byte-identical at its deployment block and at the block immediately before the exploit five hours later.",
+    "Components are the exact ERC-20 quantities the eight Borrow events of the anchor transaction moved out of Polter's reserves, read from the receipt: 9,134,844.118945021990073601 WFTM (of which 9,130,844.118945021990073601 reached the attacker EOA and 4,000 went to SpookySwap pool 0xec7178f4c41f346b2721907f5cf7628e388a7a58 as the cost of the manipulation, a financing cost that does not reduce gross depletion), 1,997,342.444872152375623648 sFTMX, 56,881.017750 USDC.e, 10.960867221404812339 WETH, 26,002.496452 axlUSDC, 0.23379639 WBTC and 8,763.798905510696167658 MIM. A further 475.247372561 units of the Multichain-bridged SOL token 0xd99021c2a33e4cf243010539c9e9b7c52e0236c1 were drawn in the same transaction but are excluded from the USD total: DefiLlama publishes no historical or current price for that bridged asset, whose backing did not survive Multichain's 2023 failure, so marking it at the 215.76 USD native SOL price would not be a price it could be sold at. Marking it there would add about 102,539 USD. The attacker's own inputs are not counted: they supplied 601.734430161888206376 BOO net and 1.000000000000000000 BOO of collateral that Polter retains. Published estimates of about 7 million USD are early approximations; this reconstruction from the receipt gives 8.72 million USD excluding the bridged SOL. WBTC's nearest DefiLlama datapoint is stamped 1731780063, 33 seconds after the anchor; its valuation timestamp records the anchor time that was queried.",
+    "Fantom has no Etherscan v2 explorer API, so contract source is unavailable and the root cause rests on the executed call trace, the deployed runtimes, reproduced adapter arithmetic and the DeFiHackLabs reproduction; the deployment anchor was located by eth_getCode binary search plus a per-transaction receipt scan of the deployment block rather than by an explorer creation endpoint.",
+    "The seed inventory measured the Aave-fork lending-pool proxy 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 and reported a 292-day code age. That proxy and its implementation 0xd47ae558623638f676c1e38dad71b53054f54273 are correct for any sound oracle, so the boundary test places the defect in the price adapter instead and the measured age drops to 18,378 seconds.",
+    "475.247372561 units of the Multichain-bridged SOL token 0xd99021c2a33e4cf243010539c9e9b7c52e0236c1 were also drained but have no evidenced sellable price and are excluded from loss.usd."
+  ]
 }

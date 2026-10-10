@@ -1,159 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x7a3cadc2f33e000b0091307df62db2f5cc79ab8e0b022fd84de9e1c2c0745bd2",
-  "protocol": {
-    "name": "Falcon Heavy Token (FH)",
-    "slug": "fh-token"
-  },
+  "protocol": "Falcon Heavy Token (FH)",
   "name": "FH sell path burns the sold amount from the FH/USDT pair before the sale",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x7a3cadc2f33e000b0091307df62db2f5cc79ab8e0b022fd84de9e1c2c0745bd2",
-      "blockNumber": 117979402,
-      "transactionIndex": 62,
-      "timestamp": 1787651692
-    },
-    "attackerAddresses": [
-      "0x7fa3bc0d5667ffd14d7acd6ce5f2432ac13a6fda",
-      "0x727fb666e3f2531e807e987532c6e2c22adc45ad"
-    ]
-  },
   "summary": "On a sale to the FH/USDT pair, FHToken._transfer burns 80% of the seller's after-fee amount from the pair's own balance, moves another 20% from the pair to the treasury, and calls sync() before the seller's tokens arrive. Buys are only allowed to whitelisted recipients, but the constructor whitelists PancakeSwap router 0x1b81d678ffb9c0263b24a97847620c99d213eb14, whose public sweepToken releases tokens held for any caller. Four minutes after the community wallet added 19,999.5 USDT of liquidity, a generic exploit bot looped 25 times with flash-loaned USDT: buy to that router, sweep, sell. It took the pair's USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 19999.02,
-      "valuationTimestamp": 1787651692,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "19999.018106552928530404",
-        "usdValue": 19999.02,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1787651692,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDT depletion of the FH/USDT pair 0x8f2d1a3992856a860304f1b86534b6b129cc4df7, all of which reached the attacker EOA; the flash-loaned USDT buy legs are attacker inputs. The pair's FH burned to DEAD or moved to the treasury and slippage wallets is the same liquidity and is not added."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xdcf0dfe0053677a67610c6d08ea1f5c78df8ca37",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xdcf0dfe0053677a67610c6d08ea1f5c78df8ca37",
-        "codeHash": "0x62639e7e807fa4900d11e4d3e9a9f95896c92b1d76f1101569adcf47f00fad36"
-      },
-      "deployment": {
-        "timestamp": 1787070034,
-        "blockNumber": 116687253,
-        "transactionHash": "0xfb1d377fe0907d1f04895740dce0c1082e3f67f57b7b3ffab346f0ea2c136710",
-        "transactionIndex": 125,
-        "creatorAddress": "0x624faef18dbdfce8929805ca10f7cd6fa61943b1"
-      },
-      "ageReset": {
+      "address": "0xdcf0dfe0053677a67610c6d08ea1f5c78df8ca37",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable FHToken runtime (no DELEGATECALL or SELFDESTRUCT). The constructor sets the pair, the router whitelist used for buys and tradingEnabled; the only later owner writes are two setBuyerWhitelist calls for addresses absent from the exploit."
-      },
-      "codeAgeSeconds": 581658,
-      "failureModeId": "failure:fh-sell-burns-pair-reserve-before-sale",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xfb1d377fe0907d1f04895740dce0c1082e3f67f57b7b3ffab346f0ea2c136710"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x7a3cadc2f33e000b0091307df62db2f5cc79ab8e0b022fd84de9e1c2c0745bd2"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xfb1d377fe0907d1f04895740dce0c1082e3f67f57b7b3ffab346f0ea2c136710"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe5baab51779fd03f5fb97dd654df4e5b0139de5c9151cbc48ec22b879021399f"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:59:29Z",
-      "note": "Lead: SlowMist (source-6) cites TenArmor's alert naming source-1. source-1 (117979402:62): EOA 0x7fa3bc0d (nonce 5) calls 0x727fb666, a contract it created at 116599046, before FH existed. callTracer: a USDT flash loan via 0x8f73b65b, then 25 rounds of PancakeRouter swapExactTokensForTokensSupportingFeeOnTransferTokens (0x5c11d795) buying FH to 0x1b81d678 (isBuyerWhitelist true), 0x1b81d678.sweepToken (0xdf2ab5bb) to the attacker, and a router sell whose FH._transfer calls pair.sync() (0xfff6cae9) 25 times; receipt FH nets: pair -199999.99303, DEAD +125280.7399, treasury 0x36ac7a08 +31320.1850, slippage wallet 0x776a1279 +43399.0681. Verified source (source-7): in FHToken._transfer the isSell branch (not inSwap) moves the fee to SLIPPAGE_WALLET, then _burn(pair, 80% of netAmount), super._transfer(pair, TREASURY_WALLET, 20%) and pair.sync(), and only then transfers netAmount from the seller; the only floor is totalSupply > targetSupply. The constructor whitelists 0x1b81d678ffb9c0263b24a97847620c99d213eb14 in isBuyerWhitelist. Liquidity: source-3 (117978788:87) by COMMUNITY_WALLET 0xcb6c36d9 added 200,000 FH and 19,999.5 USDT, the pair's first liquidity. Admin: Etherscan txlist of the token to 117979402 (4 txs): creation, approve, setBuyerWhitelist(0x82183edd) 116687682 and setBuyerWhitelist(0x97fd4823) 116687733, neither in the trace; owner still 0x624faef1. First exercise: Etherscan tokentx of the pair 116687253..117979402: 177 transfers in exactly two transactions, source-3 and source-1. Artifact: eth_getCode empty at 116687252; keccak(runtime) 0x62639e7e807fa4900d11e4d3e9a9f95896c92b1d76f1101569adcf47f00fad36 (16,671 bytes) at 116687253 and 117979401; source-2 creates it at 116687253:125 from 0x624faef18dbdfce8929805ca10f7cd6fa61943b1; no DELEGATECALL/SELFDESTRUCT. codeAgeSeconds = 1787651692 - 1787070034 = 581658."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:59:29Z",
-      "note": "Loss: eth_call USDT 0x55d398326f99059ff775485246999027b3197955 balanceOf(pair 0x8f2d1a3992856a860304f1b86534b6b129cc4df7) = 19999500000000000000000 at 117979401 and 481893447071469596 at 117979402 (-19999018106552928530404); receipt USDT nets pair -19999018106552928530404 and attacker EOA 0x7fa3bc0d +19999018106552928530404. BSC-USD has 18 decimals and is valued at par."
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://x.com/TenArmorAlert/status/2092427353456812207"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "note": "Verified FHToken source at https://bscscan.com/address/0xdcf0dfe0053677a67610c6d08ea1f5c78df8ca37#code; reproduce with Etherscan V2 contract.getsourcecode chainid=56: ContractName FHToken, v0.8.34+commit.80d5c536, optimizer off, SHA-256 of returned SourceCode 4101d3f687790f7a7d9ea53805503e7048ee0efedf3b5a7c669c1dbeeec7f6cf. Inspect _transfer (isSell branch) and the constructor whitelist."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-5"
+  "loss": {
+    "usd": 19999.02,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "19999.018106552928530404",
+        "usd": 19999.02
+      }
     ]
   },
-  "discovery": [
-    "web:2026-08-26:fh-token"
+  "refs": [
+    "eip155:56:0xe5baab51779fd03f5fb97dd654df4e5b0139de5c9151cbc48ec22b879021399f",
+    "https://x.com/TenArmorAlert/status/2092427353456812207"
+  ],
+  "notes": [
+    "Direct immutable FHToken runtime (no DELEGATECALL or SELFDESTRUCT). The constructor sets the pair, the router whitelist used for buys and tradingEnabled; the only later owner writes are two setBuyerWhitelist calls for addresses absent from the exploit.",
+    "Exact USDT depletion of the FH/USDT pair 0x8f2d1a3992856a860304f1b86534b6b129cc4df7, all of which reached the attacker EOA; the flash-loaned USDT buy legs are attacker inputs. The pair's FH burned to DEAD or moved to the treasury and slippage wallets is the same liquidity and is not added."
   ]
 }

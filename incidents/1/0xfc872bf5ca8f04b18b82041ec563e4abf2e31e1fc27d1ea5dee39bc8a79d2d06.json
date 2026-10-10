@@ -1,152 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xfc872bf5ca8f04b18b82041ec563e4abf2e31e1fc27d1ea5dee39bc8a79d2d06",
-  "protocol": {
-    "name": "USDTStakingContract28",
-    "slug": "usdt-staking-28"
-  },
+  "protocol": "USDTStakingContract28",
   "name": "USDTStakingContract28 public tokenAllowAll()",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xfc872bf5ca8f04b18b82041ec563e4abf2e31e1fc27d1ea5dee39bc8a79d2d06",
-      "blockNumber": 17696563,
-      "transactionIndex": 6,
-      "timestamp": 1689396899
-    },
-    "attackerAddresses": [
-      "0x000000915f1b10b0ef5c4efe696ab65f13f36e74"
-    ]
-  },
   "summary": "tokenAllowAll(token, spender) was public with no owner check, so the attacker had the staking contract approve them for unlimited USDT and then transferred out the whole deposit balance.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 20999.916289,
-      "valuationTimestamp": 1689396899,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-          "symbol": "USDT"
-        },
-        "amount": "20999.916289",
-        "usdValue": 20999.916289,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1689396899,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Entire preexisting staking balance transferred to attacker, valued at USDT par. No campaign input or recovery adjustment; gas costs do not reduce gross loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x800cfd4a2ba8ce93ea2cc814fce26c3635169017",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1689080039,
-        "creatorAddress": "0xdcbeefb14ba39092711d62cf3ea19af643f2c155",
-        "blockNumber": 17670498,
-        "transactionIndex": 67,
-        "transactionHash": "0xfa76b78810174d94798df7ca9b7722a62b9934c133be357001111b880051b034"
-      },
-      "ageReset": {
-        "kind": "deployment"
-      },
-      "codeAgeSeconds": 316860,
-      "failureModeId": "failure:usdt-staking-28-public-token-approval",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "reviewSourceIds": [
-          "source-4"
-        ],
-        "limitations": []
-      },
-      "codeArtifact": {
-        "address": "0x800cfd4a2ba8ce93ea2cc814fce26c3635169017",
-        "codeHash": "0x7f5cf84ccf9cf62eb95a9ba3fc94a046a51448f04c44fbe296a08ba6ca45cf96"
+      "address": "0x800cfd4a2ba8ce93ea2cc814fce26c3635169017",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xfa76b78810174d94798df7ca9b7722a62b9934c133be357001111b880051b034"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xfc872bf5ca8f04b18b82041ec563e4abf2e31e1fc27d1ea5dee39bc8a79d2d06"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-07/USDTStakingContract28_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://x.com/DecurityHQ/status/1680117291013267456"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed anchor, root cause, loss, runtime identity and complete relevant age history. Etherscan verified BUSD staking.sol (source-6) exposes tokenAllowAll(asset,allowee) without onlyOwner, unlike transferAllFunds; it reads no staking configuration and grants an arbitrary spender unlimited allowance. Source-1 callTracer shows attacker helper 0xb754ebdba9b009113b4cf445a7cb0fc9227648ad calling this function (0x9ce25b6d), then USDT.transferFrom(staking,attacker,20999916289). Receipt log 27 grants allowance; log 28 transfers 20999916289 raw USDT units (6 decimals), all 20999.916289 USDT of preexisting balance. Stablecoin valuation is $1 per USDT. Funding reconciliation from complete Etherscan V2 account/tokentx history: creator deposits 500 USDT in each of 0x0428148ce13cc4716bf98d6b5a914be84f3c900781a9b76cab261a985e171b22 and 0xe9012cecb7568829df45ddb14bf15ce1900b17829d23c557d399f334f0247df0; creator claims 0.083711 USDT in 0x852ceb6183e96087faacd49e59a7e2b6bafa91972ac12136f0725aebb91cd5f8; depositor 0x1c84adfeb68cfbf1f81cf793d16ee9d2d20e5ba5 supplies 20000 USDT in 0xec6ffe5026ed1b3bd7169ce84d255842260a596f4db311e800a2e28d89f17837. Neither depositor is the attacker or helper; no identified attacker input. First exercise: eth_getLogs over blocks 17670498..17696563 with Approval topic 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925 and topic1 padded staking address, without an emitting-token filter, returns only source-1 log 27. Full explorer txlist has 12 direct transactions, no earlier tokenAllowAll call; full tokentx has five transfers, with only the legitimate interest payment preceding this drain and no subsequent funding or losses as of review. Later direct tokenAllowAll transaction 0x909d0c8826032067c5cb1c69560d1e7329f4dc5d2aa9b132ca11de00835d976f in block 17698215 acts on the empty contract and adds no loss. Source-5 receipt proves direct creation at block 17670498/index 67 by recorded creator. eth_getCode is empty at 17670497 and byte-identical at creation and pre-exploit block 17696562; cast keccak reproduces the stored hash. Runtime disassembly has no DELEGATECALL, CALLCODE or SELFDESTRUCT, and source exposes no code replacement or mutable authorization for this function. Deposits change exposure only. Deployment therefore establishes the defective code until its first successful unauthorized approval in source-1; code age is 316860 seconds. USDT is the transferred asset, not an additional defect-bearing target.",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-16T15:30:37Z"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xfa76b78810174d94798df7ca9b7722a62b9934c133be357001111b880051b034"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Verified explorer source: https://etherscan.io/address/0x800cfd4a2ba8ce93ea2cc814fce26c3635169017#code"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "reviewSourceIds": [
-      "source-4"
-    ],
-    "limitations": []
+  "loss": {
+    "usd": 20999.916289,
+    "assets": [
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "20999.916289",
+        "usd": 20999.916289
+      }
+    ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-07/USDTStakingContract28_exp.sol",
-    "seed:usdt-staking-28:2023-07-15:usdtstakingcontract28-public-tokenallowall"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/USDTStakingContract28_exp.sol",
+    "https://x.com/DecurityHQ/status/1680117291013267456"
+  ],
+  "notes": [
+    "Entire preexisting staking balance transferred to attacker, valued at USDT par. No campaign input or recovery adjustment; gas costs do not reduce gross loss."
   ]
 }

@@ -1,173 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c",
-  "protocol": {
-    "name": "Inverse Finance",
-    "slug": "inverse-finance"
-  },
+  "protocol": "Inverse Finance",
   "name": "Inverse Finance YVCrv3CryptoFeed spot-balance LP valuation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c",
-      "blockNumber": 14972419,
-      "transactionIndex": 0,
-      "timestamp": 1655369278
-    },
-    "attackerAddresses": [
-      "0x7b792e49f640676b3706d666075e903b3a4deec6",
-      "0xf508c58ce37ce40a40997c715075172691f92e2d",
-      "0x8e764be4288b842791989db5b8ec067279829809"
-    ]
-  },
   "summary": "YVCrv3CryptoFeed.latestAnswer(), the price feed the Anchor Oracle used for the anYvCrv3Crypto collateral market, prices the Yearn share as (WBTC.balanceOf(tricrypto2) * BTC/USD + WETH.balanceOf(tricrypto2) * ETH/USD + USDT.balanceOf(tricrypto2) * USDT/USD) * 1e18 / crv3crypto.totalSupply() * vault.pricePerShare(). Every Chainlink component is sound, but the pool composition is read live, so the aggregate is whatever an imbalanced trade leaves in the pool at that instant. The contract even declares an ICurvePool interface whose only member is get_virtual_price(), the manipulation-resistant alternative, and never calls it; CRV3CRYPTO is used solely for address(). In the anchor transaction the attacker flash-borrowed 27,000 WBTC from Aave V2, added 225 WBTC as liquidity for 5,375.596969399930881565 crv3crypto, wrapped it into 4,906.754677503974414310 yvCurve-3Crypto and minted anYvCrv3Crypto, then pushed the remaining 26,775 WBTC through tricrypto2 for 75,403,376.186072 USDT. The feed answer moved from 979.618562315051433272 USD at block 14972418 to 2,831.510989208155228660 USD inside the exploit, a 2.89x inflation, and borrowAllowed let the attacker draw 10,133,949.192393802606886848 DOLA against collateral worth a fraction of it. The violated invariant is that collateral pricing used for borrow authorization must not be atomically manipulable by a market participant. The boundary test finds no parameter: the feed has no owner, no setter and no constructor argument, every address is a hardcoded constant or an inline-initialised literal, so no configured value of the deployed contract would have rejected the manipulated composition.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 10080763.456915053,
-      "valuationTimestamp": 1655369278,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x865377367054516e17014ccded1e7d814edc9ce4",
-          "symbol": "DOLA"
-        },
-        "amount": "10133949.192393802606886848",
-        "usdValue": 10080763.456915053,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1655369263,
-          "unitPriceUsd": 0.9947517266497972,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The component is the exact Borrow amount in the anchor receipt: anDOLA 0x7fcb7dac61ee35b3d4a51117a7c58d53f0a8a670 sent 10,133,949.192393802606886848 DOLA to the attack contract, and the attacker immediately swapped all of it for 9,881,355.040729892287779421 3CRV, so a near-par DOLA mark is realisable rather than a spot mark. Following the treatment used for this protocol's April 2022 record, the 4,906.754677503974414310 yvCurve-3Crypto the attacker posted as collateral is an attacker-supplied input that stayed with the protocol and is not netted from this gross figure; Inverse later liquidated it and reported the resulting net protocol loss as 5.83 million USD in DOLA. The attacker's own realised end-of-transaction proceeds, after the 27,000 WBTC Aave V2 flash loan was repaid with the 27,024.3 WBTC premium, are 53.24446541 WBTC and 99,976.294967 USDT, about 1.259 million USD at the DefiLlama WBTC price of 21,760.665102437866, which is the figure contemporaneous reporting quotes as 1.2 to 1.3 million. Nothing else in the block re-executes the defect: the attacker's only earlier transaction is the attack-contract creation one block before, and the two later calls with selector 0xc7e42b1b merely sweep the proceeds."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c",
-        "codeHash": "0x898e380441ead5e79f82172f51f2b19a22966bbf0734fea156229e70caea1fa4"
-      },
-      "deployment": {
-        "timestamp": 1653431213,
-        "blockNumber": 14838300,
-        "transactionHash": "0x102076528b11efcd9f43166ba08ede0679ca31209b85b6059f0f032a0013fc0b",
-        "transactionIndex": 104,
-        "creatorAddress": "0xc253af7b80f3dd3d469bf4b94aa9e3df59e71e43"
-      },
-      "ageReset": {
+      "address": "0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c",
+      "reset": {
         "kind": "deployment",
-        "description": "YVCrv3CryptoFeed is an immutable contract with no owner, setter, proxy or delegatecall dispatch; its 1,788-byte runtime was installed by this top-level creation and is byte-identical at block 14972418."
-      },
-      "codeAgeSeconds": 1938065,
-      "failureModeId": "failure:inverse-yvcrv3cryptofeed-spot-balance-lp-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0x102076528b11efcd9f43166ba08ede0679ca31209b85b6059f0f032a0013fc0b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Anchor: 0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c, block 14972419 index 0, timestamp 1655369278, receipt status 0x1, 228 call frames, 54 logs. The seed row recorded this hash without confirming the path; the trace confirms it. Inside the Aave V2 flashLoan callback the attack contract 0xf508c58ce37ce40a40997c715075172691f92e2d calls add_liquidity on tricrypto2 0xd51a44d3fae010294c616388b506acda1bfaae46, deposit on the Yearn vault 0xe537b5cc158eb71037d4125bdd7538421981e6aa, mint (0xa0712d68) on anYvCrv3Crypto 0x1429a930ec3bcf5aa32ef298ccc5ab09836ef587, and borrow (0xc5ebeaec) on anDOLA 0x7fcb7dac61ee35b3d4a51117a7c58d53f0a8a670; comptroller 0x4dcf7407ae5c07f8681e1659f626e114a7667339 (implementation 0x48c5e896d241afd1aee73ae19259a2e234256a85) calls Oracle 0xe8929afd47064efd36a7fb51da3f8c5eb40c4cb4 getUnderlyingPrice(0x1429a930...), which STATICCALLs the feed 0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c latestAnswer() and receives 2,831.510989208155228660e18. The feed's own subtree in the trace shows exactly the reads its verified source performs: Chainlink BTC/USD 0xf4030086522a5beea4988f8ca5b36dbc97bee88c, ETH/USD 0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419 and USDT/USD 0x3e7d1eab13ad0104d2750b8863b489d65364e32d, the live WBTC, WETH and USDT balances of the tricrypto2 pool, crv3crypto totalSupply and the vault's pricePerShare. A direct eth_call of latestAnswer() at block 14972418 returns 979.618562315051433272e18, so the same code returned 2.89 times more one block later purely because 26,775 WBTC had been pushed into the pool inside the transaction. Boundary test: the verified YVCrv3CryptoFeed source (solc 0.8.13) has no owner, no setter, no initializer and no constructor; CRV3CRYPTO, vault, BTCFeed, ETHFeed and USDTFeed are constants and the four token handles are inline-initialised literals, so no parameter value of the deployed contract would have rejected the manipulated composition. It declares interface ICurvePool with the single member get_virtual_price() and never calls it. Target: 0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c, direct, non-proxy, created by top-level CREATE from Inverse's deployer 0xc253af7b80f3dd3d469bf4b94aa9e3df59e71e43 in transaction 0x102076528b11efcd9f43166ba08ede0679ca31209b85b6059f0f032a0013fc0b at block 14838300 index 104, timestamp 1653431213; the creator is unrelated to the three attacker addresses. eth_getCode returns the same 1,788-byte runtime, hash 0x898e380441ead5e79f82172f51f2b19a22966bbf0734fea156229e70caea1fa4, at blocks 14838300, 14900000 and 14972418, and prestateTracer on the anchor agrees, so deployment is the last code change and the age is 1655369278 - 1653431213 = 1,938,065 seconds (22.43 days). Loss: the anDOLA Borrow in the receipt is 10,133,949.192393802606886848 DOLA; netting every ERC-20 Transfer over the attacker cluster leaves 53.24446541 WBTC and 99,976.294967 USDT of realised profit with the flash loan repaid, which reproduces BlockSec's independently published 53.2 WBTC and 99,976 USDT and their 979 to 2,831 price figures. Scope: this incident is separate from the April 2022 Anchor xINV InvFeed incident recorded at eip155:1:0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842; different attacker, different market, different feed contract, different code hash, and no loss is shared between the two records. The Oracle.setFeed that pointed anYvCrv3Crypto at this feed is configuration context and is not the code-age anchor."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x102076528b11efcd9f43166ba08ede0679ca31209b85b6059f0f032a0013fc0b"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1655369278/ethereum:0x865377367054516e17014ccded1e7d814edc9ce4",
-      "observedAt": 1787669022
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/our-take-on-the-inverse-finance-security-incident-price-manipulation-attack"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-06/InverseFinance_exp.sol"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/resources/blog/inverse-finance-incident-analysis"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1655369278/ethereum:0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-      "observedAt": 1787669022
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2022-06/InverseFinance_exp.sol",
-    "seed:inverse-finance:2022-06-16:inverse-finance-anyvcrv3crypto-lp-oracle-manipulation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The recorded figure is gross victim depletion, the full DOLA borrow. Inverse subsequently liquidated the attacker's yvCurve-3Crypto collateral and reported a net protocol loss of 5.83 million USD, and the attacker's realised profit was about 1.26 million USD; both are stated in the loss notes so a reviewer can select the measure they want."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 10080763.456915053,
+    "assets": [
+      {
+        "token": "0x865377367054516e17014ccded1e7d814edc9ce4",
+        "symbol": "DOLA",
+        "amount": "10133949.192393802606886848",
+        "usd": 10080763.456915053
+      }
     ]
   },
+  "refs": [
+    "https://blocksec.com/blog/our-take-on-the-inverse-finance-security-incident-price-manipulation-attack",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-06/InverseFinance_exp.sol",
+    "https://www.certik.com/resources/blog/inverse-finance-incident-analysis"
+  ],
   "notes": [
+    "YVCrv3CryptoFeed is an immutable contract with no owner, setter, proxy or delegatecall dispatch; its 1,788-byte runtime was installed by this top-level creation and is byte-identical at block 14972418.",
+    "The component is the exact Borrow amount in the anchor receipt: anDOLA 0x7fcb7dac61ee35b3d4a51117a7c58d53f0a8a670 sent 10,133,949.192393802606886848 DOLA to the attack contract, and the attacker immediately swapped all of it for 9,881,355.040729892287779421 3CRV, so a near-par DOLA mark is realisable rather than a spot mark. Following the treatment used for this protocol's April 2022 record, the 4,906.754677503974414310 yvCurve-3Crypto the attacker posted as collateral is an attacker-supplied input that stayed with the protocol and is not netted from this gross figure; Inverse later liquidated it and reported the resulting net protocol loss as 5.83 million USD in DOLA. The attacker's own realised end-of-transaction proceeds, after the 27,000 WBTC Aave V2 flash loan was repaid with the 27,024.3 WBTC premium, are 53.24446541 WBTC and 99,976.294967 USDT, about 1.259 million USD at the DefiLlama WBTC price of 21,760.665102437866, which is the figure contemporaneous reporting quotes as 1.2 to 1.3 million. Nothing else in the block re-executes the defect: the attacker's only earlier transaction is the attack-contract creation one block before, and the two later calls with selector 0xc7e42b1b merely sweep the proceeds.",
+    "The recorded figure is gross victim depletion, the full DOLA borrow. Inverse subsequently liquidated the attacker's yvCurve-3Crypto collateral and reported a net protocol loss of 5.83 million USD, and the attacker's realised profit was about 1.26 million USD; both are stated in the loss notes so a reviewer can select the measure they want.",
     "The seed inventory aged this row from the anYvCrv3Crypto market 0x1429a930ec3bcf5aa32ef298ccc5ab09836ef587, deployed 368 seconds before the feed. The market contract applies the oracle answer as written; the defect is in the feed, so the age basis is the feed deployment and the measured age is 1,938,065 rather than the snapshot's 1,938,433 seconds.",
     "This is Inverse Finance's second Frontier oracle incident. The April 2022 xINV InvFeed incident is a separate record and the two losses are disjoint."
   ]

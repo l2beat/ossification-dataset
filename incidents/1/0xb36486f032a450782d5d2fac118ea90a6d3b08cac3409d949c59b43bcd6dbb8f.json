@@ -1,181 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xb36486f032a450782d5d2fac118ea90a6d3b08cac3409d949c59b43bcd6dbb8f",
-  "protocol": {
-    "name": "ElasticSwap",
-    "slug": "elasticswap"
-  },
+  "protocol": "ElasticSwap",
   "name": "ElasticSwap exchange decay accounting",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xb36486f032a450782d5d2fac118ea90a6d3b08cac3409d949c59b43bcd6dbb8f",
-      "blockNumber": 16172820,
-      "transactionIndex": 0,
-      "timestamp": 1670898767
-    },
-    "attackerAddresses": [
-      "0xbeadedbabed6a353c9caa4894aa7e5f883e32967",
-      "0xe911519dc7f35996c6ad5c8a53e82b101af790d6",
-      "0x3bdf01ed32f07e8e843163b5d478d4502f5743cd"
-    ]
-  },
   "summary": "The ElasticSwap Exchange keeps an internal x*y=k reserve pair alongside the real ERC-20 balances so that a rebasing base token produces 'decay' that liquidity providers resolve. Exchange.removeLiquidity pays out quoteTokenQtyToReturn = _liquidityTokenQty * IERC20(quoteToken).balanceOf(this) / totalSupply, computed from the live quote balance, and then subtracts that same payout from internalBalances.quoteTokenReserveQty, clamping at zero, while the base side is reduced only pro rata of the internal reserve. Quote tokens sent to the exchange outside addLiquidity therefore inflate the payout and destroy the internal quote reserve without ever having been credited to it. The attacker resolved the pool's standing AMPL decay, matched a double-sided deposit to reach 49.99% of the liquidity supply, transferred 776,350.901415 USDC straight to the exchange, and burned its liquidity: internalBalances went from 511,820.669323655 AMPL / 776,351.901415 USDC to 255,977.646408554 AMPL / 204.702652 USDC. The wrecked curve then sold 253,430.605150757 AMPL for 20,470.2652 USDC in one swapQuoteTokenForBaseToken call.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 747936.9489991106,
-      "valuationTimestamp": 1670898767,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
-          "symbol": "AMPL"
-        },
-        "amount": "161792.170690922",
-        "usdValue": 247542.02115711066,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1670898767,
-          "unitPriceUsd": 1.53,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "500394.927842",
-        "usdValue": 500394.927842,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1670898767,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "All of the Ethereum loss is in the single exploit transaction. The AMPLvUSDC-ELP exchange 0xa0c5aa50ce3cc69b1c478d8235597bc0c51dfdab holds 164339.211948719 AMPL and 527279.223993 USDC at block 16172819 and 2547.041257797 AMPL and 26884.296151 USDC at block 16172820; summing the transaction's own AMPL and USDC Transfer logs in and out of the exchange gives exactly the same deltas, -161792.170690922 AMPL and -500394.927842 USDC, after the attacker's 183276.868919506 + 164204.58845543 + 315908.946489763 AMPL and 249072.677422 + 776350.901415 + 20470.2652 + 2564311.548877 USDC of deposits. DefiLlama prices AMPL at 1.53 at exactly 1670898767; USDC is valued at par and DefiLlama's nearest USDC observation, 1670898781, is 1.0. The attacker EOA's ETH balance rises from 3.435133546077577845 to 448.449207793691850189 across the block, i.e. it realised roughly 445 ETH after selling the AMPL into thin Uniswap liquidity; the realised figure is lower than the gross assets taken and is not used. Excluded from this number: the ElasticSwap TIC/USDC.e exchange 0x4ae1da57f2d6b2e9a23d07e264aa2b3bbcaed19a on Avalanche, code-identical and drained by the same defect 582 seconds earlier in transaction 0x782b2410fcc9449ead554a81f78184b6f9cca89f07ea346bc50cf11887cd9b18 at block 23563710, losing 41119.385246748693436063 TIC and 195078.151742 USDC.e; that is a chain-43114 execution context this chain-1 record cannot carry as a target, and together with the Ethereum drain it accounts for the commonly reported ~$845k aggregate. Nothing was recovered."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa0c5aa50ce3cc69b1c478d8235597bc0c51dfdab",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa0c5aa50ce3cc69b1c478d8235597bc0c51dfdab",
-        "codeHash": "0xd929e7a39946bd9ef59f6478da333cc4f29f5b0836330ed61b4a596c7996f475"
-      },
-      "deployment": {
-        "timestamp": 1652151110,
-        "blockNumber": 14746111,
-        "transactionHash": "0x540b5182c4eb3803549661fc205eee409dff402293162680d3c24eaf18cc0f74",
-        "transactionIndex": 210,
-        "creatorAddress": "0x8b3d780db8842593d8b61632a2f76c4d4f31d7c3"
-      },
-      "ageReset": {
+      "address": "0xa0c5aa50ce3cc69b1c478d8235597bc0c51dfdab",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-upgradeable exchange created by the ElasticSwap ExchangeFactory 0x8b3d780db8842593d8b61632a2f76c4d4f31d7c3 in a single CREATE. The address has no code at block 14746110 and its runtime code hash is 0xd929e7a39946bd9ef59f6478da333cc4f29f5b0836330ed61b4a596c7996f475 at both the creation block 14746111 and block 16172819; the EIP-1967 implementation and beacon slots and the EIP-1822 proxiable slot all read zero at block 16172819, and the only delegatecall target in the runtime is the MathLib library address 0xe3c08c95aa81474f44bee23f8c45d470ddad37be embedded as a PUSH20 literal, whose own code hash 0xb1f05f46b2061d2cd5a62d70d233d4bf60110a6abe62a0fd7057f30d9178ff59 is identical at both blocks."
-      },
-      "codeAgeSeconds": 18747657,
-      "failureModeId": "failure:elasticswap-exchange-remove-liquidity-quote-reserve-drain",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+        "tx": "0x540b5182c4eb3803549661fc205eee409dff402293162680d3c24eaf18cc0f74"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb36486f032a450782d5d2fac118ea90a6d3b08cac3409d949c59b43bcd6dbb8f"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://quillaudits.medium.com/decoding-elastic-swaps-850k-exploit-quillaudits-9ceb7fcd8d1a"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-12/ElasticSwap_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x540b5182c4eb3803549661fc205eee409dff402293162680d3c24eaf18cc0f74"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1670898767/coingecko:ampleforth",
-      "observedAt": 1787649000
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1670898767/coingecko:usd-coin",
-      "observedAt": 1787649000
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T09:45:00Z",
-      "note": "Genuine accounting defect, located in Exchange.removeLiquidity rather than in the MathLib decay helpers. The exchange is verified on Etherscan as ElasticSwap Exchange; removeLiquidity reads baseTokenReserveQty and quoteTokenReserveQty as live balanceOf values, returns _liquidityTokenQty * quoteTokenReserveQty / totalSupply, and then writes internalBalances.quoteTokenReserveQty -= quoteTokenQtyToReturn (zero-clamped) while writing internalBalances.baseTokenReserveQty -= _liquidityTokenQty * internalBase / totalSupply. The trace reproduces this exactly: internalBalances() reads 347616.080868225 AMPL / 527279.223993 USDC before the attack, the attacker resolves the standing AMPL decay with addLiquidity(183276.868919506, 0) for 5966445134104 ELP, adds 164204.58845543 AMPL + 249072.677422 USDC for 10691121837278 ELP to reach 16657566971382 of 33323899082546 ELP (49.99%), transfers 776350.901415 USDC directly to the exchange, and removeLiquidity(16657566971382) pays 255843.022915101 AMPL + 776147.198763 USDC and leaves internalBalances at 255977.646408554 AMPL / 204.702652 USDC. swapQuoteTokenForBaseToken(20470.2652 USDC) against that curve returns 253430.605150757 AMPL. The five delegatecalls the exchange makes are solc external-library calls into MathLib 0xe3c08c95aa81474f44bee23f8c45d470ddad37be (selectors 0xfaf5c6ed calculateAddLiquidityQuantities, 0x6cb4024b, 0xc131f417); MathLib's arithmetic is not the defect, so the target stays direct on the exchange runtime. Anchor kept and it is the only successful one: the exchange emits logs in 35 transactions between blocks 16170000 and 16200000 and 0xb36486f0 is the only one with more than two, all later exchange activity is ordinary liquidity providers exiting, and the exploit author 0x3bdf01ed32f07e8e843163b5d478d4502f5743cd had every Ethereum attempt revert (0x87ab1f09 at 16172782, 0x53c1b30a at 16172820 index 114, 0x3a77ae2d at 16172860, 0x7a0ad8c7 at 16172900) after succeeding on Avalanche at 1670898185; the successful Ethereum execution at index 0 of block 16172820 is the generalised front-runner 0xbeadedbabed6a353c9caa4894aa7e5f883e32967 through its bot 0xe911519dc7f35996c6ad5c8a53e82b101af790d6. Not a proxy and no code change after deployment: no code at block 14746110, runtime hash 0xd929e7a39946bd9ef59f6478da333cc4f29f5b0836330ed61b4a596c7996f475 at both 14746111 and 16172819, EIP-1967 implementation slot 0x360894a1...382bbc, EIP-1967 beacon slot 0xa3f0ad74...133d50 and EIP-1822 slot 0xc5f16f0f...22bcf7 all zero at 16172819, and the linked MathLib address is a PUSH20 literal in the runtime with an unchanged code hash, so there is no repointable code. Creation trace confirms a single CREATE frame from the ExchangeFactory 0x8b3d780db8842593d8b61632a2f76c4d4f31d7c3 inside transaction 0x540b5182 (sender 0x72c6d5b5e7f921e84166dc2061bef4533a5a98db, block 14746111, index 210), giving a code age of 18747657s (216d 23h 40m 57s); neither address is an attacker. The v1 snapshot and DeFiHackLabs pointed at the Avalanche ELP 0x4ae1da57f2d6b2e9a23d07e264aa2b3bbcaed19a, which is never reached in the cited Ethereum transaction; the Ethereum victim is 0xa0c5aa50. Loss is the exchange's own AMPL and USDC balance deltas across the exploit block, cross-checked against the receipt's Transfer logs; the Avalanche pool's separate 41119.385246748693436063 TIC and 195078.151742 USDC.e loss is documented but excluded because this record's chain is 1."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 747936.9489991106,
+    "assets": [
+      {
+        "token": "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+        "symbol": "AMPL",
+        "amount": "161792.170690922",
+        "usd": 247542.02115711066
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "500394.927842",
+        "usd": 500394.927842
+      }
     ]
   },
+  "refs": [
+    "https://quillaudits.medium.com/decoding-elastic-swaps-850k-exploit-quillaudits-9ceb7fcd8d1a",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/ElasticSwap_exp.sol"
+  ],
   "notes": [
+    "Non-upgradeable exchange created by the ElasticSwap ExchangeFactory 0x8b3d780db8842593d8b61632a2f76c4d4f31d7c3 in a single CREATE. The address has no code at block 14746110 and its runtime code hash is 0xd929e7a39946bd9ef59f6478da333cc4f29f5b0836330ed61b4a596c7996f475 at both the creation block 14746111 and block 16172819; the EIP-1967 implementation and beacon slots and the EIP-1822 proxiable slot all read zero at block 16172819, and the only delegatecall target in the runtime is the MathLib library address 0xe3c08c95aa81474f44bee23f8c45d470ddad37be embedded as a PUSH20 literal, whose own code hash 0xb1f05f46b2061d2cd5a62d70d233d4bf60110a6abe62a0fd7057f30d9178ff59 is identical at both blocks.",
+    "All of the Ethereum loss is in the single exploit transaction. The AMPLvUSDC-ELP exchange 0xa0c5aa50ce3cc69b1c478d8235597bc0c51dfdab holds 164339.211948719 AMPL and 527279.223993 USDC at block 16172819 and 2547.041257797 AMPL and 26884.296151 USDC at block 16172820; summing the transaction's own AMPL and USDC Transfer logs in and out of the exchange gives exactly the same deltas, -161792.170690922 AMPL and -500394.927842 USDC, after the attacker's 183276.868919506 + 164204.58845543 + 315908.946489763 AMPL and 249072.677422 + 776350.901415 + 20470.2652 + 2564311.548877 USDC of deposits. DefiLlama prices AMPL at 1.53 at exactly 1670898767; USDC is valued at par and DefiLlama's nearest USDC observation, 1670898781, is 1.0. The attacker EOA's ETH balance rises from 3.435133546077577845 to 448.449207793691850189 across the block, i.e. it realised roughly 445 ETH after selling the AMPL into thin Uniswap liquidity; the realised figure is lower than the gross assets taken and is not used. Excluded from this number: the ElasticSwap TIC/USDC.e exchange 0x4ae1da57f2d6b2e9a23d07e264aa2b3bbcaed19a on Avalanche, code-identical and drained by the same defect 582 seconds earlier in transaction 0x782b2410fcc9449ead554a81f78184b6f9cca89f07ea346bc50cf11887cd9b18 at block 23563710, losing 41119.385246748693436063 TIC and 195078.151742 USDC.e; that is a chain-43114 execution context this chain-1 record cannot carry as a target, and together with the Ethereum drain it accounts for the commonly reported ~$845k aggregate. Nothing was recovered.",
     "The measured loss covers the Ethereum AMPLvUSDC exchange only. The code-identical ElasticSwap TIC/USDC.e exchange on Avalanche was drained by the same defect 582 seconds earlier for a further 41119.385246748693436063 TIC and 195078.151742 USDC.e; that execution context belongs to eip155:43114 and is not representable as a target of this chain-1 record."
   ]
 }

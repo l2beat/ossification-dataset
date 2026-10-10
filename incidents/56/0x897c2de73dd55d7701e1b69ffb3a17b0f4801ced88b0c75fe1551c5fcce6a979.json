@@ -1,269 +1,48 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x897c2de73dd55d7701e1b69ffb3a17b0f4801ced88b0c75fe1551c5fcce6a979",
-  "protocol": {
-    "name": "PancakeBunny",
-    "slug": "pancakebunny"
-  },
+  "protocol": "PancakeBunny",
   "name": "PancakeBunny BUNNY minter spot LP valuation",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x897c2de73dd55d7701e1b69ffb3a17b0f4801ced88b0c75fe1551c5fcce6a979",
-      "blockNumber": 7556391,
-      "transactionIndex": 8,
-      "timestamp": 1621463668
-    },
-    "attackerAddresses": [
-      "0xa0acc61547f6bd066f7c9663c17a312b6ad7e187",
-      "0xcc598232a75fb1b361510bce4ca39d7bc39cf498"
-    ]
-  },
   "summary": "PriceCalculatorBSCV1.valueOfAsset() prices any Cake-LP whose pair contains WBNB as amount * WBNB.balanceOf(pair) * 2 / pair.totalSupply(), a single spot read of the pair's WBNB reserve with no invariant, TWAP or bound. BunnyMinterV2.mintForV2() zaps the vault performance fee into BUNNY-BNB LP, values that LP through the same call, and mints BUNNY = valueInBNB * performanceFee / feeSum * bunnyPerProfitBNB / 1e18 with no cap or sanity check. Flash-loaning WBNB into the BUNNY-WBNB pair inside the same transaction inflated the reported LP value, so a VaultFlipToFlip.getReward() on a position worth a fraction of a BNB minted 8,018,324 BUNNY, 6,972,455 of it to the attacker.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 41747693.69380884,
-      "valuationTimestamp": 1621460291,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "114631.542114869651730975",
-        "usdValue": 41747693.69380884,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1621460291,
-          "unitPriceUsd": 364.1902823916861,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Valued on realised proceeds, not on a spot mark of the minted token. The single exploit transaction mints 8018324.054007685473386005 BUNNY from the zero address, of which 6972455.699137117802944353 goes to the attacker's contract and 1045868.354870567670441652 to the protocol's BunnyPool. The attacker sells the BUNNY into the two BUNNY/WBNB PancakeSwap pairs, which give up 64350.677479753673535696 and 56270.431537854947410798 WBNB respectively, 120621.109017608620946494 WBNB gross; 5989.566902738969215519 WBNB of that is consumed by PancakeSwap flash-swap fees inside the same transaction, so exactly 114631.542114869651730975 WBNB is transferred out to attacker EOA 0xa0acc61547f6bd066f7c9663c17a312b6ad7e187 after every flash loan is repaid. That WBNB quantity is the measured loss. The 697245.569913711780294436 BUNNY the attacker still holds at the end of the transaction is deliberately excluded: the attacker's own selling had already collapsed the BUNNY/WBNB pairs, so no spot mark on that residue is realisable, and the frequently quoted 45M headline is a mark on the full 6.97M BUNNY that could never have been sold at that price. WBNB is valued with the last DefiLlama datapoint at or before the exploit (1621460291, 364.1902823916861 USD); BNB moved between roughly 364 and 390 USD within minutes of the exploit on that day, and the nearest later datapoint (1621463838, 379.71 USD) would give 43.53M USD, so the USD figure carries a few per cent of price noise that the exact WBNB quantity does not.",
-    "realizedAt": 1621463668
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8cb88701790f650f273c8bb2cc4c5f439cd65219",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x819eea71d3f93bb604816f1797d4828c90219b5d",
-        "codeHash": "0x26a3c82e748073ec3ffd99b65d05c4b413d36d421d5a545a6f72d60d89b833b2"
-      },
-      "deployment": {
-        "timestamp": 1615339981,
-        "blockNumber": 5545145,
-        "transactionHash": "0x527a19c2b54dd5135d2a56633bc9183a7e593ad73b13a8ad8464ee2886935bfb",
-        "transactionIndex": 16,
-        "creatorAddress": "0xe87f02606911223c2cf200398ffaf353f60801f7"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1619496929,
-        "blockNumber": 6920074,
-        "transactionHash": "0x1162f89e442eb0956bf0d85c53b1c48b0604d061df48ac14ccad5663586dbbc0",
-        "transactionIndex": 6,
-        "logIndex": 27,
-        "mechanism": {
-          "type": "event",
-          "address": "0x8cb88701790f650f273c8bb2cc4c5f439cd65219",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Third and last pre-exploit Upgraded event from the BunnyMinter proxy, selecting BunnyMinterV2 implementation 0x819eea71d3f93bb604816f1797d4828c90219b5d, which was created five transaction indices earlier in the same block. The EIP-1967 implementation slot still holds that address at block 7556390."
-      },
-      "codeAgeSeconds": 1966739,
-      "failureModeId": "failure:bunny-minter-unbounded-mint-from-spot-lp-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-11"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-2",
-          "source-13"
-        ]
+      "address": "0x8cb88701790f650f273c8bb2cc4c5f439cd65219",
+      "code": "0x819eea71d3f93bb604816f1797d4828c90219b5d",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1162f89e442eb0956bf0d85c53b1c48b0604d061df48ac14ccad5663586dbbc0"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x542c06a5dc3f27e0fbdc9fb7bc6748f26d54ddb0",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x81ef2bc1e02fee5414e46accc6ae14d833eebba0",
-        "codeHash": "0xe88612726aedfe83ea5ed9a9a70df5450f552dcc9ceb3c6fb838079c576540f6"
-      },
-      "deployment": {
-        "timestamp": 1615621069,
-        "blockNumber": 5638601,
-        "transactionHash": "0x3890e86a3e092b3f94dd55a6bec081248a67bf74748d6996194db6a1fad99199",
-        "transactionIndex": 32,
-        "creatorAddress": "0xe87f02606911223c2cf200398ffaf353f60801f7"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1620132196,
-        "blockNumber": 7129699,
-        "transactionHash": "0x2f82f3cac5006d814b8bf5811380536d91d040becb0be73343a2edb87d8d3352",
-        "transactionIndex": 4,
-        "logIndex": 7,
-        "mechanism": {
-          "type": "event",
-          "address": "0x542c06a5dc3f27e0fbdc9fb7bc6748f26d54ddb0",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The only pre-exploit Upgraded event from the PriceCalculatorBSC V1 proxy, selecting implementation 0x81ef2bc1e02fee5414e46accc6ae14d833eebba0. The EIP-1967 implementation slot still holds that address at block 7556390."
-      },
-      "codeAgeSeconds": 1331472,
-      "failureModeId": "failure:pancake-lp-valued-by-spot-wbnb-reserve",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-5",
-          "source-6",
-          "source-12"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2",
-          "source-13"
-        ]
+      "address": "0x542c06a5dc3f27e0fbdc9fb7bc6748f26d54ddb0",
+      "code": "0x81ef2bc1e02fee5414e46accc6ae14d833eebba0",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x2f82f3cac5006d814b8bf5811380536d91d040becb0be73343a2edb87d8d3352"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x897c2de73dd55d7701e1b69ffb3a17b0f4801ced88b0c75fe1551c5fcce6a979"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T15:05:00Z",
-      "note": "Anchor selection: attacker EOA 0xa0acc61547f6bd066f7c9663c17a312b6ad7e187 created exploit contract 0xcc598232a75fb1b361510bce4ca39d7bc39cf498 at block 7555350; its complete transaction list contains exactly two successful calls, 0x88fcffc3256faac76cde4bbd0df6ea3603b1438a5a0409b2e2b91e7c2ba3371a at block 7556330 (selector 0xe1c7392a) and 0x897c2de73dd55d7701e1b69ffb3a17b0f4801ced88b0c75fe1551c5fcce6a979 at block 7556391 index 8 (selector 0x8566270b); everything else, including all later copycat calls from other senders, reverted. The 44-frame trace of the earlier transaction only zaps 1 BNB into the WBNB-USDT v2 pair and deposits the LP into VaultFlipToFlip 0x633e538ecf0bee1a18c2edfe10c4da0d6e71e77b; it never reaches the minter or the price calculator, so it does not execute the defect and the anchor is the second transaction. Its 277-frame callTracer trace shows seven nested PancakeSwap flash swaps and a ForTube USDT flash loan, then VaultFlipToFlip.getReward() (0x3d18b912) which DELEGATECALLs implementation 0xd415e6caa8af7cc17b7abd872a42d5f2c90838ea and calls the BunnyMinter proxy 0x8cb88701790f650f273c8bb2cc4c5f439cd65219 with isMinter (0xaa271e1a) and mintForV2 (0xfaeb3308); the minter DELEGATECALLs 0x819eea71d3f93bb604816f1797d4828c90219b5d, zaps the fee through ZapBSC 0xcbec8e7ab969f6eb873df63d04b4eafc353574b1 into the BUNNY-WBNB pair 0x7bb89460599dbf32ee3aa50798bbceae2a5f7f6a, calls the price-calculator proxy 0x542c06a5dc3f27e0fbdc9fb7bc6748f26d54ddb0 (DELEGATECALL to 0x81ef2bc1e02fee5414e46accc6ae14d833eebba0) which reads that pair's symbol, totalSupply, getReserves and token0, and then mints BUNNY twice via 0xa0712d68. Reading the verified sources confirms the defect: PriceCalculatorBSCV1.valueOfAsset returns amount * WBNB.balanceOf(pair) * 2 / pair.totalSupply() for a WBNB-paired Cake-LP, and BunnyMinterV2.mintForV2 turns that number straight into mint volume through amountBunnyToMint. Neither depends on a parameter that could make it correct. Code history: minter proxy created by 0xe87f02606911223c2cf200398ffaf353f60801f7 at block 5545145 index 16; eth_getLogs over topic 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b from creation to block 7556390 returns exactly three Upgraded events (0xaebbfa9399d8f5c2c5411269ac422e266273dffb at 5808861, 0x6298e5485596b7a281ed35d90c7ef6fb85c436b4 at 6808248, 0x819eea71d3f93bb604816f1797d4828c90219b5d at 6920074 index 6 log 27) and the EIP-1967 slot holds the last one at block 7556390. Price-calculator proxy created by the same deployer at block 5638601 index 32; the same scan returns exactly one Upgraded event, 0x81ef2bc1e02fee5414e46accc6ae14d833eebba0 at block 7129699 index 4 log 7, still in the slot at block 7556390. Both implementation runtimes hash identically at their creation block, at block 7556390 and today: 0x26a3c82e748073ec3ffd99b65d05c4b413d36d421d5a545a6f72d60d89b833b2 and 0xe88612726aedfe83ea5ed9a9a70df5450f552dcc9ceb3c6fb838079c576540f6, giving ages 1966739 and 1331472 seconds. Loss recomputed from the anchor receipt's Transfer logs: 8018324.054007685473386005 BUNNY minted from the zero address, 1045868.354870567670441652 to BunnyPool 0xcadc8cb26c8c7cb46500e61171b5f27e9bd7889d and 6972455.699137117802944353 to the attacker, matching cmichel's 6,972,455 figure; the two BUNNY/WBNB pairs 0x7bb89460599dbf32ee3aa50798bbceae2a5f7f6a and 0x5afef8567414f29f0f927a0f2787b188624c10e2 lose 64350.677479753673535696 and 56270.431537854947410798 WBNB, and after 5989.566902738969215519 WBNB of PancakeSwap flash-swap fees the attacker EOA receives exactly 114631.542114869651730975 WBNB in log index 129. No BUNNY spot mark is used anywhere in the valuation."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x527a19c2b54dd5135d2a56633bc9183a7e593ad73b13a8ad8464ee2886935bfb"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1162f89e442eb0956bf0d85c53b1c48b0604d061df48ac14ccad5663586dbbc0"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x3890e86a3e092b3f94dd55a6bec081248a67bf74748d6996194db6a1fad99199"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2f82f3cac5006d814b8bf5811380536d91d040becb0be73343a2edb87d8d3352"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1621460000/bsc:0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-      "observedAt": 1787665007
-    },
-    {
-      "id": "source-8",
-      "type": "post-mortem",
-      "url": "https://cmichel.io/bsc-pancake-bunny-exploit-post-mortem/"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x88fcffc3256faac76cde4bbd0df6ea3603b1438a5a0409b2e2b91e7c2ba3371a"
-    },
-    {
-      "id": "source-10",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "d5167541cd4c982cd4d29e583089b2a1a5caa6e6",
-      "path": "src/test/2021-05/PancakeBunny_exp.sol"
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xcc77c07d388a84ae49577bb1fed97e683e1a28ad6f85691059c3641722703e4a"
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf900b296e47ebec51c1acc0f8ec9d757fd2ef3ee7070775746980d718730bf76"
-    },
-    {
-      "id": "source-13",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T07:30:00Z",
-      "note": "Knot collapse. PriceCalculatorBSCV1 spot LP valuation and BunnyMinterV2 unbounded minting produced one loss and neither alone does: the calculator returns a manipulable number that only the minter turns into unbacked BUNNY. The pair is one conjunctive failure. The exploitable combination existed from the calculator implementation upgrade at block 7129699, the later of the two resets, so target-2 supplies the single knot and target-1 is supporting."
-    }
-  ],
-  "discovery": [
-    "seed:pancakebunny:2021-05-19:pancakebunny-bunnyminterv2-lp-price-manipulation",
-    "web:2021-05-20:pancakebunny"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 41747693.69380884,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "114631.542114869651730975",
+        "usd": 41747693.69380884
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://cmichel.io/bsc-pancake-bunny-exploit-post-mortem/",
+    "eip155:56:0x88fcffc3256faac76cde4bbd0df6ea3603b1438a5a0409b2e2b91e7c2ba3371a",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2021-05/PancakeBunny_exp.sol",
+    "eip155:56:0xcc77c07d388a84ae49577bb1fed97e683e1a28ad6f85691059c3641722703e4a",
+    "eip155:56:0xf900b296e47ebec51c1acc0f8ec9d757fd2ef3ee7070775746980d718730bf76"
+  ],
+  "notes": [
+    "Third and last pre-exploit Upgraded event from the BunnyMinter proxy, selecting BunnyMinterV2 implementation 0x819eea71d3f93bb604816f1797d4828c90219b5d, which was created five transaction indices earlier in the same block. The EIP-1967 implementation slot still holds that address at block 7556390.",
+    "The only pre-exploit Upgraded event from the PriceCalculatorBSC V1 proxy, selecting implementation 0x81ef2bc1e02fee5414e46accc6ae14d833eebba0. The EIP-1967 implementation slot still holds that address at block 7556390.",
+    "Valued on realised proceeds, not on a spot mark of the minted token. The single exploit transaction mints 8018324.054007685473386005 BUNNY from the zero address, of which 6972455.699137117802944353 goes to the attacker's contract and 1045868.354870567670441652 to the protocol's BunnyPool. The attacker sells the BUNNY into the two BUNNY/WBNB PancakeSwap pairs, which give up 64350.677479753673535696 and 56270.431537854947410798 WBNB respectively, 120621.109017608620946494 WBNB gross; 5989.566902738969215519 WBNB of that is consumed by PancakeSwap flash-swap fees inside the same transaction, so exactly 114631.542114869651730975 WBNB is transferred out to attacker EOA 0xa0acc61547f6bd066f7c9663c17a312b6ad7e187 after every flash loan is repaid. That WBNB quantity is the measured loss. The 697245.569913711780294436 BUNNY the attacker still holds at the end of the transaction is deliberately excluded: the attacker's own selling had already collapsed the BUNNY/WBNB pairs, so no spot mark on that residue is realisable, and the frequently quoted 45M headline is a mark on the full 6.97M BUNNY that could never have been sold at that price. WBNB is valued with the last DefiLlama datapoint at or before the exploit (1621460291, 364.1902823916861 USD); BNB moved between roughly 364 and 390 USD within minutes of the exploit on that day, and the nearest later datapoint (1621463838, 379.71 USD) would give 43.53M USD, so the USD figure carries a few per cent of price noise that the exact WBNB quantity does not.",
+    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+  ]
 }

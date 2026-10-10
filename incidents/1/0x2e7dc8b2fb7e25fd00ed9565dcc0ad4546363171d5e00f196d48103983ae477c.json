@@ -1,199 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x2e7dc8b2fb7e25fd00ed9565dcc0ad4546363171d5e00f196d48103983ae477c",
-  "protocol": {
-    "name": "Curve",
-    "slug": "curve"
-  },
+  "protocol": "Curve",
   "name": "Curve CRV/ETH Vyper lock reentrancy",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x2e7dc8b2fb7e25fd00ed9565dcc0ad4546363171d5e00f196d48103983ae477c",
-      "blockNumber": 17807830,
-      "transactionIndex": 6,
-      "timestamp": 1690744103
-    },
-    "attackerAddresses": [
-      "0xb752def3a1fded45d6c4b9f4a8f18e645b41b324"
-    ]
-  },
   "summary": "Vyper 0.3.0 allocated the same named nonreentrant lock to different storage slots in different functions. The CRV/ETH pool's native-ETH callback therefore allowed cross-function reentrancy from remove_liquidity() into add_liquidity(), minting an invalid claim on pool reserves.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 19466180.685977396,
-      "valuationTimestamp": 1690744068,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "7680.493699345042585217",
-        "usdValue": 14417592.357599534,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1690744068,
-          "unitPriceUsd": 1877.17,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xd533a949740bb3306d119cc777fa900ba034cd52",
-          "symbol": "CRV"
-        },
-        "amount": "7193401.775311984312323106",
-        "usdValue": 5048588.3283778615,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1690744064,
-          "unitPriceUsd": 0.701836,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The two structured components are the attack helper's exact end-of-transaction proceeds after repaying its 10,000 WETH flash loan. The later 2,879.65 ETH whitehat extraction was returned to Curve and is excluded. Other Vyper-affected pools were attacked independently and are not included in this pool-specific loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8301ae4fc9c624d1d396cbdaa1ed877821d7c511",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8301ae4fc9c624d1d396cbdaa1ed877821d7c511",
-        "codeHash": "0x0a93dc0d31254f712e0129e5a67ac2863dbf2c8505cf6f014b388792f75aadc1"
-      },
-      "deployment": {
-        "timestamp": 1637753758,
-        "blockNumber": 13676995,
-        "transactionHash": "0x5fccb9a4416f29918bf376294a8121834173a4a4499bcb1f98a336cac54cfa6e",
-        "transactionIndex": 74,
-        "creatorAddress": "0xbabe61887f1de2713c6f97e567623453d3c79f67"
-      },
-      "ageReset": {
+      "address": "0x8301ae4fc9c624d1d396cbdaa1ed877821d7c511",
+      "reset": {
         "kind": "deployment",
-        "description": "The immutable Vyper pool runtime was deployed in this transaction and remained byte-identical immediately before the exploit."
-      },
-      "codeAgeSeconds": 52990345,
-      "failureModeId": "failure:vyper-cross-function-named-reentrancy-lock",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0x5fccb9a4416f29918bf376294a8121834173a4a4499bcb1f98a336cac54cfa6e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2e7dc8b2fb7e25fd00ed9565dcc0ad4546363171d5e00f196d48103983ae477c"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:49:30Z",
-      "note": "Reviewed the exploit receipt and 634-frame call trace, pool creation transaction and trace, verified Vyper 0.3.0 source, historical runtime at deployment and immediately before the exploit, commit-pinned reproduction, Vyper's compiler advisory, LlamaRisk's pool-by-pool post-mortem, exact post-transaction token balances, and the later whitehat exploit and return receipts. The malicious anchor repeatedly executes the direct CRV/ETH pool 0x8301ae4fc9c624d1d396cbdaa1ed877821d7c511 without DELEGATECALL. The pool was created by top-level CREATE from 0xbabe61887f1de2713c6f97e567623453d3c79f67 in transaction 0x5fccb9a4416f29918bf376294a8121834173a4a4499bcb1f98a336cac54cfa6e. Its 22,389-byte runtime is byte-identical at deployment and block 17807829 and hashes to 0x0a93dc0d31254f712e0129e5a67ac2863dbf2c8505cf6f014b388792f75aadc1. After the flash loan is repaid, the attack helper's balances increase by exactly 7,680.493699345042585217 WETH and 7,193,401.775311984312323106 CRV. Independent actors attacked the pETH/ETH, msETH/ETH, and alETH/ETH pools; those losses are not part of this incident."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5fccb9a4416f29918bf376294a8121834173a4a4499bcb1f98a336cac54cfa6e"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://github.com/vyperlang/vyper/security/advisories/GHSA-5824-cm3x-3c38"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://www.llamarisk.com/research/curve-pool-reentrancy-exploit-postmortem"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-07/Curve_exp02.sol"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1690744103/coingecko:ethereum",
-      "observedAt": 1787597370
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1690744103/ethereum:0xd533a949740bb3306d119cc777fa900ba034cd52",
-      "observedAt": 1787597370
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xcd99fadd7e28a42a063e07d9d86f67c88e10a7afe5921bd28cd1124924ae2052"
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb76754124fdde090f25129105ed2907e3c62e0db87ecb8ffcefcb1dede0954fd"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 19466180.685977396,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "7680.493699345042585217",
+        "usd": 14417592.357599534
+      },
+      {
+        "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "symbol": "CRV",
+        "amount": "7193401.775311984312323106",
+        "usd": 5048588.3283778615
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/vyperlang/vyper/security/advisories/GHSA-5824-cm3x-3c38",
+    "https://www.llamarisk.com/research/curve-pool-reentrancy-exploit-postmortem",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Curve_exp02.sol",
+    "eip155:1:0xcd99fadd7e28a42a063e07d9d86f67c88e10a7afe5921bd28cd1124924ae2052",
+    "eip155:1:0xb76754124fdde090f25129105ed2907e3c62e0db87ecb8ffcefcb1dede0954fd"
+  ],
+  "notes": [
+    "The immutable Vyper pool runtime was deployed in this transaction and remained byte-identical immediately before the exploit.",
+    "The two structured components are the attack helper's exact end-of-transaction proceeds after repaying its 10,000 WETH flash loan. The later 2,879.65 ETH whitehat extraction was returned to Curve and is excluded. Other Vyper-affected pools were attacked independently and are not included in this pool-specific loss."
+  ]
 }

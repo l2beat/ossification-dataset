@@ -1,158 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0x554c9e4067e3bc0201ba06fc2cfeeacd178d7dd9c69f9b211bc661bb11296fde",
-  "protocol": {
-    "name": "BTC24H",
-    "slug": "btc24h"
-  },
+  "protocol": "BTC24H",
   "name": "BTC24H Lock claim() without beneficiary check",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0x554c9e4067e3bc0201ba06fc2cfeeacd178d7dd9c69f9b211bc661bb11296fde",
-      "blockNumber": 65560669,
-      "transactionIndex": 0,
-      "timestamp": 1734370278
-    },
-    "attackerAddresses": [
-      "0xde0a99fb39e78efd3529e31d78434f7645601163",
-      "0x3cb2452c615007b9ef94d5814765eb48b71ae520"
-    ]
-  },
   "summary": "The BTC24H token Lock 0x968e1c98 holds the owner's 110,000 BTC24H until releaseDate 1734220800, but claim() is guarded only by onlyOnOrAfter(releaseDate) and the claimed flag: it has no onlyOwner or beneficiary check and pays claims.amount to msg.sender. About 41.5 hours after release, before the owner claimed, the attacker contract called claim(), received all 110,000 BTC24H and sold them through the Uniswap universal router for 4,953.29 USDT and 0.76433089 WBTC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 86385.86488448999,
-      "valuationTimestamp": 1734370278,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0xea4b5c48a664501691b2ecb407938ee92d389a6f",
-          "symbol": "BTC24H"
-        },
-        "amount": "110000",
-        "usdValue": 86385.86488448999,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1734370278,
-          "unitPriceUsd": 0.7853260444044544,
-          "sourceIds": [
-            "source-5",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion: the Lock's entire 110000 BTC24H balance (its only inflow was the owner's deposit) moved to the attack contract in receipt log 0. The attacker sold all of it in the same transaction into two thin Uniswap V3 pools, so BTC24H has no reliable spot quote (none on DefiLlama) and is valued at realised proceeds: 10000 BTC24H for 4953.287533 USDT (log 2), valued at par, and 100000 BTC24H for 0.76433089 WBTC (log 6), valued at the DefiLlama WBTC quote 106541 (source-6). Both proceeds went straight to the attacker EOA. No attacker input exists."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x968e1c984a431f3d0299563f15d48c395f70f719",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x968e1c984a431f3d0299563f15d48c395f70f719",
-        "codeHash": "0x719be1e07faa5b04d3512c2d23eae66361722b574a8ac68f827bcf20a001e849"
-      },
-      "deployment": {
-        "timestamp": 1733934548,
-        "blockNumber": 65358210,
-        "transactionHash": "0x38e17e6b6d2506052f2415487ba2c96b0d8939c8c9574ae27cc61eade4cff184",
-        "transactionIndex": 42,
-        "creatorAddress": "0x88538ab036824f5b8b904f3e3c6015d125aa629e"
-      },
-      "ageReset": {
+      "address": "0x968e1c984a431f3d0299563f15d48c395f70f719",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable Lock runtime contains the unrestricted claim(); the owner's later deposit() only funded the lock with hard-coded amount and release date, which sets exposure and timing, not the missing authorization."
-      },
-      "codeAgeSeconds": 435730,
-      "failureModeId": "failure:btc24h-lock-claim-missing-beneficiary-check",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x38e17e6b6d2506052f2415487ba2c96b0d8939c8c9574ae27cc61eade4cff184"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x554c9e4067e3bc0201ba06fc2cfeeacd178d7dd9c69f9b211bc661bb11296fde"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-12/BTC24H_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Verified source: Etherscan V2 contract.getsourcecode chainid=137 for 0x968e1c984a431f3d0299563f15d48c395f70f719, contract Lock (contracts/Lock.sol), v0.8.28+commit.7893614a, optimizer off, constructor argument token 0xea4b5c48a664501691b2ecb407938ee92d389a6f. claim() carries only onlyOnOrAfter(claims.releaseDate) and require(!claims.claimed), then safeTransfer(msg.sender, claims.amount); the declared onlyOwner modifier is never applied to it. deposit() hard-codes amount 110000e18 and releaseDate 1734220800. View calls: owner() = 0x88538ab036824f5b8b904f3e3c6015d125aa629e; getClaimDetails() = (110000e18, 1734220800, false) at block 65560668 and (110000e18, 1734220800, true) at 65560669. debug_traceTransaction(source-1, callTracer): attack contract 0x3cb2452c615007b9ef94d5814765eb48b71ae520 (created by the attacker EOA at block 60203143, Etherscan getcontractcreation) calls claim() (0x4e71d92d); receipt log 0 moves 110000e18 BTC24H from the Lock to it. Earliest exercise: the claimed flag permits one successful claim and flips only in source-1; Etherscan V2 account.tokentx for the Lock lists exactly the owner's deposit (0x2cf0a8091065beb8849b219507e54121ace4b8000876611b3af2499beb44d7ed, block 65358245) and the source-1 outflow. Attacker 0xde0a99fb... is not the owner or creator. Identity: eth_getCode empty at block 65358209; keccak256(eth_getCode) = 0x719be1e07faa5b04d3512c2d23eae66361722b574a8ac68f827bcf20a001e849 at 65358210 and 65560668; creation receipt source-4 (block 65358210, index 42) from the owner, to null. No DELEGATECALL or SELFDESTRUCT in the runtime, no setter for owner, token or claims other than deposit(). Etherscan V2 account.txlist for the Lock returns only the creation and the owner's deposit(); that deposit supplies the locked balance and the hard-coded schedule, which bound exposure and timing but not the missing authorization, so deployment supplies the age.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:52:20Z"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x38e17e6b6d2506052f2415487ba2c96b0d8939c8c9574ae27cc61eade4cff184"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Reviewed loss. eth_getTransactionReceipt(source-1), status 1, 10 logs: log 0 BTC24H Lock -> attack contract 0x174b1ca8ab05a8c00000 (110000e18); log 1 attack contract -> universal router 0xec7be89e9d109e7e3fec59c222cf297125fefda2 10000e18 BTC24H; log 3 router -> pool 0xd06cd277cd... and log 2 USDT 0xc2132d05d31c914a87c6611c10748aeb04b58e8f pool -> attacker EOA 0x127392b6d = 4953.287533 (6 decimals), Swap log 4; log 5 attack contract -> router 100000e18 BTC24H; log 7 router -> pool 0x495e8f82f3...; log 6 WBTC 0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6 pool -> attacker EOA 0x48e47c1 = 0.76433089 (8 decimals), Swap log 8. Value: 4953.287533 x 1 + 0.76433089 x 106541 = 86385.86488448999 USD, i.e. 0.7853260444044544 USD per BTC24H.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:52:20Z"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1734370278/polygon:0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
-      "observedAt": 1790621540
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 86385.86488448999,
+    "assets": [
+      {
+        "token": "0xea4b5c48a664501691b2ecb407938ee92d389a6f",
+        "symbol": "BTC24H",
+        "amount": "110000",
+        "usd": 86385.86488448999
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2024-12/BTC24H_exp.sol",
-    "seed:btc24h:2024-12-16:btc24h"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-12/BTC24H_exp.sol"
+  ],
+  "notes": [
+    "Direct immutable Lock runtime contains the unrestricted claim(); the owner's later deposit() only funded the lock with hard-coded amount and release date, which sets exposure and timing, not the missing authorization.",
+    "Exact victim depletion: the Lock's entire 110000 BTC24H balance (its only inflow was the owner's deposit) moved to the attack contract in receipt log 0. The attacker sold all of it in the same transaction into two thin Uniswap V3 pools, so BTC24H has no reliable spot quote (none on DefiLlama) and is valued at realised proceeds: 10000 BTC24H for 4953.287533 USDT (log 2), valued at par, and 100000 BTC24H for 0.76433089 WBTC (log 6), valued at the DefiLlama WBTC quote 106541 (source-6). Both proceeds went straight to the attacker EOA. No attacker input exists."
   ]
 }

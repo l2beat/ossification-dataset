@@ -1,143 +1,30 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:10:0x3d6367de5c191204b44b8a5cf975f257472087a9aadc59b5d744ffdef33a520e",
-  "protocol": {
-    "name": "Exactly Protocol",
-    "slug": "exactly-protocol"
-  },
+  "protocol": "Exactly Protocol",
   "name": "Exactly Protocol DebtManager unvalidated-market impersonation",
-  "incident": {
-    "chainId": 10,
-    "exploit": {
-      "transactionHash": "0x3d6367de5c191204b44b8a5cf975f257472087a9aadc59b5d744ffdef33a520e",
-      "blockNumber": 108375558,
-      "transactionIndex": 1,
-      "timestamp": 1692349893
-    },
-    "attackerAddresses": [
-      "0x3747dbbcb5c07786a4c59883e473a2e38f571af9",
-      "0x00000000002088951336d7972746a135f2956417"
-    ]
-  },
   "summary": "DebtManager accepted a caller-supplied market in its permit and leverage path without checking that the Auditor listed it. A malicious market bypassed the permit, set DebtManager's effective sender to a victim, then reentered crossDeleverage with a real market to withdraw the victim's position through an attacker-controlled swap pool.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 7612038,
-      "valuationTimestamp": 1692349893,
-      "method": "reported",
-      "sourceIds": [
-        "source-4"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Exactly's post-mortem reports $7,612,038 lost by 117 accounts. The main attacker caused 97% of the campaign loss and a copycat using the same defect caused the remaining 3%."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x675d410dcf6f343219aae8d1dde0bfab46f52106",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x16748cb753a68329ca2117a7647aa590317ebf41",
-        "codeHash": "0x42ee231ba4472dbaa3372f1ae110b6209bc3652f030d9481b4f4df0a17e0d91d"
-      },
-      "deployment": {
-        "timestamp": 1689870347,
-        "blockNumber": 107135785,
-        "transactionHash": "0x62cc4fbe0367ba490672b23ca857346340d5908c9e5b30b11f505a6ee992ad7b",
-        "transactionIndex": 2,
-        "creatorAddress": "0xe61bdef3fff4c3cf7a07996dcb8802b5c85b665a"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1689870347,
-        "blockNumber": 107135785,
-        "transactionHash": "0x62cc4fbe0367ba490672b23ca857346340d5908c9e5b30b11f505a6ee992ad7b",
-        "transactionIndex": 2,
-        "logIndex": 17,
-        "mechanism": {
-          "type": "event",
-          "address": "0x675d410dcf6f343219aae8d1dde0bfab46f52106",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The proxy creation transaction emitted Upgraded selecting the vulnerable DebtManager implementation; no later Upgraded event occurred before the exploit."
-      },
-      "codeAgeSeconds": 2479546,
-      "failureModeId": "failure:exactly-debt-manager-unvalidated-market-impersonation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x675d410dcf6f343219aae8d1dde0bfab46f52106",
+      "code": "0x16748cb753a68329ca2117a7647aa590317ebf41",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x62cc4fbe0367ba490672b23ca857346340d5908c9e5b30b11f505a6ee992ad7b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x3d6367de5c191204b44b8a5cf975f257472087a9aadc59b5d744ffdef33a520e"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x18407a14c11704f387c039c538c2930b692fe462d6236b7f6ad9d856e84c1a7e"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:17:16Z",
-      "note": "Reviewed the live Optimism receipt and call trace, the implementation and proxy creation traces, the proxy implementation slot, every Upgraded event through the exploit, the pre-exploit implementation hash, the exact commit-matching verified source, and Exactly's post-mortem. The attacker contract calls DebtManager proxy 0x675d410dcf6f343219aae8d1dde0bfab46f52106, which repeatedly delegatecalls 0x16748cb753a68329ca2117a7647aa590317ebf41. The unvalidated market and permit path lets malicious market contracts make DebtManager retain a victim as its effective sender during reentrant crossDeleverage calls against real markets, withdrawing victim positions through attacker-created pools. The proxy was created and initialized with the artifact at 107135785:2, emitting its sole pre-exploit Upgraded event at log 17; the implementation slot and trace select that artifact and its runtime hash matches the declaration. Exactly reports $7,612,038 lost across 117 accounts to the main attacker and copycat."
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://medium.com/@exactly_protocol/exactly-protocol-incident-post-mortem-b4293d97e3ed"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/exactly/protocol",
-      "commit": "d5c2eab0ec63e5faa4d1ac7fabd7f008affdfebd",
-      "path": "contracts/periphery/DebtManager.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x62cc4fbe0367ba490672b23ca857346340d5908c9e5b30b11f505a6ee992ad7b"
-    }
+  "loss": {
+    "usd": 7612038,
+    "assets": []
+  },
+  "refs": [
+    "eip155:10:0x18407a14c11704f387c039c538c2930b692fe462d6236b7f6ad9d856e84c1a7e",
+    "https://medium.com/@exactly_protocol/exactly-protocol-incident-post-mortem-b4293d97e3ed",
+    "https://github.com/exactly/protocol/blob/d5c2eab0ec63e5faa4d1ac7fabd7f008affdfebd/contracts/periphery/DebtManager.sol"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The loss uses Exactly's account-level aggregate rather than a separately repriced onchain asset ledger."
-    ],
-    "reviewSourceIds": [
-      "source-3"
-    ]
-  }
+  "notes": [
+    "The proxy creation transaction emitted Upgraded selecting the vulnerable DebtManager implementation; no later Upgraded event occurred before the exploit.",
+    "Exactly's post-mortem reports $7,612,038 lost by 117 accounts. The main attacker caused 97% of the campaign loss and a copycat using the same defect caused the remaining 3%.",
+    "The loss uses Exactly's account-level aggregate rather than a separately repriced onchain asset ledger."
+  ]
 }

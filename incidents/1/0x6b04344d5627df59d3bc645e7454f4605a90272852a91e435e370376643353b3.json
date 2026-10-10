@@ -1,164 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x6b04344d5627df59d3bc645e7454f4605a90272852a91e435e370376643353b3",
-  "protocol": {
-    "name": "RWAVault",
-    "slug": "rwavault"
-  },
+  "protocol": "RWAVault",
   "name": "RWAVault ERC-4626 withdraw override without allowance spend",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x6b04344d5627df59d3bc645e7454f4605a90272852a91e435e370376643353b3",
-      "blockNumber": 24979316,
-      "transactionIndex": 2,
-      "timestamp": 1777388411
-    },
-    "attackerAddresses": [
-      "0x7137804200a073f616d92e87007f1f100100b56a",
-      "0x50c140c2f705fa9d0bd0f4f253bacf4087588d17"
-    ]
-  },
   "summary": "RWAVault.withdraw(uint256,address,address) overrides OpenZeppelin's ERC4626.withdraw and bypasses ERC4626._withdraw, which is the only place the base implementation performs 'if (caller != owner) _spendAllowance(owner, caller, shares)'. The override reads _depositInfos[owner], computes the share and principal reductions, and then calls _burn(owner, shares) and SafeERC20.safeTransfer(asset, receiver, assets) with no check that msg.sender is the owner or holds an ERC-20 allowance from the owner. Any external caller can therefore name an arbitrary owner and an arbitrary receiver and take that depositor's position out of the vault. The invariant broken is that an ERC-4626 vault may only move a share owner's assets on the owner's own authority or against an allowance the owner granted. No parameter restores the check: the allowance spend is absent from the compiled code, and the phase and withdrawalStartTime gates that the override does enforce were satisfied by the vault's normal Matured state. RWAVault.redeem has the same omission.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 392763.999994,
-      "valuationTimestamp": 1777388411,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-3"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "392763.999994",
-        "usdValue": 392763.999994,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1777388411,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depositor depletion in the single exploit transaction. The vault clone 0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a held 398,656.303037 USDC at block 24979315 and 0.830585 USDC at block 24979316. Of the 398,655.472452 USDC that left it, 392,763.999994 was routed to the attacker's contract 0x50c140c2f705fa9d0bd0f4f253bacf4087588d17 as the receiver of the eight unauthorised withdraw calls, against 392,764.000000 of burned shares, and that is the loss recorded here. The remaining 5,891.472458 USDC is the pending interest that _claimRemainingInterest paid to the eight rightful depositors themselves, so it is not stolen value and is excluded. The attacker's own gross proceeds were the same 392,763.999994 USDC, of which 5,000.000000 was swapped through Uniswap V2 into 2.195959995966763304 WETH paid to the block builder 0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97; that payment is a bribe and METHODOLOGY does not deduct it from gross depletion. The attacker EOA 0x7137804200a073f616d92e87007f1f100100b56a ended the transaction with 387,763.999994 USDC. USDC is valued at par. The seed row's figure of 398,655 and the DeFiHackLabs header's 398,655.47 are the total vault outflow including the interest returned to the owners."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a",
-      "relationship": "minimal-proxy",
-      "codeArtifact": {
-        "address": "0x317aa10528ff675ef4c358ea6a5b7b5494325733",
-        "codeHash": "0x983a798bc4543beaef1baaa83054ba40aabf52e39b9a8e7ed6d47e841debfe24"
-      },
-      "deployment": {
-        "timestamp": 1773932555,
-        "blockNumber": 24692301,
-        "transactionHash": "0x241de4abe766c3dce8c418af0baf3b3789a22eccaabbf636367a0e28c232a337",
-        "transactionIndex": 67,
-        "creatorAddress": "0x475984eb4672eb45bdf8750848b91fb113fdd8de"
-      },
-      "ageReset": {
+      "address": "0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a",
+      "code": "0x317aa10528ff675ef4c358ea6a5b7b5494325733",
+      "reset": {
         "kind": "deployment",
-        "description": "The exploited execution context is the EIP-1167 clone 0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a, whose 45-byte runtime 0x363d3d373d3d3d363d73317aa10528ff675ef4c358ea6a5b7b54943257335af43d82803e903d91602b57fd5bf3 hard-codes the defect-bearing RWAVault implementation 0x317aa10528ff675ef4c358ea6a5b7b5494325733 and cannot be repointed. The clone was created by CREATE from the RWAVault factory 0x475984eb4672eb45bdf8750848b91fb113fdd8de inside 0x241de4abe766c3dce8c418af0baf3b3789a22eccaabbf636367a0e28c232a337 at block 24692301 index 67 and initialised in the same transaction, so this is the only change to the executable code the context uses. The implementation itself is older: the factory's constructor created it in 0x268b273c6e89c11cb6f5a3a352206846d8750996db10d3e0f70aa93dd60c5f2a at block 24381124 index 208, timestamp 1770179579, which would give 7,208,832 s if the shared template rather than the clone were the age basis."
-      },
-      "codeAgeSeconds": 3455856,
-      "failureModeId": "failure:rwavault-erc4626-withdraw-override-missing-allowance-spend",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3",
-          "source-7"
-        ]
+        "tx": "0x241de4abe766c3dce8c418af0baf3b3789a22eccaabbf636367a0e28c232a337"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x6b04344d5627df59d3bc645e7454f4605a90272852a91e435e370376643353b3"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-04/RWAVault_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Target corrected, root cause confirmed against source, loss reconstructed. The seed row named 0x317aa10528ff675ef4c358ea6a5b7b5494325733 as a 'direct' execution address. It is not an execution context: eth_getCode on 0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a returns the 45-byte EIP-1167 stub 0x363d3d373d3d3d363d73317aa10528ff675ef4c358ea6a5b7b54943257335af43d82803e903d91602b57fd5bf3, and the callTracer output shows the attack contract 0x50c140c2f705fa9d0bd0f4f253bacf4087588d17 calling selector 0xb460af94 (withdraw(uint256,address,address)) on the clone eight times, each frame DELEGATECALLing 0x317aa105 with the clone's storage. Execution address is therefore the clone and the relationship is minimal-proxy, with 0x317aa105 as the artifact. Root cause read from the Etherscan-verified standard-json source (Solidity 0.8.24, src/vault/RWAVault.sol, contract RWAVault): the withdraw override marked 'public override(ERC4626, IERC4626) nonReentrant whenNotPaused' checks currentPhase, withdrawalStartTime, calls _claimRemainingInterest(owner), computes shares = Math.mulDiv(assets, info.shares, netValue, Ceil), then does _burn(owner, shares) and SafeERC20.safeTransfer(asset(), receiver, assets); it never routes through ERC4626._withdraw, which is where the bundled OpenZeppelin copy performs the caller != owner allowance spend, and it makes no _spendAllowance call of its own. redeem has the identical omission. Anchor kept and shown to be first. The attacker EOA 0x7137804200a073f616d92e87007f1f100100b56a was funded at block 24972326 and spent nonces 0 to 11 on five contract creations and five test() calls at blocks 24972689 to 24972903; I traced all five and none makes any external call, so none executes the vault. Nonce 11 creates the attack contract 0x50c140c2f705fa9d0bd0f4f253bacf4087588d17 at block 24979202 and nonce 12 is this transaction, status 1 at block 24979316 index 2, timestamp 1777388411. I also enumerated every USDC Transfer whose sender is the clone from its creation block 24692301 to the exploit block: seventeen logs, of which the only pre-exploit two are legitimate transfers of 10 and 392,754.830579 USDC to the pool-manager Safe 0x8afebf3781ac142e846ef7b52eab85a607ed58be, so there is no earlier unauthorised withdrawal. Code history: the clone was created by CREATE from the factory 0x475984eb4672eb45bdf8750848b91fb113fdd8de, not by an attacker, inside 0x241de4abe766c3dce8c418af0baf3b3789a22eccaabbf636367a0e28c232a337 at block 24692301 index 67, timestamp 1773932555; keccak(eth_getCode) on the clone is 0x8094c8f212cc4dc265b95c5a25c07efc8262c72fdfc03b9d8153eff8a315904f at both 24692301 and 24979315 and the empty-code hash at 24692300, and keccak(eth_getCode) on the implementation is 0x983a798bc4543beaef1baaa83054ba40aabf52e39b9a8e7ed6d47e841debfe24 at 24381124, 24692301 and 24979315 with the empty-code hash at 24381123, so neither runtime ever changed and there is no upgrade slot to scan. Age 1777388411 - 1773932555 = 3,455,856 s or 39.998 days, measured from the clone deployment because an EIP-1167 stub fixes its delegate permanently at CREATE, which is the convention the other fifteen reviewed minimal-proxy targets in this dataset follow. The implementation was created 43.4 days earlier, in the factory's own constructor in 0x268b273c6e89c11cb6f5a3a352206846d8750996db10d3e0f70aa93dd60c5f2a at block 24381124 index 208, timestamp 1770179579; aging from the shared template instead would give the seed row's 7,208,832 s. Loss reproduced from the receipt and from balanceOf at the block boundary: the clone held 398,656.303037 USDC at 24979315 and 0.830585 at 24979316; 392,763.999994 USDC went to the attack contract against 392,764.000000 burned shares, and 5,891.472458 USDC went to the eight owners as _claimRemainingInterest payments they were owed, which I exclude from the loss. The attacker forwarded 387,763.999994 USDC to its EOA and paid the block builder 2.195959995966763304 WETH bought with 5,000 USDC. Boundary test applied: the allowance spend is absent from the compiled code, so no configuration makes the deployed withdraw correct."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x241de4abe766c3dce8c418af0baf3b3789a22eccaabbf636367a0e28c232a337"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x268b273c6e89c11cb6f5a3a352206846d8750996db10d3e0f70aa93dd60c5f2a"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://t.me/defimon_alerts/2958"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-26T08:03:41Z",
-      "note": "Clone basis retained under the case-by-case rule: this vault clone held the depositor share records and USDC balance that the missing allowance check exposed."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2026-04/RWAVault_exp.sol",
-    "web:2026-04-28:yieldcore",
-    "web:2026-04-29:ycdeal3"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 392763.999994,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "392763.999994",
+        "usd": 392763.999994
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-04/RWAVault_exp.sol",
+    "eip155:1:0x268b273c6e89c11cb6f5a3a352206846d8750996db10d3e0f70aa93dd60c5f2a",
+    "https://t.me/defimon_alerts/2958"
+  ],
+  "notes": [
+    "The exploited execution context is the EIP-1167 clone 0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a, whose 45-byte runtime 0x363d3d373d3d3d363d73317aa10528ff675ef4c358ea6a5b7b54943257335af43d82803e903d91602b57fd5bf3 hard-codes the defect-bearing RWAVault implementation 0x317aa10528ff675ef4c358ea6a5b7b5494325733 and cannot be repointed. The clone was created by CREATE from the RWAVault factory 0x475984eb4672eb45bdf8750848b91fb113fdd8de inside 0x241de4abe766c3dce8c418af0baf3b3789a22eccaabbf636367a0e28c232a337 at block 24692301 index 67 and initialised in the same transaction, so this is the only change to the executable code the context uses. The implementation itself is older: the factory's constructor created it in 0x268b273c6e89c11cb6f5a3a352206846d8750996db10d3e0f70aa93dd60c5f2a at block 24381124 index 208, timestamp 1770179579, which would give 7,208,832 s if the shared template rather than the clone were the age basis.",
+    "Exact depositor depletion in the single exploit transaction. The vault clone 0xb9c7c84a1aa0dd40b5b38aae815ad0cdd2e5f88a held 398,656.303037 USDC at block 24979315 and 0.830585 USDC at block 24979316. Of the 398,655.472452 USDC that left it, 392,763.999994 was routed to the attacker's contract 0x50c140c2f705fa9d0bd0f4f253bacf4087588d17 as the receiver of the eight unauthorised withdraw calls, against 392,764.000000 of burned shares, and that is the loss recorded here. The remaining 5,891.472458 USDC is the pending interest that _claimRemainingInterest paid to the eight rightful depositors themselves, so it is not stolen value and is excluded. The attacker's own gross proceeds were the same 392,763.999994 USDC, of which 5,000.000000 was swapped through Uniswap V2 into 2.195959995966763304 WETH paid to the block builder 0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97; that payment is a bribe and METHODOLOGY does not deduct it from gross depletion. The attacker EOA 0x7137804200a073f616d92e87007f1f100100b56a ended the transaction with 387,763.999994 USDC. USDC is valued at par. The seed row's figure of 398,655 and the DeFiHackLabs header's 398,655.47 are the total vault outflow including the interest returned to the owners."
+  ]
 }

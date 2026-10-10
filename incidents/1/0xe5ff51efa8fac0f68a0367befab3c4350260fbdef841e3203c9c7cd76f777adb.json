@@ -1,167 +1,46 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xe5ff51efa8fac0f68a0367befab3c4350260fbdef841e3203c9c7cd76f777adb",
-  "protocol": {
-    "name": "Opyn",
-    "slug": "opyn"
-  },
+  "protocol": "Opyn",
   "name": "Opyn ETH put double exercise",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xe5ff51efa8fac0f68a0367befab3c4350260fbdef841e3203c9c7cd76f777adb",
-      "blockNumber": 10590876,
-      "transactionIndex": 73,
-      "timestamp": 1596511389
-    },
-    "attackerAddresses": [
-      "0x1c7d53f921271da48e8f6c105f3a36ff3a9094d9",
-      "0xdcbeb119118edab1bff3b9dd3682ba3847e4e07b",
-      "0xb5cdeb8901673de4c9f0491b6d2b1c2fd3ba1b31",
-      "0xb837531bf4eb8ebfa3e20948bd14be067c18cbd3",
-      "0x915c2d6f571d3d47a182dd59d5f41e87d4c3fb8e",
-      "0xe7870231992ab4b1a01814fa0a599115fe94203f"
-    ]
-  },
   "summary": "oToken.exercise(uint256,address[]) loops over the caller-supplied vault array and calls _exercise() once per vault, and _exercise() settles the ETH underlying leg with require(msg.value == amtUnderlyingToPay) against the same unchanged msg.value on every iteration while crediting vault.underlying to each vault. One ETH payment therefore exercised the put against several vaults, paying out each vault's USDC collateral, and removeUnderlying() then returned the single ETH payment from the attacker's own vault.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 371260,
-      "valuationTimestamp": 1596511389,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "371260",
-        "usdValue": 371260,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1596511389,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact gross depletion of third-party vault collateral, summed from the amtCollateralToPay field of every Exercise event whose vaultExercisedFrom is not an attacker helper, across the fourteen defect-executing transactions between blocks 10590876 and 10592517. USDC is valued at par. The victim vaults were credited an equal amount of vault.underlying ETH by the same buggy loop, but that credit is unbacked because each attacker withdrew the single real ETH payment from their own vault with removeUnderlying(), so it does not offset the depletion. oTokens the attackers bought on Uniswap V1 and the collateral of their own vaults are attacker-supplied inputs and are excluded. Opyn's later reimbursement of affected vault owners is a recovery and does not reduce gross depletion. Three independent senders exploited the same defect in the same six-hour window against byte-identical sibling oToken series; they are covered here as one campaign, matching the single 371,260 USDC figure Opyn reported, and no other record claims any part of this loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe3a2c34fa2f59ffa95c4acd1e5663633d45bc3ad",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe3a2c34fa2f59ffa95c4acd1e5663633d45bc3ad",
-        "codeHash": "0x402071d699a5c5fb4371e5f921940a16d537b86a371e198fe00191092c4cdef4"
-      },
-      "deployment": {
-        "timestamp": 1593714280,
-        "blockNumber": 10381596,
-        "transactionHash": "0x315c680d6cc456a31ca8aa4fa0778297c1dee6c8807a3635d85f1a9d2f85c342",
-        "transactionIndex": 79,
-        "creatorAddress": "0xcc5d905b9c2c8c9329eb4e25dc086369d6c7777c"
-      },
-      "ageReset": {
+      "address": "0xe3a2c34fa2f59ffa95c4acd1e5663633d45bc3ad",
+      "reset": {
         "kind": "deployment",
-        "description": "The oToken series was created by CREATE from OptionsFactory 0xcc5d905b9c2c8c9329eb4e25dc086369d6c7777c in this transaction. Its runtime is immutable and hashes identically at the creation block, at block 10590875 immediately before the exploit, and in the anchor transaction prestate."
-      },
-      "codeAgeSeconds": 2797109,
-      "failureModeId": "failure:opyn-otoken-exercise-loop-reuses-msg-value",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x315c680d6cc456a31ca8aa4fa0778297c1dee6c8807a3635d85f1a9d2f85c342"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe5ff51efa8fac0f68a0367befab3c4350260fbdef841e3203c9c7cd76f777adb"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://medium.com/opyn/opyn-eth-put-exploit-post-mortem-1a009e3347a8"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x315c680d6cc456a31ca8aa4fa0778297c1dee6c8807a3635d85f1a9d2f85c342"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x36811f9a0c0820afad110676dd440c35e513dd3e01ee0ccd665749ede55d1fb6",
-        "0xbd5d3f3e65e949c3e57a40177b845356ffd221c800c83a2ff4cfaedd0d8c351b",
-        "0xe00e11e7add35f0779b9e773046b617b7c6796b7f35b849f9738ada8f10c9ae5",
-        "0xcdaf63e9edb931882b04ff7fdaa0af167f7d35e01a8abe85fdf3b9619a0bde57",
-        "0xb6e89d8fc1cff6542286d867929ff00289fc13437cdb2b749308f8387280cddd",
-        "0x787aa0da7915bdf7aec75dd691f496303902872bda94745b090b66a5142ecac0",
-        "0x8bff3fe67793853ad6f0fa188210908d5d0bfdc60ceae2c7d5a673f135f4292a",
-        "0xbd1b2cd49cd0dce7416b6abdae702f60f1e8717fea9a94a9df1d06e8ebe316be",
-        "0xaa9daa773f513392576a0f3f1aa36da4f3f134a1e780cd9ba36f37cb2b3a1b99",
-        "0xa858463f30a08c6f3410ed456e59277fbe62ff14225754d2bb0b4f6a75fdc8ad",
-        "0xd06378b73536e7718895069a5219855774d362db47312dc304dfd4b6e39ef000",
-        "0x351bcbb182cb11cecb0d50d9f1bf45bd6820b71f7de5ec1ef607518865d43dc2",
-        "0x56de6c4bd906ee0c067a332e64966db8b1e866c7965c044163a503de6ee6552a"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:05:00Z",
-      "note": "Full re-review of the migrated Opyn row. Re-anchored: the snapshot row used 0x56de6c4bd906ee0c067a332e64966db8b1e866c7965c044163a503de6ee6552a, which is nonce 14 of attacker 0x915c2d6f571d3d47a182dd59d5f41e87d4c3fb8e and the fourteenth and last defect-executing transaction of the campaign. I scanned eth_getLogs for Exercise(uint256,uint256,address,address) topic 0xfa7bab37479e50a9b24a9412b879d400de9bcaa1e3a2b343e90bb370d85bbaa7 over blocks 10300000-10650000: exactly fourteen transactions emit two or more Exercise events, which is the exploit signature because a two-vault exercise is impossible for an honest caller (the second iteration re-checks the same msg.value). The earliest is 0xe5ff51efa8fac0f68a0367befab3c4350260fbdef841e3203c9c7cd76f777adb at block 10590876 index 73, timestamp 1596511389, receipt status 0x1, sent by 0x1c7d53f921271da48e8f6c105f3a36ff3a9094d9 through helper 0xdcbeb119118edab1bff3b9dd3682ba3847e4e07b; that is the new anchor. Its callTracer trace shows an 836 ETH dYdX SoloMargin flash loan, oToken purchase on Uniswap V1 exchange 0x3924ab37a77fab676c1a4021c548bb1d43f5d634, a self-owned vault funded with USDC, one CALL to 0xe3a2c34fa2f59ffa95c4acd1e5663633d45bc3ad with selector 0x58b36dac (exercise(uint256,address[])) carrying value 194 ETH, and a following 0xfaa2041f (removeUnderlying()) that returns the same 194 ETH, so the attacker paid nothing. Re-targeted: the snapshot named oToken 0x951d51baefb72319d9fbe941e1615938d89abfe2, which the campaign only reached in its eleventh transaction. Three byte-identical oToken series were exploited - 0xe3a2c34fa2f59ffa95c4acd1e5663633d45bc3ad (5 transactions), 0x3cbfc1397def0602c2d211c70a1c0c38cedb5448 (5), 0x951d51baefb72319d9fbe941e1615938d89abfe2 (4) - and all three runtimes hash to 0x402071d699a5c5fb4371e5f921940a16d537b86a371e198fe00191092c4cdef4, so the representative target is the one the anchored campaign reached first. Read the Etherscan-verified oToken source (Solidity v0.5.10+commit.5a6ea5b1): exercise() loops over vaultsToExerciseFrom calling _exercise() per vault, and _exercise() enforces the ETH leg with require(msg.value == amtUnderlyingToPay) against the unchanged msg.value on every iteration while crediting vault.underlying += amtUnderlyingToPay to each vault, so one ETH payment settles N vaults. Code history: the artifact is the execution address itself (no DELEGATECALL out of the oToken in the anchor trace, no EIP-1967 slot); it was created by CREATE from OptionsFactory 0xcc5d905b9c2c8c9329eb4e25dc086369d6c7777c inside transaction 0x315c680d6cc456a31ca8aa4fa0778297c1dee6c8807a3635d85f1a9d2f85c342 at block 10381596 index 79, timestamp 1593714280 (top-level sender 0xde99ea535749f02da84d13e6f8253291e32d3a7f, not an attacker). eth_getCode keccak is 0x402071d699a5c5fb4371e5f921940a16d537b86a371e198fe00191092c4cdef4 at the creation block 10381596, at block 10590875 immediately before the exploit, and in the anchor transaction's prestateTracer entry, so the deployment basis is exact and codeAgeSeconds = 1596511389 - 1593714280 = 2797109 (32.4 days). Loss: I summed the amtCollateralToPay of every Exercise event whose vaultExercisedFrom is not an attacker helper across the fourteen transactions - 34920, 72180, 18000, 16560, 9540, 15800, 15000, 20000, 20000, 10000, 89760, 24750, 5940+8910 and 9900 USDC - which is exactly 371260 USDC of vault collateral drawn from vault owners 0xc5df4d5ed23f645687a867d8f83a41836fcf8811, 0x076c95c6cd2eb823acc6347fdf5b3dd9b83511e4, 0x46630a164a20cf66c0357a72ee0130e9f93c0591, 0x33b495480cdfab66790300d853f56452f9f96eed, 0x40e652fe0ec7329dc80282a6db8f03253046efde, 0x01bdb7ada61c82e951b9ed9f0d312dc9af0ba0f2, 0x25125e438b7ae0f9ae8511d83abb0f4574217c7a and 0x2caa6c95dcbe5a4bed332bdc59d5219d89398a54, all externally owned accounts. The figure reproduces Opyn's reported 371,260 USDC exactly. The attackers' own vault exercises and the oTokens they bought on Uniswap V1 are attacker-supplied inputs and are excluded."
-    }
-  ],
-  "discovery": [
-    "seed:opyn:2020-08-04:opyn-eth-put-double-exercise",
-    "web:2020-08-05:opyn"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 371260,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "371260",
+        "usd": 371260
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://medium.com/opyn/opyn-eth-put-exploit-post-mortem-1a009e3347a8",
+    "eip155:1:0x36811f9a0c0820afad110676dd440c35e513dd3e01ee0ccd665749ede55d1fb6",
+    "eip155:1:0xbd5d3f3e65e949c3e57a40177b845356ffd221c800c83a2ff4cfaedd0d8c351b",
+    "eip155:1:0xe00e11e7add35f0779b9e773046b617b7c6796b7f35b849f9738ada8f10c9ae5",
+    "eip155:1:0xcdaf63e9edb931882b04ff7fdaa0af167f7d35e01a8abe85fdf3b9619a0bde57",
+    "eip155:1:0xb6e89d8fc1cff6542286d867929ff00289fc13437cdb2b749308f8387280cddd",
+    "eip155:1:0x787aa0da7915bdf7aec75dd691f496303902872bda94745b090b66a5142ecac0",
+    "eip155:1:0x8bff3fe67793853ad6f0fa188210908d5d0bfdc60ceae2c7d5a673f135f4292a",
+    "eip155:1:0xbd1b2cd49cd0dce7416b6abdae702f60f1e8717fea9a94a9df1d06e8ebe316be",
+    "eip155:1:0xaa9daa773f513392576a0f3f1aa36da4f3f134a1e780cd9ba36f37cb2b3a1b99",
+    "eip155:1:0xa858463f30a08c6f3410ed456e59277fbe62ff14225754d2bb0b4f6a75fdc8ad",
+    "eip155:1:0xd06378b73536e7718895069a5219855774d362db47312dc304dfd4b6e39ef000",
+    "eip155:1:0x351bcbb182cb11cecb0d50d9f1bf45bd6820b71f7de5ec1ef607518865d43dc2",
+    "eip155:1:0x56de6c4bd906ee0c067a332e64966db8b1e866c7965c044163a503de6ee6552a"
+  ],
+  "notes": [
+    "The oToken series was created by CREATE from OptionsFactory 0xcc5d905b9c2c8c9329eb4e25dc086369d6c7777c in this transaction. Its runtime is immutable and hashes identically at the creation block, at block 10590875 immediately before the exploit, and in the anchor transaction prestate.",
+    "Exact gross depletion of third-party vault collateral, summed from the amtCollateralToPay field of every Exercise event whose vaultExercisedFrom is not an attacker helper, across the fourteen defect-executing transactions between blocks 10590876 and 10592517. USDC is valued at par. The victim vaults were credited an equal amount of vault.underlying ETH by the same buggy loop, but that credit is unbacked because each attacker withdrew the single real ETH payment from their own vault with removeUnderlying(), so it does not offset the depletion. oTokens the attackers bought on Uniswap V1 and the collateral of their own vaults are attacker-supplied inputs and are excluded. Opyn's later reimbursement of affected vault owners is a recovery and does not reduce gross depletion. Three independent senders exploited the same defect in the same six-hour window against byte-identical sibling oToken series; they are covered here as one campaign, matching the single 371,260 USDC figure Opyn reported, and no other record claims any part of this loss."
+  ]
 }

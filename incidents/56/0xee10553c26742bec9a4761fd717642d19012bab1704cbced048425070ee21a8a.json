@@ -1,157 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a",
-  "protocol": {
-    "name": "ATM (0xa595)",
-    "slug": "atm-a595"
-  },
+  "protocol": "ATM (0xa595)",
   "name": "ATM transfer-triggered fee auto-swap manipulation",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a",
-      "blockNumber": 37483301,
-      "transactionIndex": 0,
-      "timestamp": 1711987729
-    },
-    "attackerAddresses": [
-      "0x499057d1ae21f2afe0b46c154f9529201c44c6c1",
-      "0x521377c730f2780270a0468308b265662d6b4810"
-    ]
-  },
   "summary": "ATM synchronously sold its own token inventory into the ATM/WBNB pair before each non-whitelisted transfer to that pair. The sell amount followed the triggering transfer, the threshold was zero, and both internal swaps accepted zero minimum output, so a flash-funded attacker repeatedly transferred ATM to the pair and skimmed it back to trigger 34 protocol dumps before unwinding against the depleted pool.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 230111.04687454784,
-      "valuationTimestamp": 1711987599,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "400.946206569814328228",
-        "usdValue": 230111.04687454784,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1711987599,
-          "unitPriceUsd": 573.92,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt records 148.244121844478847692 WBNB entering and 549.190328414293175920 WBNB leaving the ATM/WBNB pair, for an exact 400.946206569814328228 WBNB net LP depletion. This excludes the attacker's pair inputs. The USD value uses the nearest DefiLlama BNB observation preceding the transaction."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa5957e0e2565dc93880da7be32abcbdf55788888",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa5957e0e2565dc93880da7be32abcbdf55788888",
-        "codeHash": "0x64ebf6a91fdab588b3c76bc1b52dc34e4723b160701ce9182c0d0836a69bc028"
-      },
-      "deployment": {
-        "timestamp": 1711179777,
-        "blockNumber": 37214548,
-        "transactionHash": "0x18fa8d9eabca4e6ab8306d3f4efcbccc7d65a88c5cb2317594d6a1a06098d2c7",
-        "transactionIndex": 158,
-        "creatorAddress": "0xf8cfc849343777676ba60386374bbda1199516f8"
-      },
-      "ageReset": {
+      "address": "0xa5957e0e2565dc93880da7be32abcbdf55788888",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct deployment fixed the transfer-triggered auto-swap, zero swap threshold, transfer-sized inventory sale, and zero minimum outputs. Later launch, whitelist, fund-address, transfer-fee, ownership-renunciation, liquidity, and inventory changes exposed or sized the defect but did not create or alter it."
-      },
-      "codeAgeSeconds": 807952,
-      "failureModeId": "failure:atm-transfer-triggered-unbounded-fee-autoswap",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x18fa8d9eabca4e6ab8306d3f4efcbccc7d65a88c5cb2317594d6a1a06098d2c7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://app.blocksec.com/explorer/tx/bsc/0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-04/ATM_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T10:07:20Z",
-      "note": "Reviewed the successful receipt and full call trace, commit-pinned reproduction, explorer-verified Token source, archive balances and views, direct creation receipt, runtime history, EIP-1967 slots, and successful calls to the token before exploitation. The deployed _transfer computes numTokensSellToFund from the current transfer amount, treats the contract's zero swapAtAmount as sufficient, and calls distributeCurrency before completing any eligible transfer to the main pair. swapTokensForCurrency then sells the contract's ATM with amountOutMin = 0; distribution also swaps WBNB to USDT with amountOutMin = 0 and adds liquidity with both minima zero. Immediately before exploitation the onchain values were swapAtAmount = 0, numTokensSellRate = 100, swapAndLiquifyEnabled = true, buy_totalFees = sell_totalFees = 300, and the main pair was enabled. The trace begins with a WBNB flash loan and contains 37 ATM/WBNB pair swaps: three whose recipient was attack helper 0x521377c730f2780270a0468308b265662d6b4810 and 34 protocol inventory sales whose recipient was ATM's TokenDistributor 0xee75ee686399682e97eb9f1f6e60dc5258fea417. It also contains 33 helper-directed pair skim calls and 34 router mint calls, reproducing the repeated transfer/skim trigger and protocol dump. WBNB Transfer logs show 148.244121844478847692 WBNB entering and 549.190328414293175920 WBNB leaving the ATM/WBNB pair, an exact net loss of 400.946206569814328228 WBNB. The pair held 465.914909920725475715 WBNB at block 37483300 and therefore held 64.968703350911147487 immediately after transaction index 0; later transactions in block 37483301 account for the higher end-of-block balance. Artifact history: 0xa5957e0e2565dc93880da7be32abcbdf55788888 was directly created by 0xf8cfc849343777676ba60386374bbda1199516f8 at block 37214548 index 158, timestamp 1711179777. Code is absent at block 37214547, and the 16,034-byte runtime hashes to 0x64ebf6a91fdab588b3c76bc1b52dc34e4723b160701ce9182c0d0836a69bc028 both at deployment and immediately before exploitation. Explorer metadata marks it non-proxy, both EIP-1967 implementation and beacon slots are zero, and the runtime contains no DELEGATECALL, CALLCODE, CREATE, CREATE2, or SELFDESTRUCT. Pre-exploit owner calls launched trading, adjusted fee whitelists, fund and transfer-fee state, and renounced ownership, but did not change the defect-bearing auto-swap parameters or logic. Those later calls and the token inventory only exposed or sized a vulnerability already fixed in the deployment runtime, making deployment the latest age reset 807,952 seconds before exploitation."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x18fa8d9eabca4e6ab8306d3f4efcbccc7d65a88c5cb2317594d6a1a06098d2c7"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1711987717/coingecko:binancecoin?searchWidth=4h",
-      "observedAt": 1787911640
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-04/ATM_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 230111.04687454784,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "400.946206569814328228",
+        "usd": 230111.04687454784
+      }
     ]
   },
+  "refs": [
+    "https://app.blocksec.com/explorer/tx/bsc/0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/ATM_exp.sol"
+  ],
   "notes": [
+    "The direct deployment fixed the transfer-triggered auto-swap, zero swap threshold, transfer-sized inventory sale, and zero minimum outputs. Later launch, whitelist, fund-address, transfer-fee, ownership-renunciation, liquidity, and inventory changes exposed or sized the defect but did not create or alter it.",
+    "The exploit receipt records 148.244121844478847692 WBNB entering and 549.190328414293175920 WBNB leaving the ATM/WBNB pair, for an exact 400.946206569814328228 WBNB net LP depletion. This excludes the attacker's pair inputs. The USD value uses the nearest DefiLlama BNB observation preceding the transaction.",
     "Replaces the seed row's rounded $182,000 attacker-profit estimate with the transaction-exact ATM/WBNB LP depletion and a pre-incident BNB price."
   ]
 }

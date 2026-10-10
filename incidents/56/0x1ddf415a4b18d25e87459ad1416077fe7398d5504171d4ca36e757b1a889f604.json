@@ -1,147 +1,30 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x1ddf415a4b18d25e87459ad1416077fe7398d5504171d4ca36e757b1a889f604",
-  "protocol": {
-    "name": "UtopiaSphere (UPS)",
-    "slug": "utopiasphere-ups"
-  },
+  "protocol": "UtopiaSphere (UPS)",
   "name": "UPS sell path burns the pair's reserve",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x1ddf415a4b18d25e87459ad1416077fe7398d5504171d4ca36e757b1a889f604",
-      "blockNumber": 40665083,
-      "transactionIndex": 34,
-      "timestamp": 1721560344
-    },
-    "attackerAddresses": [
-      "0x6e12ce089a8bedea49532010229f0913475d8d9c",
-      "0x9671ed0ebc3bf00f22d3a3b1b4d18175a9244e09"
-    ]
-  },
   "summary": "On every non-whitelisted sale to its USDT pair, the UPS token burns 95% of the sold amount directly from the pair's balance and calls sync() before the swap settles. The attacker used flash-loaned USDT to buy almost all UPS out of the pair, sending it to an address on the public whitelist because ordinary buys revert. It then sold 4,982,240 UPS. The burn cut the pair's UPS reserve to 1 wei, so the swap paid out 560,128 USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 560128.3245473708,
-      "valuationTimestamp": 1721560344,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "560128.324547370758240113",
-        "usdValue": 560128.3245473708,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1721560344,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDT depletion of the UPS/USDT PancakeSwap pair 0x5db4604c8952a8c3474e8ac33e0d31814d75f786 in the single exploit transaction; the drained UPS reserve is worthless afterwards and is not counted. Flash-loan principal and fees, and the UPS sent to the whitelisted recipient, are attacker-side flows, not victim loss.",
-    "realizedAt": 1721560344
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe2bb1b04c978a8c8cc1e0bcca5ad30e274b69bfa",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe2bb1b04c978a8c8cc1e0bcca5ad30e274b69bfa",
-        "codeHash": "0x5d5412b7caa534d55a931b68d99d86d12f22e7bc14ac7b73bc6c8afc2a09c581"
-      },
-      "deployment": {
-        "timestamp": 1712592125,
-        "blockNumber": 37684375,
-        "transactionHash": "0x62bd1697746ab38c8343090a6d7ccd7c0bb6a0da070240a0afdad8fc2d7d0348",
-        "transactionIndex": 109,
-        "creatorAddress": "0x51c81533b28534ff5f63c57efeebd5cce5b87e8c"
-      },
-      "ageReset": {
+      "address": "0xe2bb1b04c978a8c8cc1e0bcca5ad30e274b69bfa",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct, non-upgradeable UPS token. The pair-burn sell path and the constructor whitelisting of the deployer, which already provides a buy recipient, exist from deployment. Later whitelist, node-list and rate writes are not needed for the exploited condition."
-      },
-      "codeAgeSeconds": 8968219,
-      "failureModeId": "failure:ups-0xe2bb1b04-sell-burns-pair-reserve",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x62bd1697746ab38c8343090a6d7ccd7c0bb6a0da070240a0afdad8fc2d7d0348"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1ddf415a4b18d25e87459ad1416077fe7398d5504171d4ca36e757b1a889f604"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x62bd1697746ab38c8343090a6d7ccd7c0bb6a0da070240a0afdad8fc2d7d0348"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:02:34Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. In source-1 (block 40665083, index 34), EOA 0x6e12ce08 calls contract 0x9671ed0e (a89d5dfd). debug_traceTransaction(callTracer) shows three nested flash loans of USDT and USDC, from 0x92b7807b, 0x172fcd41 and 0x4f3126d5. The contract then calls router 0x10ed43c7 swapExactTokensForTokens with 96196121436139601474037942 USDT in and to=0x4ef09b34885fb39f50a897ed2e83e701f119a388. The pair swap sends 810832586044035898700561282 UPS to that address. whiteMap(0x4ef09b34) is true at block 40665082 (set in 0xff745f00de81e8475b423b58b291d89ceea7e008dacfc65d5a1074ce8cf76301). whiteMap(deployer 0x51c81533) is also true, set by the constructor. Next, transferFrom moves 5107166403563844794174751 UPS from the EOA to the contract, and swapExactTokensForTokensSupportingFeeOnTransferTokens sells 4982240147415907130686929 UPS. UPS._update, sell branch (source-4), sends a 5% fee to 31 nodeList addresses and calls _swapBurn(amount-fee). That burns 4733128140045111774152583 UPS from the pair, which held 4733128140045111774152584 after the buy, and calls sync (0xfff6cae9). With 1 wei of UPS reserve left, the pair swap pays 96756249760686972232278055 USDT. The attacker bought its UPS through a different pool (0x3ba3eea0, via UniversalRouter at blocks 40664218/40664377/40664495), so it is an external actor. Identity/age: eth_getCode is empty at 37684374. keccak at 37684375 and 40665082 is the recorded hash (5036 bytes). Source-2 (index 109) is a top-level creation by 0x51c81533. The verified source has no proxy, delegatecall or selfdestruct. Admin review: Etherscan txlist for the token, blocks 0..40665083, has 3029 transactions. Of these, 3 are setWhiteMap (0xa08d970c): [token, 0x230a1665, 0x4ef09b34] at 37684468, [0xc845d078] at 37686035 and [0x0] at 37899890. There are 10 setNodeList (0xeac81da1) calls, the last at 40280439, and no setRate or ownership calls. The deployer whitelist from the constructor already enables the buy leg, so no write resets age. Earliest exercise: Etherscan tokentx for USDT of the pair, blocks 0..40665083, returns 1730 transfers. Replaying the balance, the only single outflows above 3% of the running balance are LP removals to 0x230a1665 (blocks 37684974 and 40574614), a 2143 USDT outflow at 37880222 (0x70513b75, a plain sale in which the pair UPS balance rises from 964772737 to 995714130 UPS), the 10 UniversalRouter sales by nodeList member 0x55ddfa0aad3750fbb1daf96d1caf028a9af66f03 (blocks 40259493..40259598, 563203 USDT in total), and source-1. The node sales are ordinary transfers of owner-assigned fee shares: first sale 99843750 UPS against a pair UPS balance of 912744294 at block 40259492. They include no buy leg that empties the reserve, so they are insider sales, not exercises of the reserve-collapse path."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Verified UPS source at https://bscscan.com/address/0xe2bb1b04c978a8c8cc1e0bcca5ad30e274b69bfa#code. Reproduce with Etherscan V2 contract.getsourcecode, chainid=56. Contract UPS, compiler v0.8.25+commit.b61c2a91, optimizer 200 runs. SHA-256 of the returned SourceCode (UTF-8) is 1b47a88f8a65d3a295c81223f2c0a53ee2421be33b2ad24246b333c61e8ac4cc. See _update: when to==pairAddress and neither side is whitelisted, it calls _swapBurn(amount - fee), which is super._burn(pairAddress, amount - fee) followed by ISwapPair(pairAddress).sync(). Buys (from==pairAddress) revert unless the recipient is whitelisted, and the constructor sets whiteMap[deployer]=true."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:02:34Z",
-      "note": "Reviewed loss. USDT balanceOf(pair 0x5db4604c8952a8c3474e8ac33e0d31814d75f786) is 560128324547370758240134 at block 40665082 and 21 at 40665083. The difference, 560128324547370758240113 base units (18 decimals), is the pair's net USDT outflow in the source-1 receipt. Of the exploit's proceeds, 521225549192915729817491 USDT reaches the attacker EOA; the rest pays flash-loan fees and side transfers. USDT is valued at par."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 560128.3245473708,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "560128.324547370758240113",
+        "usd": 560128.3245473708
+      }
     ]
   },
-  "discovery": [
-    "web:2024-07-21:ups-second-incident"
+  "notes": [
+    "Direct, non-upgradeable UPS token. The pair-burn sell path and the constructor whitelisting of the deployer, which already provides a buy recipient, exist from deployment. Later whitelist, node-list and rate writes are not needed for the exploited condition.",
+    "Exact USDT depletion of the UPS/USDT PancakeSwap pair 0x5db4604c8952a8c3474e8ac33e0d31814d75f786 in the single exploit transaction; the drained UPS reserve is worthless afterwards and is not counted. Flash-loan principal and fees, and the UPS sent to the whitelisted recipient, are attacker-side flows, not victim loss."
   ]
 }

@@ -1,162 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:10:0xf4fc3b638f1a377cf22b729199a9aeb27fc62fe2983a65c4d14b99ee5c5b2328",
-  "protocol": {
-    "name": "NBLGAME",
-    "slug": "nblgame"
-  },
+  "protocol": "NBLGAME",
   "name": "NblNftStake withdrawNft reentrancy",
-  "incident": {
-    "chainId": 10,
-    "exploit": {
-      "transactionHash": "0xf4fc3b638f1a377cf22b729199a9aeb27fc62fe2983a65c4d14b99ee5c5b2328",
-      "blockNumber": 115293069,
-      "transactionIndex": 1,
-      "timestamp": 1706184915
-    },
-    "attackerAddresses": [
-      "0x1fd0a6a5e232eeba8020a40535ad07013ec4ef12",
-      "0xe4d41bdd6459198b33cc795ff280cee02d91087b",
-      "0xfc3b08555b1c328ecf8b8a0ccd85679bf59bba4c"
-    ]
-  },
   "summary": "NblNftStake.withdrawNft() returned the staked ERC-721 with safeTransferFrom before paying NBL and clearing the slot, despite inheriting a reentrancy guard that the function did not use. The receiver callback re-entered the same slot, so two nested withdrawals each paid its unchanged NBL amount and emptied the staking contract.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 180881.24657324585,
-      "valuationTimestamp": 1706184911,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 10,
-          "tokenAddress": "0x4b03afc91295ed778320c2824bad5eb5a1d852dd",
-          "symbol": "NBL"
-        },
-        "amount": "1773100000.000000000000000000",
-        "usdValue": 180881.24657324585,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1706184911,
-          "unitPriceUsd": 0.00010201412586613607,
-          "sourceIds": [
-            "source-1",
-            "source-4",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "NblNftStake held exactly 1,773,100,000 NBL before the exploit and zero afterwards. The attacker supplied a separate 1,773,100,000 NBL flash-loan deposit, which is excluded, then received 3,546,200,000 NBL through two identical withdrawals. After repaying 1,778,419,300 NBL principal and fee, the attacker sold the remaining 1,767,780,700 NBL for 164,967.658585 USDT and 6.900257340231423430 WETH. At $2,227.59/WETH those proceeds are $180,338.60283352611651843370, an effective realised price of $0.0001020141258661360634372994908/NBL. Applying that price to the exact gross victim depletion values it at $180,881.2465732458540806757271 without subtracting the attacker's flash-loan fee."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5499178919c79086fd580d6c5f332a4253244d91",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5499178919c79086fd580d6c5f332a4253244d91",
-        "codeHash": "0xfb9a9784b556eeac62c4d4f81f4ac05b529db3001e2d2511f8fcd6ddf81f143e"
-      },
-      "deployment": {
-        "timestamp": 1705282195,
-        "blockNumber": 114841709,
-        "transactionHash": "0x0c37eaa4ad398f37835c453b852befe1783f4b3a4c2cbfd497cee20cea0dfb1b",
-        "transactionIndex": 1,
-        "creatorAddress": "0xcea80f944a0b90e62adbd2999c89d27e39e51c73"
-      },
-      "ageReset": {
+      "address": "0x5499178919c79086fd580d6c5f332a4253244d91",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct deployment fixed withdrawNft's external ERC-721 callback before effects and its missing nonReentrant modifier. Later dependency, reward, pricing, liquidity, and deposited-balance changes do not alter that ordering or guard omission."
-      },
-      "codeAgeSeconds": 902720,
-      "failureModeId": "failure:nblgame-withdrawnft-callback-before-slot-clear",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x0c37eaa4ad398f37835c453b852befe1783f4b3a4c2cbfd497cee20cea0dfb1b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0xf4fc3b638f1a377cf22b729199a9aeb27fc62fe2983a65c4d14b99ee5c5b2328"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/SlowMist_Team/status/1750526097106915453"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-01/NBLGAME_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T10:16:35Z",
-      "note": "Reviewed the successful receipt and full call trace, commit-pinned reproduction, explorer-verified NblNftStake source, archive balances and code, direct creation receipt, proxy slots, and pre-exploit runtime history. The verified Solidity 0.8.18 contract inherits ReentrancyGuard, but withdrawNft has no nonReentrant modifier. It reads the slot's nftTokenId and nblStakeAmount, calls nft.safeTransferFrom(address(this), msg.sender, tokenid), then pays nblStakeAmount and only afterwards zeroes nftTokenId, inscriptionId, nblStakeAmount and begin. The exploit trace shows transient helper 0xfc3b08555b1c328ecf8b8a0ccd85679bf59bba4 call unlockSlot once, depositNft twice, depositNbl once, and withdrawNft twice. The first withdrawal's safe ERC-721 transfer invokes the helper's onERC721Received callback while the slot still holds NFT 737 and 1,773,100,000 NBL; the callback transfers the NFT back, re-enters withdrawNft on the unchanged slot, and redeposits it before the outer call resumes. Receipt logs show the staking contract pay the helper exactly 1,773,100,000 NBL in each withdrawal. The contract's pre-transaction NBL balance was 1,773,100,000 NBL; the attacker deposited a separately flash-borrowed 1,773,100,000 NBL and the two withdrawals removed 3,546,200,000 NBL, leaving zero. The helper repaid 1,778,419,300 NBL, sold 1,591,002,630 NBL to the NBL/USDT pool for 164,967.658585 USDT and 176,778,070 NBL to the NBL/WETH pool for 6.900257340231423430 WETH, then transferred both exact proceeds to the attacker EOA and self-destructed. Artifact history: 0x5499178919c79086fd580d6c5f332a4253244d91 was directly created by 0xcea80f944a0b90e62adbd2999c89d27e39e51c73 in block 114841709 index 1, timestamp 1705282195. Code is absent at block 114841708, and its 13,185-byte runtime hashes to 0xfb9a9784b556eeac62c4d4f81f4ac05b529db3001e2d2511f8fcd6ddf81f143e at deployment and immediately before exploitation. Explorer metadata marks it non-proxy, both EIP-1967 implementation and beacon slots are zero, and its runtime contains no DELEGATECALL, CALLCODE, CREATE, CREATE2, or SELFDESTRUCT. Owner-set dependencies and staking parameters neither change the callback-before-effects ordering nor add a guard, while deposited NBL only changes exposure. Deployment is therefore the latest age reset, 902,720 seconds before exploitation."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x0c37eaa4ad398f37835c453b852befe1783f4b3a4c2cbfd497cee20cea0dfb1b"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1706184900/coingecko:ethereum?searchWidth=4h",
-      "observedAt": 1787912195
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-01/NBLGAME_exp.sol",
-    "web:2024-01-25:nebula-revelation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 180881.24657324585,
+    "assets": [
+      {
+        "token": "0x4b03afc91295ed778320c2824bad5eb5a1d852dd",
+        "symbol": "NBL",
+        "amount": "1773100000.000000000000000000",
+        "usd": 180881.24657324585
+      }
     ]
   },
+  "refs": [
+    "https://twitter.com/SlowMist_Team/status/1750526097106915453",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/NBLGAME_exp.sol"
+  ],
   "notes": [
+    "The direct deployment fixed withdrawNft's external ERC-721 callback before effects and its missing nonReentrant modifier. Later dependency, reward, pricing, liquidity, and deposited-balance changes do not alter that ordering or guard omission.",
+    "NblNftStake held exactly 1,773,100,000 NBL before the exploit and zero afterwards. The attacker supplied a separate 1,773,100,000 NBL flash-loan deposit, which is excluded, then received 3,546,200,000 NBL through two identical withdrawals. After repaying 1,778,419,300 NBL principal and fee, the attacker sold the remaining 1,767,780,700 NBL for 164,967.658585 USDT and 6.900257340231423430 WETH. At $2,227.59/WETH those proceeds are $180,338.60283352611651843370, an effective realised price of $0.0001020141258661360634372994908/NBL. Applying that price to the exact gross victim depletion values it at $180,881.2465732458540806757271 without subtracting the attacker's flash-loan fee.",
     "Replaces the seed row's rounded $180,000 estimate with exact victim NBL depletion and the attacker's transaction-exact disposal proceeds."
   ]
 }

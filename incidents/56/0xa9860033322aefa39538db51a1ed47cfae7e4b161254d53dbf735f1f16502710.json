@@ -1,220 +1,67 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xa9860033322aefa39538db51a1ed47cfae7e4b161254d53dbf735f1f16502710",
-  "protocol": {
-    "name": "Bogged Finance",
-    "slug": "bogged-finance"
-  },
+  "protocol": "Bogged Finance",
   "name": "Bogged Finance BOG transfer-fee distribution mint",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xa9860033322aefa39538db51a1ed47cfae7e4b161254d53dbf735f1f16502710",
-      "blockNumber": 7633044,
-      "transactionIndex": 16,
-      "timestamp": 1621694826
-    },
-    "attackerAddresses": [
-      "0x4622a1f3d05dcf5a0589c458136c231009b6a207",
-      "0xe576790f35a8cc854d45b9079259fe84f5294e07"
-    ]
-  },
   "summary": "The original BOG token 0xd7b729ef857aa773f47d37088a1181bb3fbf0099 credits the staker share of every transfer fee by only raising _totalFees in _distribute, while _transferFrom debits the sender just the amount sent plus the burnt part. The distributed share is therefore minted for LP stakers without leaving the sender. The attacker staked BOG/WBNB LP so that it held most of the stake, then made hundreds of transfers to itself per transaction, each paying itself newly created BOG. It sold the inflated BOG into the PancakeSwap V1 WBNB/BOG pair 0x1490c68d0d5e3e7c9d53299824c9bb816639aa66, taking 11,865.986498156644903693 WBNB over 33 transactions.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 3844209.549473751,
-      "valuationTimestamp": 1621694467,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "11865.986498156644903693",
-        "usdValue": 3844209.549473751,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1621694467,
-          "unitPriceUsd": 323.96881203858953,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact net WBNB Transfer outflow of the WBNB/BOG pair across the 33 successful calls from EOA 0x4622a1f3 to its contract 0xe576790f (blocks 7633044-7633176); the attacker entered with 2 BNB and supplied no other WBNB, so flash swaps, liquidity adds and removals net out inside the sum. The final call 0xf3a66e59 alone nets 11,358.106750514743826316 WBNB. Pair WBNB reserves fell from 14,729.847493066028204336 (block 7633043) to 1,947.278848679801098223 (block 7633176); the difference beyond the attacker's sum is other traders' sells in the same window. BOG stakers' dilution is not valued. DefiLlama lists 3.0M USD.",
-    "realizedAt": 1621695222
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xd7b729ef857aa773f47d37088a1181bb3fbf0099",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xd7b729ef857aa773f47d37088a1181bb3fbf0099",
+      "reset": {
+        "kind": "config",
+        "tx": "0x8da41c87d53758a837fe4e33f500ce9d7242d5a1a018e9253a0d658b588f391c",
         "address": "0xd7b729ef857aa773f47d37088a1181bb3fbf0099",
-        "codeHash": "0xde23a5820f926c933ff7976de506bd60f62235a61ed4bf3941e104a74b797767"
-      },
-      "deployment": {
-        "timestamp": 1614713410,
-        "blockNumber": 5338040,
-        "transactionHash": "0xb3538b3a5134a6aff16be8f21c87e15920227f71d5d79427fb82bc7072eecb6a",
-        "transactionIndex": 54,
-        "creatorAddress": "0x5022e4502a4566223a9301c6597eeda0c3a1b59e"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1614718852,
-        "blockNumber": 5339854,
-        "transactionHash": "0x8da41c87d53758a837fe4e33f500ce9d7242d5a1a018e9253a0d658b588f391c",
-        "transactionIndex": 6,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xd7b729ef857aa773f47d37088a1181bb3fbf0099",
-          "callData": "0x8d5f81e2",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000001490c68d0d5e3e7c9d53299824c9bb816639aa66"
-        },
-        "description": "Owner setPairAddress(0x1490c68d...) set _pair and _pairInitialized; stake() and unstake() carry the pairInitialized modifier, so no account could hold the LP stake that receives the minted distribution before this write. Later setDistributionRatio (5413662, 5685227, 5776080) and setBurnRate (5413671, 6227809, 6332231, 6600517) calls only resize the fee and its split, and there is no later setPairAddress."
-      },
-      "codeAgeSeconds": 6975974,
-      "failureModeId": "failure:bog-fee-distribution-without-sender-debit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+        "call": "0x8d5f81e2"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa9860033322aefa39538db51a1ed47cfae7e4b161254d53dbf735f1f16502710"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf3a66e59b69f45b127e399cc363d7ea671e7d50f25c648c242a738b04fbf5c47"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0xa9860033322aefa39538db51a1ed47cfae7e4b161254d53dbf735f1f16502710",
-        "0x47a355743456714d9abc23e1dff9e26430e38e84cc8b8e0a0b4ca475918f3475",
-        "0xcdc6c745ccd379f0e6db134e17dcbb1fbb59fbedcd7ae5ddf3dbdfac26c2b00c",
-        "0x36bc94cb59c0fe3c670b74ebca0b06e832f92b69945b0963f49285998b2505d5",
-        "0x51b81135eb809fa0710b1c3411b248910ded9d2db7871c5c81d4e890ef0fc6b7",
-        "0x15bf64b7a3949c9c778725801c6b81cc9688bb873833532864b978f407e1dbb1",
-        "0x5f48d12f9c04fd87b395859e94e195e7430f869062dfeff0a0f53f20b761c546",
-        "0xf63792a3b56550652411b868746dc39046ed27a8dcf264d33e5fe39e49a94567",
-        "0x7e7a95fa9a82a90482244bd6a3a15677cc65e4f015ae56476a8847b2d58a6f28",
-        "0x9b02c4cca662c94e531dcd0176f952993745d98f8970508dfec30588a0635046",
-        "0xdba62df0fc095939cd75b97250b52a98b44fd2c473be79ba6a6db9cd96b94718",
-        "0xffe589341a3182f8200725bc490ef742200a9045b77b865d355e4253b16c28cf",
-        "0x6232c495a54e33f629bc3dd8a3d84075c77c6444ca526bd8ffdd0fabc8679136",
-        "0x57dbf7fb97c58a7fc46538b146c1c2ce053c0c2ccab77d144e921fed6c03b1d7",
-        "0xef92d8d6a30e3174c8777c48470aae65b8d4f9c98f7d30bc889abba28c51f324",
-        "0x9aa27e242fc10f75728f51047575d3d5deac5a9409c53e6c8773fce3708592bd",
-        "0x681c04b87bcc38e3a6e403fc0d7668a072d75efca984f77335f0c02a419f72e9",
-        "0x8743681a06631d1f45525618edbdf920811930abddf3a65c5970dbaf8dd1d3f5",
-        "0xe0495982c36322ecb47b6ee4a4659a43d1a3178d6831105e4abd25369acb2934",
-        "0xbf80d5e23e04f89803e46ec182ea36dcd0bf4d9c688993fd860a124727fb8627",
-        "0xce6b34ae73ccb20344d342f279ed4bd7fe056248d4dab66549d0af138fda4230",
-        "0x0e6f04f8ad51ea7ed88fc9f6a880bed7fa017351b76813ec3521c2400cb26b6c",
-        "0xf0bfaf3dfad0f9d66ecfe4e023f2026aec45a642692872718da2f9ba5ca08ec0",
-        "0x418447cccd9f4ef5c5724b6b8762e4f7ebdf65f730b09fd59931d8ef3408ac62",
-        "0xdeb8d5e47566e4b85289aa0f9c0dc0764ca4b65b2db24d0a3d4b4395be6ae416",
-        "0x944388033d155b9d92ee2c40619503f0195f3f3c01767e39865ecb0793c32952",
-        "0xe1021c37aacb0782c517feee486a1f3ce4e3df9d65a4001c2a2eca1d71b0ac09",
-        "0x215713e60d5058a9f0f925fc25b08823ba603341167ea0f9011d1369c37a7e06",
-        "0x16e06ebc7b205506dc893db2d03ee38fbdd352633c8d67302581841b5518ca7f",
-        "0xa95cad29aee9cd5bb30ca3e5346464504f1e439b6d81a78fa2611a41fdc66690",
-        "0xc92deff96ec94a97844ebf1f8d4b271c1939ae30d28131ed546abbf3b958c293",
-        "0x35b7c3cc53437c5d478c59a6ac582199be0f0f8701c8d53487d72048373e748a",
-        "0xf3a66e59b69f45b127e399cc363d7ea671e7d50f25c648c242a738b04fbf5c47"
-      ]
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1621695222/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790651955
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb3538b3a5134a6aff16be8f21c87e15920227f71d5d79427fb82bc7072eecb6a"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8da41c87d53758a837fe4e33f500ce9d7242d5a1a018e9253a0d658b588f391c"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://bscscan.com/address/0xd7b729ef857aa773f47d37088a1181bb3fbf0099#code"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:21:19Z",
-      "note": "Target: BscScan-verified BoggedFinance (BOG20) 0xd7b729ef. _transferFrom: sendAmt = _txBurn(sender, amount); _balances[sender] -= sendAmt; _balances[recipient] += sendAmt. _txBurn: toBurn = amount * _burnRate / 1000; _distribute(account, toBurn * (_distributeRatio - 1) / _distributeRatio) only adds to _totalFees; _burn debits toBurn / _distributeRatio. The sender thus loses amount minus the distributed share while stakers' balanceOf (= _balances + earnt, earnt = (_totalFees - excludedAmt) * LP / _totalLP) gains it. Created by 0x5022e4502a4566223a9301c6597eeda0c3a1b59e in 0xb3538b3a (5338040:54, ts 1614713410); eth_getCode empty at 5338039 and hashing to 0xde23a582...7767 at 5338040 and 7633043 (no proxy). Owner txlist (0x5022e450, through 7633044): setMaxTxPercent 5339495, setPairAddress(0x1490c68d) 5339854:6 (ts 1614718852), addBogdabot/removeBogdabot, setDistributionRatio 5413662 (45), 5685227 (1e8), 5776080 (1e16), setBurnRate 5413671 (45), 6227809 (30), 6332231 (28), 6600517 (19); no ownership transfer or second setPairAddress. eth_call getPairAddress() (0x8d5f81e2) returns zero at 5339853 and the pair at 5339854. Age = 1621694826 - 1614718852 = 6,975,974 s (7,081,416 s from deployment). Every fee-bearing transfer since launch runs the same unbacked _distribute; the earliest-exercise scan therefore looks for the exploit pattern: BscScan tokentx over 5338040-7633043 (147,237 BOG transfers) has no transaction with more than 6 BOG transfers, while the anchor has 434 and every later attack call 400+ self-transfers."
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:21:19Z",
-      "note": "Anchor: EOA 0x4622a1f3d05dcf5a0589c458136c231009b6a207 (funded 2 BNB at 7632829) deployed 0xe576790f35a8cc854d45b9079259fe84f5294e07 (7632849) and called 0x7bc49a95 in 0xa9860033 (7633044:16, ts 1621694826, status 1, 1,465 logs): 9 BOG Staked events, 400 BOG Transfer logs with from = to = 0xe576790f of 46,862.37 BOG each, 434 FeesDistributed (0x63be20cc) and 434 Burn logs, and a net 103.204367703556601655 WBNB Transfer out of pair 0x1490c68d. The EOA's txlist has 33 successful and 30 reverted calls to 0xe576790f (7633044-7633176, last success 0xf3a66e59 at 7633176:16, ts 1621695222); summing WBNB Transfer logs into and out of the pair in the 33 receipts gives -11,865.986498156644903693 WBNB. Proceeds left via 1inch swaps (3,000/3,000/3,000/2,378 BNB, 7633247-7633330) and 0x6f817a0c. Price: DefiLlama WBNB 323.96881203858953 USD at 1621694467."
-    }
-  ],
-  "discovery": [
-    "web:2021-05-23:bogged-finance"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-9"
+  "loss": {
+    "usd": 3844209.549473751,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "11865.986498156644903693",
+        "usd": 3844209.549473751
+      }
     ]
-  }
+  },
+  "refs": [
+    "eip155:56:0xf3a66e59b69f45b127e399cc363d7ea671e7d50f25c648c242a738b04fbf5c47",
+    "eip155:56:0x47a355743456714d9abc23e1dff9e26430e38e84cc8b8e0a0b4ca475918f3475",
+    "eip155:56:0xcdc6c745ccd379f0e6db134e17dcbb1fbb59fbedcd7ae5ddf3dbdfac26c2b00c",
+    "eip155:56:0x36bc94cb59c0fe3c670b74ebca0b06e832f92b69945b0963f49285998b2505d5",
+    "eip155:56:0x51b81135eb809fa0710b1c3411b248910ded9d2db7871c5c81d4e890ef0fc6b7",
+    "eip155:56:0x15bf64b7a3949c9c778725801c6b81cc9688bb873833532864b978f407e1dbb1",
+    "eip155:56:0x5f48d12f9c04fd87b395859e94e195e7430f869062dfeff0a0f53f20b761c546",
+    "eip155:56:0xf63792a3b56550652411b868746dc39046ed27a8dcf264d33e5fe39e49a94567",
+    "eip155:56:0x7e7a95fa9a82a90482244bd6a3a15677cc65e4f015ae56476a8847b2d58a6f28",
+    "eip155:56:0x9b02c4cca662c94e531dcd0176f952993745d98f8970508dfec30588a0635046",
+    "eip155:56:0xdba62df0fc095939cd75b97250b52a98b44fd2c473be79ba6a6db9cd96b94718",
+    "eip155:56:0xffe589341a3182f8200725bc490ef742200a9045b77b865d355e4253b16c28cf",
+    "eip155:56:0x6232c495a54e33f629bc3dd8a3d84075c77c6444ca526bd8ffdd0fabc8679136",
+    "eip155:56:0x57dbf7fb97c58a7fc46538b146c1c2ce053c0c2ccab77d144e921fed6c03b1d7",
+    "eip155:56:0xef92d8d6a30e3174c8777c48470aae65b8d4f9c98f7d30bc889abba28c51f324",
+    "eip155:56:0x9aa27e242fc10f75728f51047575d3d5deac5a9409c53e6c8773fce3708592bd",
+    "eip155:56:0x681c04b87bcc38e3a6e403fc0d7668a072d75efca984f77335f0c02a419f72e9",
+    "eip155:56:0x8743681a06631d1f45525618edbdf920811930abddf3a65c5970dbaf8dd1d3f5",
+    "eip155:56:0xe0495982c36322ecb47b6ee4a4659a43d1a3178d6831105e4abd25369acb2934",
+    "eip155:56:0xbf80d5e23e04f89803e46ec182ea36dcd0bf4d9c688993fd860a124727fb8627",
+    "eip155:56:0xce6b34ae73ccb20344d342f279ed4bd7fe056248d4dab66549d0af138fda4230",
+    "eip155:56:0x0e6f04f8ad51ea7ed88fc9f6a880bed7fa017351b76813ec3521c2400cb26b6c",
+    "eip155:56:0xf0bfaf3dfad0f9d66ecfe4e023f2026aec45a642692872718da2f9ba5ca08ec0",
+    "eip155:56:0x418447cccd9f4ef5c5724b6b8762e4f7ebdf65f730b09fd59931d8ef3408ac62",
+    "eip155:56:0xdeb8d5e47566e4b85289aa0f9c0dc0764ca4b65b2db24d0a3d4b4395be6ae416",
+    "eip155:56:0x944388033d155b9d92ee2c40619503f0195f3f3c01767e39865ecb0793c32952",
+    "eip155:56:0xe1021c37aacb0782c517feee486a1f3ce4e3df9d65a4001c2a2eca1d71b0ac09",
+    "eip155:56:0x215713e60d5058a9f0f925fc25b08823ba603341167ea0f9011d1369c37a7e06",
+    "eip155:56:0x16e06ebc7b205506dc893db2d03ee38fbdd352633c8d67302581841b5518ca7f",
+    "eip155:56:0xa95cad29aee9cd5bb30ca3e5346464504f1e439b6d81a78fa2611a41fdc66690",
+    "eip155:56:0xc92deff96ec94a97844ebf1f8d4b271c1939ae30d28131ed546abbf3b958c293",
+    "eip155:56:0x35b7c3cc53437c5d478c59a6ac582199be0f0f8701c8d53487d72048373e748a",
+    "https://bscscan.com/address/0xd7b729ef857aa773f47d37088a1181bb3fbf0099#code"
+  ],
+  "notes": [
+    "Owner setPairAddress(0x1490c68d...) set _pair and _pairInitialized; stake() and unstake() carry the pairInitialized modifier, so no account could hold the LP stake that receives the minted distribution before this write. Later setDistributionRatio (5413662, 5685227, 5776080) and setBurnRate (5413671, 6227809, 6332231, 6600517) calls only resize the fee and its split, and there is no later setPairAddress.",
+    "Exact net WBNB Transfer outflow of the WBNB/BOG pair across the 33 successful calls from EOA 0x4622a1f3 to its contract 0xe576790f (blocks 7633044-7633176); the attacker entered with 2 BNB and supplied no other WBNB, so flash swaps, liquidity adds and removals net out inside the sum. The final call 0xf3a66e59 alone nets 11,358.106750514743826316 WBNB. Pair WBNB reserves fell from 14,729.847493066028204336 (block 7633043) to 1,947.278848679801098223 (block 7633176); the difference beyond the attacker's sum is other traders' sells in the same window. BOG stakers' dilution is not valued. DefiLlama lists 3.0M USD."
+  ]
 }

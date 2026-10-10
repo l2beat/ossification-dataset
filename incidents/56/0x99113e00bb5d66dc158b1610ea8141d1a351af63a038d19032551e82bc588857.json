@@ -1,186 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x99113e00bb5d66dc158b1610ea8141d1a351af63a038d19032551e82bc588857",
-  "protocol": {
-    "name": "Inuko Finance",
-    "slug": "inuko-finance"
-  },
+  "protocol": "Inuko Finance",
   "name": "Inuko bond prices LP from the pair's raw USDT balance",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x99113e00bb5d66dc158b1610ea8141d1a351af63a038d19032551e82bc588857",
-      "blockNumber": 22169170,
-      "transactionIndex": 101,
-      "timestamp": 1665752846
-    },
-    "attackerAddresses": [
-      "0xb12011c14e087766f30f4569ccaf735ec2182165",
-      "0xf1464de3a49cec184f050c2c2c9baf7f40d89bcc",
-      "0x7413dc275f1ed10110d04d57381308bdfae5c5b5",
-      "0xcc59c055966166339f0f72f25fa35feb9d493a81",
-      "0x5a41f3dc694dcf0891712aaf3fff359892994c61"
-    ]
-  },
   "summary": "The Inuko bond contract sizes a bond by LpToToken, which values LP as 2 x IBEP20(USDT).balanceOf(pair) x lpAmount / totalSupply, then quotes that USDT amount in INUKO with the router's getAmountsIn. In one transaction the attacker flash-borrowed USDT, sent 5,181,964.88 USDT to the INUKO/USDT pair, bought three bonds with 2,231.06 LP while the balance was inflated, and skimmed the USDT back. Two days later, when the lock expired, the three bonds paid 172,923.21 INUKO, which the attacker sold into the pair.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 61731.36493538908,
-      "valuationTimestamp": 1665926303,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xea51801b8f5b88543ddad3d1727400c15b209d8f",
-          "symbol": "INUKO"
-        },
-        "amount": "172923.209469637221781689",
-        "usdValue": 64834.40041103114,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1665926303,
-          "unitPriceUsd": 0.3749317434593134,
-          "sourceIds": [
-            "source-2",
-            "source-7",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The bond contract paid 172,923.209469637221781689 INUKO on the three manipulated bonds. The attacker's disposal moved the price, so it is valued at realised proceeds: 64,834.400411031142494522 USDT reached the attacker EOA from the pair in the claim transaction, 0.37493 USDT per INUKO paid out, with DefiLlama coingecko:tether at 1. From that the attacker-supplied consideration is netted: 2,231.061260442558263531 INUKO-USDT LP delivered to the bond vault, worth 3,103.035475642067368147 USDT at the pair's pre-exploit reserves. The pair's net USDT outflow of 71,238.505050452932003552 in the claim transaction also includes the INUKO token's own tax swap, and is not used. The seed row and the Ancilia report give 64,834 USD, the attacker's USDT proceeds.",
-    "realizedAt": 1665926303
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x09beddae85a9b5ada57a5bd7979bb7b3dd08b538",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x09beddae85a9b5ada57a5bd7979bb7b3dd08b538",
+      "reset": {
+        "kind": "config",
+        "tx": "0xd9d910617be2ec54f541daadf1c561fad00ee3dc422f66f146fa2295dffceadc",
         "address": "0x09beddae85a9b5ada57a5bd7979bb7b3dd08b538",
-        "codeHash": "0xc7a4bd0b48be7defced84525e8130e1d2c1f835e06ee9e477bbd166444e66a3c"
-      },
-      "deployment": {
-        "timestamp": 1665673897,
-        "blockNumber": 22143086,
-        "transactionHash": "0xd653ee0e26859f19f4a39f938af7f471abb3e4cef8ea9eba331c52f38615d7da",
-        "transactionIndex": 71,
-        "creatorAddress": "0x85f6be9460291e86e0fb49b07d0a83cc5f7206cd"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1665674257,
-        "blockNumber": 22143206,
-        "transactionHash": "0xd9d910617be2ec54f541daadf1c561fad00ee3dc422f66f146fa2295dffceadc",
-        "transactionIndex": 133,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x09beddae85a9b5ada57a5bd7979bb7b3dd08b538",
-          "storageSlot": "0x405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ad0",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x000000000000000000000000d50b9bcd8b7d4b791ea301dbcc8318ee854d8b67"
-        },
-        "description": "Owner addBond(\"INUKO-USDT-CAKELP\", 800, pair 0xd50b9bcd8b7d4b791ea301dbcc8318ee854d8b67, premium 10400, lock 172800, upper cap 100000e18, lower cap 20000e18) created bond 0 with the INUKO/USDT pair as lpToken. That is the pair whose raw balance LpToToken reads."
-      },
-      "codeAgeSeconds": 78589,
-      "failureModeId": "failure:inuko-bond-lp-raw-balance-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "slot": "0x405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ad0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x99113e00bb5d66dc158b1610ea8141d1a351af63a038d19032551e82bc588857"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc8c50cd5492e43c87f16ba29c7859c99765f380a1b0e58be398c372bee206274"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-10/INUKO_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd653ee0e26859f19f4a39f938af7f471abb3e4cef8ea9eba331c52f38615d7da"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd9d910617be2ec54f541daadf1c561fad00ee3dc422f66f146fa2295dffceadc"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:29:27Z",
-      "note": "Root cause, target and anchor. Verified source of bond 0x09beddae85a9b5ada57a5bd7979bb7b3dd08b538 (Etherscan V2 getsourcecode, chainid=56): buyBond(lpAmount, bondId) sets bond amount = LpToSig(lpToken, lpAmount) * premiumPercentage / 10000. LpToSig = router.getAmountsIn(LpToToken(pair, lpAmount), [INUKO, USDT])[0], and LpToToken = IBEP20(USDT).balanceOf(pair) * 2 * lpAmount / pair.totalSupply(). claim(index) transfers the stored amount after releaseTimeStamp. debug_traceTransaction(callTracer) of source-1 (block 22169170, index 101): attack contract 0xf1464de3 flash-borrows via Venus, sends 5181964.880277852511283911 USDT to the pair (log 285); helpers 0x7413dc27, 0xcc59c055 and 0x5a41f3dc each call buyBond(743.687086814186087843 LP, 0) (selector 0xc2ca269a), sending that LP to vault 0x62d55e1d648dc1076b5e273018122607d9666bea (logs 286-288); then pair.skim (0xbc25cf77) returns the same USDT (log 289). Each bond was recorded at 57641.069823212407260563 INUKO; LpToSig(pair, 743.687086814186087843e18) at block 22169169 returns 2239.550466669564491958e18, i.e. 2329.13 INUKO with premium, so each bond was 24.7x the unmanipulated quote. Age: eth_getTransactionReceipt(source-4).contractAddress = the bond (block 22143086, index 71, creator 0x85f6be94); eth_getCode empty at 22143085; keccak256(runtime) = 0xc7a4bd0b48be7defced84525e8130e1d2c1f835e06ee9e477bbd166444e66a3c at blocks 22143086, 22169169 and 22226574; not a proxy. bondList is at slot 2 (length 3 at block 22169169); bond 0's lpToken field is keccak256(uint256(2)) + 2 = 0x405787fa...5ad0, written 0 -> pair in source-5 (22143206:133). Etherscan txlist of the bond up to block 22169170 has only deployment, three addBond calls (bond ids 0-2, 22143206/22143275/22143299), configureDepositor (22143421), deposit (22143510) and buyBond calls; updateBond calls start at 22169244, after source-1. bondList(0) at block 22169169 = (INUKO-USDT-CAKELP, 800, pair, sigBalance 316452.143015059738113885e18, 100000e18, 20000e18, 10400, 172800, true). Earliest exercise: eth_getLogs of pair Transfer events to the vault from block 22143086 to 22169170 show 16 direct buyBond transactions to the bond with no USDT transfer to the pair, plus three INUKO-tax liquidity mints (0xb4790a32, 0x99ebd9d6, 0x02075a97) that do not call buyBond; source-1 is the first bond bought with an inflated pair balance."
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:29:27Z",
-      "note": "Loss. eth_getTransactionReceipt(source-2) (block 22226575, index 43, attacker EOA 0xb12011c14e087766f30f4569ccaf735ec2182165 calling 0xf1464de3.GetClaim): INUKO 0xea51801b8f5b88543ddad3d1727400c15b209d8f transfers of 57641.069823212407260563 from the bond to each helper (logs 80, 96, 112), total 172923.209469637221781689. The helpers sell to the pair: 6 x 22000 plus 3 x 6724.141444426918389296 INUKO to the pair, with 6 x 3000 plus 3 x 916.928378785488871267 INUKO taken as token tax. USDT 0x55d398326f99059ff775485246999027b3197955 from pair 0xd50b9bcd8b7d4b791ea301dbcc8318ee854d8b67 to the EOA at logs 83, 88, 93, 99, 104, 109, 115, 120, 149 totals 64834.400411031142494522. Bond INUKO balanceOf 419947.617214313846871655e18 -> 250149.407744676625089966e18 across the block; the 3125 difference is the token's own deposit at log 131. Attacker consideration: the three helpers' 2231.061260442558263531 LP were minted in 0x05880999e0a11e1c919359da6c6c8f4ec941608c0242e973e57d791507dbc9b6 (block 22169138, log 340) from 14 WBNB of swaps. Pair getReserves at block 22169169 = (USDT 241441.637214916738629049e18, INUKO 519225.374643865544474738e18) with totalSupply 347189.768003904248691078e18, so the LP is worth 2 x 241441.637214916738629049 x 2231.061260442558263531 / 347189.768003904248691078 = 3103.035475642067368147 USDT. Net loss = 64834.400411031142494522 - 3103.035475642067368147 = 61731.364935389075126375 USD."
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1665925000/coingecko:tether",
-      "observedAt": 1790620174
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6",
-      "source-7"
+  "loss": {
+    "usd": 61731.36493538908,
+    "assets": [
+      {
+        "token": "0xea51801b8f5b88543ddad3d1727400c15b209d8f",
+        "symbol": "INUKO",
+        "amount": "172923.209469637221781689",
+        "usd": 64834.40041103114
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2022-10/INUKO_exp.sol",
-    "seed:inuko-finance:2022-10-16:inuko-finance-bond-lp-spot-price-manipulation"
+  "refs": [
+    "eip155:56:0xc8c50cd5492e43c87f16ba29c7859c99765f380a1b0e58be398c372bee206274",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/INUKO_exp.sol"
+  ],
+  "notes": [
+    "Owner addBond(\"INUKO-USDT-CAKELP\", 800, pair 0xd50b9bcd8b7d4b791ea301dbcc8318ee854d8b67, premium 10400, lock 172800, upper cap 100000e18, lower cap 20000e18) created bond 0 with the INUKO/USDT pair as lpToken. That is the pair whose raw balance LpToToken reads.",
+    "The bond contract paid 172,923.209469637221781689 INUKO on the three manipulated bonds. The attacker's disposal moved the price, so it is valued at realised proceeds: 64,834.400411031142494522 USDT reached the attacker EOA from the pair in the claim transaction, 0.37493 USDT per INUKO paid out, with DefiLlama coingecko:tether at 1. From that the attacker-supplied consideration is netted: 2,231.061260442558263531 INUKO-USDT LP delivered to the bond vault, worth 3,103.035475642067368147 USDT at the pair's pre-exploit reserves. The pair's net USDT outflow of 71,238.505050452932003552 in the claim transaction also includes the INUKO token's own tax swap, and is not used. The seed row and the Ancilia report give 64,834 USD, the attacker's USDT proceeds."
   ]
 }

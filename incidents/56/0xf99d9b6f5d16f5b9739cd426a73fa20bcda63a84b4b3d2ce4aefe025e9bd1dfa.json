@@ -1,227 +1,81 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
-  "protocol": {
-    "name": "ATMBlindBox",
-    "slug": "atmblindbox"
-  },
+  "protocol": "ATMBlindBox",
   "name": "ATM BlindBox predictable expired-blockhash settlement",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
-      "blockNumber": 87517587,
-      "transactionIndex": 10,
-      "timestamp": 1773931459
-    },
-    "attackerAddresses": [
-      "0x3f9bd963641e969fc0c9ddf1c67e210e84915b7d",
-      "0x9c1819640201f223596fad4f6401900b4b732eea"
-    ]
-  },
   "summary": "BlindBox bets resolve on blockhash(betBlock+2), but settle(betId) is public and caller-timed and lastUnsettledId auto-settles only one bet per entry. Once that blockhash expires, _trySettle falls back to keccak256(block.prevrandao, betId, block.timestamp), which the settler knows in advance. The attacker queued 1-ATM filler bets to block auto-settlement, settled winners at once and settled losers after expiry in blocks where the fallback made them win, draining the DEAD-address payout pool at 1.95x.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 55141.83454274973,
-      "valuationTimestamp": 1773938117,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6",
-        "source-9",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x9c86f45905868317bacb8f442653d5e9a6888888",
-          "symbol": "ATM"
-        },
-        "amount": "32568315.15",
-        "usdValue": 55141.83454274973,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1773938117,
-          "unitPriceUsd": 0.001693112900952438,
-          "sourceIds": [
-            "source-6",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-9"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Gross victim depletion in the helper's 38 winning predictable-fallback bets: 66850752.15 ATM paid minus 34282437 ATM deposited for those same bet IDs. Placement time does not exclude a stake: bet 5136 contributes 585000 - 300000 = 285000 ATM although its deposit precedes the incident anchor. Live-blockhash wins are excluded throughout the campaign. Losing and unsettled stakes are attack costs and do not reduce gross theft. The anchor predictor test pays a third-party bettor, not the helper; no theft of that bettor's funds is claimed. USD value allocates the nine disposals' aggregate proceeds proportionally to the attributed ATM quantity, because the sales mix exploit winnings, ordinary winnings and initial capital. BSC-USD is valued at par; later recoveries and the cold wallet's removal of the remaining DEAD balance are not netted.",
-    "realizedAt": 1773938117
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x1f8336aef584795e282fece8de356babd7734c59",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1773831403,
-        "blockNumber": 87295347,
-        "transactionHash": "0x0d7894a59873925895a363237655a317089fe8227c2c74fadb6802e9c7c13c17",
-        "transactionIndex": 70,
-        "creatorAddress": "0x6342bacf1839aeca00fbcced499125a2b946ec9c"
-      },
-      "ageReset": {
+      "address": "0x1f8336aef584795e282fece8de356babd7734c59",
+      "reset": {
         "kind": "deployment",
-        "description": "The immutable BlindBox runtime contains both the caller-timed settle() and the predictable expired-blockhash fallback. The ATM token's blindBoxContract wiring (setSubContracts, block 87296867) is ordinary initial wiring to this address, and no erroneous value is needed for the defect, so deployment supplies the age."
-      },
-      "codeAgeSeconds": 100056,
-      "failureModeId": "failure:atm-blindbox-predictable-expired-blockhash-settlement",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x1f8336aef584795e282fece8de356babd7734c59",
-        "codeHash": "0xc0cabb4120336740866ab054e8458f3fa37e9c9207485f36f368a8a8e0c651ee"
+        "tx": "0x0d7894a59873925895a363237655a317089fe8227c2c74fadb6802e9c7c13c17"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-03/ATMBlindBox_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. eth_getLogs on BlindBox 0x1f8336aef584795e282fece8de356babd7734c59, blocks 87295347..87700000: 5286 BetPlaced (topic0 0x1b8a9031cb9351278d70a994f81536e9e08c91162e64f92b2fe4766fb7a891b4) and 5266 BetSettled (topic0 0xe730d6310bec1dfc964bdf1e3f75a78c8ef2dee9d092f9ff09253258852ed7d4); none after block 87530623. A settlement took the fallback when its (placement block + 2) was more than 256 blocks old and it was the first settlement of that target block, so cachedBlockHash was empty; 557 settlements qualify. Before the anchor, 455 fallback settlements all came from bet entry, where onBlindBoxEntry auto-settles lastUnsettledId: 448 ATM transfers to dEaD, 2 ERC-4337 handleOps whose smart account transfers ATM to dEaD, and 5 inside attacker bet-placing calls (selector 0x9cc4ed0a). They won 221 and lost 234, which is chance-level, and Etherscan V2 txlist shows no direct BlindBox call before block 90149619. The attacker EOA 0x3f9bd963641e969fc0c9ddf1c67e210e84915b7d deployed helper 0x9c1819640201f223596fad4f6401900b4b732eea (0x35d9fd468bd30369d9fe91b44397a5a07140310d1cadc898f95839a6ca2cd7f2, block 87513684). The helper's 0x9cc4ed0a queues up to 100 1-ATM filler bets plus one large even-parity bet; that call executes no DIFFICULTY at depth 1. Its settle wrapper 0x2bcc7ddd reads bets(id), then at depth 1 executes NUMBER, BLOCKHASH(target) and, when that returns zero, DIFFICULTY and TIMESTAMP (debug_traceTransaction structLogs, pcs 1883/1972/1984/1986) before calling BlindBox.settle. It did so in 82 successful txs. Its first seven calls (first 0x04ec2a49f3ff32dd0828bbaa7dcfe613d1b936ade781741a571dcad87ae8780d, block 87515760) settled large bets 10 to 148 blocks after target, on the live blockhash. Anchor source-1 is the first 0x2bcc7ddd call to execute the fallback: settle(0x140e) at block 87517587, tx index 10, target 87517013 (574 blocks old); BetSettled log 70 pays bettor 0x7aca6eeaec709e653f011f5aac9e5dba73e5b6d1 292.5 ATM, a predictor test. The first fallback win on the attacker's own bet is PoC tx 0xb74a572967ce997afa5920811e6a9dc8b82a6e41ee31fa4d1a24a85aec89e342 (block 87517892): settle(0x1410), target 818 blocks old, ATM log 3 pays 585000 ATM from dEaD. In total, 38 of the helper's 0x2bcc7ddd fallback settlements pay its own bets, the first being the PoC tx. Identity: eth_getCode is empty at block 87295346; keccak256 is 0xc0cabb4120336740866ab054e8458f3fa37e9c9207485f36f368a8a8e0c651ee at blocks 87295347, 87517586 and 87530623. Source-4 is a top-level creation by 0x6342bacf1839aeca00fbcced499125a2b946ec9c whose receipt contractAddress is the target. Source-5 has no owner, upgrade, selfdestruct or setter, and atmToken is immutable. ATM token 0x9c86f45905868317bacb8f442653d5e9a6888888 blindBoxContract() returns 0x0 at block 87296866 and the target from block 87296867 through 87517586. That value comes from cold-wallet 0x6df7c5a8b5a3a2b514e602c6126d883ad42d1352 setSubContracts calls 0x1bc86030be2c111d5a77881db0fe58515e2a5980ade0d5b5f4ff9aab72dd9be8 (block 87296867) and 0xdaed1941236262457f0bda4872d9031e8cccc9c89d04caf71d3d9639a5eb316b (block 87296930), both with the same (BlindBox, ExitQueue, Lottery) arguments. Ordinary wiring: no configuration value bears on the randomness defect.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:44:23Z"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x0d7894a59873925895a363237655a317089fe8227c2c74fadb6802e9c7c13c17"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified BlindBox standard-JSON source at https://bscscan.com/address/0x1f8336aef584795e282fece8de356babd7734c59#code; reproduce with Etherscan V2 contract.getsourcecode, chainid=56. ContractName BlindBox, compiler v0.8.19+commit.7dd6d404, optimizer on, 1 run. The SHA-256 of the returned SourceCode string is af3a27c36c19ca0b0c527a2ca24f930e0f670cae9ba1f1bc71a387cfecbc0db1. In contracts/BlindBoxV2.sol, _trySettle uses cachedBlockHash[target], else blockhash(target), else keccak256(abi.encodePacked(block.prevrandao, betId, block.timestamp)). Parity is uint256(hash) % 16, and a win pays 195/100 of the stake through IATMToken.internalTransferFrom(DEAD, user, payout). settle(uint256) and batchSettle are unrestricted."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed gross loss by bet ID, replacing the invalid before/after-anchor cash-flow split. Reproduce eth_getLogs on BlindBox 0x1f8336aef584795e282fece8de356babd7734c59 over blocks 87295347..87700000, splitting ranges to avoid provider response limits: 5286 BetPlaced and 5266 BetSettled logs. Sort by (blockNumber, transactionIndex, logIndex); join placement and settlement by indexed betId. For each placementBlock+2, its first settlement fixes cachedBlockHash for all later bets at that target: classify it as fallback only if that first settlement is more than 256 blocks later. The immutable code exposes no other cache writer. Select successful fallback payouts to helper 0x9c1819640201f223596fad4f6401900b4b732eea. Exactly 38 bets qualify, all first settlements of their target block and all settled through the helper wrapper; source-9 enumerates their payout transactions. Independently retrieved receipts reproduce each payout from DEAD and each matching stake to DEAD in the placement transaction, not merely deposits after the incident anchor. Payouts sum to 66850752.15 ATM, matched stakes to 34282437 ATM, gross victim depletion to 32568315.15 ATM. Bet 5136 illustrates the corrected boundary: placement 0xe6b1d602b1dc2076e70c1272607af96499f15c51a252cf2d881c8e11e2fb34e1 at block 87517072 log 60 deposits 300000 ATM; source-8 at block 87517892 log 3 pays 585000 ATM. The three losing fallback bets (5132, 5180, 5193) pay zero and are not theft. All live-blockhash results, including cached-live results settled after expiry, are excluded: 243 wins pay 56922774.09365625 ATM against 29191166.201875 ATM in matched stakes; 50 live bets lose. Five helper bets remain unsettled in this scan. Losing/unsettled stakes do not offset gross theft. Cross-check all helper flows: 339 stakes total 65814212.64365625 ATM and 281 positive payouts total 123773526.24365625 ATM; the difference 57959313.6 mixes ordinary and exploit winnings and is not the selected loss. Source-7 enumerates all nine disposal receipts, blocks 87525414..87532383. Sum ATM Transfer logs from helper to pair 0x4394f228cd29db11825a22b12cf132567e07eaa4 and BSC-USD Transfer logs out of that pair minus those into it: 58064313.6 ATM sold for 98309.438441108095465392 BSC-USD. Flash-loan principal and repayment are outside the pair flows. The sold ATM equals total net helper winnings plus 105000 ATM initially bought by the EOA for 1500 BSC-USD in 0x78ab7f1da74695602948dc83952debeb45de9250fb8fb1ebc67f49e79864a9b3. The pooled realised rate is 98309.438441108095465392 / 58064313.6 = 0.001693112900952437944 USD/ATM; allocate it proportionally to 32568315.15 ATM, yielding 55141.834542749734 USD. This allocation across mixed holdings is the valuation limitation; the 38 bet quantities and matching inputs are exact.",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-29T07:07:42Z"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x9c02fa6033b0895ea3329a26cbb46058bda24336b545739d676847692b0dd7cb",
-        "0x39bfaa25b8efe7616eb7694f7a1f8c4166e40c9186ecfb55cc173151b6b5bc4a",
-        "0x000260666d7034c4717ef070446b9fea39ab92f614dab3cbef931b9d29650aa3",
-        "0x8d60c19f18acc35e60e9c59d23033cd751d874aecbb460d20b285d890af9f08b",
-        "0xbeb51017b7ce81162e04558a373b37617d041ff4b49db1e4a2a05bfaecd6c803",
-        "0xca027ce1c73915672983f9650f20ad13d8813958ed15232c0d79db6aeb140fce",
-        "0x9738e57660e9f19bc9f9a246711617d520e58e8fd7e406ce62701767e39d3e3f",
-        "0x685ebf610128cab1c9c0babfa54f7efa9a42bfc3a1f70c4b5954b5f299236b7f",
-        "0x9de1f936ce382e053784e7fc7211f40a9e6ed6eba2a8fa8f3a5b085904c02020"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb74a572967ce997afa5920811e6a9dc8b82a6e41ee31fa4d1a24a85aec89e342"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0xb74a572967ce997afa5920811e6a9dc8b82a6e41ee31fa4d1a24a85aec89e342",
-        "0xaeb35ea5e2835110e6a7d8a586fc164484835e2c839f13b8fdcfe7a7c500a30b",
-        "0x2cb88b7de1b04ca2344e107a75b8816e373699779563c4182e5d4546e261bded",
-        "0xc242dee1e5d28f537a7b96debd843d656fb44054bcf4b6e7ec0e324182482401",
-        "0x15362ae875bbbe5039256e4b552d5da38279d28c87af122b2463f057d4607cc0",
-        "0x6d43d354d891f703de84ad4c2df2825003f2bb06d48f85eed5ef79dd1df160a3",
-        "0xba8a774d5ff2ae8d0f45ca6a4c75fba148a3902271902fd2860b53e370fa4286",
-        "0xbaea6444a22a54ad3e783fda1af52523cff428b790169e6d14e0b349865b8880",
-        "0xa61e00ff6fe0c5879e65e9c6b83bc8846dbef1141fcca0e479eed3d1ae760954",
-        "0x55547351ee0cc325116f799ba5b93d101db18c67cb053654378648715c69e0b6",
-        "0x2e0d6bb947e30f4f9c2691c9cecce8d3bf030f12d2eb7fe7edb2bf86b2856436",
-        "0xe1ec243ac3e8eaa0fab769039465043ffe97daba36c4bb369df895e082d4dd37",
-        "0x26e3746659c01cc0d5a7960028d4f7d462c911e07a924381f5e8d91ea661293e",
-        "0x0274920967d0319e5d3faf901d2df78b370537c50f365e4cf642367e62567398",
-        "0x14ff73abac785744657da8b2c4ee9290882a128829765630596e640e5b536bb9",
-        "0x85d32237e4aa986ab2cbecafb86fe405b8f91e03249fe610f000ca3b7d745ee4",
-        "0x549a06207980e136914cc3e5f71ce2a62a697ffa3b2e6ec79bed42f30f8a2d35",
-        "0x88659764116b1b8d35b7bde160410b837a548379580ac2fba4f0bc12df727fc3",
-        "0x946084239b818da01553c0a9643225e6e65f35dc80189f228bd40a13dec28256",
-        "0x8511f64289f4304a4948ed29a616b69dba237cbaf191d8cf0512f02d4aba948c",
-        "0xdad7115d6204b5ceddbdfc331a7e9f9b3b9ca19b2d2eb3e960276a8b2b2af0ce",
-        "0xa9e0c6e97791f601da463def5a5cdb1d659427c92b38c98b7308e19307dac5f1",
-        "0x0696d95e5ea22474b483e7756583ba8e4eae50b4f420d82410b1865f6d14924f",
-        "0x98d3d97551c9834125e749ce30194efc6b4ecb48ad3904fbf6c1721cc5f89dd6",
-        "0xc1a88f6ddb2a5ffc6831ad8040a997bd4a99b8320c6bcccbf06ee012c602c67f",
-        "0xc98c98ff8a8a8bed9e4f64023671dec6864ca837ab7d560f6649b4bba4498107",
-        "0x6b4a5fa7c33005b2a3f7b5781154e993f3fc7d8aae47394bca8da5cdf7d00d79",
-        "0x420c3a23f733f490be187cdb92adf2988c507db64ebe2b1c0f842de5379577b5",
-        "0xde2e7a70060dd1bdee318bc9c28b4603d290e419c49e773821ef24ccb12b3408",
-        "0x9c25a7984f0ebf97968c21ff7b18dc71da516fef7463b49ddecdeea23cbc88eb",
-        "0x0f02589894a68414ac89f1b2e73b5a3751a8e88aca4c864131b23f5e297accc4",
-        "0x597c410daedeb5527ea59dd273710bb04baefdb1d496f04293a308f4cbcfe400",
-        "0xea4f4da05b904b99a6c85be3e1b250a6077abd1a0a2eac75cf16fdeedd8ee119",
-        "0x19dba18402f638ac624f8fbe0fef902a0f1517223086c6c50e1f564c219aceea",
-        "0x89e6162a3778cee5674777512da81c6addc625dd7006f31351753cfab6da53a4",
-        "0xaf92d25f9945d646f74f4a36c8beefa46f59353459050b93e73e730352f14106",
-        "0xe788678c5d9746124f7e9bd06356e936089deb345fbb418b24ce926a4e162014",
-        "0x68eedc7a52c4fb165350759d5213bc95a106cc55316e65487f4b4e2f2c718ce8"
-      ]
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "USD loss uses the campaign-wide average realised disposal price, allocated proportionally across exploit winnings, ordinary winnings and initial capital."
-    ],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 55141.83454274973,
+    "assets": [
+      {
+        "token": "0x9c86f45905868317bacb8f442653d5e9a6888888",
+        "symbol": "ATM",
+        "amount": "32568315.15",
+        "usd": 55141.83454274973
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2026-03/ATMBlindBox_exp.sol",
-    "seed:atmblindbox:2026-03-19:atmblindbox"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-03/ATMBlindBox_exp.sol",
+    "eip155:56:0x9c02fa6033b0895ea3329a26cbb46058bda24336b545739d676847692b0dd7cb",
+    "eip155:56:0x39bfaa25b8efe7616eb7694f7a1f8c4166e40c9186ecfb55cc173151b6b5bc4a",
+    "eip155:56:0x000260666d7034c4717ef070446b9fea39ab92f614dab3cbef931b9d29650aa3",
+    "eip155:56:0x8d60c19f18acc35e60e9c59d23033cd751d874aecbb460d20b285d890af9f08b",
+    "eip155:56:0xbeb51017b7ce81162e04558a373b37617d041ff4b49db1e4a2a05bfaecd6c803",
+    "eip155:56:0xca027ce1c73915672983f9650f20ad13d8813958ed15232c0d79db6aeb140fce",
+    "eip155:56:0x9738e57660e9f19bc9f9a246711617d520e58e8fd7e406ce62701767e39d3e3f",
+    "eip155:56:0x685ebf610128cab1c9c0babfa54f7efa9a42bfc3a1f70c4b5954b5f299236b7f",
+    "eip155:56:0x9de1f936ce382e053784e7fc7211f40a9e6ed6eba2a8fa8f3a5b085904c02020",
+    "eip155:56:0xb74a572967ce997afa5920811e6a9dc8b82a6e41ee31fa4d1a24a85aec89e342",
+    "eip155:56:0xaeb35ea5e2835110e6a7d8a586fc164484835e2c839f13b8fdcfe7a7c500a30b",
+    "eip155:56:0x2cb88b7de1b04ca2344e107a75b8816e373699779563c4182e5d4546e261bded",
+    "eip155:56:0xc242dee1e5d28f537a7b96debd843d656fb44054bcf4b6e7ec0e324182482401",
+    "eip155:56:0x15362ae875bbbe5039256e4b552d5da38279d28c87af122b2463f057d4607cc0",
+    "eip155:56:0x6d43d354d891f703de84ad4c2df2825003f2bb06d48f85eed5ef79dd1df160a3",
+    "eip155:56:0xba8a774d5ff2ae8d0f45ca6a4c75fba148a3902271902fd2860b53e370fa4286",
+    "eip155:56:0xbaea6444a22a54ad3e783fda1af52523cff428b790169e6d14e0b349865b8880",
+    "eip155:56:0xa61e00ff6fe0c5879e65e9c6b83bc8846dbef1141fcca0e479eed3d1ae760954",
+    "eip155:56:0x55547351ee0cc325116f799ba5b93d101db18c67cb053654378648715c69e0b6",
+    "eip155:56:0x2e0d6bb947e30f4f9c2691c9cecce8d3bf030f12d2eb7fe7edb2bf86b2856436",
+    "eip155:56:0xe1ec243ac3e8eaa0fab769039465043ffe97daba36c4bb369df895e082d4dd37",
+    "eip155:56:0x26e3746659c01cc0d5a7960028d4f7d462c911e07a924381f5e8d91ea661293e",
+    "eip155:56:0x0274920967d0319e5d3faf901d2df78b370537c50f365e4cf642367e62567398",
+    "eip155:56:0x14ff73abac785744657da8b2c4ee9290882a128829765630596e640e5b536bb9",
+    "eip155:56:0x85d32237e4aa986ab2cbecafb86fe405b8f91e03249fe610f000ca3b7d745ee4",
+    "eip155:56:0x549a06207980e136914cc3e5f71ce2a62a697ffa3b2e6ec79bed42f30f8a2d35",
+    "eip155:56:0x88659764116b1b8d35b7bde160410b837a548379580ac2fba4f0bc12df727fc3",
+    "eip155:56:0x946084239b818da01553c0a9643225e6e65f35dc80189f228bd40a13dec28256",
+    "eip155:56:0x8511f64289f4304a4948ed29a616b69dba237cbaf191d8cf0512f02d4aba948c",
+    "eip155:56:0xdad7115d6204b5ceddbdfc331a7e9f9b3b9ca19b2d2eb3e960276a8b2b2af0ce",
+    "eip155:56:0xa9e0c6e97791f601da463def5a5cdb1d659427c92b38c98b7308e19307dac5f1",
+    "eip155:56:0x0696d95e5ea22474b483e7756583ba8e4eae50b4f420d82410b1865f6d14924f",
+    "eip155:56:0x98d3d97551c9834125e749ce30194efc6b4ecb48ad3904fbf6c1721cc5f89dd6",
+    "eip155:56:0xc1a88f6ddb2a5ffc6831ad8040a997bd4a99b8320c6bcccbf06ee012c602c67f",
+    "eip155:56:0xc98c98ff8a8a8bed9e4f64023671dec6864ca837ab7d560f6649b4bba4498107",
+    "eip155:56:0x6b4a5fa7c33005b2a3f7b5781154e993f3fc7d8aae47394bca8da5cdf7d00d79",
+    "eip155:56:0x420c3a23f733f490be187cdb92adf2988c507db64ebe2b1c0f842de5379577b5",
+    "eip155:56:0xde2e7a70060dd1bdee318bc9c28b4603d290e419c49e773821ef24ccb12b3408",
+    "eip155:56:0x9c25a7984f0ebf97968c21ff7b18dc71da516fef7463b49ddecdeea23cbc88eb",
+    "eip155:56:0x0f02589894a68414ac89f1b2e73b5a3751a8e88aca4c864131b23f5e297accc4",
+    "eip155:56:0x597c410daedeb5527ea59dd273710bb04baefdb1d496f04293a308f4cbcfe400",
+    "eip155:56:0xea4f4da05b904b99a6c85be3e1b250a6077abd1a0a2eac75cf16fdeedd8ee119",
+    "eip155:56:0x19dba18402f638ac624f8fbe0fef902a0f1517223086c6c50e1f564c219aceea",
+    "eip155:56:0x89e6162a3778cee5674777512da81c6addc625dd7006f31351753cfab6da53a4",
+    "eip155:56:0xaf92d25f9945d646f74f4a36c8beefa46f59353459050b93e73e730352f14106",
+    "eip155:56:0xe788678c5d9746124f7e9bd06356e936089deb345fbb418b24ce926a4e162014",
+    "eip155:56:0x68eedc7a52c4fb165350759d5213bc95a106cc55316e65487f4b4e2f2c718ce8"
+  ],
+  "notes": [
+    "The immutable BlindBox runtime contains both the caller-timed settle() and the predictable expired-blockhash fallback. The ATM token's blindBoxContract wiring (setSubContracts, block 87296867) is ordinary initial wiring to this address, and no erroneous value is needed for the defect, so deployment supplies the age.",
+    "Gross victim depletion in the helper's 38 winning predictable-fallback bets: 66850752.15 ATM paid minus 34282437 ATM deposited for those same bet IDs. Placement time does not exclude a stake: bet 5136 contributes 585000 - 300000 = 285000 ATM although its deposit precedes the incident anchor. Live-blockhash wins are excluded throughout the campaign. Losing and unsettled stakes are attack costs and do not reduce gross theft. The anchor predictor test pays a third-party bettor, not the helper; no theft of that bettor's funds is claimed. USD value allocates the nine disposals' aggregate proceeds proportionally to the attributed ATM quantity, because the sales mix exploit winnings, ordinary winnings and initial capital. BSC-USD is valued at par; later recoveries and the cold wallet's removal of the remaining DEAD balance are not netted.",
+    "USD loss uses the campaign-wide average realised disposal price, allocated proportionally across exploit winnings, ordinary winnings and initial capital."
   ]
 }

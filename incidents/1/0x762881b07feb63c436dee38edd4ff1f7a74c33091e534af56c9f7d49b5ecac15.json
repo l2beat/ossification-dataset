@@ -1,173 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x762881b07feb63c436dee38edd4ff1f7a74c33091e534af56c9f7d49b5ecac15",
-  "protocol": {
-    "name": "bZx",
-    "slug": "bzx"
-  },
+  "protocol": "bZx",
   "name": "bZx BZxOracle sUSD marginal-rate collateral valuation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x762881b07feb63c436dee38edd4ff1f7a74c33091e534af56c9f7d49b5ecac15",
-      "blockNumber": 9504627,
-      "transactionIndex": 2,
-      "timestamp": 1581995638
-    },
-    "attackerAddresses": [
-      "0xb8c6ad5fe7cb6cc72f2c4196dca11fbb272a8cbf",
-      "0x360f85f0b74326cddff33a812b05353bc537747b"
-    ]
-  },
   "summary": "BZxOracle 0xaa6198fe597dfc331471ae7deba026fb299297fc is the price source that bZx's getBorrowAmount() and takeOrderFromiToken() paths use to size a loan against its collateral. Its getTradeData(sourceToken, destToken, sourceTokenAmount) ignores the amount it is asked about - the protocol passes 2**256-1 - and instead STATICCALLs KyberNetworkProxy 0x818e6fecd516ecc3849daf6845e3ec868087b755 getExpectedRate with srcQty 2**255 + 1e16, that is the marginal rate for a 0.01-unit trade with permissionless reserves disabled, then returns that rate verbatim as the collateral price. There is no time averaging, no deviation bound against an independent reference, no check that the quoted marginal rate is achievable at the size being valued, and nothing stopping a borrow in the same transaction that moved the quoting market. The attacker flash-borrowed 7,500 WETH through iETH LoanToken 0x77f973fcaf871459aa58cd81881ce453759281bc, bought sUSD from the Synthetix depot and then ran eighteen consecutive 20-ETH buys through the Uniswap V1 sUSD exchange 0x2157a7894439191e520825fe9399ab8655e0f708 that Kyber's reserve quotes; the same eth_call that returns a sUSD/WETH rate of 0.003613877057815960 at block 9504626 returned 0.009297067356545891 inside the exploit, 2.5726 times higher. getBorrowAmount therefore authorised up to 6,816.866335916617112493 WETH against 1,099,841.392100433025126219 sUSD at the 150 percent initial margin, and takeOrderFromiToken opened a 6,799.272741673360528371 WETH loan of which 6,796.012817135270528952 WETH was paid out.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 637681.6587625479,
-      "valuationTimestamp": 1581995638,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "2378.153715421627764132",
-        "usdValue": 637681.6587625479,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1581995638,
-          "unitPriceUsd": 268.1414807745058,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Measured as the attacker's exact realised proceeds: attack contract 0x360f85f0b74326cddff33a812b05353bc537747b holds 0 wei at block 9504626 and 2,378.153715421627764132 ETH at block 9504627, and moved that whole balance to the attacker EOA in withdraw() transaction 0x2e05b36f4e1afd92366dfded4f7fb7a11eab4d681e313caab6068b1a5879067f at block 9504634. All of the attacker's campaign capital was the 7,500 WETH bZx flash loan, which was repaid inside the same transaction, so no attacker-supplied input is counted. This is a conservative floor on the lender's economic loss rather than a gross depletion: the iETH pool's WETH balance fell from 18,586.276356627435240969 to 11,787.018373071280837922, a 6,799.257983556154403047 WETH outflow worth 1,823,163.10 USD, against 1,099,841.392100433025126219 sUSD of collateral taken into BZxVault worth 1,074,683.79 USD at DefiLlama's incident-time sUSD price of 0.9771261517396886, implying a shortfall near 748,479 USD; the difference between that and the figure recorded here is slippage the attacker paid to the Kyber, Uniswap and Synthetix markets, not value retained by bZx. Disjoint from the two other bZx incidents in this dataset: eip155:1:0xb5c8bd9430b6cc87a0e2fe110ece6bf527fa4f170a4bc8cd032f768fc5219838 (2020-02-15, 1,193 ETH) and eip155:1:0x85dc2a433fd9eaadaf56fd8156c956da23fc17e5ef83955c7e2c4c37efa20bb5 (2020-09-13, 8.1 million USD)."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xaa6198fe597dfc331471ae7deba026fb299297fc",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xaa6198fe597dfc331471ae7deba026fb299297fc",
-        "codeHash": "0xdb972a7db9bbcc6b4131490943344fac3aaa3e67836e7553135861350e2bc869"
-      },
-      "deployment": {
-        "timestamp": 1581920143,
-        "blockNumber": 9498957,
-        "transactionHash": "0x749d7d8053182ac50a10d228289d29a12791795d72767f741409acce3b47cdb7",
-        "transactionIndex": 8,
-        "creatorAddress": "0xadff3ada12ed0f8a87e31e5a04dfd2ee054e1118"
-      },
-      "ageReset": {
+      "address": "0xaa6198fe597dfc331471ae7deba026fb299297fc",
+      "reset": {
         "kind": "deployment",
-        "description": "The oracle is a plain top-level CREATE from an EOA with no upgrade mechanism; its 22,397-byte runtime is byte-identical at the creation block and at block 9504626 and contains no DELEGATECALL or CALLCODE, so deployment is the only executable-code change."
-      },
-      "codeAgeSeconds": 75495,
-      "failureModeId": "failure:bzx-oracle-kyber-marginal-rate-collateral-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The deployed oracle runtime is not verified on Etherscan or Sourcify, so the root cause is established from the execution trace, live eth_calls against the deployed contract, and published analysis rather than from matching source."
-        ],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+        "tx": "0x749d7d8053182ac50a10d228289d29a12791795d72767f741409acce3b47cdb7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x762881b07feb63c436dee38edd4ff1f7a74c33091e534af56c9f7d49b5ecac15"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x749d7d8053182ac50a10d228289d29a12791795d72767f741409acce3b47cdb7"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2e05b36f4e1afd92366dfded4f7fb7a11eab4d681e313caab6068b1a5879067f"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://www.palkeo.com/en/projets/ethereum/bzx.html"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://peckshield.medium.com/bzx-hack-ii-full-disclosure-with-detailed-profit-analysis-8126eecc1360"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1581995638/coingecko:ethereum",
-      "observedAt": 1787687497
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1581995638/ethereum:0x57ab1ec28d129707052df4df418d58a2d46d5f51",
-      "observedAt": 1787687497
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T19:51:37Z",
-      "note": "Reviewed the mainnet receipt and the 2,663-line replayed call trace of 0x762881b07feb63c436dee38edd4ff1f7a74c33091e534af56c9f7d49b5ecac15 (status 1, block 9504627 index 2, timestamp 1581995638), the oracle's creation receipt, its runtime at the creation block and at block 9504626, live eth_calls of the oracle at pre-exploit state, the attacker's complete Ethereum transaction list, and the palkeo and PeckShield analyses. Anchor: the attacker EOA 0xb8c6ad5fe7cb6cc72f2c4196dca11fbb272a8cbf created attack contract 0x360f85f0b74326cddff33a812b05353bc537747b at block 9504567 and its four earlier successful transactions (blocks 9504584, 9504590, 9504605, 9504608) only deposit and withdraw 0.1 ETH to and from that contract and touch no bZx address, so 0x762881b0 is the earliest successful transaction that executes the defect. Causal path in the trace: iETH LoanToken 0x77f973fcaf871459aa58cd81881ce453759281bc DELEGATECALLs 0x85ca13d8496b2d22d6518faeb524911e096dd7e0 flashBorrowToken, sends 7,500 WETH to the attack contract, which unwraps it, buys sUSD and executes eighteen 20-ETH ethToTokenSwapInput buys on the Uniswap V1 sUSD exchange 0x2157a7894439191e520825fe9399ab8655e0f708, then calls borrowTokenFromDeposit; bZxProxy 0x1cf226e9413addaf22412a2e182f9c0de44af002 DELEGATECALLs module 0x3756fa458880fa8fe53604101cf31c542ef22f6f for getBorrowAmount and takeOrderFromiToken, and both CALL BZxOracle 0xaa6198fe597dfc331471ae7deba026fb299297fc getTradeData (selector 0x06599aa0) with sourceTokenAmount 2**256-1. The oracle STATICCALLs KyberNetworkProxy 0x818e6fecd516ecc3849daf6845e3ec868087b755 getExpectedRate with srcQty 57896044618658097711785492504343953926634992332820282019728802003956564819968 = 2**255 + 1e16; the inner frame confirms Kyber strips the flag and quotes 0x38a5cf926a0b9b5fe3a265c57d184ad8c0af05b6 getExpectedRate(sUSD, WETH, 10000000000000000, false), a 0.01-unit marginal rate. getTradeData returned sourceToDestRate 9297067356545891 with precision 1e18 inside the exploit, while the identical eth_call at block 9504626 returns 3613877057815960 and at block 9504000 returns 3702685093449619: a 2.5726x inflation produced entirely inside the exploit transaction. getBorrowAmount then returned 6816866335916617112493 wei and takeOrderFromiToken returned 6799272741673360528371 wei. Boundary test: the oracle's price source is stored state (kyberContract() reads 0x818e6fecd516ecc3849daf6845e3ec868087b755) but the deployed runtime does not even contain the BZxOracle family's setKyberContractAddress(address) selector 0xd28a4f9e, and in any case no value of that address makes this code correct, because the code requests the marginal rate for a fixed 0.01-unit probe and applies it verbatim to a position of arbitrary size with no averaging, deviation bound or liquidity check. This matches the treatment of the Elephant Money Reserve and Inverse Finance YVCrv3CryptoFeed rows, where a router or pool address is configuration but every value of it still yields an atomically manipulable same-transaction quote. Code history: the oracle was created by top-level CREATE from 0xadff3ada12ed0f8a87e31e5a04dfd2ee054e1118 (also its owner()) in transaction 0x749d7d8053182ac50a10d228289d29a12791795d72767f741409acce3b47cdb7 at 9498957:8, the replacement oracle bZx shipped after the 2020-02-15 incident; its 22,397-byte runtime hashes to 0xdb972a7db9bbcc6b4131490943344fac3aaa3e67836e7553135861350e2bc869 at both 9498957 and 9504626, disassembles with zero DELEGATECALL and CALLCODE opcodes, and has no upgrade mechanism, so deployment is the correct basis and the code was 75,495 seconds (20.97 hours) old. Loss: attack contract balance 0 at 9504626 and 2378153715421627764132 wei at 9504627, withdrawn in full at block 9504634; valued with DefiLlama's ETH price 268.1414807745058 for timestamp 1581995638. This incident is distinct from the two bZx incidents already in the dataset: a different defect (spot collateral valuation, not the takeOrderFromiToken short-circuit of 2020-02-15 nor the iETH self-transfer of 2020-09-13), a different target address, a different attacker and a disjoint loss."
-    }
-  ],
-  "discovery": [
-    "seed:bzx:2020-02-18:bzx-susd-kyber-spot-price-manipulation",
-    "web:2020-02-18:bzx-second-incident"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The loss is the attacker's exactly measured realised proceeds, which is a conservative floor on the iETH pool's shortfall; the shortfall implied by the WETH outflow net of the sUSD collateral received is about 748,000 USD."
-    ],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 637681.6587625479,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "2378.153715421627764132",
+        "usd": 637681.6587625479
+      }
     ]
-  }
+  },
+  "refs": [
+    "eip155:1:0x2e05b36f4e1afd92366dfded4f7fb7a11eab4d681e313caab6068b1a5879067f",
+    "https://www.palkeo.com/en/projets/ethereum/bzx.html",
+    "https://peckshield.medium.com/bzx-hack-ii-full-disclosure-with-detailed-profit-analysis-8126eecc1360"
+  ],
+  "notes": [
+    "The oracle is a plain top-level CREATE from an EOA with no upgrade mechanism; its 22,397-byte runtime is byte-identical at the creation block and at block 9504626 and contains no DELEGATECALL or CALLCODE, so deployment is the only executable-code change.",
+    "Measured as the attacker's exact realised proceeds: attack contract 0x360f85f0b74326cddff33a812b05353bc537747b holds 0 wei at block 9504626 and 2,378.153715421627764132 ETH at block 9504627, and moved that whole balance to the attacker EOA in withdraw() transaction 0x2e05b36f4e1afd92366dfded4f7fb7a11eab4d681e313caab6068b1a5879067f at block 9504634. All of the attacker's campaign capital was the 7,500 WETH bZx flash loan, which was repaid inside the same transaction, so no attacker-supplied input is counted. This is a conservative floor on the lender's economic loss rather than a gross depletion: the iETH pool's WETH balance fell from 18,586.276356627435240969 to 11,787.018373071280837922, a 6,799.257983556154403047 WETH outflow worth 1,823,163.10 USD, against 1,099,841.392100433025126219 sUSD of collateral taken into BZxVault worth 1,074,683.79 USD at DefiLlama's incident-time sUSD price of 0.9771261517396886, implying a shortfall near 748,479 USD; the difference between that and the figure recorded here is slippage the attacker paid to the Kyber, Uniswap and Synthetix markets, not value retained by bZx. Disjoint from the two other bZx incidents in this dataset: eip155:1:0xb5c8bd9430b6cc87a0e2fe110ece6bf527fa4f170a4bc8cd032f768fc5219838 (2020-02-15, 1,193 ETH) and eip155:1:0x85dc2a433fd9eaadaf56fd8156c956da23fc17e5ef83955c7e2c4c37efa20bb5 (2020-09-13, 8.1 million USD).",
+    "The loss is the attacker's exactly measured realised proceeds, which is a conservative floor on the iETH pool's shortfall; the shortfall implied by the WETH outflow net of the sUSD collateral received is about 748,000 USD.",
+    "The deployed oracle runtime is not verified on Etherscan or Sourcify, so the root cause is established from the execution trace, live eth_calls against the deployed contract, and published analysis rather than from matching source."
+  ]
 }

@@ -1,158 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xf12ccb683c51cc1c5907d362f3219b3a49a597be1fdfe1fb36bb2361bb3db877",
-  "protocol": {
-    "name": "GDC",
-    "slug": "gdc"
-  },
+  "protocol": "GDC",
   "name": "GDCToken sell burn exceeds forwarded amount, with reentrant tax-free exit",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xf12ccb683c51cc1c5907d362f3219b3a49a597be1fdfe1fb36bb2361bb3db877",
-      "blockNumber": 121253214,
-      "transactionIndex": 113,
-      "timestamp": 1789125763
-    },
-    "attackerAddresses": [
-      "0xe327b58233de729d58d35e36e4b6d45c8e00cdbb",
-      "0x5fe1deb9d9a58e9424b7fafc77494ff782b7dc14",
-      "0x5fa62a1f824016c9e470feee9adbb8ef2034691a",
-      "0xd1dc1ff58ea56b3f454fe5fe21a222544875f99f",
-      "0xf95b62c60ce579afece6a67f7955861a0b9a7579"
-    ]
-  },
   "summary": "On a taxed GDC sell, swapSellAward forwards only 30% of the sold amount to the pair but _burnSellAgainstPair then burns the full nominal amount out of the pair's reserve and syncs; the sell body runs with swapping = true, and the referral reward is paid mid-body with a raw BNB call, during which transfers into the pair skip the tax branch. Helpers that deposited from their constructors (defeating the extcodesize EOA check) could buy from the pair because the token classifies pair outflows to depositors as liquidity removals. The attacker sold 221.24M GDC to collapse the GDC reserve and, inside the referral callbacks, dumped a pre-bought 1.63B GDC bag tax-free, netting 35.34 WBNB from the GDC/WBNB pair.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 25081.366285352247,
-      "valuationTimestamp": 1789125763,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "35.33715149597698649",
-        "usdValue": 25081.366285352247,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789125760,
-          "unitPriceUsd": 709.7732902497156,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "WBNB the GDC/WBNB pair 0x9cd8d04c30ed78afef7ed00ab1a2a028d476331c paid to the attacker's contracts net of the WBNB they paid into it, less the attacker's 0.2 BNB of helper deposits into GDC; it equals the 35.33715149597698649 WBNB forwarded to the attacker (Moolah flash loan at 0% fee). The pair's total WBNB drop was 38.136252429986871143; the other 2.799 WBNB are GDC's own tax swap-back routed to the company, referral and liquidity paths and are not attributed to the attacker."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe3342358e7ccbaebdd1139ad0274c53c5b3ef822",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe3342358e7ccbaebdd1139ad0274c53c5b3ef822",
-        "codeHash": "0xa65efebb8237fdad2868dfb5057bcd77e816d359619a0f75688f74f5976c65b2"
-      },
-      "deployment": {
-        "timestamp": 1788965262,
-        "blockNumber": 120896821,
-        "transactionHash": "0x700650456e964b386387e9a38971ffcdebc1fa55cf8c4cafa562f66cc47fe6fa",
-        "transactionIndex": 34,
-        "creatorAddress": "0xc675a36d735bcfbe3d2f26bc4fc65811e5ab3585"
-      },
-      "ageReset": {
+      "address": "0xe3342358e7ccbaebdd1139ad0274c53c5b3ef822",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable GDCToken; owner parameter changes after deployment (deposit bounds, node levels) do not affect the exploit in replay, and the inviter migration batches are user-state import."
-      },
-      "codeAgeSeconds": 160501,
-      "failureModeId": "failure:gdc-sell-burn-mismatch-reentrant-exit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x700650456e964b386387e9a38971ffcdebc1fa55cf8c4cafa562f66cc47fe6fa"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf12ccb683c51cc1c5907d362f3219b3a49a597be1fdfe1fb36bb2361bb3db877"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x700650456e964b386387e9a38971ffcdebc1fa55cf8c4cafa562f66cc47fe6fa"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:59:27Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. Verified GDCToken source (Etherscan V2 getsourcecode chainid=56, v0.8.22+commit.4fc1097e, optimizer 1 run; SHA-256 of SourceCode 7d489fdb7299ae877cc7033be9f777708d435f6b2597202f768731f7da896c83), contracts/gdc/GDCToken.sol: isContract uses extcodesize; _update flags pair->user transfers as isRemove when the user has an addLiquidityUnlockTime (bypassing BuyingProhibited); swapSellAward pays referral rewards through _sendBNB (raw call) and then _burnSellAgainstPair(user, amount) burns the full sold amount from the pair and syncs while only SELL_USER_PERCENT reached it; the pair-bound tax branch is skipped while swapping is true. debug_traceTransaction(callTracer) of source-1 (block 121253214, index 113; EOA 0xe327b58233de729d58d35e36e4b6d45c8e00cdbb creates 0x5fe1deb9..., which creates hub 0x5fa62a1f... and helpers 0xd1dc1ff5... and 0xf95b62c6... that each deposit 0.1 BNB from their constructors): a 241582.58557590636 WBNB Moolah flash loan; receipt SellBurn logs 976 (f95 sells 221244665.270452920 GDC, burns the same, reserve after 54463255.884) and 1010 (1 GDC sell); inside the referral callbacks helper d1 buys 1.63e9 GDC for 365.564188762178 WBNB and later dumps it straight through pair.swap; pair WBNB transfers net 407.6013402581551 out to the hub against 365.5641887621781 + 6.5 in. First exercise: over GDC's life to the exploit (eth_getLogs, 21,079 token events) SellBurn(address,uint256,uint256,uint256) appears only in source-1, so the reserve-burn mismatch had never run; nine earlier UpdateLog(from = pair, isRemove = true) transfers without a pair Burn (blocks 121013224..121028152, EOAs 0x36265f07d6fb55cdd2865430e2aec389c5840db3 and 0xc1cacfbef9c22b12133638f18b711d2a70159601) are small depositor buys (0.0029..0.0599 WBNB each) that exercise only the buy-classification quirk without any burn or extraction. Configuration: nonce bisection of owner 0xc675a36d735bcfbe3d2f26bc4fc65811e5ab3585 from deployment to 121253213 finds 53 transactions; prestateTracer diffs of the 32 owner parameter calls to GDC (14 setNodeLevels, 12 migration, 4 setMinAmount, 2 setMaxAmount) show 4,416 changed slots: setMinAmount/setMaxAmount (0x897b0637/0x4fe47f70), setNodeLevels batches (0x2acb8a6b) and inviter migration batches (0xd42cca93, blocks 120898416..120898986). Replaying source-1 with debug_traceCall at block 121253213 returns the same 35.33715149597698649 BNB to the EOA with all min/max and node-level slots reverted to their pre-change values; reverting the migration's imported referral records makes the replay revert, as it removes user state the token reads, not a parameter. Artifact: eth_getCode 0x at 120896820; keccak256 0xa65efebb8237fdad2868dfb5057bcd77e816d359619a0f75688f74f5976c65b2 at 120896821 and 121253213; source-2 is its top-level creation (index 34) by the owner. No proxy or self-destruct path. Deployment supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/GDC_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:59:27Z",
-      "note": "Reviewed loss. eth_call WBNB(0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c).balanceOf(pair) = 51257477451742533534 at block 121253213 and 13121225021755662391 at 121253214. Receipt WBNB log 1014: hub 0x5fa62a1f -> 0x5fe1deb9 35337151495976986490 wei, unwrapped and sent to the EOA (callTracer); the EOA's BNB balance rises from 0.01976316 to 35.349200564976986490. The flash loan (241582.58557590636 WBNB) is repaid in full. Other pair outflows: 3.7397728258075746 WBNB via the router to GDC's own swap-back, of which GDC returned 1.0856718917976902 WBNB to the pair and paid 2.5640953521400327 BNB to 0xaf3c502b67eb54c8b03f06ddfb3017a91d568728, 0.15793166682053145 BNB to 0x61c749d4a32136de9c1ac46ede6c2e493fdc93a8 and 0.07696583341026572 BNB of referral reward to helper d1. Loss counted: 35.33715149597698649 WBNB at USD 709.7732902497156 (source-7)."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789125763/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790639891
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 25081.366285352247,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "35.33715149597698649",
+        "usd": 25081.366285352247
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-11:gdc"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/GDC_exp.sol"
+  ],
+  "notes": [
+    "Direct immutable GDCToken; owner parameter changes after deployment (deposit bounds, node levels) do not affect the exploit in replay, and the inviter migration batches are user-state import.",
+    "WBNB the GDC/WBNB pair 0x9cd8d04c30ed78afef7ed00ab1a2a028d476331c paid to the attacker's contracts net of the WBNB they paid into it, less the attacker's 0.2 BNB of helper deposits into GDC; it equals the 35.33715149597698649 WBNB forwarded to the attacker (Moolah flash loan at 0% fee). The pair's total WBNB drop was 38.136252429986871143; the other 2.799 WBNB are GDC's own tax swap-back routed to the company, referral and liquidity paths and are not attributed to the attacker."
   ]
 }

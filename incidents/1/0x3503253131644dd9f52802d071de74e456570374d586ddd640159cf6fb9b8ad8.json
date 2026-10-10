@@ -1,169 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8",
-  "protocol": {
-    "name": "Eminence",
-    "slug": "eminence"
-  },
+  "protocol": "Eminence",
   "name": "Eminence EMN claim/award bypasses bonding-curve reserve accounting",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8",
-      "blockNumber": 10954411,
-      "transactionIndex": 3,
-      "timestamp": 1601342441
-    },
-    "attackerAddresses": [
-      "0x223034edbe95823c1160c16f26e3000315171ca9",
-      "0xe38684752ebe4c333c921800a8109bc97cd6fa3d",
-      "0x9450fb7581ed04f19426c265179ccee6cd31c962",
-      "0xbf65028a0c4c91a38b04a5735328a3fd557408b5",
-      "0x3882a1e71636c4d5896af656793cb358e6e9713f",
-      "0x0e10172eab8a72ca12923eb9cacf21909d4c8a0f",
-      "0xb4da77aa47731fa0cc60867b4a535305145b239e"
-    ]
-  },
   "summary": "EminenceCurrency prices buy() and sell() from a Bancor curve over (totalSupply, reserveBalance), but its external claim(address,uint256) and award(address,uint256) burn and mint EMN without any matching change to reserveBalance. The Eminence AAVE sub-currency, made a gamemaster by its own constructor through EMN.addGM, calls exactly those two functions, so converting EMN into eAAVE cut EMN's totalSupply while the DAI reserve accounting stayed put and raised the redemption price of every remaining EMN. Under a flash loan the attacker bought EMN, burned half of it into eAAVE, sold the rest back at the inflated rate, minted the EMN back out of eAAVE and sold again, three rounds per transaction. The violated invariant is that the curve's supply and reserve variables must move together on every supply change.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 15151298.902592022,
-      "valuationTimestamp": 1601342441,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "15151298.902592022871481394",
-        "usdValue": 15151298.902592022,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1601342441,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion measured from the DAI Transfer logs of the three exploit receipts: 165,515,253.962728662 DAI out of the EMN curve contract against 150,363,955.060136639 DAI in, a net 15,151,298.902592022871481394 DAI. The gross-in figure is dominated by flash-loan principal that was repaid inside each transaction and is therefore netted out as an attacker-supplied input. EMN's own DAI balance fell from 14,786,580.432831687370238855 to 81,325.093766019990770332 over blocks 10954410 to 10954419, 446,043.56 DAI less than the attacker took, because unrelated users kept buying into the curve during those blocks. DAI is valued at par. The attacker later returned 8,000,000 DAI to the deployer; under METHODOLOGY that recovery does not reduce gross victim depletion.",
-    "realizedAt": 1601342608
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5ade7ae8660293f2ebfcefaba91d141d72d221e8",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5ade7ae8660293f2ebfcefaba91d141d72d221e8",
-        "codeHash": "0xdaf4426c283c6ffc402fe60fcbdf6700a3040147533a84c0fd3d9304a8d5a55f"
-      },
-      "deployment": {
-        "timestamp": 1601291393,
-        "blockNumber": 10950651,
-        "transactionHash": "0xef1a1f263e2527e5629765cb7e9ad73fbb353b998eb34afc404e636d38be77cb",
-        "transactionIndex": 36,
-        "creatorAddress": "0x2d407ddb06311396fe14d4b49da5f0471447d45c"
-      },
-      "ageReset": {
+      "address": "0x5ade7ae8660293f2ebfcefaba91d141d72d221e8",
+      "reset": {
         "kind": "deployment",
-        "description": "EminenceCurrency is immutable with no proxy, upgrade path or delegatecall dispatch; the runtime installed by this creation is byte-identical at block 10954410, 14 hours later."
-      },
-      "codeAgeSeconds": 51048,
-      "failureModeId": "failure:eminence-claim-award-skips-reserve-accounting",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0xef1a1f263e2527e5629765cb7e9ad73fbb353b998eb34afc404e636d38be77cb"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Anchor: 0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8, block 10954411 index 3, timestamp 1601342441, receipt status 0x1, 78 call frames. It is a contract-creation transaction whose constructor runs the whole round. The attacker EOA 0x223034edbe95823c1160c16f26e3000315171ca9 has exactly 37 lifetime transactions, of which three are these exploit deployments at blocks 10954411, 10954415 and 10954419; there are no earlier attempts, successful or failed. Defect, read from Etherscan's verified source (ContractName EminenceCurrency, solc v0.5.17) and reproduced in the trace: EminenceCurrency 0x5ade7ae8660293f2ebfcefaba91d141d72d221e8 prices buy(uint256,uint256) 0xd6febde8 and sell(uint256,uint256) 0xd79875eb from the Bancor formula at 0x16f6664c16bede5d70818654defef11769d40983 over (totalSupply(), reserveBalance), and keeps reserveBalance in step only inside _continuousMint and _continuousBurn. Its external claim(address,uint256) 0xaad3ec96 and award(address,uint256) 0x5d8a776e call _burn and _mint directly, changing totalSupply while leaving reserveBalance untouched, so every conversion into or out of a sub-currency silently repriced the curve. The sub-token Eminence AAVE 0xc08f38f43adb64d16fe9f9efcc2949d9eddec198 is another EminenceCurrency whose buy() calls EMN.claim and whose sell() calls EMN.award, and whose constructor calls EMN.addGM(address(this)) - permitted because EMN's addGM accepts gamemasters[tx.origin]. At block 10954410 gamemasters(0xc08f38f4...) is true and npcs(0xc08f38f4...) is false, confirming that route. The trace shows the cycle three times per transaction: EMN.buy, eAAVE.buy which burns EMN through claim, EMN.sell at the now-inflated redemption rate, eAAVE.sell which mints EMN back through award, EMN.sell again. Boundary test: no parameter of the deployed contract fixes this. reserveRatio (999000 at the exploit), the gamemaster set and the npc set are all settable, but with any sub-currency registered at all - the contract's whole purpose - claim and award break the curve invariant, and with none registered the system does nothing. The missing reserveBalance adjustment is executable accounting logic, not a configured value the code applies as designed. Target: EminenceCurrency 0x5ade7ae8660293f2ebfcefaba91d141d72d221e8, direct, immutable, no proxy or delegatecall dispatch, 10,527-byte runtime. Created by top-level CREATE from 0x2d407ddb06311396fe14d4b49da5f0471447d45c in 0xef1a1f263e2527e5629765cb7e9ad73fbb353b998eb34afc404e636d38be77cb at block 10950651 index 36, timestamp 1601291393. The runtime hashes to 0xdaf4426c283c6ffc402fe60fcbdf6700a3040147533a84c0fd3d9304a8d5a55f at blocks 10950651, 10950652, 10952000 and 10954410, and prestateTracer on the anchor returns the same hash. Code age 1601342441 - 1601291393 = 51,048 s, i.e. 14 hours 10 minutes - the youngest deployed code in this dataset. Two later EminenceCurrency redeployments by unrelated addresses, 0x8b31d4a56dd29d18c817ef0fa3990d30ecc5d89b and 0xc674fce5f253ef52d5a4b5d1700047a684545cf6, are copycats and are not this target. Loss: summing DAI 0x6b175474e89094c44da98b954eedeac495271d0f Transfer logs in the three receipts, 165,515,253.962728662 DAI left EMN and 150,363,955.060136639 DAI entered it, a net depletion of exactly 15,151,298.902592022871481394 DAI. Independently, EMN's DAI balance fell from 14,786,580.432831687370238855 at block 10954410 to 81,325.093766019990770332 at block 10954419; the 446,043.56 DAI difference is unrelated users buying into the curve in the same blocks. The attacker's DAI inputs were Uniswap DAI/WETH flash loans repaid inside each transaction and are excluded. On 2020-09-29 the attacker returned 8,000,000 DAI to the deployer 0x2d407ddb06311396fe14d4b49da5f0471447d45c in 0x7bc97357364222207f1f011b22ad98ba78fcd3c25d3398346caa3928cdf4a4dd; METHODOLOGY excludes later recoveries from gross victim depletion, so it does not reduce this figure."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xef1a1f263e2527e5629765cb7e9ad73fbb353b998eb34afc404e636d38be77cb"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8",
-        "0x045b60411af18114f1986957a41296ba2a97ccff75a9b38af818800ea9da0b2a",
-        "0x4f0f495dbcb58b452f268b9149a418524e43b13b55e780673c10b3b755340317"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x7bc97357364222207f1f011b22ad98ba78fcd3c25d3398346caa3928cdf4a4dd"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://rekt.news/eminence-rekt-in-prod"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://www.coindesk.com/tech/2020/10/01/defi-degens-hit-hard-by-eminence-exploit-will-be-partially-compensated"
-    }
-  ],
-  "discovery": [
-    "web:2020-09-29:eminence"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 15151298.902592022,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "15151298.902592022871481394",
+        "usd": 15151298.902592022
+      }
     ]
   },
+  "refs": [
+    "eip155:1:0x045b60411af18114f1986957a41296ba2a97ccff75a9b38af818800ea9da0b2a",
+    "eip155:1:0x4f0f495dbcb58b452f268b9149a418524e43b13b55e780673c10b3b755340317",
+    "eip155:1:0x7bc97357364222207f1f011b22ad98ba78fcd3c25d3398346caa3928cdf4a4dd",
+    "https://rekt.news/eminence-rekt-in-prod",
+    "https://www.coindesk.com/tech/2020/10/01/defi-degens-hit-hard-by-eminence-exploit-will-be-partially-compensated"
+  ],
   "notes": [
+    "EminenceCurrency is immutable with no proxy, upgrade path or delegatecall dispatch; the runtime installed by this creation is byte-identical at block 10954410, 14 hours later.",
+    "Exact victim depletion measured from the DAI Transfer logs of the three exploit receipts: 165,515,253.962728662 DAI out of the EMN curve contract against 150,363,955.060136639 DAI in, a net 15,151,298.902592022871481394 DAI. The gross-in figure is dominated by flash-loan principal that was repaid inside each transaction and is therefore netted out as an attacker-supplied input. EMN's own DAI balance fell from 14,786,580.432831687370238855 to 81,325.093766019990770332 over blocks 10954410 to 10954419, 446,043.56 DAI less than the attacker took, because unrelated users kept buying into the curve during those blocks. DAI is valued at par. The attacker later returned 8,000,000 DAI to the deployer; under METHODOLOGY that recovery does not reduce gross victim depletion.",
     "The Eminence contracts were deployed to mainnet unannounced and unfinished, but they were live, permissionless and held roughly 14.8M DAI of user deposits at the time of the exploit, so the victim is a real deployed execution context with a complete onchain deployment anchor.",
     "The sub-currency Eminence AAVE 0xc08f38f43adb64d16fe9f9efcc2949d9eddec198 is a separate EminenceCurrency deployment that supplies the calls into the defective functions. It is not carried as a second target because the broken accounting is entirely in the EMN contract; eAAVE only uses the API as intended."
   ]

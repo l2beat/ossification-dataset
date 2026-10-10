@@ -1,189 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd6e5d399b4a9df00bc890aa1462a8de01e8e28027d8a5d5607516ec54ce251a6",
-  "protocol": {
-    "name": "BUBU2",
-    "slug": "bubu2"
-  },
+  "protocol": "BUBU2",
   "name": "BUBU2 accumulated burn rounds drain the BUBU2/WBNB pair after the owner cut the trigger interval to 120 seconds",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd6e5d399b4a9df00bc890aa1462a8de01e8e28027d8a5d5607516ec54ce251a6",
-      "blockNumber": 83955808,
-      "transactionIndex": 1,
-      "timestamp": 1772326153
-    },
-    "attackerAddresses": [
-      "0x000000006723cfa477656c08d08882d366c0e8fb",
-      "0xcf17fda0a7b3097a9272f5a3e010ecff548132f7",
-      "0x936eee4603751956db2e1b0fb13885a1176542df"
-    ]
-  },
   "summary": "BUBU2._triggerDailyBurnAndMint, run on any non-exempt transfer while burnAndMintSwitch is on, moves pairBalance * 0.5% * rounds out of the BUBU2/WBNB pair and syncs, where rounds = elapsed time / TRIGGER_INTERVAL with no cap. The owner set TRIGGER_INTERVAL to 120 seconds and then enabled the switch; after about 6.7 hours without a trigger, an MEV searcher flash-borrowed 18.4 WBNB, bought 18.7M BUBU2, triggered 199 accumulated rounds with a 1000-wei self-transfer that removed 1.29B BUBU2 (99.5%) from the pair, and sold back for 50.58 WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 19830.66,
-      "valuationTimestamp": 1772326153,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "32.176361483602658753",
-        "usdValue": 19830.66,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1772326144,
-          "unitPriceUsd": 616.3113947912203,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "WBNB extracted from the BUBU2/WBNB pair 0x774547ea9d2a0cc79db3288f61e989f1b06bcd2f net of the attacker's own 18.4 WBNB buy input, equal to the WBNB the attacker EOA received after repaying the fee-free flash loan. The pair's total WBNB depletion in the transaction is 42.492514217217574189; the other 10.316152733614915436 WBNB paid for the token contract's own fee swap of 935,792.8 BUBU2 to its sellFeeBNBAddress 0x3758df1f78fe7a0c7f1f4d97b9e4f7678fd9e617 at the manipulated price and is not counted as stolen. The attacker's 0.1 BNB builder payment is not netted."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x3ff3f18b5c113fac5e81b43f80bf438b99edee52",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x3ff3f18b5c113fac5e81b43f80bf438b99edee52",
+      "reset": {
+        "kind": "config",
+        "tx": "0x191c2c0710827267f09f5fe6fb24faec9f7fad3f4ce7d5c10aec9c998b4c1ee4",
         "address": "0x3ff3f18b5c113fac5e81b43f80bf438b99edee52",
-        "codeHash": "0x06e6407980fa983832850d8b4cab4477e75e21cbe9becced3226e41fabdc45f1"
-      },
-      "deployment": {
-        "timestamp": 1772170660,
-        "blockNumber": 83610561,
-        "transactionHash": "0xbc9c11e5757fc53ae3a805840e2cf0199b9da912be2099e9f1224c21895db86f",
-        "transactionIndex": 38,
-        "creatorAddress": "0xecab24f32cbf4ff82a37347bbfab0c05f1e2be4d"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1772299322,
-        "blockNumber": 83896199,
-        "transactionHash": "0x191c2c0710827267f09f5fe6fb24faec9f7fad3f4ce7d5c10aec9c998b4c1ee4",
-        "transactionIndex": 67,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x3ff3f18b5c113fac5e81b43f80bf438b99edee52",
-          "callData": "0xe8769525",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "Owner setBurnAndMintSwitch(true) enabled the pair-burn engine for the first time, 54 blocks after setTriggerInterval(120) (0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c, TRIGGER_INTERVAL 21600 -> 120). Both values are necessary: with the switch off nothing burns, and at the default 21600 s interval the 26,831 s from this change to the exploit yield one 0.5% round instead of 199. The switch is the later of the two causal writes."
-      },
-      "codeAgeSeconds": 26831,
-      "failureModeId": "failure:bubu2-uncapped-accumulated-pair-burn-rounds",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5",
-          "source-9"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "call": "0xe8769525"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd6e5d399b4a9df00bc890aa1462a8de01e8e28027d8a5d5607516ec54ce251a6"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbc9c11e5757fc53ae3a805840e2cf0199b9da912be2099e9f1224c21895db86f"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x191c2c0710827267f09f5fe6fb24faec9f7fad3f4ce7d5c10aec9c998b4c1ee4"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:22:28Z",
-      "note": "Exploit source-1 (83955808:1): EOA 0x000000006723cfa477656c08d08882d366c0e8fb (nonce 77442, active MEV searcher since block 36849194, no funding or tx link to the BUBU2 deployer 0xecab24f3 or owner 0x6ecef2e7) calls 0xcf17fda0 -> helper 0x936eee46. Receipt: flash loan 18.4 WBNB from 0x6098a563 (logs 0-2, repaid log 31 with no fee); buy 18,715,856.012349658 BUBU2 (log 8, plus 355,601,264.23 pair->DEAD buy burn log 7); 1000-wei self-transfer (log 17) whose _update runs _triggerDailyBurnAndMint: TriggerDailyBurnAndMint log 13 has rounds 0xc7 = 199, liquidityPairBalance 1,298,670,511.63 BUBU2, of which 266,188,494.77 go to lpAddress 0x0dde486e (log 11) + 1,025,988,664.30 to DEAD (log 12), then sync (log 14); token fee swap 935,792.8 BUBU2 -> 10.316 WBNB to router/sellFeeBNBAddress (logs 22-25); attacker sells 17,780,063.21 BUBU2 for 50.576361483602658753 WBNB (logs 27-28) and forwards 32.176361483602658753 WBNB to the EOA (log 32). Verified source (source-9) _triggerDailyBurnAndMint: rounds = (now - lastTriggerTime)/TRIGGER_INTERVAL, burn = pairBalance*(25+25)*rounds/10000 with no cap, super._update(pair, ...) then pair.sync(); gated by burnAndMintSwitch; setTriggerInterval has no bound. eth_call at 83955807: lastTriggerTime 1772302202 (last trigger at 83902688), TRIGGER_INTERVAL 120 -> (1772326153-1772302202)/120 = 199. Config: burnAndMintSwitch() (0xe8769525) false at 83896198, true at 83896199 (source-3, from owner 0x6ecef2e7, also set lastTriggerTime 1772299322); TRIGGER_INTERVAL() 21600 at 83896144, 120 at 83896145 (source-4); a prior identical setTriggerInterval by the deployer at 83896078 reverted (not owner). Etherscan txlist of the token 83610561..83955808 (asc 10000 from creation + desc 10000 from the exploit, overlapping): only these two config writes plus setLpAddress(0x0dde486e) at 83897867 (redirects the award share only, not necessary) and transferOwnership at 83612359; no earlier setBurnAndMintSwitch. First exercise: Etherscan tokentx of the pair 83890000..84100000: triggers at 83897363/83897950/83900255/83900897/83902688 are ordinary third-party transfers that burned BUBU2 without any WBNB leaving the pair; source-1 is the first WBNB extraction. Artifact: eth_getCode empty at 83610560; keccak(runtime) 0x06e6407980fa983832850d8b4cab4477e75e21cbe9becced3226e41fabdc45f1 (48,384 bytes) at 83610561 and 83955807; source-2 creates it at 83610561:38 from 0xecab24f32cbf4ff82a37347bbfab0c05f1e2be4d; no DELEGATECALL/SELFDESTRUCT. codeAgeSeconds = 1772326153 - 1772299322 = 26831."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:22:28Z",
-      "note": "Loss: eth_call WBNB 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c balanceOf(pair 0x774547ea9d2a0cc79db3288f61e989f1b06bcd2f) = 63678088126664092303 at 83955807 and 21185573909446518114 at 83955808 (-42492514217217574189). Pair WBNB Transfer logs in source-1: +18400000000000000000 from helper (log 2), -10316152733614915436 to router for the token's fee swap (log 23, unwrapped and paid to 0x3758df1f per callTracer), -50576361483602658753 to helper (log 28). Attacker net = 50576361483602658753 - 18400000000000000000 = 32176361483602658753 wei, matching log 32 to the EOA. Valued at the DefiLlama WBNB price (source-7) 616.3113947912203 at 1772326144: 19,830.66 USD."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1772326153/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790637720
-    },
-    {
-      "id": "source-8",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-2-mar-8-2026"
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:57:56Z",
-      "note": "Verified BUBU2 source at https://bscscan.com/address/0x3ff3f18b5c113fac5e81b43f80bf438b99edee52#code; reproduce with Etherscan V2 contract.getsourcecode chainid=56: ContractName BUBU2, v0.8.24+commit.e11b9ed9, optimizer 200 runs, SHA-256 of returned SourceCode afa112da710515c4a6115fdb38501f669ce3c1070b61f6e2010d11767c5dc708. Inspect _update, _triggerDailyBurnAndMint, setTriggerInterval and setBurnAndMintSwitch."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5",
-      "source-6"
+  "loss": {
+    "usd": 19830.66,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "32.176361483602658753",
+        "usd": 19830.66
+      }
     ]
   },
-  "discovery": [
-    "web:2026-03-01:bubu2"
+  "refs": [
+    "eip155:56:0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c",
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-2-mar-8-2026"
+  ],
+  "notes": [
+    "Owner setBurnAndMintSwitch(true) enabled the pair-burn engine for the first time, 54 blocks after setTriggerInterval(120) (0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c, TRIGGER_INTERVAL 21600 -> 120). Both values are necessary: with the switch off nothing burns, and at the default 21600 s interval the 26,831 s from this change to the exploit yield one 0.5% round instead of 199. The switch is the later of the two causal writes.",
+    "WBNB extracted from the BUBU2/WBNB pair 0x774547ea9d2a0cc79db3288f61e989f1b06bcd2f net of the attacker's own 18.4 WBNB buy input, equal to the WBNB the attacker EOA received after repaying the fee-free flash loan. The pair's total WBNB depletion in the transaction is 42.492514217217574189; the other 10.316152733614915436 WBNB paid for the token contract's own fee swap of 935,792.8 BUBU2 to its sellFeeBNBAddress 0x3758df1f78fe7a0c7f1f4d97b9e4f7678fd9e617 at the manipulated price and is not counted as stolen. The attacker's 0.1 BNB builder payment is not netted."
   ]
 }

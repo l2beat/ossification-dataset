@@ -1,146 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:43114:0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d",
-  "protocol": {
-    "name": "Defrost Finance",
-    "slug": "defrost-finance"
-  },
+  "protocol": "Defrost Finance",
   "name": "Defrost LSWUSDC reentrancy",
-  "incident": {
-    "chainId": 43114,
-    "exploit": {
-      "transactionHash": "0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d",
-      "blockNumber": 24003941,
-      "transactionIndex": 0,
-      "timestamp": 1671794865
-    },
-    "attackerAddresses": [
-      "0x7373dca267bdc623dfba228696c9d4e8234469f6"
-    ]
-  },
   "summary": "LSWUSDC computed deposit shares from its temporarily reduced assets during an ERC-3156 flash loan and allowed deposit() from the borrower callback. The callback therefore minted excess shares before flashLoan() restored the principal through a second accounting deposit, letting the attacker redeem more USDC than supplied.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 173637.629135,
-      "valuationTimestamp": 1671794865,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
-          "symbol": "USDC"
-        },
-        "amount": "173637.629135",
-        "usdValue": 173637.629135,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1671794865,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt gives the attacker cluster a net 173,637.629135 USDC after all LSWUSDC and Trader Joe flash-loan principal and fees are repaid. Transfers between the attacker EOA and helper are internal to the cluster."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xff152e21c5a511c478ed23d1b89bb9391be6de96",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xff152e21c5a511c478ed23d1b89bb9391be6de96",
-        "codeHash": "0xb1aca4a8d95f1d28a7037b32c6d31e9561c9b99dd9b7dbdd9308e3a0281732ff"
-      },
-      "deployment": {
-        "timestamp": 1663037518,
-        "blockNumber": 19817058,
-        "transactionHash": "0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413",
-        "transactionIndex": 2,
-        "creatorAddress": "0x3cd5854fe3a13707b7882d8290d3cae793a7751a"
-      },
-      "ageReset": {
+      "address": "0xff152e21c5a511c478ed23d1b89bb9391be6de96",
+      "reset": {
         "kind": "deployment",
-        "description": "LSWUSDC is a direct contract whose runtime is identical at deployment and immediately before the exploit. Its runtime contains no SELFDESTRUCT, and the exploit trace executes flashLoan(), deposit(), and redeem() directly without delegating LSWUSDC execution."
-      },
-      "codeAgeSeconds": 8757347,
-      "failureModeId": "failure:defrost-lswusdc-flashloan-deposit-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://metatrust.io/blogs/post/defrost-finance-event-analysis"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-12/Defrost_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-27T18:55:46Z",
-      "note": "Reviewed the exploit receipt and call trace, deployment transaction, runtime at deployment and pre-exploit, disassembly, commit-pinned reproduction, and technical incident analysis. The trace calls flashLoan(), re-enters deposit() from onFlashLoan(), and then redeems the inflated shares on direct contract 0xff152e21c5a511c478ed23d1b89bb9391be6de96. Its 23,572-byte runtime hashes to 0xb1aca4a8d95f1d28a7037b32c6d31e9561c9b99dd9b7dbdd9308e3a0281732ff at deployment block 19817058 and pre-exploit block 24003940, contains no SELFDESTRUCT, and does not delegate its execution in the exploit. Deployment transaction 0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413 occurred at 19817058:2, timestamp 1663037518, giving age 8,757,347 seconds. Receipt-level USDC transfers leave the attacker EOA/helper cluster with exactly 173,637.629135 USDC after repayment; the external analysis independently reports $173,637 of proceeds."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2022-12/Defrost_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 173637.629135,
+    "assets": [
+      {
+        "token": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+        "symbol": "USDC",
+        "amount": "173637.629135",
+        "usd": 173637.629135
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://metatrust.io/blogs/post/defrost-finance-event-analysis",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/Defrost_exp.sol"
+  ],
+  "notes": [
+    "LSWUSDC is a direct contract whose runtime is identical at deployment and immediately before the exploit. Its runtime contains no SELFDESTRUCT, and the exploit trace executes flashLoan(), deposit(), and redeem() directly without delegating LSWUSDC execution.",
+    "The exploit receipt gives the attacker cluster a net 173,637.629135 USDC after all LSWUSDC and Trader Joe flash-loan principal and fees are repaid. Transfers between the attacker EOA and helper are internal to the cluster."
+  ]
 }

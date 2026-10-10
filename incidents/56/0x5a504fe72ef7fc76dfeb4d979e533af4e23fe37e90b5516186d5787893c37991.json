@@ -1,128 +1,29 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x5a504fe72ef7fc76dfeb4d979e533af4e23fe37e90b5516186d5787893c37991",
-  "protocol": {
-    "name": "Uranium Finance",
-    "slug": "uranium-finance"
-  },
+  "protocol": "Uranium Finance",
   "name": "Uranium Finance v2 pair k-check miscalculation",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x5a504fe72ef7fc76dfeb4d979e533af4e23fe37e90b5516186d5787893c37991",
-      "blockNumber": 6947154,
-      "transactionIndex": 101,
-      "timestamp": 1619578972
-    },
-    "attackerAddresses": [
-      "0xc47bdd0a852a88a019385ea3ff57cf8de79f019d"
-    ]
-  },
   "summary": "The v2 UraniumPair.swap() scaled its balance adjustment by 10000 for the new fee but kept Uniswap's 1000**2 factor on the reserve side of the constant-product require, making the post-swap invariant check 100x too weak and letting the attacker take ~99% of each pair's reserves for a token dust input.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 53300000,
-      "valuationTimestamp": 1619578972,
-      "method": "reported",
-      "sourceIds": [
-        "source-3"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "The U.S. Department of Justice reports that the attacker obtained approximately $53.3 million across 26 Uranium liquidity pools by exploiting this error. This is the reported gross campaign total rather than a reconstruction of each asset's incident-time price."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9b9bad4c6513e0ff3fb77c739359d59601c7caff",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x9b9bad4c6513e0ff3fb77c739359d59601c7caff",
-        "codeHash": "0xa7d2393c32120a10af3a0d5cadab96618196ffc29479c7f57f64248f409886ed"
-      },
-      "deployment": {
-        "timestamp": 1618554862,
-        "blockNumber": 6608857,
-        "transactionHash": "0x335a14ad5e3b16eb7b3b4df801ce4d31fcb063a30bbfcb2e7f4a44b46edbb9fa",
-        "transactionIndex": 8,
-        "creatorAddress": "0xa943ea143cd7e79806d670f4a7cf08f8922a454f"
-      },
-      "ageReset": {
+      "address": "0x9b9bad4c6513e0ff3fb77c739359d59601c7caff",
+      "reset": {
         "kind": "deployment",
-        "description": "UraniumFactory created the direct WBNB/BUSD pair with CREATE2. Its 11,454-byte runtime is identical at creation and immediately before the exploit."
-      },
-      "codeAgeSeconds": 1024110,
-      "failureModeId": "failure:uranium-pair-invariant-scale-mismatch",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x335a14ad5e3b16eb7b3b4df801ce4d31fcb063a30bbfcb2e7f4a44b46edbb9fa"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5a504fe72ef7fc76dfeb4d979e533af4e23fe37e90b5516186d5787893c37991"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://immunefi.com/blog/bug-fix-reviews/hack-analysis-uranium-finance-april-2021/"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://www.justice.gov/usao-sdny/pr/maryland-man-charged-defrauding-crypto-exchange-over-50-million-hacks"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x335a14ad5e3b16eb7b3b4df801ce4d31fcb063a30bbfcb2e7f4a44b46edbb9fa"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2021-04/Uranium_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:26:56Z",
-      "note": "Reviewed the exploit receipt and call trace, factory state and complete PairCreated-log history, pair creation trace, runtime at creation and immediately before the exploit, the commit-pinned reproduction, Immunefi's technical analysis, and the DOJ's reported campaign loss. The successful anchor is transaction index 101 of block 6947154. It calls swap() three times on the WBNB/BUSD pair 0x9b9bad4c6513e0ff3fb77c739359d59601c7caff, and the factory still returns that pair immediately before the exploit. PairCreated log 30 of transaction 0x335a14ad5e3b16eb7b3b4df801ce4d31fcb063a30bbfcb2e7f4a44b46edbb9fa records WBNB, BUSD, and this pair; the trace shows CREATE2 from factory 0xa943ea143cd7e79806d670f4a7cf08f8922a454f. A complete factory log scan found this target once. Its direct 11,454-byte runtime has hash 0xa7d2393c32120a10af3a0d5cadab96618196ffc29479c7f57f64248f409886ed at creation and at block 6947153. The DOJ reports approximately $53.3 million obtained across 26 pools through the same invariant-scale error."
-    }
+  "loss": {
+    "usd": 53300000,
+    "assets": []
+  },
+  "refs": [
+    "https://immunefi.com/blog/bug-fix-reviews/hack-analysis-uranium-finance-april-2021/",
+    "https://www.justice.gov/usao-sdny/pr/maryland-man-charged-defrauding-crypto-exchange-over-50-million-hacks",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-04/Uranium_exp.sol"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $53.3 million loss is the DOJ's approximate aggregate for the campaign across 26 pools; per-asset quantities and prices are not reconstructed here."
-    ],
-    "reviewSourceIds": [
-      "source-6"
-    ]
-  }
+  "notes": [
+    "UraniumFactory created the direct WBNB/BUSD pair with CREATE2. Its 11,454-byte runtime is identical at creation and immediately before the exploit.",
+    "The U.S. Department of Justice reports that the attacker obtained approximately $53.3 million across 26 Uranium liquidity pools by exploiting this error. This is the reported gross campaign total rather than a reconstruction of each asset's incident-time price.",
+    "The $53.3 million loss is the DOJ's approximate aggregate for the campaign across 26 pools; per-asset quantities and prices are not reconstructed here."
+  ]
 }

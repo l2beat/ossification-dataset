@@ -1,237 +1,51 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7",
-  "protocol": {
-    "name": "Beanstalk",
-    "slug": "beanstalk"
-  },
+  "protocol": "Beanstalk",
   "name": "Beanstalk GovernanceFacet emergencyCommit on unsnapshotted voting power",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7",
-      "blockNumber": 14602790,
-      "transactionIndex": 13,
-      "timestamp": 1650198256
-    },
-    "attackerAddresses": [
-      "0x1c5dcdd006ea78a7e4783f9e6021c32935a10fb4",
-      "0x79224bc0bf70ec34f0ef56ed8251619499a59def",
-      "0xe5ecf73603d98a0128f05ed30506ac7a663dbb69"
-    ]
-  },
   "summary": "GovernanceFacet.emergencyCommit(uint32) executes a BIP's arbitrary LibDiamond.diamondCut once bipVotePercent(bip) = rootsFor(bip) / totalRoots() reaches the two-thirds supermajority. Both terms are read at call time, Silo deposits mint Roots synchronously through recordVote's balanceOfRoots(msg.sender), and the only temporal guard is C.getGovernanceEmergencyPeriod() (86,400 s) measured from BIP submission rather than from the acquisition of voting weight. The facet neither snapshots weight at proposal time nor imposes any holding period between minting Roots and voting them, so the supermajority authorization is satisfiable by state that exists only inside the authorizing transaction. In transaction 0xcd314668 the attacker took roughly USD 1 billion of Aave and Uniswap V3 flash loans, deposited 795,425,740.813818200295323741 BEAN3CRV-f (BDV 789,265,388.807140) and 58,924,887.872471876761750555 BEANLUSD-f (BDV 57,932,975.182545) into the Silo, minted 386,865,631,100,312,806,110,485,288,529 Roots, voted them onto BIP-18 (log 64) and emergency-committed at 387,487,298,354,313,289,142,728,288,490 / 485,851,957,499,334,104,135,968,761,599 = 79.75 percent, delegatecalling the attacker's init contract 0xe5ecf73603d98a0128f05ed30506ac7a663dbb69 to transfer every Silo-held token out of the diamond. The thresholds are private compile-time constants inside the facet runtime, not owner-settable parameters, and no value of the emergency period, the supermajority ratio or the proposal threshold makes the deployed code correct, because none of them constrain when the voting weight was acquired.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 75923910.25026375,
-      "valuationTimestamp": 1650198256,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "24830.116910462326232315",
-        "usdValue": 75673910.25026375,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1650198256,
-          "unitPriceUsd": 3047.666288610106,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "250000",
-        "usdValue": 250000,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1650198256,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xdc59ac4fefa32293a95889dc396682858d52e5db",
-          "symbol": "BEAN"
-        },
-        "amount": "36398226.924163",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Measured from the exploit receipt. Netting every ERC-20 Transfer log, the Beanstalk diamond 0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5 lost 79,238,241.423601190873232684 BEAN3CRV-f, 1,637,956.191657208904972868 BEANLUSD-f, 36,084,584.376516 BEAN and 0.540716100968756904 BEAN:ETH Uniswap V2 LP after the attacker's own same-transaction Silo deposits (795,425,740.813818200295323741 BEAN3CRV-f and 58,924,887.872471876761750555 BEANLUSD-f, both flash-loan funded and therefore attacker-supplied inputs) are removed. Redeeming those positions took 10,883.105341079068109889 WETH and 32,414,493.174334 BEAN out of the BEAN:ETH pair, 43,043,401.256710036550983795 3CRV net out of the BEAN:3CRV metapool and 1,255,121.165448307654022661 LUSD net out of the BEAN:LUSD pool. The structured components are instead the attack contract 0x79224bc0bf70ec34f0ef56ed8251619499a59def's exact end-of-transaction net position (24,830.116910462326232315 WETH and 36,398,226.924163 BEAN) plus the 250,000 USDC it sent to the Ukraine donation address 0x165cd37b4c644c2921454429e7f9358d18a45e14 inside the same transaction; this avoids marking BEAN or BEAN-paired LP at the pre-attack quote. The measurement is therefore net: the 315,000 DAI, 450,000 USDC and 135,000 USDT Aave premiums and the Curve/Uniswap slippage were paid out of the extracted assets and are not added back; adding the 900,000 USD of premiums reconciles to Beanstalk's own figure of about 77 million USD of non-Beanstalk user assets stolen. BEAN carries a 1.0142914155592448 USD DefiLlama quote at the incident timestamp, but that quote is the pre-collapse peg: BEAN fell roughly 75-90 percent within hours, the attacker never sold the 36.4 million BEAN, and the quantity could not have been sold at spot, so it is recorded without a USD value. The widely reported 182 million USD figure is Beanstalk's total value locked with BEAN and BEAN-denominated LP marked at peg, not the value of assets that left the system."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5",
-      "relationship": "diamond",
-      "codeArtifact": {
-        "address": "0xf480ee81a54e21be47aa02d0f9e29985bc7667c4",
-        "codeHash": "0x47813097cb0435c0db83147fb47cccb5c38ac2cb51630dd66feef0227f9e49e9"
-      },
-      "deployment": {
-        "timestamp": 1628288832,
-        "blockNumber": 12974075,
-        "transactionHash": "0x40b23cea3aa6e1a7dd89bbcd24c67f6fa1f6d663d7609f14046cd6cf50b6ce86",
-        "transactionIndex": 151,
-        "creatorAddress": "0x925753106fcdb6d2f30c3db295328a0a1c5fd1d1"
-      },
-      "ageReset": {
-        "kind": "module-change",
-        "timestamp": 1648784765,
-        "blockNumber": 14498034,
-        "transactionHash": "0x1aa7e6521d30e8aba53e6d0bb249e81f31ef87bd2d71a21c93e263ca45401463",
-        "transactionIndex": 105,
-        "logIndex": 149,
-        "mechanism": {
-          "type": "event",
-          "address": "0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5",
-          "eventTopic": "0x8faa70878671ccd212d20771b795c50af8fd3ff6cf27f4bde57e5d4de0aeb673",
-          "codeAddressLocation": "data-word-98-address"
-        },
-        "description": "DiamondCut replaced the 18 governance selectors, including vote(uint32) 0x9094c763 and emergencyCommit(uint32) 0x73015684, with GovernanceFacet 0xf480ee81a54e21be47aa02d0f9e29985bc7667c4, whose 17,045-byte runtime differs from the 17,279-byte predecessor facet 0xdbc8cbd2af1e22f4e9e3ad0ea7f51433f7f31328."
-      },
-      "codeAgeSeconds": 1413491,
-      "failureModeId": "failure:beanstalk-governance-flash-acquired-supermajority",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-9"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5",
+      "code": "0xf480ee81a54e21be47aa02d0f9e29985bc7667c4",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1aa7e6521d30e8aba53e6d0bb249e81f31ef87bd2d71a21c93e263ca45401463"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Reviewed the exploit receipt and full callTracer trace, the verified GovernanceFacet source, the complete DiamondCut log history of the diamond, historical runtimes, and the exact token flows. Anchor: 0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7 is a contract-creation transaction whose constructor performs the whole attack; status 1 at 14602790:13, timestamp 1650198256. It is the earliest successful transaction that executes the defect. The attacker's earlier campaign transactions (depositBeans at 14595357:91, BIP-18 propose 0x68cdec0ac76454c3b0f7af0b8a3895db00adf6daaf3b50a99716858c4fa54c6f at 14595906:94 with timestamp 1650106485, BIP-19 propose 0x9575e478d7c542558ecca52b27072fa1f1ec70679106bdbd62f3bb4d6c87a80d, and the CREATE2 deployment of the init contract at 14602790:12) exercise only correctly-behaving code; emergencyCommit's 86,400-second guard was cleared by 91,771 seconds. Root cause: in the trace the attacker contract 0x79224bc0bf70ec34f0ef56ed8251619499a59def calls the diamond with 0x47e7ef24 twice (Silo deposits of 795,425,740.813818200295323741 BEAN3CRV-f and 58,924,887.872471876761750555 BEANLUSD-f, Deposit logs 61 and 63, BDV 789,265,388.807140 and 57,932,975.182545), then 0x9094c763 vote(18) (Vote log 64, 386,865,631,100,312,806,110,485,288,529 Roots), then 0x73015684 emergencyCommit(18), each of which the diamond DELEGATECALLs to 0xf480ee81a54e21be47aa02d0f9e29985bc7667c4. Reading the chain directly, totalRoots() went from 98,986,326,399,021,298,025,483,473,070 at block 14602789 to 485,851,957,499,334,104,135,968,761,599 at block 14602790 and rootsFor(18) from 621,667,254,000,483,032,242,999,961 to 387,487,298,354,313,289,142,728,288,490, i.e. from 0.63 to 79.75 percent, entirely from deposits made inside the committing transaction. GovernanceFacet.commit() by contrast requires the seven-day voting period to have ended and divides by the snapshotted endTotalRoots, so the same contract contains a delayed measure on its normal path and an instantaneous one on the emergency path. C.sol holds GOVERNANCE_EMERGENCY_PERIOD, the 2/3 emergency threshold and the 0.1 percent proposal threshold as private compile-time constants with no setter, and no value of any of them constrains when voting weight is acquired, so the boundary test resolves to a code defect rather than a parameter defect. Target: executionAddress is the Beanstalk diamond 0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5, created by 0x925753106fcdb6d2f30c3db295328a0a1c5fd1d1 in 0x40b23cea3aa6e1a7dd89bbcd24c67f6fa1f6d663d7609f14046cd6cf50b6ce86 at 12974075:151. The facet artifact was created by the same deployer in 0x6118d177b2995e3dcb64e2d23264b36fc067c7909e032c952bc27cc0a76709dc at 14498025:180; its 34,092-byte runtime hashes to 0x47813097cb0435c0db83147fb47cccb5c38ac2cb51630dd66feef0227f9e49e9 at blocks 14498025, 14498034 and 14602789 and is the empty-code hash at 14498024. A complete DiamondCut query over 12974075-14602790 returned 32 events; exactly five ever touch selectors 0x73015684 or 0x9094c763 (facets 0x2e4c49f6, 0x23a3c56c, 0x88540cb1, 0xdbc8cbd2, 0xf480ee81), the last being log 149 of 0x1aa7e6521d30e8aba53e6d0bb249e81f31ef87bd2d71a21c93e263ca45401463 at 14498034:105, timestamp 1648784765, whose data word 98 is 0xf480ee81a54e21be47aa02d0f9e29985bc7667c4 and whose FacetCut is a Replace of all 18 governance selectors. The five later cuts before the exploit (blocks 14498058, 14498067, 14541362, 14541420, 14547427) contain neither selector. codeAgeSeconds = 1650198256 - 1648784765 = 1,413,491. Loss: netting all Transfer logs, the diamond's balances fell by 79,238,241.423601190873232684 BEAN3CRV-f, 1,637,956.191657208904972868 BEANLUSD-f, 36,084,584.376516 BEAN and 0.540716100968756904 BEAN:ETH LP net of the attacker's own deposits, and the attack contract ended the transaction holding exactly 24,830.116910462326232315 WETH and 36,398,226.924163 BEAN having also sent 250,000 USDC to 0x165cd37b4c644c2921454429e7f9358d18a45e14. Aave premiums of 315,000 DAI, 450,000 USDC and 135,000 USDT are visible in the same logs."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1aa7e6521d30e8aba53e6d0bb249e81f31ef87bd2d71a21c93e263ca45401463"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x40b23cea3aa6e1a7dd89bbcd24c67f6fa1f6d663d7609f14046cd6cf50b6ce86"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x6118d177b2995e3dcb64e2d23264b36fc067c7909e032c952bc27cc0a76709dc"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x68cdec0ac76454c3b0f7af0b8a3895db00adf6daaf3b50a99716858c4fa54c6f"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://bean.money/blog/beanstalk-governance-exploit"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1650198256/coingecko:ethereum",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-9",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-04/Beanstalk_exp.sol"
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x677660ce489935b94bf5ac32c494669a71ee76913ffabe623e82a7de8226b460"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2022-04/Beanstalk_exp.sol",
-    "seed:beanstalk:2022-04-16:beanstalk-flash-loaned-governance-bip-18-bip-19"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The 36,398,226.924163 BEAN the attacker retained is recorded as a quantity without a USD value, because the only contemporaneous quote is the pre-collapse peg and the position could not have been sold at it."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 75923910.25026375,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "24830.116910462326232315",
+        "usd": 75673910.25026375
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "250000",
+        "usd": 250000
+      },
+      {
+        "token": "0xdc59ac4fefa32293a95889dc396682858d52e5db",
+        "symbol": "BEAN",
+        "amount": "36398226.924163"
+      }
     ]
   },
+  "refs": [
+    "eip155:1:0x6118d177b2995e3dcb64e2d23264b36fc067c7909e032c952bc27cc0a76709dc",
+    "eip155:1:0x68cdec0ac76454c3b0f7af0b8a3895db00adf6daaf3b50a99716858c4fa54c6f",
+    "https://bean.money/blog/beanstalk-governance-exploit",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-04/Beanstalk_exp.sol",
+    "eip155:1:0x677660ce489935b94bf5ac32c494669a71ee76913ffabe623e82a7de8226b460"
+  ],
   "notes": [
+    "DiamondCut replaced the 18 governance selectors, including vote(uint32) 0x9094c763 and emergencyCommit(uint32) 0x73015684, with GovernanceFacet 0xf480ee81a54e21be47aa02d0f9e29985bc7667c4, whose 17,045-byte runtime differs from the 17,279-byte predecessor facet 0xdbc8cbd2af1e22f4e9e3ad0ea7f51433f7f31328.",
+    "Measured from the exploit receipt. Netting every ERC-20 Transfer log, the Beanstalk diamond 0xc1e088fc1323b20bcbee9bd1b9fc9546db5624c5 lost 79,238,241.423601190873232684 BEAN3CRV-f, 1,637,956.191657208904972868 BEANLUSD-f, 36,084,584.376516 BEAN and 0.540716100968756904 BEAN:ETH Uniswap V2 LP after the attacker's own same-transaction Silo deposits (795,425,740.813818200295323741 BEAN3CRV-f and 58,924,887.872471876761750555 BEANLUSD-f, both flash-loan funded and therefore attacker-supplied inputs) are removed. Redeeming those positions took 10,883.105341079068109889 WETH and 32,414,493.174334 BEAN out of the BEAN:ETH pair, 43,043,401.256710036550983795 3CRV net out of the BEAN:3CRV metapool and 1,255,121.165448307654022661 LUSD net out of the BEAN:LUSD pool. The structured components are instead the attack contract 0x79224bc0bf70ec34f0ef56ed8251619499a59def's exact end-of-transaction net position (24,830.116910462326232315 WETH and 36,398,226.924163 BEAN) plus the 250,000 USDC it sent to the Ukraine donation address 0x165cd37b4c644c2921454429e7f9358d18a45e14 inside the same transaction; this avoids marking BEAN or BEAN-paired LP at the pre-attack quote. The measurement is therefore net: the 315,000 DAI, 450,000 USDC and 135,000 USDT Aave premiums and the Curve/Uniswap slippage were paid out of the extracted assets and are not added back; adding the 900,000 USD of premiums reconciles to Beanstalk's own figure of about 77 million USD of non-Beanstalk user assets stolen. BEAN carries a 1.0142914155592448 USD DefiLlama quote at the incident timestamp, but that quote is the pre-collapse peg: BEAN fell roughly 75-90 percent within hours, the attacker never sold the 36.4 million BEAN, and the quantity could not have been sold at spot, so it is recorded without a USD value. The widely reported 182 million USD figure is Beanstalk's total value locked with BEAN and BEAN-denominated LP marked at peg, not the value of assets that left the system.",
+    "The 36,398,226.924163 BEAN the attacker retained is recorded as a quantity without a USD value, because the only contemporaneous quote is the pre-collapse peg and the position could not have been sold at it.",
     "The same emergencyCommit logic path existed in the predecessor governance facets back to the diamond's August 2021 genesis cut, but the executable code the diamond ran on 2022-04-17 was installed on 2022-04-01 and its runtime differs from the predecessor's, so the measured age is that of the deployed artifact, not of the design.",
     "BIP-18 was submitted 91,771 seconds before the commit, clearing C.getGovernanceEmergencyPeriod()'s 86,400-second guard; the attacker's malicious diamondCut init contract 0xe5ecf73603d98a0128f05ed30506ac7a663dbb69 was CREATE2-deployed one transaction earlier in the exploit block, so the proposal remained inspectable as a codeless init address for the whole emergency period."
   ]

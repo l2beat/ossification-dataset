@@ -1,209 +1,49 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x59ed06fd0d44aec351bed54f57eccec65874da5a25a0aa71e348611710ec05f3",
-  "protocol": {
-    "name": "SELLC",
-    "slug": "sellc"
-  },
+  "protocol": "SELLC",
   "name": "SELLC StakingRewards permissionless token listing and spot-priced sell",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x59ed06fd0d44aec351bed54f57eccec65874da5a25a0aa71e348611710ec05f3",
-      "blockNumber": 28092674,
-      "transactionIndex": 2,
-      "timestamp": 1683735404
-    },
-    "attackerAddresses": [
-      "0xc67af66b8a72d33dedd8179e1360631cf5169160",
-      "0xf635fea87f0a8a444ede1dbb698d875dbb417829"
-    ]
-  },
   "summary": "StakingRewards.addLiquidity has no access control and sets listToken[_token]=true for any caller-supplied token. sell(token, token1, amount) then pays any token1 the contract holds, priced from the caller-controlled token/token1 pair. The attacker listed its own token, created a custom pair against SellQILP (the SELLC/QIQI LP that StakingRewards held) and sold worthless tokens for the contract's LP. It burned the LP and dumped the SELLC for WBNB. Copycats repeated the drain within hours.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 94855.10004870794,
-      "valuationTimestamp": 1683735419,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x4cd4bf5079fc09d6989b4b5b42b113377ad8d565",
-          "symbol": "SellQILP"
-        },
-        "amount": "20712693.906761133974337559",
-        "usdValue": 94855.10004870794,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1683735419,
-          "unitPriceUsd": 0.004579563647090102,
-          "sourceIds": [
-            "source-6",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x4cd4bf5079fc09d6989b4b5b42b113377ad8d565",
-          "symbol": "SellQILP"
-        },
-        "amount": "5083400.394404696467632133",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8121d345b16469f38bd3b82ee2a547f6be54f9c9",
-          "symbol": "QIQI"
-        },
-        "amount": "28559585.683583778068547246",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xa645995e9801f2ca6e2361edf4c2a138362bade4",
-          "symbol": "SELLC"
-        },
-        "amount": "27963.832524033082298088",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Components are StakingRewards' exact net depletion in each exploit transaction: Transfer inflows minus outflows of real tokens, so attacker-supplied listing liquidity is netted. Only the first campaign is valued. Its 20712693.906761132 SellQILP (99.96% of the SELLC/QIQI pair supply was held by the victim) is valued at the attacker's realised disposal. Burning the LP yielded 6939399.227733031 SELLC and 58060083.58033396 QIQI; the SELLC plus 33689.818 SELLC the attacker bought with 3 WBNB of its own were sold into Pancake SELLC/WBNB pair 0x358efc593134f99833c66894ccecd41f550051b6 for 303.3264312585738 WBNB. Net of the 3 WBNB input that is 300.3264312585738 WBNB at the DefiLlama WBNB price. QIQI had no liquid market beyond the drained pair and is left unvalued. The pre-exploit spot value of the drained LP (about 1561 BNB of underlying at pair reserves) was not realisable against the 596.48-WBNB SELLC pool, so no spot valuation is used. Later copycat depletion (the second SellQILP, QIQI and SELLC components) is recorded without USD value; its realised proceeds were not isolated, so the USD total is a lower bound.",
-    "realizedAt": 1683752343
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x274b3e185c9c8f4ddef79cb9a8dc0d94f73a7675",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1683565498,
-        "blockNumber": 28036129,
-        "transactionHash": "0xc4e7c154d349c4c0e10ee360abb746a523188c39d3e5b586994c1e14c83d0bd1",
-        "transactionIndex": 93,
-        "creatorAddress": "0x2f98fa813ced7aa9fd6788ab624b2f3f292b9239"
-      },
-      "ageReset": {
+      "address": "0x274b3e185c9c8f4ddef79cb9a8dc0d94f73a7675",
+      "reset": {
         "kind": "deployment",
-        "description": "The immutable StakingRewards runtime contains both the permissionless addLiquidity listing and the pair-quoted sell payout. Owner setup calls (updateUser, setEx) and the SellQILP balance built up from stakes do not introduce the defect, so deployment supplies the age."
-      },
-      "codeAgeSeconds": 169906,
-      "failureModeId": "failure:sellc-stakingrewards-permissionless-listing-pair-priced-sell",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x274b3e185c9c8f4ddef79cb9a8dc0d94f73a7675",
-        "codeHash": "0xbc8f0f9f25f2fb863566740ee1df653652c39b55d3b077a148c802a4ca532537"
+        "tx": "0xc4e7c154d349c4c0e10ee360abb746a523188c39d3e5b586994c1e14c83d0bd1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x59ed06fd0d44aec351bed54f57eccec65874da5a25a0aa71e348611710ec05f3"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-05/SELLC_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Target identity, age and earliest exercise. eth_getTransactionReceipt(source-4).contractAddress = StakingRewards 0x274b3e185c9c8f4ddef79cb9a8dc0d94f73a7675 (block 28036129, index 93, creator 0x2f98fa813ced7aa9fd6788ab624b2f3f292b9239); eth_getCode empty at 28036128; keccak256(runtime) = 0xbc8f0f9f25f2fb863566740ee1df653652c39b55d3b077a148c802a4ca532537 at 28036129 and 28092673; no proxy, so deployment supplies the age. trace_filter(toAddress StakingRewards) in 100-block windows over blocks 28036129-28262064 returns 6802 call frames (window 28080329-28080428 re-queried: one QIQI stake call). Before source-1 every successful addLiquidity (0xe4a76726) comes from the owner and every successful sell (0xcae270b6) uses token = QIQI 0x8121d345b16469f38bd3b82ee2a547f6be54f9c9; the first non-owner addLiquidity is source-1 (block 28092674, index 2, from attack contract 0xf635fea87f0a8a444ede1dbb698d875dbb417829 listing itself), and the first sell with another token is 0x904e48ccc1a1eada85f2e3a6444debc428c55f8652ebbebe26e77d02be2902bf (28092678, index 3) by the same contract.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:10:28Z"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc4e7c154d349c4c0e10ee360abb746a523188c39d3e5b586994c1e14c83d0bd1"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified StakingRewards source at https://bscscan.com/address/0x274b3e185c9c8f4ddef79cb9a8dc0d94f73a7675#code; reproduce with Etherscan V2 contract.getsourcecode, chainid=56. Compiler v0.8.4+commit.c7e474f2, optimizer on, 200 runs. The SHA-256 of the returned SourceCode string is de65fc3448ad948d2f94daf3d654e7a992f8fd2452ab26e031def4a358b0853e. addLiquidity(address,address,uint256) (selector 0xe4a76726) has no modifier and ends with listToken[_token]=true. sell(address,address,uint256) (selector 0xcae270b6) requires only listToken[token], computes _sellc = getTokenPriceSellc(token, token1, amount*50/100) from the router pair and transfers that much token1 from the contract to msg.sender, removing 0.7% of its token/token1 LP if its balance is short."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed loss. Scope: eth_getLogs over all token addresses for Transfer with topic1 or topic2 = StakingRewards 0x274b3e185c9c8f4ddef79cb9a8dc0d94f73a7675, blocks 28092674..28300000 (first 28036129..28300000 for outflows: 19332 logs). callTracer on every outflow tx after the anchor (381 txs, 0 trace errors) finds 44 exploit txs, blocks 28092678..28098315. An exploit tx calls sell (0xcae270b6) with token != QIQI 0x8121d345b16469f38bd3b82ee2a547f6be54f9c9, or a non-owner addLiquidity (0xe4a76726). For each, victim net = inflows - outflows of SellQILP 0x4cd4bf5079fc09d6989b4b5b42b113377ad8d565, QIQI, SELLC 0xa645995e9801f2ca6e2361edf4c2a138362bade4, BSC-USD and WBNB. First campaign (EOA 0xc67af66b8a72d33dedd8179e1360631cf5169160 via 0xf635fea87f0a8a444ede1dbb698d875dbb417829): 0x904e48ccc1a1eada85f2e3a6444debc428c55f8652ebbebe26e77d02be2902bf (10 sells) plus source-8 (30 sells) = -20712693.906761133974337559 SellQILP. In source-8, log 60/61 burns 20039077.964870416 SellQILP for 58060083.58033396 QIQI (log 62) and 6939399.227733031 SELLC (log 63). Log 68 sells 6973089.045844951 SELLC to pair 0x358efc593134f99833c66894ccecd41f550051b6 for 303.3264312585738 WBNB (log 69), forwarded to the EOA (log 72). The attacker's only input was 3 WBNB (source-1 log 8, bought 34070.90974282571 SELLC, 381.09163090577766 of it added to the SELLC/QIQI LP), so realised proceeds are 300.3264312585738 WBNB x 315.84 = 94855.100048707949 USD. Copycats against the same runtime: 0xddc9540fc024e6f582dbcf1e40543eb7548243a0 (first 0x4b6c04ba044a45e2b17cea1e95da93dcce907d7d1dfc035c77b2bc59855806c5, block 28094599; 2314341.817 SellQILP); 0x1581262fd72776ba5da2337c4c4e1b92c6e36ae6 (0x89c45a50b236a6e9de7c2ff0bfc3e9a65e501038a98851942acb3d1fedfb342e and 0xa17a4080d46371dabea382e68838dc256e45e34683e8af8b05d8db2afeee5b1a; 2559584.673 SellQILP); 0x00000000002088951336d7972746a135f2956417 (0x2b6b6bebc27526c68cb33f39a5d2205de1fca5ef343583d747251fca5baf8464: 209473.904 SellQILP; 0x5caecbad1638362931549cfb8855d37b6f561fe3f285f5f6e7782412bbbd2b63, block 28098315: 28559585.683583778068547246 QIQI); 0x0ce1e9995d86bda9e9121d0a047925c85fdeae06 (0xc18a7b56f76dbba2b957481c3ed743d8b8c9819364d4e7bafc7d787d8c711969, 27956.685 SELLC) and 0x74449f53d1fa63dd6bbcbabdcbdcdd09eb3f529a (7.147 SELLC). Totals: SellQILP 5083400.394404696467632133, QIQI 28559585.683583778068547246, SELLC 27963.832524033082298088. These disposals were not isolated and are left unvalued. Victim balances (balanceOf): 25790674.069 SellQILP / 24135033.035 QIQI / 35150.519 SELLC at block 28092673 and 1640.345 / 1490596.795 / 3.471 at block 28098316; unchanged from block 28300000 to latest. SellQILP pair reserves at block 28092673: 74750992.823 QIQI / 8934313.385 SELLC, totalSupply 25799841.832. SELLC/WBNB pair reserves: 6825263.949 SELLC / 596.481 WBNB.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:10:28Z"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1683735419/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790622080
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x247e61bd0f41f9ec56a99558e9bbb8210d6375c2ed6efa4663ee6a960349b46d"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 94855.10004870794,
+    "assets": [
+      {
+        "token": "0x4cd4bf5079fc09d6989b4b5b42b113377ad8d565",
+        "symbol": "SellQILP",
+        "amount": "20712693.906761133974337559",
+        "usd": 94855.10004870794
+      },
+      {
+        "token": "0x4cd4bf5079fc09d6989b4b5b42b113377ad8d565",
+        "symbol": "SellQILP",
+        "amount": "5083400.394404696467632133"
+      },
+      {
+        "token": "0x8121d345b16469f38bd3b82ee2a547f6be54f9c9",
+        "symbol": "QIQI",
+        "amount": "28559585.683583778068547246"
+      },
+      {
+        "token": "0xa645995e9801f2ca6e2361edf4c2a138362bade4",
+        "symbol": "SELLC",
+        "amount": "27963.832524033082298088"
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-05/SELLC_exp.sol",
-    "seed:sellc:2023-05-10:sellc"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-05/SELLC_exp.sol",
+    "eip155:56:0x247e61bd0f41f9ec56a99558e9bbb8210d6375c2ed6efa4663ee6a960349b46d"
+  ],
+  "notes": [
+    "The immutable StakingRewards runtime contains both the permissionless addLiquidity listing and the pair-quoted sell payout. Owner setup calls (updateUser, setEx) and the SellQILP balance built up from stakes do not introduce the defect, so deployment supplies the age.",
+    "Components are StakingRewards' exact net depletion in each exploit transaction: Transfer inflows minus outflows of real tokens, so attacker-supplied listing liquidity is netted. Only the first campaign is valued. Its 20712693.906761132 SellQILP (99.96% of the SELLC/QIQI pair supply was held by the victim) is valued at the attacker's realised disposal. Burning the LP yielded 6939399.227733031 SELLC and 58060083.58033396 QIQI; the SELLC plus 33689.818 SELLC the attacker bought with 3 WBNB of its own were sold into Pancake SELLC/WBNB pair 0x358efc593134f99833c66894ccecd41f550051b6 for 303.3264312585738 WBNB. Net of the 3 WBNB input that is 300.3264312585738 WBNB at the DefiLlama WBNB price. QIQI had no liquid market beyond the drained pair and is left unvalued. The pre-exploit spot value of the drained LP (about 1561 BNB of underlying at pair reserves) was not realisable against the 596.48-WBNB SELLC pool, so no spot valuation is used. Later copycat depletion (the second SellQILP, QIQI and SELLC components) is recorded without USD value; its realised proceeds were not isolated, so the USD total is a lower bound."
   ]
 }

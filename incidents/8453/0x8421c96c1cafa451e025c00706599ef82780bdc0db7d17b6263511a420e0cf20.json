@@ -1,158 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x8421c96c1cafa451e025c00706599ef82780bdc0db7d17b6263511a420e0cf20",
-  "protocol": {
-    "name": "RICE",
-    "slug": "rice"
-  },
+  "protocol": "RICE",
   "name": "RICE BentoBox-fork vault unauthenticated setMasterContractApproval",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x8421c96c1cafa451e025c00706599ef82780bdc0db7d17b6263511a420e0cf20",
-      "blockNumber": 30655996,
-      "transactionIndex": 1,
-      "timestamp": 1748101339
-    },
-    "attackerAddresses": [
-      "0x2a49c6fd18bd111d51c4fffa6559be1d950b8eff",
-      "0x7ee23c81995fe7992721ac14b3af522718b63f8f"
-    ]
-  },
   "summary": "The unverified BentoBoxV1-fork vault 0xcfe0de4a's setMasterContractApproval(user, masterContract, approved, v, r, s) performs no authorization: it ignores v, r, s and msg.sender, requires only masterContract != 0, and writes masterContractApproved[masterContract][user]. The attacker contract called registerProtocol() to become its own master contract, approved itself for depositor 0x49876a20 with a zero signature, and withdrew that depositor's entire 22,189,176.5 RICE vault balance through the allowed(from) check.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 88150.24295258734,
-      "valuationTimestamp": 1748101339,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0xf501e4c51dbd89b95de24b9d53778ff97934cd9c",
-          "symbol": "RICE"
-        },
-        "amount": "22189176.505973791717313474",
-        "usdValue": 88150.24295258734,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1748101339,
-          "unitPriceUsd": 0.0039726685183136675,
-          "sourceIds": [
-            "source-4",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion: the vault's LogWithdraw debits depositor 0x49876a20bb86714e98a7e4d0a33d85a4011b3455 of 22189176505973791717313474 RICE base units (18 decimals), its full RICE share, in the single exploit transaction. The attacker sold the whole amount in the same transaction into Uniswap V3 RICE/USDT pool 0xa0213b570dff35a8c826334472e23b9a8a94ef3b for 88232.917196 USDT (log 7), then routed it through USDC to 34.52291421920366 WETH paid to the attacker EOA (log 17). That sale emptied the pool's USDT side, so RICE is valued at realised proceeds: the USDT received times the DefiLlama USDT quote 0.999063 (source-6). A spot mark at DefiLlama's RICE quote (0.077597 USD at 1748103192) would give about 1.72M USD, which the pool's liquidity could not realise. No attacker input is subtracted; no other vault asset was taken."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xcfe0de4a50c80b434092f87e106dfa40b71a5563",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xcfe0de4a50c80b434092f87e106dfa40b71a5563",
-        "codeHash": "0xceb9a0a5fa2635fd9d8079d60f7db977402e3d411d6eeb05cbe059776598de5c"
-      },
-      "deployment": {
-        "timestamp": 1741844031,
-        "blockNumber": 27527342,
-        "transactionHash": "0x7f753beb37a5b113637481d56cc5595a14f3351c2efd1b8f498fd7b69127069d",
-        "transactionIndex": 61,
-        "creatorAddress": "0x6f6f8b3b1f9ee48e315a1b7cfdb03e5550e94106"
-      },
-      "ageReset": {
+      "address": "0xcfe0de4a50c80b434092f87e106dfa40b71a5563",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable vault runtime contains the unauthenticated setMasterContractApproval; no owner configuration event was ever emitted, and no stored value gates the approval write."
-      },
-      "codeAgeSeconds": 6257308,
-      "failureModeId": "failure:rice-bentobox-fork-unauthenticated-set-master-contract-approval",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x7f753beb37a5b113637481d56cc5595a14f3351c2efd1b8f498fd7b69127069d"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x8421c96c1cafa451e025c00706599ef82780bdc0db7d17b6263511a420e0cf20"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-05/RICE_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Vault source is unverified (Etherscan V2 getsourcecode chainid=8453 returns 'Contract source code not verified'); selectors from cast selectors on the runtime are the BentoBoxV1 set (deposit 0x02b9446c, withdraw 0x97da6d30, transfer 0xf18d03cc, batch 0xd2423b51, registerProtocol 0xaee4d1b2, setMasterContractApproval 0xc0a47c93, ...). Root cause from bytecode and debug_traceTransaction(source-1) structLogs: the external call to setMasterContractApproval (calldata user 0x49876a20bb86714e98a7e4d0a33d85a4011b3455, masterContract 0x7ee23c81995fe7992721ac14b3af522718b63f8f, approved true, v=r=s=0) validates ABI arguments and jumps to the body at pc 0x246f; cast disassemble of 0x246f..0x255a shows one JUMPI (masterContract & 0xff..ff nonzero, else revert), then keccak(user . keccak(masterContract . 3)) SLOAD/SSTORE of the approved bool and LOG3 LogSetMasterContractApproval (0x5f6ebb64...). No CALLER, no ecrecover/STATICCALL, no whitelistedMasterContracts or masterContractOf[user] read exists on the path, so any caller may approve any master contract for any user. Upstream BentoBoxV1 requires user == msg.sender plus whitelisting for the zero-signature branch and ecrecover == user otherwise. registerProtocol (pc 9193) SSTOREs masterContractOf[caller] = caller. withdraw's allowed(from) (pc 7781..7966) loads masterContractOf[caller] = 0x7ee23c81 and masterContractApproved[0x7ee23c81][0x49876a20] = 1, then zeroes the depositor's RICE share and the RICE totals and transfers 22189176505973791717313474 RICE (receipt log 4, LogWithdraw log 5). Earliest exercise: Etherscan V2 logs.getLogs for the vault, blocks 0..99999999 (105 logs: 1 OwnershipTransferred at creation, 50 LogDeposit, 52 LogWithdraw, 1 LogRegisterProtocol 0xdfb44ffa, 1 LogSetMasterContractApproval) shows the only approval and protocol registration ever are in source-1 (block 30655996, tx 1, logs 2-3), and no vault log follows it. Identity and age: eth_getCode empty at block 27527341; keccak256(eth_getCode) = 0xceb9a0a5fa2635fd9d8079d60f7db977402e3d411d6eeb05cbe059776598de5c at blocks 27527342, 30655995 and latest. Creation receipt source-5 (block 27527342, index 61): from 0x6f6f8b3b1f9ee48e315a1b7cfdb03e5550e94106, to null, contractAddress the vault. EIP-1967 implementation slot is 0 at block 30655995; the disassembly holds one DELEGATECALL (BoringBatchable batch self-call) and no SELFDESTRUCT. Etherscan V2 account.txlist for the vault returns only the creation; the log history has no LogWhiteListMasterContract, strategy or ownership event after creation, and the approval write is gated by no stored value, so deployment supplies the age.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:38:43Z"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed loss. eth_getTransactionReceipt(source-1), 18 logs: log 4 RICE 0xf501e4c51dbd89b95de24b9d53778ff97934cd9c Transfer vault -> attack contract 0x7ee23c81 of 0x125abdab2e177fdfd7cbc2 = 22189176505973791717313474 (22189176.505973791717313474 RICE); log 5 vault LogWithdraw(token RICE, from 0x49876a20, to 0x7ee23c81, amount = share = same value). Log 7 USDT 0xfde4c96c8593536e31f229ea8f37b2ada2699bb2 Transfer pool 0xa0213b57 -> attack contract 0x148b1778cc = 88232.917196 (6 decimals); log 8 RICE attack contract -> pool, the full withdrawn amount; log 9 Swap. Logs 11-16 swap the USDT to 88166.114848 USDC and then 34.52291421920366 WETH (0x1df1a079276ea9ed3); log 17 WETH to attacker EOA 0x2a49c6fd. The depositor's full RICE share was withdrawn (withdraw SSTOREs share and RICE totals to 0). Realised proceeds are the USDT leg, the direct sale of the stolen RICE.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:38:43Z"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x7f753beb37a5b113637481d56cc5595a14f3351c2efd1b8f498fd7b69127069d"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1748101339/base:0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
-      "observedAt": 1790620659
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 88150.24295258734,
+    "assets": [
+      {
+        "token": "0xf501e4c51dbd89b95de24b9d53778ff97934cd9c",
+        "symbol": "RICE",
+        "amount": "22189176.505973791717313474",
+        "usd": 88150.24295258734
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2025-05/RICE_exp.sol",
-    "seed:rice:2025-05-24:rice"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-05/RICE_exp.sol"
+  ],
+  "notes": [
+    "Direct immutable vault runtime contains the unauthenticated setMasterContractApproval; no owner configuration event was ever emitted, and no stored value gates the approval write.",
+    "Exact victim depletion: the vault's LogWithdraw debits depositor 0x49876a20bb86714e98a7e4d0a33d85a4011b3455 of 22189176505973791717313474 RICE base units (18 decimals), its full RICE share, in the single exploit transaction. The attacker sold the whole amount in the same transaction into Uniswap V3 RICE/USDT pool 0xa0213b570dff35a8c826334472e23b9a8a94ef3b for 88232.917196 USDT (log 7), then routed it through USDC to 34.52291421920366 WETH paid to the attacker EOA (log 17). That sale emptied the pool's USDT side, so RICE is valued at realised proceeds: the USDT received times the DefiLlama USDT quote 0.999063 (source-6). A spot mark at DefiLlama's RICE quote (0.077597 USD at 1748103192) would give about 1.72M USD, which the pool's liquidity could not realise. No attacker input is subtracted; no other vault asset was taken."
   ]
 }

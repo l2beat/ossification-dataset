@@ -1,182 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x26bcefc152d8cd49f4bb13a9f8a6846be887d7075bc81fa07aa8c0019bd6591f",
-  "protocol": {
-    "name": "D3x.ai",
-    "slug": "d3xai"
-  },
+  "protocol": "D3x.ai",
   "name": "D3x.ai exchange spot-price manipulation",
   "summary": "The exchange implementation priced USDT/D3XAT conversions by calling D3XAT.price(), which read the current PancakeSwap reserves through Router.getAmountsOut. It imposed no time-weighting or manipulation bound, so one transaction could buy D3XAT, move the same pool's spot price through transient accounts, and redeem D3XAT against the exchange's USDT inventory at the manipulated quote.",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x26bcefc152d8cd49f4bb13a9f8a6846be887d7075bc81fa07aa8c0019bd6591f",
-      "blockNumber": 57780985,
-      "transactionIndex": 1,
-      "timestamp": 1755333865
-    },
-    "attackerAddresses": [
-      "0x4b63c0cf524f71847ea05b59f3077a224d922e8d",
-      "0x3b3e1edeb726b52d5de79cf8dd8b84995d9aa27c"
-    ]
-  },
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 200163.20198686118,
-      "valuationTimestamp": 1755333865,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "200163.201986861180092497",
-        "usdValue": 200163.20198686118,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1755333865,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exchange proxy and protocol controller 0x13342140a62cb51c052b5a70eb186f40a1725ebf form the victim entity. Two initial exchange buys put 24627.150187372155949310 USDT into the proxy. Nineteen later redemptions send 224790.352174233336041807 USDT to the seller helper and 39668.885677805882830887 USDT to the controller; the next redemption reverts. The controller is the proxy and active-implementation deployer and the sender of the last upgrade, and its archive USDT balance rises by exactly the fee amount and retains it through the bounded window. That internal transfer cancels, leaving 224790.352174233336041807 - 24627.150187372155949310 = 200163.201986861180092497 USDT of external protocol depletion. The proxy's archive balance change independently equals its receipt net of -239832.087664667062923384 USDT. The victim union gains 21680.158448278855196476 D3XAT overall because controller transfer-tax receipts more than offset the proxy's D3XAT decrease, so D3XAT is not a loss component. The reported 190 BNB is downstream realization: the D3XAT/WBNB pair sends 190.553117446131167874 WBNB to the router, which unwraps it; it is not native depletion from the exchange. The 20 million USDT flash principal plus 2000 USDT fee is repaid in full. Nothing was returned to the victim union.",
-    "realizedAt": 1755333865
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb8ad82c4771daa852ddf00b70ba4be57d22edd99",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x94ddcd7253ac864ec77a2ddc2be4b2418ed17c9d",
-        "codeHash": "0x7280f72a7ffc19fd86e97faa01088fe17455323051037ada3ce80a79e09348e8"
-      },
-      "deployment": {
-        "timestamp": 1751351264,
-        "blockNumber": 52471304,
-        "transactionHash": "0xffcc3c9159789d231dd3b732faacef521fbc2ca7b29f5e6b96fb33d214cea793",
-        "transactionIndex": 105,
-        "creatorAddress": "0x13342140a62cb51c052b5a70eb186f40a1725ebf"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1755244496,
-        "blockNumber": 57661837,
-        "transactionHash": "0x1f39a1f8141f2f632942ded5edb6ee3695b329a5300248030c090a9e075125ab",
-        "transactionIndex": 41,
-        "logIndex": 121,
-        "mechanism": {
-          "type": "event",
-          "address": "0xb8ad82c4771daa852ddf00b70ba4be57d22edd99",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The ninth and last Upgraded(address) event before the incident selected 0x94ddcd7253ac864ec77a2ddc2be4b2418ed17c9d. The ProxyAdmin upgradeAndCall supplied empty initialization calldata. The EIP-1967 implementation slot retains that address at incident-1, and the implementation runtime hash is unchanged from its creation seven blocks before activation through incident-1."
-      },
-      "codeAgeSeconds": 89369,
-      "failureModeId": "failure:d3xai-exchange-manipulable-spot-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-6",
-          "source-7",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0xb8ad82c4771daa852ddf00b70ba4be57d22edd99",
+      "code": "0x94ddcd7253ac864ec77a2ddc2be4b2418ed17c9d",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1f39a1f8141f2f632942ded5edb6ee3695b329a5300248030c090a9e075125ab"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x26bcefc152d8cd49f4bb13a9f8a6846be887d7075bc81fa07aa8c0019bd6591f"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x36811c78469e63316f042c105dfc74a00a3df848efac12413df48ecad56cf2c6"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x27baa4c57686fb256aadecf3990cd750195a9cf7b778b908a4d9bbda091847e7"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xffcc3c9159789d231dd3b732faacef521fbc2ca7b29f5e6b96fb33d214cea793"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa252654d74b800c3b03aacb3813ea2b575484b99acd5b206d150ad14de4738d7"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1f39a1f8141f2f632942ded5edb6ee3695b329a5300248030c090a9e075125ab"
-    },
-    {
-      "id": "source-7",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-08/d3xai_exp.sol"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-31T07:29:29Z",
-      "note": "Reviewed the helper creation, setup and incident transactions and call traces; every USDT, D3XAT, WBNB and native transfer; whole-block archive balances; the sender's complete nonce history; proxy creation; all nine Upgraded events; active-implementation creation and runtime; EIP-1967 state; and the commit-pinned technical reproduction. The sender's nonce 3 creates helper 0x3b3e1edeb726b52d5de79cf8dd8b84995d9aa27c, nonce 4 creates 64 transient contracts, and nonce 5 executes the sole incident receipt. The receipt uses two proxy buyers, one proxy seller, and 27 Pancake buyer/seller pairs; every transient contract ends with zero net USDT and D3XAT. The main helper receives and repays the 20 million USDT flash principal plus 2000 USDT fee, then routes already-realized assets. Sender nonces 6 through 21 only dispose native BNB through unrelated address 0x0d5550d52428e7e3175bfc9550207e4ad3859b17 and never touch the exchange, USDT or D3XAT. Exchange proxy USDT is 243209.105515353882610083 at block 57780984 and 3377.017850686819686699 at block 57780985, exactly matching its receipt net. Controller 0x13342140a62cb51c052b5a70eb186f40a1725ebf is the proxy creator, active-implementation creator and last-upgrade sender; it receives and retains exactly 39668.885677805882830887 USDT in the incident block. The entity-level external loss is therefore 200163.201986861180092497 USDT. The proxy delegates all 22 exchange calls to 0x94ddcd7253ac864ec77a2ddc2be4b2418ed17c9d; 21 succeed and the last reverts. In each call the implementation obtains the quote from D3XAT.price(), whose trace immediately reaches Pancake Router getAmountsOut and live reserves. Same-transaction price movement is therefore the direct runtime failure, not a later parameter change. Proxy code is absent one block before creation and unchanged through incident-1. The active implementation is absent at block 57661829, top-level created by the controller in source-5 at block 57661830 index 92, and hashes to 0x7280f72a7ffc19fd86e97faa01088fe17455323051037ada3ce80a79e09348e8 at creation, activation and incident-1. Source-6 emits the ninth and final Upgraded event at block 57661837 index 41 log 121, selects that implementation with empty initialization calldata, and resets age 89369 seconds before the incident."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 200163.20198686118,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "200163.201986861180092497",
+        "usd": 200163.20198686118
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2025-08/d3xai_exp.sol",
-    "seed:d3xai:2025-08-16:d3xai-proxy-exchange-priced-from-the-pancake-pool"
+  "refs": [
+    "eip155:56:0x36811c78469e63316f042c105dfc74a00a3df848efac12413df48ecad56cf2c6",
+    "eip155:56:0x27baa4c57686fb256aadecf3990cd750195a9cf7b778b908a4d9bbda091847e7",
+    "eip155:56:0xa252654d74b800c3b03aacb3813ea2b575484b99acd5b206d150ad14de4738d7",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-08/d3xai_exp.sol"
+  ],
+  "notes": [
+    "The ninth and last Upgraded(address) event before the incident selected 0x94ddcd7253ac864ec77a2ddc2be4b2418ed17c9d. The ProxyAdmin upgradeAndCall supplied empty initialization calldata. The EIP-1967 implementation slot retains that address at incident-1, and the implementation runtime hash is unchanged from its creation seven blocks before activation through incident-1.",
+    "The exchange proxy and protocol controller 0x13342140a62cb51c052b5a70eb186f40a1725ebf form the victim entity. Two initial exchange buys put 24627.150187372155949310 USDT into the proxy. Nineteen later redemptions send 224790.352174233336041807 USDT to the seller helper and 39668.885677805882830887 USDT to the controller; the next redemption reverts. The controller is the proxy and active-implementation deployer and the sender of the last upgrade, and its archive USDT balance rises by exactly the fee amount and retains it through the bounded window. That internal transfer cancels, leaving 224790.352174233336041807 - 24627.150187372155949310 = 200163.201986861180092497 USDT of external protocol depletion. The proxy's archive balance change independently equals its receipt net of -239832.087664667062923384 USDT. The victim union gains 21680.158448278855196476 D3XAT overall because controller transfer-tax receipts more than offset the proxy's D3XAT decrease, so D3XAT is not a loss component. The reported 190 BNB is downstream realization: the D3XAT/WBNB pair sends 190.553117446131167874 WBNB to the router, which unwraps it; it is not native depletion from the exchange. The 20 million USDT flash principal plus 2000 USDT fee is repaid in full. Nothing was returned to the victim union."
   ]
 }

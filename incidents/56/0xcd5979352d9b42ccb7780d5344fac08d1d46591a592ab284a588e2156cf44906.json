@@ -1,240 +1,49 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xcd5979352d9b42ccb7780d5344fac08d1d46591a592ab284a588e2156cf44906",
-  "protocol": {
-    "name": "OCA",
-    "slug": "oca"
-  },
+  "protocol": "OCA",
   "name": "OCA SwapHelper sellOCA recycles the sold OCA out of the OCA/USDC pair",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xcd5979352d9b42ccb7780d5344fac08d1d46591a592ab284a588e2156cf44906",
-      "blockNumber": 81020478,
-      "transactionIndex": 1,
-      "timestamp": 1771004909
-    },
-    "attackerAddresses": [
-      "0xdddfb3d6fa42e66cf78efa21166b8ef2d26c1ba5",
-      "0xfe43ac1924e64b33135a7756e3f78bf4710dd458",
-      "0xa297a53b5554f4feba4077f4cb13da220387deaa",
-      "0x4bcd06648a9315a233229b634b89011009f7b195",
-      "0x1a325174111db473e1ce4e079a2bd558b0164b31"
-    ]
-  },
   "summary": "The OCA SwapHelper's public sellOCA(amount) sells the caller's OCA into the OCA/USDC PancakeSwap pair with the USDC paid to the caller, then calls OCA.recycle to pull the same OCA amount back out of the pair and sync(), so every sale removes the pair's OCA without USDC coming back in. The attacker obtained OCA untaxed by flash-swapping it directly from the pair, which OCA's liquidity-removal heuristic exempts from its 100% buy tax, then repeated buy/sellOCA cycles to shrink the OCA reserve and sold its remaining OCA for the pair's USDC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 424988.7103424184,
-      "valuationTimestamp": 1771004909,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "422645.205932542647363708",
-        "usdValue": 422645.2059325426,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1771004909,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "2343.504409875759844275",
-        "usdValue": 2343.50440987576,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1771008962,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-8",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDC depletion of the OCA/USDC pair 0x5779bf44cd518b05651ae38fcc066247cce21504 in the two exploit transactions: the anchor (all proceeds to the attacker EOA) and a copycat by a different actor 4053 seconds later that took the leftover USDC with the same buy/sellOCA cycle. The 8,704,860.15 USDC Moolah flash loans and every USDC buy leg are attacker inputs returned within each transaction. The pair's OCA loss (977,500.45 OCA in the anchor, recycled to the mining pool and DEAD) is the same liquidity and is not added. Ordinary direct sellOCA sales by holders between the two transactions are not counted.",
-    "realizedAt": 1771008962
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe0d5ec0f754c442f37fbdf18266053309d5f6f55",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe0d5ec0f754c442f37fbdf18266053309d5f6f55",
-        "codeHash": "0xad37e2926d404eb9b9b44b29a5d595f3bcbae02361b8a5e87b4f8daad73c1803"
-      },
-      "deployment": {
-        "timestamp": 1768359806,
-        "blockNumber": 75145050,
-        "transactionHash": "0x71df69742f64ab2372086717cef0f650bd083362351a2a02fce10a4ff0452b79",
-        "transactionIndex": 44,
-        "creatorAddress": "0xe6e1bf9c8fefb6dbf6d95d9e83e2e22b10824832"
-      },
-      "ageReset": {
+      "address": "0xe0d5ec0f754c442f37fbdf18266053309d5f6f55",
+      "reset": {
         "kind": "deployment",
-        "description": "Unverified, non-proxy SwapHelper runtime (no DELEGATECALL, CALLCODE or SELFDESTRUCT opcode) whose sellOCA recycles the sold amount from the pair; runtime hash unchanged from creation to the exploit. The owner's later setContractMiningPool calls only redirect the recycled OCA and are not necessary to the reserve depletion."
-      },
-      "codeAgeSeconds": 2645103,
-      "failureModeId": "failure:oca-swaphelper-sell-recycles-pair-reserve",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x71df69742f64ab2372086717cef0f650bd083362351a2a02fce10a4ff0452b79"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0xe0dafd4592205067299a6ae269f68aa804f95419",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe0dafd4592205067299a6ae269f68aa804f95419",
-        "codeHash": "0xfdc2e80577ed24e8fe3aa806eb41dd83f44f5bcae4dd5653da1bc07235e3b583"
-      },
-      "deployment": {
-        "timestamp": 1768041592,
-        "blockNumber": 74719018,
-        "transactionHash": "0x6095209b6134ad7e0d869af51f31cb0ed1ba24703b7df20ff6d86c3593a463e7",
-        "transactionIndex": 180,
-        "creatorAddress": "0x792cfb1a005462b68387681004f104cf4d55d0d4"
-      },
-      "ageReset": {
+      "address": "0xe0dafd4592205067299a6ae269f68aa804f95419",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable OCAToken runtime; _isRemoveLiquidity treats any pair-to-user transfer made while both pair balances are at or below reserves, including an optimistic flash-swap buy, as liquidity removal and skips the 100% buy tax."
-      },
-      "codeAgeSeconds": 2963317,
-      "failureModeId": "failure:oca-flash-swap-buy-classified-as-liquidity-removal",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: the OCAToken deployment (74719018) precedes the SwapHelper deployment (75145050), whose sellOCA recycle is the reserve-depleting defect that completed the exploitable combination."
-        ],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x6095209b6134ad7e0d869af51f31cb0ed1ba24703b7df20ff6d86c3593a463e7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xcd5979352d9b42ccb7780d5344fac08d1d46591a592ab284a588e2156cf44906"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x71df69742f64ab2372086717cef0f650bd083362351a2a02fce10a4ff0452b79"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:08:54Z",
-      "note": "Lead from BlockSec (source-9); its claim that recycled OCA returns to the caller is wrong (see below). source-1: 81020478:1, status 1, EOA 0xdddfb3d6fa42e66cf78efa21166b8ef2d26c1ba5 (nonce 820) calls 0xfe43ac1924e64b33135a7756e3f78bf4710dd458, which CREATE2s 0xa297a53b5554f4feba4077f4cb13da220387deaa and pays 42.89 BNB to builder 0x4848489f0b2bedd788c696e2d79b6b69d7484848. debug_traceTransaction(callTracer): 0xa297 flash-borrows 8704860.148366533 USDC from Moolah 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c, then three rounds of pair.swap (optimistic OCA out, USDC paid in pancakeCall) followed by SwapHelper 0xe0d5ec0f754c442f37fbdf18266053309d5f6f55 sellOCA 0x9c1dad28(amount) with amounts 930991.714300636192319084, 44108.939333757365192491 and 2099.799513451293906651 OCA, then sells 9999.99 OCA through the router for 433238.530939106 USDC (log 62) and repays. Unverified SwapHelper behaviour from the first sellOCA frame: STATICCALL USDC.balanceOf(caller); OCA.transferFrom(caller, helper, amount); approve(router); router 0x10ed43c7 swapExactTokensForTokensSupportingFeeOnTransferTokens(amount, amountOutMin 0, [OCA, USDC], to = caller) (pair pays 8698422.789 USDC to the caller, log 11); OCA.recycle 0x5d36d182(helper, amount), which moves the same amount pair->helper (log 14) and calls pair.sync(); then OCA.transfer 40% to mining pool 0x59ac98033d74a73a23b0ef728a54b3032ee6c1d2 and 60% to 0x...dead (logs 17-18); nothing returns to the caller. The caller is a contract created in the same transaction, so sellOCA has no caller restriction. Verified OCAToken.recycle (source-5) requires only msg.sender == swapHelper and pair balance >= amount. Each round therefore leaves the pair's USDC paid out and its OCA reserve reduced by the attacker's full buy (940991.71 -> 44108.94 -> 2099.80 OCA bought per round from a shrinking reserve). Artifact: eth_getCode empty at 75145049; keccak(runtime) 0xad37e2926d404eb9b9b44b29a5d595f3bcbae02361b8a5e87b4f8daad73c1803 (6195 bytes) at 75145050, 81020477 and 81029480; cast disassemble finds no DELEGATECALL, CALLCODE or SELFDESTRUCT; source-2 receipt: contractAddress 0xe0d5ec0f at 75145050:44, from 0xe6e1bf9c8fefb6dbf6d95d9e83e2e22b10824832, the OCA owner since transferOwnership 0x598698ae52b3036f83f9c995b9675dc15a30ced0899f553cdf9cc86be92def32 (74912263). Configuration: SwapHelper txlist (1290 txs to block 81101726): owner calls setContractMiningPool 0x04cffd1d (75145146, 75146008, 79557711 -> 0x59ac9803...), setOraclePrice 0xaf44f6b6(0x2f5811226ddad1d6714063d06a1af2ae3efae47a) at 75145156, transferOwnership (79603693, 80200172); the mining-pool pointer only receives recycled OCA and the oracle is read only after the recycle, so neither is necessary to the depletion. OCA owner txs: setFeeWhitelist(helper,true) 75145172:65 and setSwapHelper(helper) 75145254:74 (SwapHelperUpdated log 0x762), the ordinary wiring that activates the helper 204 blocks after its creation; no value in it is erroneous for the defect in sellOCA, so deployment supplies the age. codeAgeSeconds = 1771004909 - 1768359806 = 2645103. First exercise: eth_getLogs OCA PairRecovered(address,uint256) blocks 74719018..81100000 = 306 logs in 302 txs; 300 are direct EOA sellOCA calls with one recycle each (the helper txlist has 301 successful direct 0x9c1dad28 txs, one without a recycle) with no same-transaction pair manipulation; the only contract-routed ones are source-1 (3 recycles) and the copycat source-8 (81029481:61, EOA 0x4bcd06648a9315a233229b634b89011009f7b195 via 0x1a325174111db473e1ce4e079a2bd558b0164b31, same flash loan and cycle, 3 recycles of 2445.154 OCA)."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:08:54Z",
-      "note": "OCAToken target. Source-5 _transfer: a pair-to-non-whitelisted transfer is untaxed when _isRemoveLiquidity() (balance0 <= reserve0 && balance1 <= reserve1) holds, otherwise _handleBuy sends 100% of the bought OCA to burn/LP-dividend/mining/treasury and the buyer receives nothing. In a flash swap the pair transfers OCA before any USDC arrives, so both balances equal the reserves and the buy is classified as liquidity removal. source-1 receipt: log 3 transfers the full 940991.714300636192319084 OCA pair -> 0xa297 with no split and no BuyExecuted(address,uint256,uint256) log (0 in the receipt); the attacker pays 8704860.148 USDC afterwards (log 4) inside pancakeCall 0x84800812. This bypass gave the attacker the OCA inventory that sellOCA then recycled. Artifact: eth_getCode empty at 74719017; keccak(runtime) 0xfdc2e80577ed24e8fe3aa806eb41dd83f44f5bcae4dd5653da1bc07235e3b583 (7761 bytes) at 74719018 and 81020477; source-7 creation at 74719018:180 by 0x792cfb1a005462b68387681004f104cf4d55d0d4; no proxy, delegatecall or upgrade path. Owner txlist to block 81101726: setReceiverAddresses, setFeeWhitelist, setSwapHelper (aad5d5be at 74719957, 0xdead at 74723203, helper at 75145254) and transferOwnership only; none changes _isRemoveLiquidity. codeAgeSeconds = 1771004909 - 1768041592 = 2963317."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified OCAToken 0xe0dafd4592205067299a6ae269f68aa804f95419 source via Etherscan V2 contract.getsourcecode chainid=56: v0.8.20+commit.a1b79de6, 200 runs, SHA-256 of returned SourceCode 3b499172452cbbb874385c2fedf8885dd1f70b3a5b91cfbd5d06630dadd6c477. Inspect _transfer, _handleBuy, _isRemoveLiquidity, setSwapHelper and recycle. SwapHelper 0xe0d5ec0f754c442f37fbdf18266053309d5f6f55 is unverified; its behaviour is taken from the source-1 call trace."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:08:54Z",
-      "note": "Loss: eth_call USDC 0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d balanceOf(pair 0x5779bf44cd518b05651ae38fcc066247cce21504) = 427369506331114918872080 at 81020477 and 4724300398572271508372 at 81020478; netting source-1 USDC Transfer logs: pair -422645205932542647363708, attacker EOA 0xdddfb3d6 +422645205932542647363708 (log 68), Moolah 0. Pair OCA 987305963488560127153699 -> 9805509370715275735473. Copycat source-8 (block 81029481, timestamp 1771008962): pair USDC 2343504422137897346802 at 81029480 -> 12262137502527 at 81029481, source-8 netting pair -2343504409875759844275, EOA 0x4bcd0664 +2343504409875759844275; no other tx touches the pair in that block (Etherscan txlist). Binance-Peg USDC has 18 decimals and is valued at par. Later PairRecovered emitters to block 81100000 are direct single sellOCA calls."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x6095209b6134ad7e0d869af51f31cb0ed1ba24703b7df20ff6d86c3593a463e7"
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x514141dac28a8a53f90312e94c58476615c2c5ce844d8d37999bdf8a66413d5c"
-    },
-    {
-      "id": "source-9",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 424988.7103424184,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "422645.205932542647363708",
+        "usd": 422645.2059325426
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "2343.504409875759844275",
+        "usd": 2343.50440987576
+      }
     ]
   },
-  "discovery": [
-    "web:2026-02-14:oca"
+  "refs": [
+    "eip155:56:0x514141dac28a8a53f90312e94c58476615c2c5ce844d8d37999bdf8a66413d5c",
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
+  ],
+  "notes": [
+    "Unverified, non-proxy SwapHelper runtime (no DELEGATECALL, CALLCODE or SELFDESTRUCT opcode) whose sellOCA recycles the sold amount from the pair; runtime hash unchanged from creation to the exploit. The owner's later setContractMiningPool calls only redirect the recycled OCA and are not necessary to the reserve depletion.",
+    "Direct immutable OCAToken runtime; _isRemoveLiquidity treats any pair-to-user transfer made while both pair balances are at or below reserves, including an optimistic flash-swap buy, as liquidity removal and skips the 100% buy tax.",
+    "Exact USDC depletion of the OCA/USDC pair 0x5779bf44cd518b05651ae38fcc066247cce21504 in the two exploit transactions: the anchor (all proceeds to the attacker EOA) and a copycat by a different actor 4053 seconds later that took the leftover USDC with the same buy/sellOCA cycle. The 8,704,860.15 USDC Moolah flash loans and every USDC buy leg are attacker inputs returned within each transaction. The pair's OCA loss (977,500.45 OCA in the anchor, recycled to the mining pool and DEAD) is the same liquidity and is not added. Ordinary direct sellOCA sales by holders between the two transactions are not counted.",
+    "Not the knot: the OCAToken deployment (74719018) precedes the SwapHelper deployment (75145050), whose sellOCA recycle is the reserve-depleting defect that completed the exploitable combination."
   ]
 }

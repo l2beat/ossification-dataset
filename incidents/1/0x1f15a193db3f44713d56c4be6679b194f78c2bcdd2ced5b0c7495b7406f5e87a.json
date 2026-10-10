@@ -1,158 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1f15a193db3f44713d56c4be6679b194f78c2bcdd2ced5b0c7495b7406f5e87a",
-  "protocol": {
-    "name": "Silo Finance",
-    "slug": "silo-finance"
-  },
+  "protocol": "Silo Finance",
   "name": "LeverageUsingSiloFlashloanWithGeneralSwap unvalidated swap target",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1f15a193db3f44713d56c4be6679b194f78c2bcdd2ced5b0c7495b7406f5e87a",
-      "blockNumber": 22781962,
-      "transactionIndex": 2,
-      "timestamp": 1750860683
-    },
-    "attackerAddresses": [
-      "0x04377cfaf4b4a44bb84042218cdda4cebcf8fd62",
-      "0x79c5c002410a67ac7a0cde2c2217c3f560859c7e"
-    ]
-  },
   "summary": "openLeveragePosition() on the unreleased leverage helper accepted a caller-supplied flashloan target and swap calldata without constraining them to the selected Silo market, so a fake flash lender's onFlashLoan callback made the helper call the real WETH Silo's borrow() on behalf of a third party that had granted it debt-receive approval.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 546092.5115717358,
-      "valuationTimestamp": 1750860673,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "224",
-        "usdValue": 546092.5115717358,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1750860673,
-          "unitPriceUsd": 2437.912998088106,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt records exactly 224 WETH transferred from Silo 0x160287e2d3fdcde9e91317982fc1cc01c1f94085 to the attacker EOA while debt shares were assigned to the approved third-party borrower."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xcbee4617abf667830fe3ee7dc8d6f46380829df9",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xcbee4617abf667830fe3ee7dc8d6f46380829df9",
-        "codeHash": "0xe5d7d3644cbc8f842140fec2a6aa9dd5ff6cd7de4fc999ebf2f70cb25f4fbd2f"
-      },
-      "deployment": {
-        "timestamp": 1750245935,
-        "blockNumber": 22731055,
-        "transactionHash": "0xff6a12947da09c007f501668cc12d7ea9bdecff91d7fd39a8129303c8c6fd53c",
-        "transactionIndex": 34,
-        "creatorAddress": "0x6d228fa4dad2163056a48fc2186d716f5c65e89a"
-      },
-      "ageReset": {
+      "address": "0xcbee4617abf667830fe3ee7dc8d6f46380829df9",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct leverage-helper runtime was deployed in this transaction and is byte-identical immediately before the incident."
-      },
-      "codeAgeSeconds": 614748,
-      "failureModeId": "failure:silo-leverage-unvalidated-flashloan-and-swap-targets",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0xff6a12947da09c007f501668cc12d7ea9bdecff91d7fd39a8129303c8c6fd53c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1f15a193db3f44713d56c4be6679b194f78c2bcdd2ced5b0c7495b7406f5e87a"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://silofinance.medium.com/post-mortem-unreleased-leverage-contract-exploitd-0ab8f37afcbb"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://www.quillaudits.com/blog/hack-analysis/how-silo-finance-lost-500k"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-06/SiloFinance_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:11:23Z",
-      "note": "Reviewed the exploit receipt and call trace, leverage-helper creation receipt, runtime bytecode at deployment and immediately before the incident, runtime disassembly, verified source, official post-mortem, and commit-pinned reproduction. LeverageUsingSiloFlashloanWithGeneralSwap 0xcbee4617abf667830fe3ee7dc8d6f46380829df9 is a direct contract whose runtime is byte-identical at both anchors and contains no DELEGATECALL or SELFDESTRUCT. The attacker calls openLeveragePosition with a fake flash lender. That lender invokes onFlashLoan with attacker-chosen swap data; GeneralSwapModule then makes an unconstrained low-level call to exchangeProxy 0x160287e2d3fdcde9e91317982fc1cc01c1f94085 using borrow(uint256,address,address), transferring 224 WETH to the attacker and assigning debt to a third party that had approved the helper."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xff6a12947da09c007f501668cc12d7ea9bdecff91d7fd39a8129303c8c6fd53c"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1750860683/coingecko:ethereum",
-      "observedAt": 1787577083
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 546092.5115717358,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "224",
+        "usd": 546092.5115717358
+      }
     ]
   },
-  "discovery": [
-    "web:2025-06-25:silo-labs-unreleased-leverage-module"
+  "refs": [
+    "https://silofinance.medium.com/post-mortem-unreleased-leverage-contract-exploitd-0ab8f37afcbb",
+    "https://www.quillaudits.com/blog/hack-analysis/how-silo-finance-lost-500k",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-06/SiloFinance_exp.sol"
+  ],
+  "notes": [
+    "The direct leverage-helper runtime was deployed in this transaction and is byte-identical immediately before the incident.",
+    "The exploit receipt records exactly 224 WETH transferred from Silo 0x160287e2d3fdcde9e91317982fc1cc01c1f94085 to the attacker EOA while debt shares were assigned to the approved third-party borrower."
   ]
 }

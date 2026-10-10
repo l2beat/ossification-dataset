@@ -1,325 +1,124 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x1350cc72865420ba5d3c27234fd4665ad25c021b0a75ba03bc8340a1b1f98a45",
-  "protocol": {
-    "name": "TLN Protocol",
-    "slug": "tln-protocol"
-  },
+  "protocol": "TLN Protocol",
   "name": "TLN Protocol spot-reserve reward and collateral manipulation",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x1350cc72865420ba5d3c27234fd4665ad25c021b0a75ba03bc8340a1b1f98a45",
-      "blockNumber": 39198686,
-      "transactionIndex": 0,
-      "timestamp": 1717144634
-    },
-    "attackerAddresses": [
-      "0x6951eb8a4a1dab360f2230fb654551335d560ec0",
-      "0xbdfbb387fbf20379c016998ac609871c3357d749",
-      "0x63290c69fa3b463bd224da847aa32317dbf5d0cf"
-    ]
-  },
   "summary": "TLNProtocolStaking priced VUSD/VOW LP rewards from the live reserves of that pool and the thin USDT/VOW pair. A flash-loan-funded VOW purchase raised lpRate 12,876.67-fold, letting the attacker stake 943.253377026177767815 LP and mint 3,199,510.344301177871795565 TLN. TlnSwap then compounded the failure: lock() lent 3,251,534.902745099463206875 VUSD against the TLN while its second live-reserve calculation reduced required VOW collateral from a pre-transaction 921,120.006996164638490158 to 71.530270655320077627 VOW.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 748229.1155236985,
-      "valuationTimestamp": 1717144634,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "182.838953341954182596",
-        "usdValue": 108231.51843076978,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1717144634,
-          "unitPriceUsd": 591.95,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "171.439728226688515854",
-        "usdValue": 639997.5970929287,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1717144634,
-          "unitPriceUsd": 3733.0763628292925,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-5",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "TlnSwap's VUSD balance fell exactly 3,251,534.902745099463206875, but VUSD had no reliable external dollar market, so it is not valued at its nominal peg. The recorded loss is instead the attacker's exact net realised proceeds. On BSC, the two sweep transactions moved 107,881.749956792323205771 USDT and 1,463,280.244257269082062875 VOW from the attack contract to the EOA. The EOA sold all USDT and 3,280.244257269082062875 VOW for 184.838953341954182596 BNB, then bridged exactly 1,460,000 VOW to Ethereum and sold it in 61 transactions for 171.439728226688515854 ETH. The 2 BNB transferred into the attack contract during setup bought the LP position later surrendered to staking and is attacker-supplied capital, so it is removed from the BNB component. Gas and bridge fees are disposal costs and are not subtracted. Incident-time DefiLlama prices value the resulting 182.838953341954182596 BNB and 171.439728226688515854 ETH at $748,229.12. Early reports of approximately $200,000 to $280,000 did not follow the VOW bridge and liquidation.",
-    "realizedAt": 1717151097
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x85f82230883693f1bbff65be1f7663ee5f0aa5f8",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x85f82230883693f1bbff65be1f7663ee5f0aa5f8",
-        "codeHash": "0x8a5c5d9d4d0db536ba4e2f97b9d2dbed6fdb18f63d7ac6a1297283424a52c064"
-      },
-      "deployment": {
-        "timestamp": 1712376455,
-        "blockNumber": 37612639,
-        "transactionHash": "0x679972f4d6f600f6a0651bba84c40d154112933d08a924c0d09a3e1a31a4d05e",
-        "transactionIndex": 91,
-        "creatorAddress": "0x65d72f51e1bd4902ab51c9e352a81649d99785cf"
-      },
-      "ageReset": {
+      "address": "0x85f82230883693f1bbff65be1f7663ee5f0aa5f8",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct contract's constructor fixed its TLN token, LP token, both reserve-reading pairs, SmartNode and qualification contract. Its 10,785-byte runtime is absent before deployment and has the same hash at deployment and immediately before the exploit; later governance calls changed eligibility thresholds, not the causal reserve-pricing logic or its fixed inputs."
-      },
-      "codeAgeSeconds": 4768179,
-      "failureModeId": "failure:tln-staking-live-reserve-lp-reward-inflation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The staking runtime is unverified on BscScan; its fixed inputs and reward calculation were reviewed from constructor bytecode, runtime decompilation, archive calls and the exploit trace."
-        ],
-        "reviewSourceIds": [
-          "source-7",
-          "source-9"
-        ]
+        "tx": "0x679972f4d6f600f6a0651bba84c40d154112933d08a924c0d09a3e1a31a4d05e"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x19b3f588bdc9a6f9ecb8255919b02f9adf053363",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x19b3f588bdc9a6f9ecb8255919b02f9adf053363",
-        "codeHash": "0x4f1513a3fe9a87ab6c1d639dcd8227aeb44eea3cd3c6d65eb3d50b29e30872e3"
-      },
-      "deployment": {
-        "timestamp": 1712375963,
-        "blockNumber": 37612475,
-        "transactionHash": "0x21324c74c061a92b76242fa7448417eb1681ac02dea98cf1c41d52d6d24dc9f2",
-        "transactionIndex": 70,
-        "creatorAddress": "0x428ed76325f68a80d61545b0fe61fd77774ff249"
-      },
-      "ageReset": {
+      "address": "0x19b3f588bdc9a6f9ecb8255919b02f9adf053363",
+      "reset": {
         "kind": "deployment",
-        "description": "TlnSwap is a direct non-proxy contract whose constructor fixed the TLN, VOW and VUSD tokens and the USDT/VOW pair used by _vowToLock(). Its 13,971-byte runtime is absent in the preceding block and hashes identically at deployment and immediately before the exploit; it exposes no setter for those inputs or the collateral calculation."
-      },
-      "codeAgeSeconds": 4768671,
-      "failureModeId": "failure:tlnswap-live-reserve-collateral-underpricing",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-7",
-          "source-9"
-        ]
+        "tx": "0x21324c74c061a92b76242fa7448417eb1681ac02dea98cf1c41d52d6d24dc9f2"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1350cc72865420ba5d3c27234fd4665ad25c021b0a75ba03bc8340a1b1f98a45"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-05/Liquiditytokens_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x679972f4d6f600f6a0651bba84c40d154112933d08a924c0d09a3e1a31a4d05e"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x21324c74c061a92b76242fa7448417eb1681ac02dea98cf1c41d52d6d24dc9f2"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x8d27f9a15b1834e5f9e55d47ec32d01e7fe54f93cfc6ea9d4e8c5fbe72756897",
-        "0xc184dc48e5035d2e720a3ee5842c605857cd2e36dc38d51527a5f1466e76c4e7",
-        "0x497343896ae0e3fcee775242bd26f24b7408d4336f0df013fa1c9f43712829eb",
-        "0x558650661d4e24b77591059678823515e209ae17eacae9eebc9561598c358dc0",
-        "0x344c2e8b77b87fd35f597669d12fe1d997fd99ac57c2a7ec68eeb54ba5aa67d3",
-        "0xbadd6d9290cf76e3c4bfba57e210b530fad95a2e24732b9e677f22b2b811ddb2",
-        "0xf6f988624e5c803e938f1f01aee4c05d894eed2823c28d2ea1ec190dcd7dbc95",
-        "0x3b460d346d6e232e31c4fe528a89c01309caa5a376c55136f5c964054313528b",
-        "0x08a01bfd0a03760b01000c0b80be35335de92f4027c5db05c5479ba980f6c21f",
-        "0x8124563eb512cf5de912187c7b1da643f872ef082fb09fb355232ed3f38e7c30",
-        "0x1743a1cbaccfc318dc3d00de3ffc2bf0d589d5f64b804558e5e7095d65053779"
-      ]
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x98983efd00e9224c0bfc38955e1f3bf4975b2deabaeeef56a26369f6f051bd44",
-        "0xca9282a7efdbc9cc462598b00f26fd5a91c3947cd9bb9809eb8562039d976912",
-        "0x4b4786f316341c41121d73606cb3e10b5be5e904d12be4f065cfa5962e5ee423",
-        "0x20f859c5999842d00dfa951f73976659cdfacfc3d8635bf88065917acd0edc22",
-        "0x0e8f52dc69a3a170c9337ab894ef9105599ac47910eddad581dba8a2180e9193",
-        "0x11057def77562537a6ddbddfade1fe662c95ad839626a0d1af62271b04c59e3a",
-        "0x13288e4bbd0f2ced2e3e0e1048ac3c12f242a164348199890c58d6b12399b5a0",
-        "0x16dcdd429b9acaa1731b8d787e39989687c96e44d36c6b7bd06c84f19a68f000",
-        "0x17899f9d400ec0979d90df084ff7b1df532cd878e42865a1c361ee7017b68d98",
-        "0x1920a5d061ca8b9548afdabe9331988f150e6e44360db6c2361335b1c57b1181",
-        "0x1bf0a214f6e8fc6057344d033a8b44b0d09809a15bfee78fd85b8589efbcf969",
-        "0x269fb9b2553150326ed52d4616dff0a08098453c6bcac0b36830ef9f82dfda4f",
-        "0x2785cd0203ded7c5848b6b3f1e84b2a54196904b73f07d663ad0314207803b34",
-        "0x2b15d1fc172f074c5e292072c1d5707e0360effcfca707c537ed75e0f4b1bbcb",
-        "0x302184301cca901d7a0c4b6b8d90fbf48c6ee2d3fa0425b4f8c7dd3e593fc6bb",
-        "0x3102141933ad40e4d38cd29a08498fa2a41b87319e8f7982eb2b4662a63e8dab",
-        "0x32a8044ab049938ee203295e8af4b642f12cac78d69b5026a9d6fb1e67d98319",
-        "0x3315918745aeaf1b1eec02a879c4668bf8e4378e764524d9910333c0bb16011d",
-        "0x33f14d7cb9bd78ae675afe0c7a1b2a15e44b9c0d27fe316ff00c4e92a36875f6",
-        "0x380253c48d63fa40dbe0c6e3e812391697e91f3aaf7ddfe294e69ee3f04ad214",
-        "0x38da797ce8f8326cb47d2399f56652b509afabb7a01e4a733ab540d32647edcd",
-        "0x39b7c2374c399a0bfeae4f0f310849f55844bb22995611f297971bf7bf5a103c",
-        "0x475b2e3956eadb736461db23aaf08043cb283ab43446456425f25bb45bc96a69",
-        "0x4c895b62bef9616cb44a09c1b0a7d1cf329f3d539c499c0397cade0024f624db",
-        "0x4d262f8f438e62c68eca7b12e86cae1a9a0742040e2579ccfc9574a1850c0d01",
-        "0x4db6798cd376035a4cc3b1c69004c8da9c0cc47ebdf020ab1433ea573dfdcb15",
-        "0x4f930e56f3a262e01449fbbc63aabc160d874c339734a8cd281ddc72e9da3c7f",
-        "0x523eedddf9463e5321a74b7c109024b68474d833c7192203bdf0900d0121a385",
-        "0x55cd68ebc57ae4207870422dfe250ee27cf69118fc579a7ac01b984e0fc165e5",
-        "0x64a246c2db8465da49a8b18da0054e8e812ca119b6ff7f974de210a4d0ac66ca",
-        "0x64f8b9bef757a2ff360611db299511d5a51a19c7b64fbbb1f21676249a26aeec",
-        "0x6606c6d2087a25302359bc52a1273797c34d0258be106ffaea65edd5939621c5",
-        "0x67e3200d9dd56f5f08b141bff486e8de1e9c7afa8c67f3f9b118cceaac10dca6",
-        "0x6a0a5b4f47de1f7a3775d4bb5472860e5cb0c75dadf2745dc99eb0becbb905ee",
-        "0x6dd6a0db1139654133e7f293d1fd136392d3dc5626f8b5fe49898860ed5b02e4",
-        "0x6e1b056730a2802b399d5002b2bff944439da45242bbfdfa3119c4401d0c4763",
-        "0x74fb5f6b631ba7dea8067931f25118a552cbb464bd5cd0ecfceff127c98b65f4",
-        "0x77fa07e52f294a2d8b89f886aa7cc345bc1fbad1b8c70ab6db551b60ec5b30ee",
-        "0x7bb3b1a6facb6b1a06c03265e3faf8fd0d3af3e68f1a8428e27bab04ad4d6fa7",
-        "0x81e867283265ace74138f7141027b3fd4038019b39583d48b1857066164246cb",
-        "0x88411d4e71d09a6bb22466c8441d1bd4e1af567b29aed8110fd7e724767804d3",
-        "0x98f5857e9bc273b8ab667a0e166f96bee582251225f40ef5dc255738205729e6",
-        "0xa251f0790094e5906f6d2abb8f7bb8276e2808df7b50f0d91ac349cd69c4b508",
-        "0xa8d0b9a4b0a3b0289e5ca946324a6b036df4ddb9e908df3f464bb951a2cb1a08",
-        "0xaec588c2d55cf7151798fcd574e06dde05ff9b959370b784bfea2010b851fced",
-        "0xb30e2abfbe8600410472f7efca73c7eca884c3d253e6573db6dd5f0afb1fc0cf",
-        "0xb520808559c6d25f93caad7c5f8836ea3459cce49cefd162e8a6711e7ca03e97",
-        "0xb5dd1b247b1c390f404ba338dd019e29195265d699189ffc235b1fcd65ad011d",
-        "0xba595f4b484eef297664d3d760b4ff567f35cadb57a8959660c88439297e671e",
-        "0xc3e779972d6b03b5b083cdea60bea5a175ae8ee5c3e908321b79eaffe6041feb",
-        "0xc7c524d8425428094c6742dba5c854b492e52f386970b12d8bb7928b148110d9",
-        "0xc827ea2f8a7b05178298ae78765b520b019ac729ea1a012d0210292b4920a5bc",
-        "0xc90647b953cf74497ad975c5e9f73caaf6489669782239309e20f8333946572f",
-        "0xc9bc65ed90e48e40c0adde69b59abf144dec5ef1e54ff2f8d0d0008f4a53b1b0",
-        "0xcc5928ebea1ef7069b6189e3f98d97ba0ea16b95e9dd1f96a61a6a625715ce30",
-        "0xcdc92bac73a7b60668081025e0a1e4acadd6c910f758fdad9adb13d91f0835a5",
-        "0xd4435d34d5a89f9330904769d635bc13791ea31e3d43de7c413420d41ece0887",
-        "0xd5872c02ff1f0ad7235e9817d74803d78b6e4f8f82cb3e1fd92bb6750fc9706b",
-        "0xdf119586a554b4fb3d84362cb83433eb83ef7f226f214d645ce66194689ea522",
-        "0xe079fc39b36e2b0232847c0a6e8121ff770ff897989a1f413b10b47c36568257",
-        "0xe2741063f65cf586cbb34f1d380a9edafa26d1847a68a3727de3fc4dd0753461",
-        "0xe9a10be82b02caaa0033955215f589921e7dcf7377908650d887fd0f63e4957a",
-        "0xef725d9a107f40bf18c3d79e39d009cbe4dcc9cabe62cff430545cf3766bbe35",
-        "0xfefccd21ed7d9d0a95159bdb24961e763b8db70c6a6caa095209ad58153f3a2b",
-        "0xff56a84cfb97c3b8f8dcd50d1441c17f2415ae6dce5ce42104b12efd1b28e0c2"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T06:21:31Z",
-      "note": "Reviewed the successful BSC receipt and call trace, both victim runtimes and creation transactions, the staking constructor and decompiled runtime, TlnSwap's verified solc 0.8.20 source, archive calls, pair and victim balance deltas, and the attacker's bounded BSC and Ethereum transaction histories. The attack contract's earlier block-39198659 transaction used 2 BNB to buy VOW and create the 942.253377026177767815-LP position but did not call either vulnerable function; block 39198686 index 0 is the earliest defect execution. Its trace shows a 19,000,000-USDT flash loan and VOW purchase move USDT/VOW reserves from 168,714.539174243098608055 USDT / 242,846.755616111124281366 VOW before the transaction to 19,168,714.539174243098608055 / 2,142.739331740252639958 at the vulnerable reads. TLNProtocolStaking's lpRate() rises from an archive-called 1.215482698109854272 to 15,651.365207148704710450, after which stake(uint256) accepts 1 LP from the helper and 942.253377026177767815 LP from the attack contract and mints rewards that consolidate into 3,199,510.344301177871795565 TLN. TlnSwap.lock() burns 70%, sends 10% to its exchange, computes VOW collateral from the same manipulated pair and transfers 3,251,534.902745099463206875 VUSD to the attacker. The verified source fixes the formula as amountIn/5 multiplied by the instantaneous reserve ratio through _getAmountOut(); an archive call at block 39198685 requires 921,120.006996164638490158 VOW for this TLN amount, while the trace transfers only 71.530270655320077627 VOW. This establishes two distinct defect-bearing roles. Code history: staking is direct, absent at block 37612638, and its 10,785-byte runtime hashes to 0x8a5c5d9d4d0db536ba4e2f97b9d2dbed6fdb18f63d7ac6a1297283424a52c064 at deployment and block 39198685; its constructor fixes SmartNode 0x028c911c10c9e346158206991e02d09bd0a8a35b, TLN 0xf7d142a354322c7560250caa0e2a06c89649e4c2, LP/pair 0x72dcf845ae36401e82e681b0e063d0703bac0bba, USDT/VOW pair 0xc6585bc17b53792f281a9739579dd60535c1f9fb and qualifier 0x9a9e97a015ca65f48973835b45d4e28a99f89191. Its complete pre-exploit top-level history contains only staking, yield withdrawal and three threshold-setting calls after deployment; no call changes those fixed pricing inputs. TlnSwap is direct, absent at block 37612474, and its 13,971-byte runtime hashes to 0x4f1513a3fe9a87ab6c1d639dcd8227aeb44eea3cd3c6d65eb3d50b29e30872e3 at deployment and block 39198685; its constructor-fixed tokens and pair have no setters. Disassembly of both runtimes contains no DELEGATECALL, CREATE, CREATE2 or SELFDESTRUCT. Their deployment resets give 4,768,179 and 4,768,671 seconds of age. Loss: TlnSwap VUSD depletion and both sweep quantities were reproduced with archive balance calls. The BSC transaction set converts all 107,881.749956792323205771 USDT plus 3,280.244257269082062875 VOW into exactly 184.838953341954182596 BNB and bridges the remaining 1,460,000 VOW to Ethereum. The Ethereum set includes four one-for-one bridge withdrawals and all 61 sales; those sales transfer exactly 1,460,000 VOW out and return exactly 171.439728226688515854 ETH to the same EOA. Removing the 2-BNB LP setup input gives the recorded net proceeds."
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1717144634/coingecko:binancecoin,coingecko:ethereum",
-      "observedAt": 1787897866
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T07:30:00Z",
-      "note": "Knot collapse. TLNProtocolStaking reward inflation and TlnSwap collateral underpricing read the same manipulated reserves in one transaction and produced one VUSD loss; the campaign needed the minted TLN to open the undercollateralized lock. The pair is one conjunctive failure. Staking was deployed 492 seconds after TlnSwap, so its deployment completed the exploitable combination: target-1 supplies the single knot and target-2 is supporting."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-05/Liquiditytokens_exp.sol",
-    "web:2024-05-31:tln-protocol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 748229.1155236985,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "182.838953341954182596",
+        "usd": 108231.51843076978
+      },
+      {
+        "chainId": 1,
+        "symbol": "ETH",
+        "amount": "171.439728226688515854",
+        "usd": 639997.5970929287
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/Liquiditytokens_exp.sol",
+    "eip155:56:0x8d27f9a15b1834e5f9e55d47ec32d01e7fe54f93cfc6ea9d4e8c5fbe72756897",
+    "eip155:56:0xc184dc48e5035d2e720a3ee5842c605857cd2e36dc38d51527a5f1466e76c4e7",
+    "eip155:56:0x497343896ae0e3fcee775242bd26f24b7408d4336f0df013fa1c9f43712829eb",
+    "eip155:56:0x558650661d4e24b77591059678823515e209ae17eacae9eebc9561598c358dc0",
+    "eip155:56:0x344c2e8b77b87fd35f597669d12fe1d997fd99ac57c2a7ec68eeb54ba5aa67d3",
+    "eip155:56:0xbadd6d9290cf76e3c4bfba57e210b530fad95a2e24732b9e677f22b2b811ddb2",
+    "eip155:56:0xf6f988624e5c803e938f1f01aee4c05d894eed2823c28d2ea1ec190dcd7dbc95",
+    "eip155:56:0x3b460d346d6e232e31c4fe528a89c01309caa5a376c55136f5c964054313528b",
+    "eip155:56:0x08a01bfd0a03760b01000c0b80be35335de92f4027c5db05c5479ba980f6c21f",
+    "eip155:56:0x8124563eb512cf5de912187c7b1da643f872ef082fb09fb355232ed3f38e7c30",
+    "eip155:56:0x1743a1cbaccfc318dc3d00de3ffc2bf0d589d5f64b804558e5e7095d65053779",
+    "eip155:1:0x98983efd00e9224c0bfc38955e1f3bf4975b2deabaeeef56a26369f6f051bd44",
+    "eip155:1:0xca9282a7efdbc9cc462598b00f26fd5a91c3947cd9bb9809eb8562039d976912",
+    "eip155:1:0x4b4786f316341c41121d73606cb3e10b5be5e904d12be4f065cfa5962e5ee423",
+    "eip155:1:0x20f859c5999842d00dfa951f73976659cdfacfc3d8635bf88065917acd0edc22",
+    "eip155:1:0x0e8f52dc69a3a170c9337ab894ef9105599ac47910eddad581dba8a2180e9193",
+    "eip155:1:0x11057def77562537a6ddbddfade1fe662c95ad839626a0d1af62271b04c59e3a",
+    "eip155:1:0x13288e4bbd0f2ced2e3e0e1048ac3c12f242a164348199890c58d6b12399b5a0",
+    "eip155:1:0x16dcdd429b9acaa1731b8d787e39989687c96e44d36c6b7bd06c84f19a68f000",
+    "eip155:1:0x17899f9d400ec0979d90df084ff7b1df532cd878e42865a1c361ee7017b68d98",
+    "eip155:1:0x1920a5d061ca8b9548afdabe9331988f150e6e44360db6c2361335b1c57b1181",
+    "eip155:1:0x1bf0a214f6e8fc6057344d033a8b44b0d09809a15bfee78fd85b8589efbcf969",
+    "eip155:1:0x269fb9b2553150326ed52d4616dff0a08098453c6bcac0b36830ef9f82dfda4f",
+    "eip155:1:0x2785cd0203ded7c5848b6b3f1e84b2a54196904b73f07d663ad0314207803b34",
+    "eip155:1:0x2b15d1fc172f074c5e292072c1d5707e0360effcfca707c537ed75e0f4b1bbcb",
+    "eip155:1:0x302184301cca901d7a0c4b6b8d90fbf48c6ee2d3fa0425b4f8c7dd3e593fc6bb",
+    "eip155:1:0x3102141933ad40e4d38cd29a08498fa2a41b87319e8f7982eb2b4662a63e8dab",
+    "eip155:1:0x32a8044ab049938ee203295e8af4b642f12cac78d69b5026a9d6fb1e67d98319",
+    "eip155:1:0x3315918745aeaf1b1eec02a879c4668bf8e4378e764524d9910333c0bb16011d",
+    "eip155:1:0x33f14d7cb9bd78ae675afe0c7a1b2a15e44b9c0d27fe316ff00c4e92a36875f6",
+    "eip155:1:0x380253c48d63fa40dbe0c6e3e812391697e91f3aaf7ddfe294e69ee3f04ad214",
+    "eip155:1:0x38da797ce8f8326cb47d2399f56652b509afabb7a01e4a733ab540d32647edcd",
+    "eip155:1:0x39b7c2374c399a0bfeae4f0f310849f55844bb22995611f297971bf7bf5a103c",
+    "eip155:1:0x475b2e3956eadb736461db23aaf08043cb283ab43446456425f25bb45bc96a69",
+    "eip155:1:0x4c895b62bef9616cb44a09c1b0a7d1cf329f3d539c499c0397cade0024f624db",
+    "eip155:1:0x4d262f8f438e62c68eca7b12e86cae1a9a0742040e2579ccfc9574a1850c0d01",
+    "eip155:1:0x4db6798cd376035a4cc3b1c69004c8da9c0cc47ebdf020ab1433ea573dfdcb15",
+    "eip155:1:0x4f930e56f3a262e01449fbbc63aabc160d874c339734a8cd281ddc72e9da3c7f",
+    "eip155:1:0x523eedddf9463e5321a74b7c109024b68474d833c7192203bdf0900d0121a385",
+    "eip155:1:0x55cd68ebc57ae4207870422dfe250ee27cf69118fc579a7ac01b984e0fc165e5",
+    "eip155:1:0x64a246c2db8465da49a8b18da0054e8e812ca119b6ff7f974de210a4d0ac66ca",
+    "eip155:1:0x64f8b9bef757a2ff360611db299511d5a51a19c7b64fbbb1f21676249a26aeec",
+    "eip155:1:0x6606c6d2087a25302359bc52a1273797c34d0258be106ffaea65edd5939621c5",
+    "eip155:1:0x67e3200d9dd56f5f08b141bff486e8de1e9c7afa8c67f3f9b118cceaac10dca6",
+    "eip155:1:0x6a0a5b4f47de1f7a3775d4bb5472860e5cb0c75dadf2745dc99eb0becbb905ee",
+    "eip155:1:0x6dd6a0db1139654133e7f293d1fd136392d3dc5626f8b5fe49898860ed5b02e4",
+    "eip155:1:0x6e1b056730a2802b399d5002b2bff944439da45242bbfdfa3119c4401d0c4763",
+    "eip155:1:0x74fb5f6b631ba7dea8067931f25118a552cbb464bd5cd0ecfceff127c98b65f4",
+    "eip155:1:0x77fa07e52f294a2d8b89f886aa7cc345bc1fbad1b8c70ab6db551b60ec5b30ee",
+    "eip155:1:0x7bb3b1a6facb6b1a06c03265e3faf8fd0d3af3e68f1a8428e27bab04ad4d6fa7",
+    "eip155:1:0x81e867283265ace74138f7141027b3fd4038019b39583d48b1857066164246cb",
+    "eip155:1:0x88411d4e71d09a6bb22466c8441d1bd4e1af567b29aed8110fd7e724767804d3",
+    "eip155:1:0x98f5857e9bc273b8ab667a0e166f96bee582251225f40ef5dc255738205729e6",
+    "eip155:1:0xa251f0790094e5906f6d2abb8f7bb8276e2808df7b50f0d91ac349cd69c4b508",
+    "eip155:1:0xa8d0b9a4b0a3b0289e5ca946324a6b036df4ddb9e908df3f464bb951a2cb1a08",
+    "eip155:1:0xaec588c2d55cf7151798fcd574e06dde05ff9b959370b784bfea2010b851fced",
+    "eip155:1:0xb30e2abfbe8600410472f7efca73c7eca884c3d253e6573db6dd5f0afb1fc0cf",
+    "eip155:1:0xb520808559c6d25f93caad7c5f8836ea3459cce49cefd162e8a6711e7ca03e97",
+    "eip155:1:0xb5dd1b247b1c390f404ba338dd019e29195265d699189ffc235b1fcd65ad011d",
+    "eip155:1:0xba595f4b484eef297664d3d760b4ff567f35cadb57a8959660c88439297e671e",
+    "eip155:1:0xc3e779972d6b03b5b083cdea60bea5a175ae8ee5c3e908321b79eaffe6041feb",
+    "eip155:1:0xc7c524d8425428094c6742dba5c854b492e52f386970b12d8bb7928b148110d9",
+    "eip155:1:0xc827ea2f8a7b05178298ae78765b520b019ac729ea1a012d0210292b4920a5bc",
+    "eip155:1:0xc90647b953cf74497ad975c5e9f73caaf6489669782239309e20f8333946572f",
+    "eip155:1:0xc9bc65ed90e48e40c0adde69b59abf144dec5ef1e54ff2f8d0d0008f4a53b1b0",
+    "eip155:1:0xcc5928ebea1ef7069b6189e3f98d97ba0ea16b95e9dd1f96a61a6a625715ce30",
+    "eip155:1:0xcdc92bac73a7b60668081025e0a1e4acadd6c910f758fdad9adb13d91f0835a5",
+    "eip155:1:0xd4435d34d5a89f9330904769d635bc13791ea31e3d43de7c413420d41ece0887",
+    "eip155:1:0xd5872c02ff1f0ad7235e9817d74803d78b6e4f8f82cb3e1fd92bb6750fc9706b",
+    "eip155:1:0xdf119586a554b4fb3d84362cb83433eb83ef7f226f214d645ce66194689ea522",
+    "eip155:1:0xe079fc39b36e2b0232847c0a6e8121ff770ff897989a1f413b10b47c36568257",
+    "eip155:1:0xe2741063f65cf586cbb34f1d380a9edafa26d1847a68a3727de3fc4dd0753461",
+    "eip155:1:0xe9a10be82b02caaa0033955215f589921e7dcf7377908650d887fd0f63e4957a",
+    "eip155:1:0xef725d9a107f40bf18c3d79e39d009cbe4dcc9cabe62cff430545cf3766bbe35",
+    "eip155:1:0xfefccd21ed7d9d0a95159bdb24961e763b8db70c6a6caa095209ad58153f3a2b",
+    "eip155:1:0xff56a84cfb97c3b8f8dcd50d1441c17f2415ae6dce5ce42104b12efd1b28e0c2"
+  ],
+  "notes": [
+    "The direct contract's constructor fixed its TLN token, LP token, both reserve-reading pairs, SmartNode and qualification contract. Its 10,785-byte runtime is absent before deployment and has the same hash at deployment and immediately before the exploit; later governance calls changed eligibility thresholds, not the causal reserve-pricing logic or its fixed inputs.",
+    "TlnSwap is a direct non-proxy contract whose constructor fixed the TLN, VOW and VUSD tokens and the USDT/VOW pair used by _vowToLock(). Its 13,971-byte runtime is absent in the preceding block and hashes identically at deployment and immediately before the exploit; it exposes no setter for those inputs or the collateral calculation.",
+    "TlnSwap's VUSD balance fell exactly 3,251,534.902745099463206875, but VUSD had no reliable external dollar market, so it is not valued at its nominal peg. The recorded loss is instead the attacker's exact net realised proceeds. On BSC, the two sweep transactions moved 107,881.749956792323205771 USDT and 1,463,280.244257269082062875 VOW from the attack contract to the EOA. The EOA sold all USDT and 3,280.244257269082062875 VOW for 184.838953341954182596 BNB, then bridged exactly 1,460,000 VOW to Ethereum and sold it in 61 transactions for 171.439728226688515854 ETH. The 2 BNB transferred into the attack contract during setup bought the LP position later surrendered to staking and is attacker-supplied capital, so it is removed from the BNB component. Gas and bridge fees are disposal costs and are not subtracted. Incident-time DefiLlama prices value the resulting 182.838953341954182596 BNB and 171.439728226688515854 ETH at $748,229.12. Early reports of approximately $200,000 to $280,000 did not follow the VOW bridge and liquidation.",
+    "The staking runtime is unverified on BscScan; its fixed inputs and reward calculation were reviewed from constructor bytecode, runtime decompilation, archive calls and the exploit trace.",
+    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+  ]
 }

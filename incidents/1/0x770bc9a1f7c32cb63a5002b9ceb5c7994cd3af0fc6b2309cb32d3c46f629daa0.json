@@ -1,145 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0",
-  "protocol": {
-    "name": "Ekubo",
-    "slug": "ekubo"
-  },
+  "protocol": "Ekubo",
   "name": "Ekubo router payCallback settles with a caller-supplied payer",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0",
-      "blockNumber": 25030409,
-      "transactionIndex": 43,
-      "timestamp": 1778003435
-    },
-    "attackerAddresses": [
-      "0x61b0dad9628d3e644eb560a5c9b0f960430e3a75",
-      "0xa911ff351b143634dbc5af3e204ea074583a83e3"
-    ]
-  },
   "summary": "The Ekubo router takes the address whose tokens settle a Core debt from its own calldata and does not check it against the caller. The attacker locked Core, called withdraw to send 17 WBTC of Core-held liquidity to themselves, and then settled the resulting debt through pay(), whose payCallback ran transferFrom against a third party that still held a router approval. The debt was paid with the victim’s tokens and the withdrawal kept.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1376975.3020429024,
-      "valuationTimestamp": 1778003435,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "17",
-        "usdValue": 1376975.3020429024,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1778003435,
-          "unitPriceUsd": 80998.54717899427,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The whole loss is in the single exploit transaction: netting its ERC-20 transfers leaves exactly two non-zero positions, 17 WBTC out of the approval holder 0x765decf4fa157756e850c1079f60801b9219edd1 and 17 WBTC into the attacker EOA. Ekubo Core itself ends the transaction whole because the router repaid it with the victim’s tokens, so the loss falls on the approval holder rather than on protocol-held liquidity. The attacker sent one exploit transaction and then 41 swap and mixer transactions. Nothing was recovered."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8ccb1ffd5c2aa6bd926473425dea4c8c15de60fd",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8ccb1ffd5c2aa6bd926473425dea4c8c15de60fd",
-        "codeHash": "0x2ce3674818a9487e495273dee5a576b9e61be5970d6bebd837106f92b33d2fb7"
-      },
-      "deployment": {
-        "timestamp": 1757083379,
-        "blockNumber": 23297576,
-        "transactionHash": "0x0cd9656c1dbeeecea2eb7ef29461f69ee91a65cf8c34676dc9a7f45d0f478df0",
-        "transactionIndex": 29,
-        "creatorAddress": "0x00000c771f6176268d5a9846e0956c3ef58597a1"
-      },
-      "ageReset": {
+      "address": "0x8ccb1ffd5c2aa6bd926473425dea4c8c15de60fd",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-upgradeable contract. The runtime code hash is 0x2ce3674818a9487e495273dee5a576b9e61be5970d6bebd837106f92b33d2fb7 both at the deployment block 23297576 and at block 25030408, and the exploit trace shows 255 frames executing at the router with no DELEGATECALL out of it, so no code change occurred between deployment and the exploit."
-      },
-      "codeAgeSeconds": 20920056,
-      "failureModeId": "failure:ekubo-router-paycallback-unchecked-payer",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x0cd9656c1dbeeecea2eb7ef29461f69ee91a65cf8c34676dc9a7f45d0f478df0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-05/Ekubo_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0cd9656c1dbeeecea2eb7ef29461f69ee91a65cf8c34676dc9a7f45d0f478df0"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T11:20:00Z",
-      "note": "The trace shows the attacker contract entering the router, the router locking Ekubo Core, Core.withdraw sending 20000000 WBTC units to the attacker EOA, and Core.pay calling back into the router, whose payCallback runs WBTC.transferFrom from 0x765decf4fa157756e850c1079f60801b9219edd1 into Core; that payer address comes from the attacker’s own calldata and is never checked against the caller, which is the defect. The pattern repeats until 17 WBTC has moved. The router is not upgradeable: identical runtime code hash at the deployment block 23297576 and at block 25030408 with no delegatecall out of it in the exploit, so the exploited code is 242.1 days old, deployed by 0x00000c771f6176268d5a9846e0956c3ef58597a1, which is not an attacker address. The attacker EOA sent exactly one transaction against Ekubo."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1778003435/ethereum:0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-      "observedAt": 1787644589
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 1376975.3020429024,
+    "assets": [
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "17",
+        "usd": 1376975.3020429024
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-05/Ekubo_exp.sol"
+  ],
+  "notes": [
+    "Non-upgradeable contract. The runtime code hash is 0x2ce3674818a9487e495273dee5a576b9e61be5970d6bebd837106f92b33d2fb7 both at the deployment block 23297576 and at block 25030408, and the exploit trace shows 255 frames executing at the router with no DELEGATECALL out of it, so no code change occurred between deployment and the exploit.",
+    "The whole loss is in the single exploit transaction: netting its ERC-20 transfers leaves exactly two non-zero positions, 17 WBTC out of the approval holder 0x765decf4fa157756e850c1079f60801b9219edd1 and 17 WBTC into the attacker EOA. Ekubo Core itself ends the transaction whole because the router repaid it with the victim’s tokens, so the loss falls on the approval holder rather than on protocol-held liquidity. The attacker sent one exploit transaction and then 41 swap and mixer transactions. Nothing was recovered."
+  ]
 }

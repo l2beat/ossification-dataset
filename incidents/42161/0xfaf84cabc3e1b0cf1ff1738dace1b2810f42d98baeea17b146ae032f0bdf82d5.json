@@ -1,253 +1,71 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xfaf84cabc3e1b0cf1ff1738dace1b2810f42d98baeea17b146ae032f0bdf82d5",
-  "protocol": {
-    "name": "Sperax USDs",
-    "slug": "sperax"
-  },
+  "protocol": "Sperax USDs",
   "name": "Sperax USDs non-rebasing migration reinterprets credits as tokens",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xfaf84cabc3e1b0cf1ff1738dace1b2810f42d98baeea17b146ae032f0bdf82d5",
-      "blockNumber": 57803530,
-      "transactionIndex": 1,
-      "timestamp": 1675466814
-    },
-    "attackerAddresses": [
-      "0x26c1fd9fd5a1338aabbdbe3f64f3e73369a0f4a0",
-      "0x4afcd19bb978eaf4f993814298504ed285df1181",
-      "0x5c978df5f8af72298fe1c2c8c2c05476a10f2539"
-    ]
-  },
   "summary": "The USDs implementation keeps two balance representations: rebasing accounts store scaled credits in _creditBalances and divide by rebasingCreditsPerToken, while non-rebasing (contract) accounts are flagged by nonRebasingCreditsPerToken[account] = 1 and have _creditBalances read back as plain token units. The lazy migration that _isNonRebasingAccount() runs the first time a transfer touches an unclassified contract account sets that flag without rescaling the account's stored credit balance, so a balance accumulated while the address was still an EOA is reinterpreted at a factor of rebasingCreditsPerToken/1e18. The attacker sent 11 USDs to a counterfactual Gnosis Safe address, deployed the Safe, and let the first transferFrom() out of it trigger the migration: with rebasingCreditsPerToken = 890714019687982181365620786, the Safe's 11 USDs became 9,797,854,205.567804 USDs of spendable balance, which was then sold into Arbitrum liquidity.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 306440.3189585675,
-      "valuationTimestamp": 1675478680,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "symbol": "USDT"
-        },
-        "amount": "149793.350734",
-        "usdValue": 149793.350734,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1675478680,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-          "symbol": "USDC.e"
-        },
-        "amount": "107946.413734",
-        "usdValue": 107946.413734,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1675478680,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "ETH"
-        },
-        "amount": "29.420036549112749275",
-        "usdValue": 48700.55449056748,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1675478680,
-          "unitPriceUsd": 1655.3532966986133,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-6",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Realised proceeds, not a par valuation of the fabricated USDs. The campaign sold 310,004 USDs out of the Safe's fabricated 9.79785e9 USDs balance across 23 transactions between blocks 57803530 and 57840578; the attacker's own selling moved USDs against USDC.e/USDT/WETH on Camelot, Curve and 1inch routes, so only the assets actually received are counted. Components are the exact ERC-20 and native-value credits to the attacker set (EOA 0x26c1fd9f..., proceeds wallet 0x4afcd19b..., exploit Safe 0x5c978df5...): 149,804.349817 USDT less the 10.999083 USDT realised on the attacker's own 11 USDs seed leg in the anchor transaction, 107,946.413734 USDC.e, and 29.420036549112749275 ETH (24.4887 native ETH unwrapped through 1inch plus 5.931308 WETH). The 10,007.133196 USDT the Safe routed into Stargate (received back as 9,986.758893 S*USDT and staked) is counted once, as USDT. Gas and DEX fees are not deducted. USDs itself is excluded from the components because the fabricated units never had backing.",
-    "realizedAt": 1675478680
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xd74f5255d557944cf7dd0e45ff521520002d5748",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x97a7e6cf949114fe4711018485d757b9c4962307",
-        "codeHash": "0x862f5ae703bf45225c908197ffa0772d6ca85540186d0491cdde3ed2eafea7ab"
-      },
-      "deployment": {
-        "timestamp": 1640227331,
-        "blockNumber": 4032282,
-        "transactionHash": "0xb2f2a13e659f26340ad76620dcb6480cb0aa47a784f9539fa691dd170c8632c3",
-        "transactionIndex": 0,
-        "creatorAddress": "0x42d2f9f84eeb86574aa4e9fcccfd74066d809600"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1671814445,
-        "blockNumber": 48326486,
-        "transactionHash": "0x7bd30e2eac633377738f4a83128d44a2e0370aec1dca7192d7cbe0ee8b753aab",
-        "transactionIndex": 1,
-        "logIndex": 1,
-        "mechanism": {
-          "type": "event",
-          "address": "0xd74f5255d557944cf7dd0e45ff521520002d5748",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Last of five pre-exploit EIP-1967 Upgraded events on the USDs proxy, installing implementation 0x97a7e6cf949114fe4711018485d757b9c4962307. The next Upgraded event is the remediation at block 57843294, after the campaign."
-      },
-      "codeAgeSeconds": 3652369,
-      "failureModeId": "failure:usds-nonrebasing-migration-omits-credit-rescale",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "Implementation 0x97a7e6cf949114fe4711018485d757b9c4962307 is not source-verified on Arbiscan; the defect was established from the deployed runtime's execution (opcode-level traces of balanceOf and the anchor transaction) and from the pre/post storage state, cross-read against the source-verified predecessor implementation 0x2d715a14d0577964f9dd7956c9a369b26afa55dc (USDsL2) which contains the same _isNonRebasingAccount/_ensureRebasingMigration structure."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0xd74f5255d557944cf7dd0e45ff521520002d5748",
+      "code": "0x97a7e6cf949114fe4711018485d757b9c4962307",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x7bd30e2eac633377738f4a83128d44a2e0370aec1dca7192d7cbe0ee8b753aab"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xfaf84cabc3e1b0cf1ff1738dace1b2810f42d98baeea17b146ae032f0bdf82d5"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-02/USDs_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Reproduced onchain. Anchor 0xfaf84cab... is successful at block 57803530 index 1, timestamp 1675466814, sent by 0x26c1fd9fd5a1338aabbdbe3f64f3e73369a0f4a0 with nonce 212. Its 115-frame callTracer trace creates Gnosis Safe 0x5c978df5f8af72298fe1c2c8c2c05476a10f2539 through factory 0xa6b71e26c5e0845f74c812102ca7114b6a896ab2 and then executes the USDs proxy 0xd74f5255d557944cf7dd0e45ff521520002d5748 fourteen times, every one of them DELEGATECALLing implementation 0x97a7e6cf949114fe4711018485d757b9c4962307. Earliest-defect check: the attacker EOA's transactions were walked from block 57000000; 0xfaf84cab is the first of its transactions whose receipt carries a USDs log, and the Safe's only pre-exploit USDs credit is 11 USDs received at block 57803397 in 0xe74641b4... from the attacker's proceeds wallet 0x4afcd19bb978eaf4f993814298504ed285df1181, so there is no earlier defect-executing success. Root cause established from the deployed runtime rather than from a blog: eth_call of balanceOf(Safe) at block 57803529 returns 11000000000000000000 and its structLog shows SLOAD(_creditBalances)=9797854216567803995021828646, SLOAD(nonRebasingCreditsPerToken)=0, SLOAD(rebasingCreditsPerToken)=890714019687982181365620786 followed by MUL 1e18 / DIV; the same call at block 57803530 returns 9797854205567803995021828646 after SLOAD(nonRebasingCreditsPerToken)=1 with no division at all, i.e. the credit balance is returned verbatim as a token amount. Legitimate contract holders confirm the intended invariant: the Camelot pair 0x495dabd6506563ce892b8285704bd28f9ddcae65 has nonRebasingCreditsPerToken=1 with _creditBalances == balanceOf. So the migration flips the representation without dividing the stored credits by rebasingCreditsPerToken/1e18, inflating the Safe by 890,714,019x. Target: relationship proxy; EIP-1967 slot 0x360894...382bbc reads 0x97a7e6cf949114fe4711018485d757b9c4962307 at both 57803529 and 57803530; that runtime is 16,096 bytes and hashes to 0x862f5ae703bf45225c908197ffa0772d6ca85540186d0491cdde3ed2eafea7ab identically at blocks 48325641 (its own creation), 48326486 and 57803529. Code history: eth_getLogs for topic 0xbc7cd75a...5c2d3b on the proxy over its whole life returns nine Upgraded events; the last before the exploit is block 48326486, transactionIndex 1, logIndex 1, transaction 0x7bd30e2eac633377738f4a83128d44a2e0370aec1dca7192d7cbe0ee8b753aab at timestamp 1671814445, and the next one is the remediation at block 57843294 on 2023-02-04T02:59:24Z, after the campaign ended. Proxy 0xd74f5255... was created by 0x42d2f9f84eeb86574aa4e9fcccfd74066d809600 in 0xb2f2a13e...632c3 at block 4032282 index 0, timestamp 1640227331, which is not an attacker address. Code age 1675466814 - 1671814445 = 3652369 s (42.27 days). Loss reconstructed from receipts across the 23-transaction campaign (blocks 57803530 to 57840578): 310,004 USDs sold out of the fabricated balance, realising 149,804.349817 USDT, 107,946.413734 USDC.e and 29.420036549112749275 ETH/WETH into the attacker set; the 10.999083 USDT realised on the attacker's own 11 USDs seed leg is deducted, giving 149,793.350734 USDT. ETH valued at the DefiLlama coingecko:ethereum price 1655.3532966986133 for the campaign-end timestamp 1675478680; USDT and USDC.e at par. Total 306,440.32 USD, which replaces the seed row's rounded 309,000 figure. No second exploiter was found: the other large USDs senders in blocks 57790000-57850000 (0x50450351..., 0xdb6f1920..., 0xd1f66625..., 0x003b1835...) are long-lived pool and router contracts with correct nonRebasingCreditsPerToken=1 accounting."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xb2f2a13e659f26340ad76620dcb6480cb0aa47a784f9539fa691dd170c8632c3"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x7bd30e2eac633377738f4a83128d44a2e0370aec1dca7192d7cbe0ee8b753aab"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 42161,
-      "transactionHashes": [
-        "0xb5b107cc986e6ad5a05db946fec6b9557a4bb6bfc115590542feee8659bb4645",
-        "0x0e2ded065094d7007af2c44d7fcf6770d11bb1f9257f1c9ccd729e807e7453ae",
-        "0x18ffec15fa7008fd61cf977d0b4a363293df8bb57eb73214c17efb61f4ca329b",
-        "0x0f7093338d3d0831f0ba302374a90e772b43e83d0f07c95e65b120e3b7017834",
-        "0x1e9313603f1e9931bc1877e809fd8ba0a6e173ad5c61f1c9f02b6fb7f6b49f51",
-        "0x4ec09576fa3c02c1747cd8cfb6cbddfe7a28a3fb70533eb322dea055b6db6913",
-        "0xee712e34e006467f8611a0492c7e27faa50719b51ca6cd9d307c548551f0c8bf",
-        "0xf00e96ce27ffbc6fd23ac372848453271d6133a3457ec803886d2ea9aa32d3fe",
-        "0xf42dc3ae658b52e3c9a7f4cea8365271428eb20c09741221f79c439a61b4a6d4",
-        "0xbae9393d7c19adc98e875d9fdf695a1bf964f7a42217da595141e5817a11d405",
-        "0x4ed6adae40531b4d0e50de5352285de00d59bab9089656520084c5495a8e9b3e",
-        "0x10c504039a3302d9db372966543c357fa9eac01307eac7d368baf55312531049",
-        "0xa936b0b178180f37c7a6de336491883666a45b6ce9ead854b4d40bbc1c9268f1",
-        "0x32b7d332fa3d5a64ecb89225c50e2ed627790c02f77dcda2d9801144ae44255d",
-        "0xe1bff1099c5218cb693a6747530b17f7b8fff83d440232cd36ac824d865aca7a",
-        "0xb914b57ca3ae2932b1c23edefeb6edcc0d1ecc06a59376965cad6ce75bdcc170",
-        "0x7601398af7164e512d9e9b56929b48fe7d3401e89ee1c7d2d3c2083da72dcc34",
-        "0x7e9a3cf91076dbee90b4d88bc2587f1e0fa2d2cc5bd6945b2e94c02890fb2661",
-        "0x7c4d9b2a87c7c5499f3295424f7114c230ab24c26edddd53f8a9cc4eb130df46",
-        "0xf161eacf53a872056ddbceb952bd8b1498bdbaa0ee0e2f9428f9bfe4737530b5",
-        "0x659fe2cdbc1f5cb8bd5e889357d6ff2d1dee709bda873314285f7f6fe46d75d4",
-        "0xb29f84372275b5cf5d0134e82c68ffd80cb5092683c8a299a10dc75529c26f55"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1675478680/coingecko:ethereum",
-      "observedAt": 1787705428
-    },
-    {
-      "id": "source-8",
-      "type": "post-mortem",
-      "url": "https://medium.com/sperax/usds-feb-3-exploit-report-from-engineering-team-9f0fd3cef00c"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 306440.3189585675,
+    "assets": [
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "149793.350734",
+        "usd": 149793.350734
+      },
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "107946.413734",
+        "usd": 107946.413734
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "ETH",
+        "amount": "29.420036549112749275",
+        "usd": 48700.55449056748
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/USDs_exp.sol",
+    "eip155:42161:0xb5b107cc986e6ad5a05db946fec6b9557a4bb6bfc115590542feee8659bb4645",
+    "eip155:42161:0x0e2ded065094d7007af2c44d7fcf6770d11bb1f9257f1c9ccd729e807e7453ae",
+    "eip155:42161:0x18ffec15fa7008fd61cf977d0b4a363293df8bb57eb73214c17efb61f4ca329b",
+    "eip155:42161:0x0f7093338d3d0831f0ba302374a90e772b43e83d0f07c95e65b120e3b7017834",
+    "eip155:42161:0x1e9313603f1e9931bc1877e809fd8ba0a6e173ad5c61f1c9f02b6fb7f6b49f51",
+    "eip155:42161:0x4ec09576fa3c02c1747cd8cfb6cbddfe7a28a3fb70533eb322dea055b6db6913",
+    "eip155:42161:0xee712e34e006467f8611a0492c7e27faa50719b51ca6cd9d307c548551f0c8bf",
+    "eip155:42161:0xf00e96ce27ffbc6fd23ac372848453271d6133a3457ec803886d2ea9aa32d3fe",
+    "eip155:42161:0xf42dc3ae658b52e3c9a7f4cea8365271428eb20c09741221f79c439a61b4a6d4",
+    "eip155:42161:0xbae9393d7c19adc98e875d9fdf695a1bf964f7a42217da595141e5817a11d405",
+    "eip155:42161:0x4ed6adae40531b4d0e50de5352285de00d59bab9089656520084c5495a8e9b3e",
+    "eip155:42161:0x10c504039a3302d9db372966543c357fa9eac01307eac7d368baf55312531049",
+    "eip155:42161:0xa936b0b178180f37c7a6de336491883666a45b6ce9ead854b4d40bbc1c9268f1",
+    "eip155:42161:0x32b7d332fa3d5a64ecb89225c50e2ed627790c02f77dcda2d9801144ae44255d",
+    "eip155:42161:0xe1bff1099c5218cb693a6747530b17f7b8fff83d440232cd36ac824d865aca7a",
+    "eip155:42161:0xb914b57ca3ae2932b1c23edefeb6edcc0d1ecc06a59376965cad6ce75bdcc170",
+    "eip155:42161:0x7601398af7164e512d9e9b56929b48fe7d3401e89ee1c7d2d3c2083da72dcc34",
+    "eip155:42161:0x7e9a3cf91076dbee90b4d88bc2587f1e0fa2d2cc5bd6945b2e94c02890fb2661",
+    "eip155:42161:0x7c4d9b2a87c7c5499f3295424f7114c230ab24c26edddd53f8a9cc4eb130df46",
+    "eip155:42161:0xf161eacf53a872056ddbceb952bd8b1498bdbaa0ee0e2f9428f9bfe4737530b5",
+    "eip155:42161:0x659fe2cdbc1f5cb8bd5e889357d6ff2d1dee709bda873314285f7f6fe46d75d4",
+    "eip155:42161:0xb29f84372275b5cf5d0134e82c68ffd80cb5092683c8a299a10dc75529c26f55",
+    "https://medium.com/sperax/usds-feb-3-exploit-report-from-engineering-team-9f0fd3cef00c"
+  ],
   "notes": [
+    "Last of five pre-exploit EIP-1967 Upgraded events on the USDs proxy, installing implementation 0x97a7e6cf949114fe4711018485d757b9c4962307. The next Upgraded event is the remediation at block 57843294, after the campaign.",
+    "Realised proceeds, not a par valuation of the fabricated USDs. The campaign sold 310,004 USDs out of the Safe's fabricated 9.79785e9 USDs balance across 23 transactions between blocks 57803530 and 57840578; the attacker's own selling moved USDs against USDC.e/USDT/WETH on Camelot, Curve and 1inch routes, so only the assets actually received are counted. Components are the exact ERC-20 and native-value credits to the attacker set (EOA 0x26c1fd9f..., proceeds wallet 0x4afcd19b..., exploit Safe 0x5c978df5...): 149,804.349817 USDT less the 10.999083 USDT realised on the attacker's own 11 USDs seed leg in the anchor transaction, 107,946.413734 USDC.e, and 29.420036549112749275 ETH (24.4887 native ETH unwrapped through 1inch plus 5.931308 WETH). The 10,007.133196 USDT the Safe routed into Stargate (received back as 9,986.758893 S*USDT and staked) is counted once, as USDT. Gas and DEX fees are not deducted. USDs itself is excluded from the components because the fabricated units never had backing.",
+    "Implementation 0x97a7e6cf949114fe4711018485d757b9c4962307 is not source-verified on Arbiscan; the defect was established from the deployed runtime's execution (opcode-level traces of balanceOf and the anchor transaction) and from the pre/post storage state, cross-read against the source-verified predecessor implementation 0x2d715a14d0577964f9dd7956c9a369b26afa55dc (USDsL2) which contains the same _isNonRebasingAccount/_ensureRebasingMigration structure.",
     "The seed row's summary attributed the loss to toggling a rebase opt-in state. That is wrong: rebaseState[account] is owner-only and stayed 0 for the exploit Safe throughout. The defect is the lazy non-rebasing migration that runs automatically the first time a transfer touches a contract account.",
     "The campaign ended when Sperax upgraded the proxy at block 57843294, roughly 15 minutes after the last drain transaction."
   ]

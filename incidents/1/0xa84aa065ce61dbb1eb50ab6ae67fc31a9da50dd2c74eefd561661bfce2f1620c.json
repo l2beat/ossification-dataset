@@ -1,172 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xa84aa065ce61dbb1eb50ab6ae67fc31a9da50dd2c74eefd561661bfce2f1620c",
-  "protocol": {
-    "name": "Curve",
-    "slug": "curve"
-  },
+  "protocol": "Curve",
   "name": "Curve pETH/ETH Vyper lock reentrancy",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xa84aa065ce61dbb1eb50ab6ae67fc31a9da50dd2c74eefd561661bfce2f1620c",
-      "blockNumber": 17806056,
-      "transactionIndex": 0,
-      "timestamp": 1690722635
-    },
-    "attackerAddresses": [
-      "0x6ec21d1868743a44318c3c259a6d4953f9978538"
-    ]
-  },
   "summary": "Vyper 0.2.15 allocated the same named nonreentrant lock to different storage slots in different functions. The pETH/ETH pool's native-ETH callback therefore allowed cross-function reentrancy from remove_liquidity() into add_liquidity(), minting an invalid claim on pool reserves.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 11460969.464399068,
-      "valuationTimestamp": 1690722462,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "6106.654659206663837483",
-        "usdValue": 11460969.464399068,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1690722462,
-          "unitPriceUsd": 1876.8,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt records exactly 86,106.654659206663837483 WETH wrapped after the pool operations, 80,000 WETH repaid to Balancer, and 6,106.654659206663837483 WETH transferred as net proceeds. Later recovery is separate from exploit-time loss. Other Vyper-affected pools were attacked independently and are not included."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9848482da3ee3076165ce6497eda906e66bb85c5",
-      "relationship": "minimal-proxy",
-      "codeArtifact": {
-        "address": "0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e",
-        "codeHash": "0xba0284a6a8a86734c1c777e3c6b5b56f2c8ba95dc0f7eba481c6d09da7885ebc"
-      },
-      "deployment": {
-        "timestamp": 1664293031,
-        "blockNumber": 15625628,
-        "transactionHash": "0x659f0eb12c4edf042be41885ed1a8bc78b0a2e87ca47339031b9253cd7ae61ce",
-        "transactionIndex": 116,
-        "creatorAddress": "0xb9fc157394af804a3578134a6585c0dc9cc990d4"
-      },
-      "ageReset": {
+      "address": "0x9848482da3ee3076165ce6497eda906e66bb85c5",
+      "code": "0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e",
+      "reset": {
         "kind": "deployment",
-        "description": "Curve's factory deployed an immutable 45-byte EIP-1167 clone whose runtime embeds implementation 0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e. Both clone and implementation runtimes remained unchanged through the exploit."
-      },
-      "codeAgeSeconds": 26429604,
-      "failureModeId": "failure:vyper-cross-function-named-reentrancy-lock",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2",
-          "source-9"
-        ]
+        "tx": "0x659f0eb12c4edf042be41885ed1a8bc78b0a2e87ca47339031b9253cd7ae61ce"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa84aa065ce61dbb1eb50ab6ae67fc31a9da50dd2c74eefd561661bfce2f1620c"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:49:30Z",
-      "note": "Reviewed the exploit receipt and call trace, pool creation transaction and trace, the clone and implementation runtimes at historical boundaries, verified Vyper 0.2.15 source, commit-pinned reproduction, Vyper's compiler advisory, LlamaRisk's pool-by-pool post-mortem, and exact WETH flows. The exploit calls pETH/ETH pool 0x9848482da3ee3076165ce6497eda906e66bb85c5 and every affected pool frame delegates to 0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e. The pool's 45-byte EIP-1167 runtime embeds that address and hashes to 0xbed04db3507e08e5220f6eadf98d5df05bdbc74df129c73fcbab7c441e86b124. Factory 0xb9fc157394af804a3578134a6585c0dc9cc990d4 created the clone in transaction 0x659f0eb12c4edf042be41885ed1a8bc78b0a2e87ca47339031b9253cd7ae61ce; the transaction sender was 0x7a271674b5fae043f42f183092f48fb06d6d551b. The 17,535-byte implementation existed before clone activation and retained hash 0xba0284a6a8a86734c1c777e3c6b5b56f2c8ba95dc0f7eba481c6d09da7885ebc through block 17806055. The exploit wraps 86,106.654659206663837483 WETH, repays the 80,000 WETH flash loan, and transfers the exact remainder as proceeds."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x659f0eb12c4edf042be41885ed1a8bc78b0a2e87ca47339031b9253cd7ae61ce"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xd27491757b3a4bc9287ed44ce5c43de9f32131264548ce139f0a702c3d5f389e"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://github.com/vyperlang/vyper/security/advisories/GHSA-5824-cm3x-3c38"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://www.llamarisk.com/research/curve-pool-reentrancy-exploit-postmortem"
-    },
-    {
-      "id": "source-7",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-07/Curve_exp01.sol"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1690722570/coingecko:ethereum",
-      "observedAt": 1787597370
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-26T08:03:41Z",
-      "note": "Clone basis retained under the case-by-case rule: the pETH/ETH clone supplied the pool configuration and accumulated liquidity that made the shared compiler defect exploitable for this loss."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 11460969.464399068,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "6106.654659206663837483",
+        "usd": 11460969.464399068
+      }
     ]
-  }
+  },
+  "refs": [
+    "eip155:1:0xd27491757b3a4bc9287ed44ce5c43de9f32131264548ce139f0a702c3d5f389e",
+    "https://github.com/vyperlang/vyper/security/advisories/GHSA-5824-cm3x-3c38",
+    "https://www.llamarisk.com/research/curve-pool-reentrancy-exploit-postmortem",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Curve_exp01.sol"
+  ],
+  "notes": [
+    "Curve's factory deployed an immutable 45-byte EIP-1167 clone whose runtime embeds implementation 0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e. Both clone and implementation runtimes remained unchanged through the exploit.",
+    "The exploit receipt records exactly 86,106.654659206663837483 WETH wrapped after the pool operations, 80,000 WETH repaid to Balancer, and 6,106.654659206663837483 WETH transferred as net proceeds. Later recovery is separate from exploit-time loss. Other Vyper-affected pools were attacked independently and are not included."
+  ]
 }

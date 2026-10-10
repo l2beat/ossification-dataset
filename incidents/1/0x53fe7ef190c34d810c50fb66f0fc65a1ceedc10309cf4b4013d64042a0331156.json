@@ -1,129 +1,29 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156",
-  "protocol": {
-    "name": "yETH",
-    "slug": "yeth"
-  },
+  "protocol": "yETH",
   "name": "yETH weighted-stableswap solver invariant collapse",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156",
-      "blockNumber": 23914086,
-      "transactionIndex": 0,
-      "timestamp": 1764537119
-    },
-    "attackerAddresses": [
-      "0xfb63aa935cf0a003335dce9cca03c4f9c0fa4779",
-      "0xbb2789b418fa18f9526ba79fa7038d4e6d753f73",
-      "0x3e8e7533dcf69c698cf806c3db22f7f10b9b0b97"
-    ]
-  },
   "summary": "Extreme imbalanced deposits drove the weighted-stableswap supply solver outside its valid domain until its product term collapsed to zero, yet the pool accepted the divergent result and over-minted yETH LP. The attacker repaired only the product through zero-value removal, used permissionless rate reconciliation to burn protocol-owned LP rather than their own, drained the LST pool, then re-entered the zero-supply bootstrap path and triggered an unchecked underflow to mint enough yETH to drain the yETH/WETH Curve pool.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 9000000,
-      "valuationTimestamp": 1764537119,
-      "method": "reported",
-      "sourceIds": [
-        "source-5"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Yearn's disclosure lists the eight pre-exploit LST balances in the yETH pool and 298.35 WETH in the downstream Curve pool; live balance checks show each LST balance reduced below 0.000000000000001 token units and the Curve pool reduced to 0.221058531986020280 WETH in the exploit block. Reputable reporting values the gross extraction at approximately $9 million. The later coordinated recovery of 857.49 pxETH is not subtracted from gross loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xccd04073f4bdc4510927ea9ba350875c3c65bf81",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xccd04073f4bdc4510927ea9ba350875c3c65bf81",
-        "codeHash": "0x62b1a1586e4b27d6c6fac09e72d0c5d2a3b8f640fb5a636ad81be479c3fa38b6"
-      },
-      "deployment": {
-        "timestamp": 1751368055,
-        "blockNumber": 22823989,
-        "transactionHash": "0x7f21203f05a7c0ec927861b700c33ce278424233d982fb175b12bda257d81ed0",
-        "transactionIndex": 172,
-        "creatorAddress": "0xd5d935c20df73630f0216e83dfa4bb8fc68a2888"
-      },
-      "ageReset": {
+      "address": "0xccd04073f4bdc4510927ea9ba350875c3c65bf81",
+      "reset": {
         "kind": "deployment",
-        "description": "Top-level deployment of the direct weighted-stableswap runtime; its deployment-block and pre-exploit hashes match."
-      },
-      "codeAgeSeconds": 13169064,
-      "failureModeId": "failure:yeth-weighted-stableswap-solver-domain-collapse",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x7f21203f05a7c0ec927861b700c33ce278424233d982fb175b12bda257d81ed0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-12/yETH_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x7f21203f05a7c0ec927861b700c33ce278424233d982fb175b12bda257d81ed0"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://github.com/yearn/yearn-security/blob/e7cd74fe8d9d78dce269f08fb6e4ac8b84303b56/disclosures/2025-12-01.md"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://www.theblock.co/news/regulation/2025-12-08-yearn-finance-9-million-yeth-exploit-confirms-partial-recovery-outlines-remediation-381740"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:10:47Z",
-      "note": "Reviewed the Ethereum receipt and full call trace, top-level pool creation transaction, historical runtime, verified Vyper metadata, commit-pinned reproduction, Yearn's disclosure, and pre/post-exploit token balances. The anchor creates constructor-only attack contract 0xbb2789b418fa18f9526ba79fa7038d4e6d753f73, and helper 0x3e8e7533dcf69c698cf806c3db22f7f10b9b0b97 directly calls update_rates, add_liquidity, and remove_liquidity on weighted-stableswap pool 0xccd04073f4bdc4510927ea9ba350875c3c65bf81. The pool transfers all eight LSTs during those calls. Immediately before the exploit it held 641.074575696016245157 sfrxETH, 359.660954158309014685 wstETH, 203.169624055563121016 ETHx, 279.067336257280184591 cbETH, 204.302160863078447330 rETH, 798.100750053197635596 apxETH, 50.542841971854161993 wOETH, and 51.389053609897701519 mETH; its post-transaction balances are each below 0.000000000000001 token units. The downstream Curve pool's WETH balance falls from 298.349202598542295579 to 0.221058531986020280 in the same transaction. The affected pool is a direct non-proxy Vyper 0.3.10 deployment: its 22,973-byte runtime hashes to 0x62b1a1586e4b27d6c6fac09e72d0c5d2a3b8f640fb5a636ad81be479c3fa38b6 at deployment block 22823989 and immediately before exploit block 23914086, with no delegatecall execution in the trace."
-    }
+  "loss": {
+    "usd": 9000000,
+    "assets": []
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-12/yETH_exp.sol",
+    "https://github.com/yearn/yearn-security/blob/e7cd74fe8d9d78dce269f08fb6e4ac8b84303b56/disclosures/2025-12-01.md",
+    "https://www.theblock.co/news/regulation/2025-12-08-yearn-finance-9-million-yeth-exploit-confirms-partial-recovery-outlines-remediation-381740"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $9 million gross loss is a rounded reported USD valuation; Yearn's disclosure and the onchain review provide the affected token quantities and confirm the pool depletion."
-    ],
-    "reviewSourceIds": [
-      "source-6"
-    ]
-  }
+  "notes": [
+    "Top-level deployment of the direct weighted-stableswap runtime; its deployment-block and pre-exploit hashes match.",
+    "Yearn's disclosure lists the eight pre-exploit LST balances in the yETH pool and 298.35 WETH in the downstream Curve pool; live balance checks show each LST balance reduced below 0.000000000000001 token units and the Curve pool reduced to 0.221058531986020280 WETH in the exploit block. Reputable reporting values the gross extraction at approximately $9 million. The later coordinated recovery of 857.49 pxETH is not subtracted from gross loss.",
+    "The $9 million gross loss is a rounded reported USD valuation; Yearn's disclosure and the onchain review provide the affected token quantities and confirm the pool depletion."
+  ]
 }

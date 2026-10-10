@@ -1,147 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xcff84cc137c92e427f720ca1f2b36fbad793f34ec5117eed127060686e6797b1",
-  "protocol": {
-    "name": "Compounder Finance",
-    "slug": "compounderfinance"
-  },
+  "protocol": "Compounder Finance",
   "name": "Compounder StrategyDAICurve permissionless deposit manipulation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xcff84cc137c92e427f720ca1f2b36fbad793f34ec5117eed127060686e6797b1",
-      "blockNumber": 17426065,
-      "transactionIndex": 31,
-      "timestamp": 1686111251
-    },
-    "attackerAddresses": [
-      "0x0e816b0d0a66252c72af822d3e0773a2676f3278"
-    ]
-  },
   "summary": "StrategyDAICurve exposed a permissionless deposit() that converted its entire loose DAI balance and added the resulting yDAI to Curve with every minimum-output amount set to zero. The attacker imbalanced Curve, routed 40,000 DAI into the strategy through Compounder's share-accounting flow, and forced this unslippaged deposit before reversing the Curve trades for a net DAI profit.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 27146.69349363824,
-      "valuationTimestamp": 1686111251,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "27146.693493638241032728",
-        "usdValue": 27146.69349363824,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1686111251,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-4",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The successful transaction ends with an exact 27,146.693493638241032728 DAI transfer to the attacker EOA. This is the attacker's net revenue from the composed Compounder and Curve sequence, valued at DAI's one-dollar par value."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xaf274e912243b19b882f02d731dacd7cd13072d0",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xaf274e912243b19b882f02d731dacd7cd13072d0",
-        "codeHash": "0x03badaa52c30aabf8e28b6822282781b5c5d0af40290eb2aff125796472f7772"
-      },
-      "deployment": {
-        "timestamp": 1604800849,
-        "blockNumber": 11213934,
-        "transactionHash": "0x847b85734c342b706454c9b79e126eaa0e54bcacf437b1180be92c04df109e5b",
-        "transactionIndex": 41,
-        "creatorAddress": "0x079667f4f7a0b440ad35ebd780efd216751f0758"
-      },
-      "ageReset": {
+      "address": "0xaf274e912243b19b882f02d731dacd7cd13072d0",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct deployment of the StrategyDAICurve runtime executed in the exploit."
-      },
-      "codeAgeSeconds": 81310402,
-      "failureModeId": "failure:compounder-permissionless-zero-slippage-deposit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x847b85734c342b706454c9b79e126eaa0e54bcacf437b1180be92c04df109e5b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xcff84cc137c92e427f720ca1f2b36fbad793f34ec5117eed127060686e6797b1"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-06/CompounderFinance_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x847b85734c342b706454c9b79e126eaa0e54bcacf437b1180be92c04df109e5b"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://eigenphi.substack.com/p/use-antique-contract-to-manipulate-price"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:39:22Z",
-      "note": "Reviewed the successful exploit receipt and call trace, exact DAI flows, verified StrategyDAICurve source, direct creation transaction, historical runtime, the commit-pinned reproduction, and EigenPhi's transaction analysis. The trace shows the attacker flash-borrow 1,239,990 DAI, deposit 200,000 DAI into Compounder's cVault_DAI, transfer 40,000 DAI to StrategyDAICurve, redeem cVault shares after the donation raised their accounting value, and then call StrategyDAICurve.deposit() directly. That permissionless function invests the strategy's entire DAI balance and invokes Curve add_liquidity with all minimum outputs set to zero, crystallizing the manipulated pool state before the attacker reverses its trades. The final receipt transfer pays 27,146.693493638241032728 DAI to the attacker EOA. StrategyDAICurve is a direct 11,064-byte runtime with hash 0x03badaa52c30aabf8e28b6822282781b5c5d0af40290eb2aff125796472f7772 at deployment and immediately before the exploit; its disassembly contains no DELEGATECALL, SELFDESTRUCT, or CREATE2."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 27146.69349363824,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "27146.693493638241032728",
+        "usd": 27146.69349363824
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-06/CompounderFinance_exp.sol",
+    "https://eigenphi.substack.com/p/use-antique-contract-to-manipulate-price"
+  ],
+  "notes": [
+    "Direct deployment of the StrategyDAICurve runtime executed in the exploit.",
+    "The successful transaction ends with an exact 27,146.693493638241032728 DAI transfer to the attacker EOA. This is the attacker's net revenue from the composed Compounder and Curve sequence, valued at DAI's one-dollar par value."
+  ]
 }

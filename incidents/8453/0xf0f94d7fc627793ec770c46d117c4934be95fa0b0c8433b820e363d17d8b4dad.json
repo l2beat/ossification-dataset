@@ -1,138 +1,29 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0xf0f94d7fc627793ec770c46d117c4934be95fa0b0c8433b820e363d17d8b4dad",
-  "protocol": {
-    "name": "NewMarketTrading",
-    "slug": "newmarkettrading"
-  },
+  "protocol": "NewMarketTrading",
   "name": "NewMarketTrading SquidRouterModule unbound delegate",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0xf0f94d7fc627793ec770c46d117c4934be95fa0b0c8433b820e363d17d8b4dad",
-      "blockNumber": 46450075,
-      "transactionIndex": 90,
-      "timestamp": 1779689497
-    },
-    "attackerAddresses": [
-      "0x7c82cb4b2909c50c7c0f2b696eee7565e0a23bb8",
-      "0x9bdc730183821b6bb2b51be30b77c964fa645b91",
-      "0x2d450322e3526f489afcc8c49923b35d355c70bc"
-    ]
-  },
   "summary": "SquidRouterModule accepted Axelar express execution while treating caller-supplied sourceAddress and delegate values as authority and never binding the delegate to msg.sender. Forged payloads therefore drove victim Safes to approve and swap valuable assets into attacker pools.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 3980000,
-      "valuationTimestamp": 1779689497,
-      "method": "reported",
-      "sourceIds": [
-        "source-4"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Rekt reports a $3.98 million gross campaign across 308 successful drain transactions affecting 88 Safes on Base, Arbitrum, and Ethereum. NMT offered a white-hat bounty, but the cited reporting records no returned proceeds; recovery is not netted."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x1f1d37a3bf840e35c6a860c7c2da71fe555123ca",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x1f1d37a3bf840e35c6a860c7c2da71fe555123ca",
-        "codeHash": "0xc09228d6a374378bd0c571ddf2cc3bfecb52ed37d63531acd648aa2f91d1fa97"
-      },
-      "deployment": {
-        "timestamp": 1771879355,
-        "blockNumber": 42545004,
-        "transactionHash": "0x35eba2583c94301e1aef89867d9ec438d9a3378875dc7be6b3cf02799d65f693",
-        "transactionIndex": 101,
-        "creatorAddress": "0x311df7369ecbca483eab798129aa1687b767d137"
-      },
-      "ageReset": {
+      "address": "0x1f1d37a3bf840e35c6a860c7c2da71fe555123ca",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly executed Base module was deployed with immutable integration addresses. Its runtime contains no delegation or destruction path and remained unchanged through the campaign's first successful drain."
-      },
-      "codeAgeSeconds": 7810142,
-      "failureModeId": "failure:newmarkettrading-squid-module-unbound-delegate",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x35eba2583c94301e1aef89867d9ec438d9a3378875dc7be6b3cf02799d65f693"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xf0f94d7fc627793ec770c46d117c4934be95fa0b0c8433b820e363d17d8b4dad"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-05/NewMarketTrading_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x35eba2583c94301e1aef89867d9ec438d9a3378875dc7be6b3cf02799d65f693"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://rekt.news/newmarkettrading-rekt"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/sanbir/evm-hack-registry",
-      "commit": "d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6",
-      "path": "2026-05-NewMarketTrading_exp/sources/SquidRouterModule_1f1d37/contracts_modules_SquidRouterModule.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:36:01Z",
-      "note": "Reviewed the three-chain campaign ordering, the live Base receipt and call trace for the earliest successful drain, the Base creation receipt and trace, historical runtime code, pinned verified source, and the cited campaign report. The selected Base transaction is the first successful campaign call after the attacker wrapper's deployment, preceding the first Arbitrum drain by 18 seconds and the first Ethereum drain by 34 seconds. It calls SquidRouterModule 0x1f1d37a3bf840e35c6a860c7c2da71fe555123ca through expressExecuteWithToken with amount zero and attacker-supplied sourceAddress, victim Safe, registered delegate, and actions. The module checks the supplied delegate's permissions but never binds it to msg.sender, then repeatedly drives victim Safes through execTransactionFromModule to approve and swap valuable tokens into attacker pools. The module was created at 42545004:101 by 0x311df7369ecbca483eab798129aa1687b767d137. Code was absent one block earlier; the direct runtime has no DELEGATECALL or SELFDESTRUCT and its hash stayed unchanged through the anchor. Rekt reports $3.98 million gross across 308 successful drains and 88 Safes on Base, Arbitrum, and Ethereum."
-    }
+  "loss": {
+    "usd": 3980000,
+    "assets": []
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/NewMarketTrading_exp.sol",
+    "https://rekt.news/newmarkettrading-rekt",
+    "https://github.com/sanbir/evm-hack-registry/blob/d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6/2026-05-NewMarketTrading_exp/sources/SquidRouterModule_1f1d37/contracts_modules_SquidRouterModule.sol"
   ],
-  "discovery": [
-    "web:2026-05-25:third-party-gnosis-safe-squidroutermodule",
-    "seed:newmarkettrading:2026-05-25:newmarkettrading",
-    "dfhl:src/test/2026-05/SquidRouterModule_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Published campaign estimates range from $3.78 million to $3.98 million because two drained assets lacked contemporaneous price feeds; this record uses Rekt's reported $3.98 million aggregate."
-    ],
-    "reviewSourceIds": [
-      "source-6"
-    ]
-  }
+  "notes": [
+    "The directly executed Base module was deployed with immutable integration addresses. Its runtime contains no delegation or destruction path and remained unchanged through the campaign's first successful drain.",
+    "Rekt reports a $3.98 million gross campaign across 308 successful drain transactions affecting 88 Safes on Base, Arbitrum, and Ethereum. NMT offered a white-hat bounty, but the cited reporting records no returned proceeds; recovery is not netted.",
+    "Published campaign estimates range from $3.78 million to $3.98 million because two drained assets lacked contemporaneous price feeds; this record uses Rekt's reported $3.98 million aggregate."
+  ]
 }

@@ -1,156 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1274b32d4dfacd2703ad032e8bd669a83f012dde9d27ed92e4e7da0387adafe4",
-  "protocol": {
-    "name": "FloorDAO",
-    "slug": "floor-dao"
-  },
+  "protocol": "FloorDAO",
   "name": "FloorStaking stake/unstake supply accounting",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1274b32d4dfacd2703ad032e8bd669a83f012dde9d27ed92e4e7da0387adafe4",
-      "blockNumber": 18068773,
-      "transactionIndex": 0,
-      "timestamp": 1693898711
-    },
-    "attackerAddresses": [
-      "0x4453aed57c23a50d887a42ad0cd14ff1b819c750"
-    ]
-  },
   "summary": "FloorStaking transferred a stake into its FLOOR balance before rebase() calculated balance minus circulating supply as distributable profit. An attacker could therefore have borrowed principal counted as reward, mint gFLOOR at the old index, trigger the resulting index increase during unstake(), and redeem at the new index for more FLOOR.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 65076.98940206191,
-      "valuationTimestamp": 1693897200,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-3",
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "40.146353823753349478",
-        "usdValue": 65076.98940206191,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1693897200,
-          "unitPriceUsd": 1620.9937691416917,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "After repaying the FLOOR flash loan and swapping the 14,606.145072279 FLOOR surplus, the exploit receipt records exactly 40.146353823753349478 WETH leaving the DAO-owned FLOOR/WETH pool."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x759c6de5bca9ade8a1a2719a31553c4b7de02539",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x759c6de5bca9ade8a1a2719a31553c4b7de02539",
-        "codeHash": "0xedfa9860249e9c6806b86532b9cff3d9b209fd34b5627fd02ce56d6a7ee0948b"
-      },
-      "deployment": {
-        "timestamp": 1645997651,
-        "blockNumber": 14290678,
-        "transactionHash": "0x555cf29ccf18cf767f460eb9aa19c2891bd4ad0b1700ba8a5037f29c47585ce4",
-        "transactionIndex": 16,
-        "creatorAddress": "0x93db3662e5e77a3ef6be5d32192f070554f212d1"
-      },
-      "ageReset": {
+      "address": "0x759c6de5bca9ade8a1a2719a31553c4b7de02539",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct FloorStaking runtime containing the principal-as-profit rebase accounting was installed by this top-level contract creation."
-      },
-      "codeAgeSeconds": 47901060,
-      "failureModeId": "failure:floor-dao-staked-principal-counted-as-rebase-profit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x555cf29ccf18cf767f460eb9aa19c2891bd4ad0b1700ba8a5037f29c47585ce4"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1274b32d4dfacd2703ad032e8bd669a83f012dde9d27ed92e4e7da0387adafe4"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-09/FloorDAO_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://medium.com/floordao/floor-post-mortem-incident-summary-september-5-2023-e054a2d5afa4"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:01:12Z",
-      "note": "Reviewed the exploit receipt and call trace, FloorDAO's post-mortem, the pinned reproduction, the verified FloorStaking source, the direct creation receipt, and runtime bytecode at deployment and immediately before the exploit. The attacker calls the direct FloorStaking runtime 17 times each through stake() and unstake(). stake() transfers borrowed FLOOR into the contract before rebase() derives epoch.distribute from FLOOR.balanceOf(this) minus sFLOOR.circulatingSupply(), so the deposit is misclassified as reward; unstake() can trigger the queued rebase before valuing and burning the gFLOOR minted at the old index. Transaction 0x555cf29ccf18cf767f460eb9aa19c2891bd4ad0b1700ba8a5037f29c47585ce4 is the successful top-level creation of this direct target, whose runtime hash is identical at deployment block 14290678 and pre-exploit block 18068772. Receipt transfers establish a 152,089.813098498 FLOOR flash loan, 153,610.711229483 FLOOR repayment, a 14,606.145072279 FLOOR surplus sold to the pool, and exactly 40.146353823753349478 WETH paid out."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x555cf29ccf18cf767f460eb9aa19c2891bd4ad0b1700ba8a5037f29c47585ce4"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1693812311&to=1693905911",
-      "observedAt": 1787576136
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 65076.98940206191,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "40.146353823753349478",
+        "usd": 65076.98940206191
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-09/FloorDAO_exp.sol",
+    "https://medium.com/floordao/floor-post-mortem-incident-summary-september-5-2023-e054a2d5afa4"
+  ],
+  "notes": [
+    "The direct FloorStaking runtime containing the principal-as-profit rebase accounting was installed by this top-level contract creation.",
+    "After repaying the FLOOR flash loan and swapping the 14,606.145072279 FLOOR surplus, the exploit receipt records exactly 40.146353823753349478 WETH leaving the DAO-owned FLOOR/WETH pool."
+  ]
 }

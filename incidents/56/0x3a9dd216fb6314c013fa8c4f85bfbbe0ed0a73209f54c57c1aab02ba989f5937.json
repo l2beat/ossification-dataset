@@ -1,156 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x3a9dd216fb6314c013fa8c4f85bfbbe0ed0a73209f54c57c1aab02ba989f5937",
-  "protocol": {
-    "name": "FPC",
-    "slug": "fpc"
-  },
+  "protocol": "FPC",
   "name": "FPC sell hook drains the pair reserve and syncs",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x3a9dd216fb6314c013fa8c4f85bfbbe0ed0a73209f54c57c1aab02ba989f5937",
-      "blockNumber": 52624701,
-      "transactionIndex": 1,
-      "timestamp": 1751466319
-    },
-    "attackerAddresses": [
-      "0x18dd258631b23777c101440380bf053c79db3d9d",
-      "0xbf6e706d505e81ad1f73bbc0babfe2b414ba3eb3",
-      "0xc2a81942627f6929521397eef6173f271d1fb456"
-    ]
-  },
   "summary": "On every sell the FPC token's _update override calls burnLpToken(value * 65 / 100), which moves 10 percent of the sold amount from the PancakeSwap pair to treasuryAddress and 55 percent from the pair to rewardPoolAddress with super._update(usdtPool, ...), then calls IUniswapV2Pair(usdtPool).sync(). The transfer hook therefore rewrites the counterparty AMM's reserves in the middle of the very swap it is settling: sync() lowers reserve1 to the post-drain FPC balance while reserve0 keeps the full USDT balance, and the router then prices the incoming FPC against that collapsed reserve. In the anchor the attacker first bought 790,178.970489172772916652 FPC so the pair held only 160,836.761063161996185171 FPC, then sold 247,441.170766403071054109 FPC through swapExactTokensForTokensSupportingFeeOnTransferTokens; burnLpToken removed 160,836.761 FPC from the pair and sync() set reserve1 to 65,000,000,000,002 wei, so PancakeRouter computed getAmountOut(235,069.112228082917501404, 0.000065000000000002, 27,693,883.534817151619771979) and the pair paid out 27,693,883.527140201011205321 USDT for the sale.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4673883.527140201,
-      "valuationTimestamp": 1751466319,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "4673883.527140201011205321",
-        "usdValue": 4673883.527140201,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1751466319,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depletion of the FPC/USDT PancakeSwap pair 0xa1e08e10eb09857a8c6f2ef6cca297c1a081ed6b, whose USDT balance is 4,673,883.534817151619771979 at block 52624700 and 0.007676950608566658 at block 52624701; the difference is the liquidity providers' loss and is measured net of the 23,020,001 USDT the attacker paid into the pair on the preceding buy, so no attacker-supplied capital is counted. The 23,020,000 USDT PancakeSwap v3 flash loan and its 2,302 USDT fee are financing, not loss: the attacker's realised take is 4,671,581.527140201011205321 USDT, 2,302 USDT less than the gross depletion recorded here. DefiLlama prices BSC-USD at exactly 1.0 at the incident timestamp. The pair additionally lost 160,836.761063161996185171 FPC that burnLpToken moved to the project's own treasury 0x0fa6c0bd9704a7a45b16e0487549b10218a82baa and reward pool 0xcea188c6bb0db78fd17904c03e28f43ae4e46d5a; that component is not valued because the same transaction destroyed the only FPC market. Nothing was recovered."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb192d4a737430aa61cea4ce9bfb6432f7d42592f",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xb192d4a737430aa61cea4ce9bfb6432f7d42592f",
-        "codeHash": "0x4e42cd5cd5c4ec012937bcaecd15ea4cf45d0e9797944b1823784e6528d28db5"
-      },
-      "deployment": {
-        "timestamp": 1751295381,
-        "blockNumber": 52396796,
-        "transactionHash": "0x261f8c807636ac7c8cf51d8a8e637598c1262e7d708c09d11d0b176a6688de6a",
-        "transactionIndex": 101,
-        "creatorAddress": "0x95bccf101f4756c8545b83b489e66dee1b6829ef"
-      },
-      "ageReset": {
+      "address": "0xb192d4a737430aa61cea4ce9bfb6432f7d42592f",
+      "reset": {
         "kind": "deployment",
-        "description": "The immutable FPC token runtime was created in this transaction; it contains no DELEGATECALL or CALLCODE and its 6,801-byte runtime is byte-identical at the creation block and at block 52624700."
-      },
-      "codeAgeSeconds": 170938,
-      "failureModeId": "failure:fpc-sell-hook-pair-reserve-drain-sync",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x261f8c807636ac7c8cf51d8a8e637598c1262e7d708c09d11d0b176a6688de6a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x3a9dd216fb6314c013fa8c4f85bfbbe0ed0a73209f54c57c1aab02ba989f5937"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x261f8c807636ac7c8cf51d8a8e637598c1262e7d708c09d11d0b176a6688de6a"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-07/FPC_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1751466319/bsc:0x55d398326f99059ff775485246999027b3197955",
-      "observedAt": 1787687497
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://x.com/TenArmorAlert/status/1940423393880244327"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T19:51:37Z",
-      "note": "Reviewed the BSC receipt and full call trace of 0x3a9dd216fb6314c013fa8c4f85bfbbe0ed0a73209f54c57c1aab02ba989f5937 (status 1, block 52624701, index 1, timestamp 1751466319), the Etherscan-verified Token source at 0xb192d4a737430aa61cea4ce9bfb6432f7d42592f, its creation receipt, and its runtime at both the creation block and the pre-exploit block. The anchor is the attacker EOA's only exploit transaction: its BSC transaction list shows the attack contract 0xbf6e706d505e81ad1f73bbc0babfe2b414ba3eb3 created at block 52596365 and invoked exactly once, at 52624701. The trace calls the FPC token directly, never by DELEGATECALL, and the disassembled runtime contains no DELEGATECALL or CALLCODE opcode; the runtime hashes to 0x4e42cd5cd5c4ec012937bcaecd15ea4cf45d0e9797944b1823784e6528d28db5 both at creation block 52396796 and at block 52624700, so deployment is the correct age basis and codeAgeSeconds is 1751466319 - 1751295381 = 170938 (1.98 days). Trading had been open for only five blocks: startBlock() reads 52624696. The defect is reproduced in the trace: Token::transferFrom(helper, pair, 247441.170766403071054109) emits Transfer(pair -> 0x0fa6c0bd9704a7a45b16e0487549b10218a82baa, 24744.117076640307105410) and Transfer(pair -> 0xcea188c6bb0db78fd17904c03e28f43ae4e46d5a, 136092.643921521689079759), exactly 10 and 55 percent of the sold amount taken out of the pair, then PancakePair::sync() writes Sync(reserve0 = 27693883534817151619771979, reserve1 = 65000000000002) and PoolBurn is emitted, all before the 235069.112228082917501404 FPC of the sale itself reaches the pair. PancakeRouter then reads the collapsed reserve1 and the pair pays out 27693883527140201011205321 USDT. The boundary test does not remove this from the cohort: lpBurnEnabled is initialised to true in the contract's own state declaration and reads true at block 52624700, maxBuyRate is 10 and the 65/10/55 splits and the 2,100,000-token _isLpStopBurn floor are hardcoded, so no configured value makes the deployed accounting correct - the hook's only non-defective setting is the owner switch that disables the feature outright, which is a kill switch for the defective branch rather than a parameter the code applies correctly. This matches the treatment of the byte-distinct but mechanically identical NGP token, eip155:56:0xc2066e0dff1a8a042057387d7356ad7ced76ab90904baa1e0b5ecbc2434df8e1. Loss is the exact USDT depletion of pair 0xa1e08e10eb09857a8c6f2ef6cca297c1a081ed6b: balanceOf 4673883534817151619771979 at block 52624700 and 7676950608566658 at 52624701, difference 4673883527140201011205321 wei, valued at DefiLlama's exact 1.0 BSC-USD price for timestamp 1751466319."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2025-07/FPC_exp.sol",
-    "seed:fpc:2025-07-02:fpc",
-    "web:2025-07-02:future-protocol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 4673883.527140201,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "4673883.527140201011205321",
+        "usd": 4673883.527140201
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-07/FPC_exp.sol",
+    "https://x.com/TenArmorAlert/status/1940423393880244327"
+  ],
+  "notes": [
+    "The immutable FPC token runtime was created in this transaction; it contains no DELEGATECALL or CALLCODE and its 6,801-byte runtime is byte-identical at the creation block and at block 52624700.",
+    "Exact depletion of the FPC/USDT PancakeSwap pair 0xa1e08e10eb09857a8c6f2ef6cca297c1a081ed6b, whose USDT balance is 4,673,883.534817151619771979 at block 52624700 and 0.007676950608566658 at block 52624701; the difference is the liquidity providers' loss and is measured net of the 23,020,001 USDT the attacker paid into the pair on the preceding buy, so no attacker-supplied capital is counted. The 23,020,000 USDT PancakeSwap v3 flash loan and its 2,302 USDT fee are financing, not loss: the attacker's realised take is 4,671,581.527140201011205321 USDT, 2,302 USDT less than the gross depletion recorded here. DefiLlama prices BSC-USD at exactly 1.0 at the incident timestamp. The pair additionally lost 160,836.761063161996185171 FPC that burnLpToken moved to the project's own treasury 0x0fa6c0bd9704a7a45b16e0487549b10218a82baa and reward pool 0xcea188c6bb0db78fd17904c03e28f43ae4e46d5a; that component is not valued because the same transaction destroyed the only FPC market. Nothing was recovered."
+  ]
 }

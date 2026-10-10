@@ -1,234 +1,59 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x00b949bc3ed3edb58b04faedfbd8eb1db2edceae761382e80fe012919f8d3732",
-  "protocol": {
-    "name": "SingularityDynaVault",
-    "slug": "singularitydynavault"
-  },
+  "protocol": "SingularityDynaVault",
   "name": "Singularity DynaVault oracle zero-price share inflation",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x00b949bc3ed3edb58b04faedfbd8eb1db2edceae761382e80fe012919f8d3732",
-      "blockNumber": 45183967,
-      "transactionIndex": 67,
-      "timestamp": 1777157281
-    },
-    "attackerAddresses": [
-      "0x5c2cbe53f2ce1b58532d4985a9b9d3db87d3af4c",
-      "0x9ad48257024f8cd3ab7fde97c95950159fcaefae",
-      "0x25c08505b6c5eba2d6c5d97c9e9a7f5f58d9a079"
-    ]
-  },
   "summary": "UniswapV3Oracle.getPrice(address,uint24,address,uint256) wraps its entire body in if (pool != address(0)) with no else branch and separately returns (0, 0) when pool.liquidity() < minLiquidityThreshold, so an asset it cannot price is reported as worth zero instead of the call reverting, and its base/WETH fallback accepts any pool the Uniswap V3 factory returns at the default 3000 fee tier. dynBaseUSDCv3's five ERC4626 holdings had no direct pool, and the attacker had initialized zero-liquidity token/WETH pools 144 seconds earlier at a price quoting them to nothing, so every holding priced at zero and VaultTokensLib.totalAssets - which adds price * amount / 10**decimals with no zero-price guard - reported only the vault's 100 idle USDC. A 100,000 USDC flash-loaned deposit therefore minted almost the entire share supply and a proportional redemption returned 99.9 percent of the real portfolio.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 448972.51380099996,
-      "valuationTimestamp": 1777157281,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x0ff79b6d6c0fb5faf54bd26db5ce97062a105f81",
-          "symbol": "REN-USDC-B"
-        },
-        "amount": "308710.203688",
-        "usdValue": 327402.153925,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1777157281,
-          "unitPriceUsd": 1.0605485339120542,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x3094b241aade60f91f1c82b0628a10d9501462f9",
-          "symbol": "maxUSD"
-        },
-        "amount": "103063.238187773015912541",
-        "usdValue": 113786.052424,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1777157281,
-          "unitPriceUsd": 1.1040411151907614,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0xc8adbfcfac975583c8684c4e12633907315ca610",
-          "symbol": "CPT48"
-        },
-        "amount": "3838.361764166304302973",
-        "usdValue": 4251.158124,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1777157281,
-          "unitPriceUsd": 1.107544933280502,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0xebc997b855b9a4e0b6cd06e4758801e6ff068e07",
-          "symbol": "PUSDCHY"
-        },
-        "amount": "1906.705673147924829529",
-        "usdValue": 2110.355793,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1777157281,
-          "unitPriceUsd": 1.1068073183607063,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0xee05dbdcaf0ca060b973d5fc5b31e9b8327edb39",
-          "symbol": "ysUSDC"
-        },
-        "amount": "1347.499541",
-        "usdValue": 1422.793535,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1777157281,
-          "unitPriceUsd": 1.0558768234860572,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depletion of vault 0x67b93f6676bd1911c5fae7ffa90fff5f35e14dcd, taken as its balanceOf delta for each holding across the single exploit block and converted to USDC with that holding's own ERC4626 convertToAssets at block 45183966. Every holding is a USDC-denominated yield-vault share redeemable at net asset value, not an AMM-quoted token, so NAV is the correct basis and the attacker's own actions did not move it: he redeemed 413132.022315 USDC of it inside the exploit transaction and forwarded the balance as 31174.292353430123 maxUSD and 1347.499541 ysUSDC shares, worth 35840.5 at the same NAV, which reconciles to the total. The 100,000 USDC Morpho flash loan he deposited is attacker-supplied and is excluded; the vault's own 100 USDC of idle deposit token was untouched. The 413,130 figure in the seed row is the immediately redeemed USDC leg alone."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x73b8c192bfc323c3ea224c88219d55dfc319e89f",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x73b8c192bfc323c3ea224c88219d55dfc319e89f",
-        "codeHash": "0x28e102107c6ec4daefcb4358c0578eca4a347962e5a2343e940e19719a15c5b6"
-      },
-      "deployment": {
-        "timestamp": 1751014979,
-        "blockNumber": 32112816,
-        "transactionHash": "0x957679eb8ef395e9e8dd18cc568b888ecbff3a2306390a658792c9bba4deb01b",
-        "transactionIndex": 38,
-        "creatorAddress": "0xcd231d4ba7b15a4722ac057419d9cd7689e7b8db"
-      },
-      "ageReset": {
+      "address": "0x73b8c192bfc323c3ea224c88219d55dfc319e89f",
+      "reset": {
         "kind": "deployment",
-        "description": "UniswapV3Oracle was created top-level in this transaction and its runtime is immutable: the same 15406-character runtime and keccak hash appear at the creation block, at block 45183966 immediately before the exploit, and in the anchor transaction prestate. Only its uniV3fee, minLiquidityThreshold and observationPeriod storage is mutable, and those are configuration, not executable code."
-      },
-      "codeAgeSeconds": 26142302,
-      "failureModeId": "failure:dynavault-uniswapv3-oracle-zero-price-on-unpriceable-asset",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x957679eb8ef395e9e8dd18cc568b888ecbff3a2306390a658792c9bba4deb01b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x00b949bc3ed3edb58b04faedfbd8eb1db2edceae761382e80fe012919f8d3732"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-04/SingularityDynaVault_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x957679eb8ef395e9e8dd18cc568b888ecbff3a2306390a658792c9bba4deb01b"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xbd7be93fd468c8ddcd13b1fcd316bd832441831840a31578778ee0e94a235b4d"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T01:45:00Z",
-      "note": "Full re-review of the migrated SingularityDynaVault row. Anchor confirmed and left in place: attacker EOA 0x5c2cbe53f2ce1b58532d4985a9b9d3db87d3af4c has only three prior actions - a self-transfer, the nonce-0 deployment of helper 0x9ad48257024f8cd3ab7fde97c95950159fcaefae at block 45183830, and the nonce-1 setup transaction 0xbd7be93fd468c8ddcd13b1fcd316bd832441831840a31578778ee0e94a235b4d at block 45183895 that only creates and initializes five Uniswap V3 pools and never touches the victim system - so this transaction, at block 45183967 index 67, timestamp 1777157281, receipt status 0x1, is the earliest success that executes the defect. Re-targeted: the snapshot named the vault clone 0x67b93f6676bd1911c5fae7ffa90fff5f35e14dcd, which holds the funds but contains no valuation logic. The callTracer trace shows the clone DELEGATECALLing master 0xea7975c2fec1ae9e3058bb5f99d8e26dbc816811, which CALLs DynaVaultManager 0x478675aa4121c07825167bbb25a44aadd22bef7f, which reaches ReferenceAssetOracle 0x6ea8e22aafdeb8b537b59fa857e2e49320ec5770 and finally UniswapV3Oracle 0x73b8c192bfc323c3ea224c88219d55dfc319e89f - the contract that produces the wrong number. Root cause read from that contract's verified source (Etherscan, contract UniswapV3Oracle, v0.8.26+commit.8a97fa7a): getPrice(address base, uint24 fee, address quote, uint256 amount) wraps its whole body in if (pool != address(0)) and has no else branch, so a nonexistent pool falls through to the implicit (0, 0); the same function returns (0, 0) when pool.liquidity() < minLiquidityThreshold; and getPrice(base, quote, amount) falls back to a base/WETH pool at the default 3000 fee tier with no check that the pool is legitimate or has TWAP history older than the caller. I read the oracle's live configuration at block 45183966: uniV3fee[token][USDC] is 42 for all five vault holdings, which is not a Uniswap V3 fee tier so factory.getPool always returns address(0); uniV3fee[token][WETH] is 0 so the fallback uses 3000; minLiquidityThreshold is 0; observationPeriod is 60. That is why the attacker created the five (token, WETH, 3000) pools 72 blocks (144 seconds) earlier - long enough for observe([60, 0]) to succeed on a single initialized observation - and initialized them at a price at which the holdings quote to zero WETH. The trace confirms the outcome: every tokenReferenceValue call on 0x6ea8e22aafdeb8b537b59fa857e2e49320ec5770 for the non-USDC holdings returns 0, while the USDC call returns par, so VaultTokensLib.totalAssets - which adds price * amount / 10**decimals with no zero-price guard - counted only the vault's 100 idle USDC. Boundary test: no fee-tier value conjures a Uniswap V3 pool for an ERC4626 vault share that has none, and raising minLiquidityThreshold only moves which branch returns zero, so no parameter value makes the deployed code correct. Target code history: the oracle is a plain non-proxy contract with no DELEGATECALL out of it and immutables baked into its runtime. It was created top-level by 0xcd231d4ba7b15a4722ac057419d9cd7689e7b8db in transaction 0x957679eb8ef395e9e8dd18cc568b888ecbff3a2306390a658792c9bba4deb01b at block 32112816 index 38, timestamp 1751014979, and the receipt's contractAddress is the oracle itself. Its 15406-character runtime keccaks to 0x28e102107c6ec4daefcb4358c0578eca4a347962e5a2343e940e19719a15c5b6 at the creation block, at block 45183966 immediately before the exploit, and in the anchor transaction's prestateTracer entry, so codeAgeSeconds = 1777157281 - 1751014979 = 26142302 (302.6 days). The snapshot's 8502370-second age was measured from the clone's creation and is the age of the wrong contract. Loss: I measured the vault's balanceOf for each holding at blocks 45183966 and 45183967 and converted the delta to USDC with each holding's own ERC4626 convertToAssets at block 45183966, giving 448972.513801 USDC of net asset value removed. This reconciles exactly with what left the transaction: 413132.022315 USDC plus 31174.292353430123 maxUSD and 1347.499541 ysUSDC shares forwarded to 0x25c08505b6c5eba2d6c5d97c9e9a7f5f58d9a079, whose combined NAV is the remaining 35840.5. The snapshot's 413130 figure is only the immediately redeemed USDC leg."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 448972.51380099996,
+    "assets": [
+      {
+        "token": "0x0ff79b6d6c0fb5faf54bd26db5ce97062a105f81",
+        "symbol": "REN-USDC-B",
+        "amount": "308710.203688",
+        "usd": 327402.153925
+      },
+      {
+        "token": "0x3094b241aade60f91f1c82b0628a10d9501462f9",
+        "symbol": "maxUSD",
+        "amount": "103063.238187773015912541",
+        "usd": 113786.052424
+      },
+      {
+        "token": "0xc8adbfcfac975583c8684c4e12633907315ca610",
+        "symbol": "CPT48",
+        "amount": "3838.361764166304302973",
+        "usd": 4251.158124
+      },
+      {
+        "token": "0xebc997b855b9a4e0b6cd06e4758801e6ff068e07",
+        "symbol": "PUSDCHY",
+        "amount": "1906.705673147924829529",
+        "usd": 2110.355793
+      },
+      {
+        "token": "0xee05dbdcaf0ca060b973d5fc5b31e9b8327edb39",
+        "symbol": "ysUSDC",
+        "amount": "1347.499541",
+        "usd": 1422.793535
+      }
     ]
   },
-  "notes": [
-    "A second defect-bearing role in the same causal path, VaultTokensLib 0x7e81c4022018cae002f70817aa9a4035f7daf5c5 adding price * amount / 10**decimals in totalAssets() with no zero-price guard, is described in the review note but is not represented as a separate target; the oracle is the proximate defect and is the only code state aged here."
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-04/SingularityDynaVault_exp.sol",
+    "eip155:8453:0xbd7be93fd468c8ddcd13b1fcd316bd832441831840a31578778ee0e94a235b4d"
   ],
-  "discovery": [
-    "web:2026-04-27:singularity-finance"
+  "notes": [
+    "UniswapV3Oracle was created top-level in this transaction and its runtime is immutable: the same 15406-character runtime and keccak hash appear at the creation block, at block 45183966 immediately before the exploit, and in the anchor transaction prestate. Only its uniV3fee, minLiquidityThreshold and observationPeriod storage is mutable, and those are configuration, not executable code.",
+    "Exact depletion of vault 0x67b93f6676bd1911c5fae7ffa90fff5f35e14dcd, taken as its balanceOf delta for each holding across the single exploit block and converted to USDC with that holding's own ERC4626 convertToAssets at block 45183966. Every holding is a USDC-denominated yield-vault share redeemable at net asset value, not an AMM-quoted token, so NAV is the correct basis and the attacker's own actions did not move it: he redeemed 413132.022315 USDC of it inside the exploit transaction and forwarded the balance as 31174.292353430123 maxUSD and 1347.499541 ysUSDC shares, worth 35840.5 at the same NAV, which reconciles to the total. The 100,000 USDC Morpho flash loan he deposited is attacker-supplied and is excluded; the vault's own 100 USDC of idle deposit token was untouched. The 413,130 figure in the seed row is the immediately redeemed USDC leg alone.",
+    "A second defect-bearing role in the same causal path, VaultTokensLib 0x7e81c4022018cae002f70817aa9a4035f7daf5c5 adding price * amount / 10**decimals in totalAssets() with no zero-price guard, is described in the review note but is not represented as a separate target; the oracle is the proximate defect and is the only code state aged here."
   ]
 }

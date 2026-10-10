@@ -1,147 +1,30 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xb1141785b7b94eb37c39c37f0272744c6e79ca1517529fec3f4af59d4c3c37ef",
-  "protocol": {
-    "name": "Deus Finance",
-    "slug": "deus-finance"
-  },
+  "protocol": "Deus Finance",
   "name": "DEI token burnFrom reversed allowance lookup",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xb1141785b7b94eb37c39c37f0272744c6e79ca1517529fec3f4af59d4c3c37ef",
-      "blockNumber": 87626026,
-      "transactionIndex": 2,
-      "timestamp": 1683309165
-    },
-    "attackerAddresses": [
-      "0x189cf534de3097c08b6beaf6eb2b9179dab122d1"
-    ]
-  },
   "summary": "The DEI implementation selected on 2023-04-16 wrote the allowance update inside burnFrom() with the owner and spender arguments transposed, so calling burnFrom(victim, 0) granted the caller an unlimited allowance over the victim and let the attacker transferFrom every DEI holder that had ever approved the token.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 6500000,
-      "valuationTimestamp": 1683309165,
-      "method": "reported",
-      "sourceIds": [
-        "source-2",
-        "source-7"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Halborn and CertiK report about $6.5 million drained across Arbitrum ($5 million), BNB Chain ($1.3 million), and Ethereum ($135,000) through the same DEI defect. Halborn reports roughly 10% was returned; the gross loss is retained and recovery is not netted."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xde1e704dae0b4051e80dabb26ab6ad6c12262da0",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xbc1b62db243b51dabcd9540473324f36e094ec55",
-        "codeHash": "0x9851d598cf345f432c312880107abd1a7a2dcdc27dc822370a9400285ef475e8"
-      },
-      "deployment": {
-        "timestamp": 1668517364,
-        "blockNumber": 38299496,
-        "transactionHash": "0x0f83a4480dc018448bf0504945ad019d54bba0b6d810d4e52c4aae2e07445d6e",
-        "transactionIndex": 2,
-        "creatorAddress": "0x18b4287fa4155efd149aece678a75bbd69ede0b8"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1681644777,
-        "blockNumber": 81036830,
-        "transactionHash": "0xbd61af334095eebfe2d03dc5b6fa07b3cfce992c5fc90f405ce25e2c7c8f13e8",
-        "transactionIndex": 2,
-        "logIndex": 0,
-        "mechanism": {
-          "type": "event",
-          "address": "0xde1e704dae0b4051e80dabb26ab6ad6c12262da0",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The fourth and final pre-exploit Upgraded event selected the vulnerable DEIStablecoin implementation; the implementation slot remained unchanged through the exploit."
-      },
-      "codeAgeSeconds": 1664388,
-      "failureModeId": "failure:deus-dei-burnfrom-reversed-allowance",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0xde1e704dae0b4051e80dabb26ab6ad6c12262da0",
+      "code": "0xbc1b62db243b51dabcd9540473324f36e094ec55",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xbd61af334095eebfe2d03dc5b6fa07b3cfce992c5fc90f405ce25e2c7c8f13e8"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xb1141785b7b94eb37c39c37f0272744c6e79ca1517529fec3f4af59d4c3c37ef"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-deus-dao-hack-may-2023"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-05/DEI_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:27:18Z",
-      "note": "Reviewed the live Arbitrum receipt and call trace, proxy creation, all four Upgraded logs through the exploit, the implementation slot before and after the final upgrade, the pre-exploit implementation runtime hash, and the cited technical reports. The successful anchor calls attacker contract 0xe2ee6252509382a2b6504d5a5f7a1c5018a38168, which calls the DEI proxy's approve, burnFrom(victim, 0), balanceOf, and transferFrom path; every proxy call delegatecalls 0xbc1b62db243b51dabcd9540473324f36e094ec55. The reversed allowance lookup lets the zero burn grant the caller spending authority over the victim. The proxy was created at 38299496:2. Its fourth and last pre-exploit Upgraded event, at 81036830:2 log 0, selected the vulnerable artifact; the implementation slot stayed fixed and the artifact runtime hash matches the declaration at exploit time. Halborn and CertiK report a $6.5 million multichain gross loss, with roughly 10% later returned."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x0f83a4480dc018448bf0504945ad019d54bba0b6d810d4e52c4aae2e07445d6e"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xbd61af334095eebfe2d03dc5b6fa07b3cfce992c5fc90f405ce25e2c7c8f13e8"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/blog/stablecoin-stumble-the-code-bug-led-to-usd6-5-million-loss-on-deus-finance"
-    }
+  "loss": {
+    "usd": 6500000,
+    "assets": []
+  },
+  "refs": [
+    "https://www.halborn.com/blog/post/explained-the-deus-dao-hack-may-2023",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/DEI_exp.sol",
+    "https://www.certik.com/blog/stablecoin-stumble-the-code-bug-led-to-usd6-5-million-loss-on-deus-finance"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The loss uses reputable cross-chain reports rather than a separately repriced transaction-level asset ledger for all three chains."
-    ],
-    "reviewSourceIds": [
-      "source-4"
-    ]
-  }
+  "notes": [
+    "The fourth and final pre-exploit Upgraded event selected the vulnerable DEIStablecoin implementation; the implementation slot remained unchanged through the exploit.",
+    "Halborn and CertiK report about $6.5 million drained across Arbitrum ($5 million), BNB Chain ($1.3 million), and Ethereum ($135,000) through the same DEI defect. Halborn reports roughly 10% was returned; the gross loss is retained and recovery is not netted.",
+    "The loss uses reputable cross-chain reports rather than a separately repriced transaction-level asset ledger for all three chains."
+  ]
 }

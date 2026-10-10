@@ -1,153 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x8fcdfcded45100437ff94801090355f2f689941dca75de9a702e01670f361c04",
-  "protocol": {
-    "name": "CloberDEX",
-    "slug": "cloberdex"
-  },
+  "protocol": "CloberDEX",
   "name": "CloberDEX",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x8fcdfcded45100437ff94801090355f2f689941dca75de9a702e01670f361c04",
-      "blockNumber": 23514451,
-      "transactionIndex": 2,
-      "timestamp": 1733818249
-    },
-    "attackerAddresses": [
-      "0x012fc6377f1c5ccf6e29967bce52e3629aaa6025"
-    ]
-  },
   "summary": "Rebalancer invoked an untrusted strategy burnHook before reducing its recorded pool reserves. A callback could reenter burn while the stale reserves remained available, causing the same WETH liquidity to be counted and withdrawn twice.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 501279,
-      "valuationTimestamp": 1733818249,
-      "method": "reported",
-      "sourceIds": [
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x4200000000000000000000000000000000000006",
-          "symbol": "WETH"
-        },
-        "amount": "133.7",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Exact pre-recovery victim depletion is 133.7 WETH: Rebalancer's WETH balance fell from 133.707875556674808577 immediately before the anchor transaction to 0.007875556674808577 afterward. The receipt records 267.4 WETH supplied to Rebalancer from flash-loan proceeds, 401.1 WETH returned across the nested burns, repayment of the 267.4 WETH principal, and retention of the 133.7 WETH victim depletion. Published analysis values 133.7 WETH at approximately $501,279; the USD total is therefore reported rather than independently price-reproduced."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6a0b87d6b74f7d5c92722f6a11714dbeda9f3895",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x6a0b87d6b74f7d5c92722f6a11714dbeda9f3895",
-        "codeHash": "0x4ddff0fcf34f2f4e362181592355533db5b78d21f3da1aca283aa6bc9c952100"
-      },
-      "deployment": {
-        "timestamp": 1732870613,
-        "blockNumber": 23040633,
-        "transactionHash": "0xc9f674bb3a48324d4b69fe0d975300e87d6170b9eca440b27a32697a2e8a8709",
-        "transactionIndex": 95,
-        "creatorAddress": "0x4587dd6356d7293e5f10db4d853332bd5b218c0b"
-      },
-      "ageReset": {
+      "address": "0x6a0b87d6b74f7d5c92722f6a11714dbeda9f3895",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable Rebalancer runtime deployed in this transaction and unchanged through the exploit; its pre-exploit and current runtime hashes match, and the runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction."
-      },
-      "codeAgeSeconds": 947636,
-      "failureModeId": "failure:clober-rebalancer-strategy-hook-stale-reserve-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0xc9f674bb3a48324d4b69fe0d975300e87d6170b9eca440b27a32697a2e8a8709"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x8fcdfcded45100437ff94801090355f2f689941dca75de9a702e01670f361c04"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-12/CloberDEX_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/clober-dex/clober-liquidity-vault",
-      "commit": "8c81375496e0c340f1458148ec586d59cff3bf6e",
-      "path": "src/Rebalancer.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/clober-dex/clober-liquidity-vault",
-      "commit": "7c5b7980d2e6a597c4d6ce79e001096d68473d57",
-      "path": "src/Rebalancer.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T12:15:20Z",
-      "note": "Reviewed Base block 23514451, the attacker helper creation at transaction index 1, the successful exploit at index 2, the complete call trace and prestate, the Rebalancer creation transaction and runtime, Clober's pre-incident source and same-day fix, the commit-pinned reproduction, exact WETH balances and receipt transfers, and published technical reporting. Index 1 only deploys the attacker helper; index 2 is the earliest successful transaction that invokes the defective burn path and realizes loss. The trace directly executes Rebalancer 0x6a0b87d6b74f7d5c92722f6a11714dbeda9f3895, whose prestate runtime hash is 0x4ddff0fcf34f2f4e362181592355533db5b78d21f3da1aca283aa6bc9c952100. That hash matches current state, and the runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction, establishing deployment as the complete executable-code history. In the vulnerable source, _burn calls the attacker-selected strategy's burnHook before reducing reserveA and reserveB; Clober's fix moves reserve settlement and deductions before that callback. Rebalancer's WETH balance decreases exactly from 133.707875556674808577 to 0.007875556674808577. The 267.4 WETH flash-loan principal is supplied and repaid within the transaction, leaving exactly 133.7 WETH of victim depletion before recovery."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xc9f674bb3a48324d4b69fe0d975300e87d6170b9eca440b27a32697a2e8a8709"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://blog.solidityscan.com/cloberdex-liquidity-vault-hack-analysis-f22eb960aa6f"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The 133.7 WETH victim depletion is exact, but the approximately $501,279 USD total is retained from published incident-time reporting rather than an independently reproduced historical price observation."
-    ],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 501279,
+    "assets": [
+      {
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "133.7"
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-12/CloberDEX_exp.sol",
+    "https://github.com/clober-dex/clober-liquidity-vault/blob/8c81375496e0c340f1458148ec586d59cff3bf6e/src/Rebalancer.sol",
+    "https://github.com/clober-dex/clober-liquidity-vault/blob/7c5b7980d2e6a597c4d6ce79e001096d68473d57/src/Rebalancer.sol",
+    "https://blog.solidityscan.com/cloberdex-liquidity-vault-hack-analysis-f22eb960aa6f"
+  ],
+  "notes": [
+    "Direct immutable Rebalancer runtime deployed in this transaction and unchanged through the exploit; its pre-exploit and current runtime hashes match, and the runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction.",
+    "Exact pre-recovery victim depletion is 133.7 WETH: Rebalancer's WETH balance fell from 133.707875556674808577 immediately before the anchor transaction to 0.007875556674808577 afterward. The receipt records 267.4 WETH supplied to Rebalancer from flash-loan proceeds, 401.1 WETH returned across the nested burns, repayment of the 267.4 WETH principal, and retention of the 133.7 WETH victim depletion. Published analysis values 133.7 WETH at approximately $501,279; the USD total is therefore reported rather than independently price-reproduced.",
+    "The 133.7 WETH victim depletion is exact, but the approximately $501,279 USD total is retained from published incident-time reporting rather than an independently reproduced historical price observation."
+  ]
 }

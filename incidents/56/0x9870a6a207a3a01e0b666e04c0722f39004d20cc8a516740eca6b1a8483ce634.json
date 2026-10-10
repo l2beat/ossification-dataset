@@ -1,172 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x9870a6a207a3a01e0b666e04c0722f39004d20cc8a516740eca6b1a8483ce634",
-  "protocol": {
-    "name": "EvoDeFi",
-    "slug": "evodefi"
-  },
+  "protocol": "EvoDeFi",
   "name": "EvoDeFi MasterChef updatePower raises power without settling rewardDebt",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x9870a6a207a3a01e0b666e04c0722f39004d20cc8a516740eca6b1a8483ce634",
-      "blockNumber": 6590138,
-      "transactionIndex": 97,
-      "timestamp": 1618498615
-    },
-    "attackerAddresses": [
-      "0x8a0a1eb0bae23e4e95608e3aad7fa25b0d907c6c",
-      "0x1cb6d29c52fd993103eadd0c01209ba000e92459"
-    ]
-  },
   "summary": "MasterChef.updatePower(pid) is public and recomputes user.power from the staked amount and the caller's current NFT/proxy bonus without paying pending rewards or resetting rewardDebt. A staker whose bonus rises can call updatePower and the next claim pays the new power times the whole accumulated reward per power minus the old debt. The first exercise (April 2021, a staker whose bonus rose 9%) paid about 0.0039 GEN extra; on 2021-06-10 an attacker flash-borrowed GEN, and six helper contracts each deposited, raised their NFT bonus, called updatePower and withdrew, draining 456,262 GEN from the MasterChef.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 489520.164376,
-      "valuationTimestamp": 1623309361,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xb0f2939a1c0e43683e5954c9fe142f7df9f8d967",
-          "symbol": "GEN"
-        },
-        "amount": "456261.585139647862699248",
-        "usdValue": 489520.16437601805,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1623309361,
-          "unitPriceUsd": 1.0728936652122285,
-          "sourceIds": [
-            "source-4",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Net GEN depletion of the MasterChef in the 2021-06-10 transaction source-2 (other stakers' deposits and reward reserves). Valued at the attacker's realised sale price: 455,576.854326181275474802 GEN sold in 21 transactions (blocks 8169292..8169627) returned 334,616.733764492976012720 BUSD from the GEN/BUSD pair and 421.633957188326703176 WBNB from the GEN/WBNB pair (WBNB at 365.646 USD), about 1.07 USD per GEN; the sale drove GEN from about 2.1 USD down, so this is a lower bound (reported loss about 1,000,000 USD). The April anchor sequence paid about 0.0039 GEN of unearned reward (source-9), which is not added.",
-    "realizedAt": 1623309361
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xf1f8e3ff67e386165e05b2b795097e95aac899f0",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1618004013,
-        "blockNumber": 6425457,
-        "transactionHash": "0xd7972ae1497bae2ca8a7b9523665f7e12ea19260cd5a1df41c828b78f2e213dc",
-        "transactionIndex": 23,
-        "creatorAddress": "0xa222ce50c1b9e65121b1597250907a71e20689db"
-      },
-      "ageReset": {
+      "address": "0xf1f8e3ff67e386165e05b2b795097e95aac899f0",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable MasterChef runtime; the proxy (bonus source) was set in the constructor and setProxy was never called; pool add/set and emission updates do not touch updatePower."
-      },
-      "codeAgeSeconds": 494602,
-      "failureModeId": "failure:evodefi-masterchef-updatepower-stale-rewarddebt",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0xf1f8e3ff67e386165e05b2b795097e95aac899f0",
-        "codeHash": "0xdda255f4ba8956772da82cfda0d3d8662155787515e933ff46dbdcd452219a45"
+        "tx": "0xd7972ae1497bae2ca8a7b9523665f7e12ea19260cd5a1df41c828b78f2e213dc"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x9870a6a207a3a01e0b666e04c0722f39004d20cc8a516740eca6b1a8483ce634"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x7c3b7f082a5c92b03a878ff5d7c7e645ce3bcd37901808b936b318c4f3cc3880"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T06:29:06Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Verified MasterChef (source-6): updatePower(pid) is public and sets user.power = user.amount*(100 + NFT bonus + proxy.bonus(msg.sender))/100 and adjusts pool.totalPower, but neither claims pending rewards nor resets user.rewardDebt; claim() pays user.power*accGenPerPower/1e12 - rewardDebt. Raising one's bonus and calling updatePower therefore makes the next claim pay the added power times the entire historical accGenPerPower. The bonus source proxy 0x443fe2adb210efc88f098e830610f4a18830f922 (bonus(address), 0xd8cb4aa3) was set in the constructor; setProxy (0x97107d6d) was never called. Earliest exercise: the complete Etherscan V2 txlist of the MasterChef to block 8169232 (109532 txs, block-paginated) has four direct updatePower (0xd3451379) calls, all by 0xcef03c4d875fb30b8de72c7a7bb7b2b23a100ec6 in pool 13, and trace_filter(toAddress = MasterChef) over blocks 6425457..6590390 in 100-block chunks (1650 chunks, 14906 calls) finds no contract-mediated updatePower. eth_call userInfo(13, 0xcef03c4d...) and proxy bonus(): source-1 (block 6590138, index 97) is the first that raises power (9600000000000000 -> 10464000000000000 as bonus goes 0 -> 9) with rewardDebt unchanged at 42863620829280000; pendingGen(13, user) jumps from 31533549792000 at block 6590137 to 3892270993314336 at 6590138 (accGenPerPower 4464960503050), and the user's deposit source-9 (block 6590162) pays 3896437238786016 GEN wei. The earlier call 0xd61c918881df3a353e575b9cf7fede69f6f8775a3574edbf96f3a279fee28036 did not change power; the later ones lower it (6590237) and raise it again (0xeed43dbf7283e54a99b9ed5594a842978aa7b671508d1379a3f4dbe3a7c62d8c, 6590391). The main campaign is source-2 (block 8169232, index 103): debug_traceTransaction(callTracer) shows 0x1cb6d29c52fd993103eadd0c01209ba000e92459 flash-borrow 273360.81 GEN from the GEN/BUSD pair and pass it through six helper contracts, each calling deposit(0, balance), GenNFT 0x1c28c5b16b67d7645f814029ee44d9981e176059.e91a7ca6 (the proxy bonus() for the helper goes 0 -> 27 on the first helper), updatePower(0) and withdraw(0, balance), each withdrawal paying more GEN than deposited. Identity/age: eth_getCode empty at block 6425456; keccak256 of runtime 0xdda255f4ba8956772da82cfda0d3d8662155787515e933ff46dbdcd452219a45 at deployment block 6425457, at 6590137 and at 8169231; creation source-7 (index 23) is a top-level CREATE by 0xa222ce50c1b9e65121b1597250907a71e20689db. The source has no delegatecall or selfdestruct. Owner calls before the exploit are transferOwnership, add (22), set (23), updateEmissionParameters (2) and updateEmissionIfNeeded (2), none affecting updatePower or rewardDebt; deployment supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T06:29:06Z",
-      "note": "Reviewed loss from receipts. Source-2 (block 8169232, index 103; sender 0x8a0a1eb0bae23e4e95608e3aad7fa25b0d907c6c via 0x1cb6d29c52fd993103eadd0c01209ba000e92459) net GEN (0xb0f2939a1c0e43683e5954c9fe142f7df9f8d967) Transfer deltas: MasterChef -456261585139647862699248 base units (after 422400000000000000 minted by updatePool, of which 384000000000000000 to the MasterChef), attacker contract +455576854326181275474802, flash lender GEN/BUSD pair 0xc89fbab3143ca9a41834b2818b33f4886e7fde01 +685114813466587224446 (273360.810573168302553809 borrowed, 274045.925386634889778255 repaid). The attacker contract forwards the whole 455576.854326181275474802 GEN to the EOA in 0x98dec7c8b09944e88b4d04a7f17b8d607ca896636a8faa05e208abd36ef174a4 (block 8169264). Disposal: Etherscan V2 account.tokentx of the EOA, blocks 8169232..8200000, lists 21 transactions sending GEN only to the GEN/BUSD pair (280000 GEN) and the GEN/WBNB pair 0x10b1b01d84ed34bddbc87186ec635d6904eb9c49 (175576.854326181275474802 GEN), blocks 8169292..8169627; summing their receipts' pair outflows gives 334616.733764492976012720 BUSD from the GEN/BUSD pair (routed onward through 0x1b96b92314c44b159149f7e0303511fb2fc4774f) and 332.964546681083677185 + 88.669410507243025991 WBNB from the GEN/WBNB pair. Realised proceeds 334616.733764 USD + 421.633957188326703176 WBNB x 365.64604114777273 (source-5) = 488785.52 USD for 455576.854 GEN, an effective 1.07289 USD per GEN applied to the 456261.585 GEN depleted."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1623310000/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790663357
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Verified MasterChef standard-JSON source at https://bscscan.com/address/0xf1f8e3ff67e386165e05b2b795097e95aac899f0#code; reproduce Etherscan V2 contract.getsourcecode chainid=56. Compiler v0.8.0+commit.c7dfd78e, optimizer 200 runs. SHA-256 of returned SourceCode: 941bddae872457b02e6e71b6e0f5df58d5ccc38bbca48042cf9633b656fb196d. Inspect updatePower, deposit, withdraw, powerUpWithNFTs, claim and _pendingGen."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd7972ae1497bae2ca8a7b9523665f7e12ea19260cd5a1df41c828b78f2e213dc"
-    },
-    {
-      "id": "source-8",
-      "type": "post-mortem",
-      "url": "https://medium.com/@Knownsec_Blockchain_Lab/knownsec-blockchain-lab-evodefi-attack-event-analysis-e1cba8a789ce"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x0add1b9b334b9af83050d0cabd5b11b15da2be91be4d59e47869643dea547a82"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 489520.164376,
+    "assets": [
+      {
+        "token": "0xb0f2939a1c0e43683e5954c9fe142f7df9f8d967",
+        "symbol": "GEN",
+        "amount": "456261.585139647862699248",
+        "usd": 489520.16437601805
+      }
     ]
   },
-  "discovery": [
-    "web:2021-06-10:evodefi"
+  "refs": [
+    "eip155:56:0x7c3b7f082a5c92b03a878ff5d7c7e645ce3bcd37901808b936b318c4f3cc3880",
+    "https://medium.com/@Knownsec_Blockchain_Lab/knownsec-blockchain-lab-evodefi-attack-event-analysis-e1cba8a789ce",
+    "eip155:56:0x0add1b9b334b9af83050d0cabd5b11b15da2be91be4d59e47869643dea547a82"
+  ],
+  "notes": [
+    "Immutable MasterChef runtime; the proxy (bonus source) was set in the constructor and setProxy was never called; pool add/set and emission updates do not touch updatePower.",
+    "Net GEN depletion of the MasterChef in the 2021-06-10 transaction source-2 (other stakers' deposits and reward reserves). Valued at the attacker's realised sale price: 455,576.854326181275474802 GEN sold in 21 transactions (blocks 8169292..8169627) returned 334,616.733764492976012720 BUSD from the GEN/BUSD pair and 421.633957188326703176 WBNB from the GEN/WBNB pair (WBNB at 365.646 USD), about 1.07 USD per GEN; the sale drove GEN from about 2.1 USD down, so this is a lower bound (reported loss about 1,000,000 USD). The April anchor sequence paid about 0.0039 GEN of unearned reward (source-9), which is not added."
   ]
 }

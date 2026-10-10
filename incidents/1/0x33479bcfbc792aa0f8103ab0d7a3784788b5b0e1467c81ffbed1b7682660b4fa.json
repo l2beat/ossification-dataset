@@ -1,156 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x33479bcfbc792aa0f8103ab0d7a3784788b5b0e1467c81ffbed1b7682660b4fa",
-  "protocol": {
-    "name": "Umbrella Network",
-    "slug": "umbrella-network"
-  },
+  "protocol": "Umbrella Network",
   "name": "Umbrella StakingRewards unchecked withdrawal accounting",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x33479bcfbc792aa0f8103ab0d7a3784788b5b0e1467c81ffbed1b7682660b4fa",
-      "blockNumber": 14421984,
-      "transactionIndex": 77,
-      "timestamp": 1647762534
-    },
-    "attackerAddresses": [
-      "0x1751e3e1aaf1a3e7b973c889b7531f43fc59f7d0"
-    ]
-  },
   "summary": "StakingRewards.withdraw() subtracted the caller-supplied amount from total supply and the caller's zero balance without checked arithmetic. Under Solidity 0.7 the values wrapped instead of reverting, so an unstaked caller could withdraw the pool's entire UNI-V2 balance.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 539794.7758571457,
-      "valuationTimestamp": 1647759600,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xb1bbeea2da2905e6b0a30203aef55c399c53d042",
-          "symbol": "UNI-V2"
-        },
-        "amount": "8792.873290680252648282",
-        "usdValue": 539794.7758571457,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1647759600,
-          "unitPriceUsd": 61.39003236055787,
-          "sourceIds": [
-            "source-1",
-            "source-4",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The selected Ethereum transaction transfers the target's exact entire balance of 8,792.873290680252648282 UMB/WETH UNI-V2 tokens. USD is immediate pre-transaction pool NAV: the stolen share represented 2,235,385.212219056057355257 UMB and 92.244534420912291405 WETH; both reserve sides are marked at the pool spot ratio and WETH uses the incident-time price."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb3fb1d01b07a706736ca175f827e4f56021b85de",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xb3fb1d01b07a706736ca175f827e4f56021b85de",
-        "codeHash": "0x1d509901e91df00f976a926bd2ff06a9bd0f9bd46cb399409a9165970cd91f82"
-      },
-      "deployment": {
-        "timestamp": 1647277530,
-        "blockNumber": 14385979,
-        "transactionHash": "0x55d1da69574b87f8129538939d932eb4895a7679cf5bda40e3f524e54f4307fc",
-        "transactionIndex": 221,
-        "creatorAddress": "0xa6e4ffa19b213abea258ae72e8e1a209b9e543e7"
-      },
-      "ageReset": {
+      "address": "0xb3fb1d01b07a706736ca175f827e4f56021b85de",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct StakingRewards runtime containing the unchecked withdrawal subtraction was installed by this top-level contract creation."
-      },
-      "codeAgeSeconds": 485004,
-      "failureModeId": "failure:umbrella-staking-rewards-unsigned-withdraw-underflow",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x55d1da69574b87f8129538939d932eb4895a7679cf5bda40e3f524e54f4307fc"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x33479bcfbc792aa0f8103ab0d7a3784788b5b0e1467c81ffbed1b7682660b4fa"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-03/Umbrella_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://medium.com/umbrella-network/update-on-polar-stream-exploit-b2f4526327f2"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:13:41Z",
-      "note": "Reviewed the exploit receipt and call trace, verified StakingRewards source, direct creation receipt, runtime bytecode at deployment and immediately before the exploit, official incident report, and pre-transaction UNI-V2 pool state. The exploit helper calls withdraw(8792873290680252648282) on the direct target despite having no stake. In Solidity 0.7, `_totalSupply = _totalSupply - amount` and `_balances[user] = _balances[user] - amount` wrap because neither subtraction uses SafeMath, after which the target transfers exactly that amount of stakingToken to the helper. Transaction 0x55d1da69574b87f8129538939d932eb4895a7679cf5bda40e3f524e54f4307fc is the successful top-level creation of the target, whose runtime hash is identical at deployment block 14385979 and pre-exploit block 14421983. The receipt amount equals the target's entire pre-transaction 8,792.873290680252648282 UMB/WETH UNI-V2 balance. At the prior block, total LP supply was 23,579.674339001054005343 against reserves of 5,994,588.297116956055431286 UMB and 247.370342923434835255 WETH, so the stolen share represented 2,235,385.212219056057355257 UMB and 92.244534420912291405 WETH."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x55d1da69574b87f8129538939d932eb4895a7679cf5bda40e3f524e54f4307fc"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1647676134&to=1647769734",
-      "observedAt": 1787576959
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 539794.7758571457,
+    "assets": [
+      {
+        "token": "0xb1bbeea2da2905e6b0a30203aef55c399c53d042",
+        "symbol": "UNI-V2",
+        "amount": "8792.873290680252648282",
+        "usd": 539794.7758571457
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/Umbrella_exp.sol",
+    "https://medium.com/umbrella-network/update-on-polar-stream-exploit-b2f4526327f2"
+  ],
+  "notes": [
+    "The direct StakingRewards runtime containing the unchecked withdrawal subtraction was installed by this top-level contract creation.",
+    "The selected Ethereum transaction transfers the target's exact entire balance of 8,792.873290680252648282 UMB/WETH UNI-V2 tokens. USD is immediate pre-transaction pool NAV: the stolen share represented 2,235,385.212219056057355257 UMB and 92.244534420912291405 WETH; both reserve sides are marked at the pool spot ratio and WETH uses the incident-time price."
+  ]
 }

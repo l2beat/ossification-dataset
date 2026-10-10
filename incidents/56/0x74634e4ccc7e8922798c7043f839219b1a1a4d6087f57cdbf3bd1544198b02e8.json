@@ -1,160 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x74634e4ccc7e8922798c7043f839219b1a1a4d6087f57cdbf3bd1544198b02e8",
-  "protocol": {
-    "name": "Unifi Protocol",
-    "slug": "unifi-protocol"
-  },
+  "protocol": "Unifi Protocol",
   "name": "Unifi UP reward manager accepts a caller-supplied fake pool for LP reward eligibility and reward math",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x74634e4ccc7e8922798c7043f839219b1a1a4d6087f57cdbf3bd1544198b02e8",
-      "blockNumber": 121045767,
-      "transactionIndex": 13,
-      "timestamp": 1789032315
-    },
-    "attackerAddresses": [
-      "0xb78e77deddaf20f238e1d8f9d1de7606c23cdd81",
-      "0xf6ba170f3d50a21fad30f2d02972ffd295f04e8c",
-      "0x44ed72d81a32a284f3fb50f9c6e6f2ef739bb324"
-    ]
-  },
   "summary": "The unverified Unifi UP reward manager 0x5d8aa155 treats any contract that calls mintUP(self) as a pool once its token0() returns WBNB, and claimUP(pool, a, b) sizes the payout from balanceOf and totalSupply read from that same address. The attacker's contract, whose runtime differs from every Unifi pool, minted UP with 0.001 flash-borrowed BNB, then claimed the manager's whole 0.559 UP reward reserve by reporting a huge LP balance. It redeemed the UP at the UPRedeemer for 5.86 BNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4200.15,
-      "valuationTimestamp": 1789032315,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x36f20660b9947929ab3edd8727b5af60260333a7",
-          "symbol": "UPbnb"
-        },
-        "amount": "0.559116757634477508",
-        "usdValue": 4200.15,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1789032300,
-          "unitPriceUsd": 7512.12,
-          "sourceIds": [
-            "source-1",
-            "source-4",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The manager's pre-exploit UP reward reserve, less 1 wei left behind; the 0.000092563800 UP net minted from the attacker's own 0.001 BNB in the same transaction is excluded. Valued at the transaction's own redemption rate, 5.860110743711839863 BNB for 0.559209321435491586 UP (10.479279 BNB per UP), times the DefiLlama WBNB price."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5d8aa15505afec01bab0de21f9377673b5246eae",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5d8aa15505afec01bab0de21f9377673b5246eae",
-        "codeHash": "0xb2d5ee7bc5178657a52f4b89c94ac3181ae7f3b1ab7afb01e519c3c28952cb87"
-      },
-      "deployment": {
-        "timestamp": 1661954703,
-        "blockNumber": 20924881,
-        "transactionHash": "0xfdd2ae437ee24f43d42ffe0e085ceb0a1b5454fadb2cd11d32213d33736824f9",
-        "transactionIndex": 78,
-        "creatorAddress": "0x637b935cba030aeb876eae07aa7ff637166de4d6"
-      },
-      "ageReset": {
+      "address": "0x5d8aa15505afec01bab0de21f9377673b5246eae",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct unverified runtime with no DELEGATECALL or SELFDESTRUCT and an empty EIP-1967 implementation slot; its only non-claim admin transaction is transferOwnership, and eligibility is decided by runtime code (token0() == WBNB), so deployment is the only age basis."
-      },
-      "codeAgeSeconds": 127077612,
-      "failureModeId": "failure:unifi-up-manager-unregistered-pool",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xfdd2ae437ee24f43d42ffe0e085ceb0a1b5454fadb2cd11d32213d33736824f9"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x74634e4ccc7e8922798c7043f839219b1a1a4d6087f57cdbf3bd1544198b02e8"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xfdd2ae437ee24f43d42ffe0e085ceb0a1b5454fadb2cd11d32213d33736824f9"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:17:22Z",
-      "note": "Exploit source-1 (121045767:13): contract creation by EOA 0xb78e77de -> 0xf6ba170f, which creates 0x44ed72d8 (runtime keccak 0x69442ad85e3bfcea...) and calls it. debug_traceTransaction callTracer: 0x44ed72d8 flash-swaps 0.001 WBNB from PancakeV2 pair 0x58f87685, unwraps, calls manager mintUP(0xaba2f2d4)(pool=0x44ed72d8) with 0.001 BNB; the manager's self-staticcall 0x4908d8ab(pool) staticcalls pool.token0() -> WBNB and returns true; UP.mint via UPController 0xf199c50b mints 95426598983586 UP to the manager, 2862797969508 are burned. It then calls claimUP(0xc53f57ee)(0x44ed72d8 x3); the manager reads pool.balanceOf(pool) = 0x147806c7c5e6441cb0c, computes 0xb02ee539(pool,pool) = 559209321435491586 and transfers that to 0x44ed72d8 (UP Transfer log), leaving 1 wei. 0x44ed72d8 redeems it at UPRedeemer 0x1b8c6808 (0xdb006a75), receives 5860110743711839863 wei BNB, repays 1002506265664162 wei and forwards 5859108237446175701 wei to the EOA. No registry, factory or code check on pool. First exercise: Etherscan txlistinternal of the manager 20924881..121045767 (143,177 rows, 15 windows): 72,007 value-bearing calls in, from 54 contracts; eth_getCode at each first call: 53 share runtime keccak 0x62b3838dbe7f2643... (the Unifi pool template), the 54th is 0x44ed72d8 in source-1. Etherscan txlist: 44 direct claimUP calls, all claimUP(sender, sender, pool) with pool in the template set. Etherscan tokentx UP of the manager to 121045766 (131,620 transfers): 189 non-burn outflows; the 145 not in the direct txlist (129 txs) were traced with callTracer: every external call into the manager (f794c3ba x408, aba2f2d4 x26) comes from a template-hash pool (28 distinct). Artifact: eth_getCode empty at 20924880; keccak(runtime) 0xb2d5ee7bc5178657a52f4b89c94ac3181ae7f3b1ab7afb01e519c3c28952cb87 (21,860 bytes) at 20924881 and 121045766; opcode scan: no DELEGATECALL/SELFDESTRUCT; EIP-1967 slot 0 at 121045766; unverified on BscScan. Created by source-2 (20924881:78) from 0x637b935cba030aeb876eae07aa7ff637166de4d6; txlist from creation: 1 creation, 1 transferOwnership (owner now 0x4e6e778b), 44 claimUP. codeAgeSeconds = 1789032315 - 1661954703 = 127077612."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:17:22Z",
-      "note": "Loss: eth_call UP 0x36f20660b9947929ab3edd8727b5af60260333a7 balanceOf(manager) = 559116757634477509 at 121045766 and 1 at 121045767; claimed 559209321435491586 = 559116757634477509 + 95426598983586 minted - 2862797969508 burned - 1. Victim loss 559116757634477508 UP wei. Redemption in source-1: 5860110743711839863 wei BNB for 559209321435491586 UP = 10.479279438 BNB/UP; x DefiLlama WBNB 716.854526966627 at 1789032300 (source-5) = 7,512.12 USD/UP; 0.559116757634477508 UP = 5.859140741775160814 BNB = 4,200.15 USD."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789032315/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790655442
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/UnifiProtocol_exp.sol"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 4200.15,
+    "assets": [
+      {
+        "token": "0x36f20660b9947929ab3edd8727b5af60260333a7",
+        "symbol": "UPbnb",
+        "amount": "0.559116757634477508",
+        "usd": 4200.15
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-09:unifi-protocol"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/UnifiProtocol_exp.sol"
+  ],
+  "notes": [
+    "Direct unverified runtime with no DELEGATECALL or SELFDESTRUCT and an empty EIP-1967 implementation slot; its only non-claim admin transaction is transferOwnership, and eligibility is decided by runtime code (token0() == WBNB), so deployment is the only age basis.",
+    "The manager's pre-exploit UP reward reserve, less 1 wei left behind; the 0.000092563800 UP net minted from the attacker's own 0.001 BNB in the same transaction is excluded. Valued at the transaction's own redemption rate, 5.860110743711839863 BNB for 0.559209321435491586 UP (10.479279 BNB per UP), times the DefiLlama WBNB price."
   ]
 }

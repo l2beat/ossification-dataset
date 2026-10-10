@@ -1,151 +1,31 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x4449114ceaedd11e8f1363c5e53507198323a63cb6958dc26078fc016d0d4b27",
-  "protocol": {
-    "name": "Unknown Base MEV bot 0xe143b486",
-    "slug": "unknown-base-mev-bot-0xe143b486"
-  },
+  "protocol": "Unknown Base MEV bot 0xe143b486",
   "name": "Unknown Base MEV bot unvalidated uniswapV3SwapCallback",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x4449114ceaedd11e8f1363c5e53507198323a63cb6958dc26078fc016d0d4b27",
-      "blockNumber": 37487849,
-      "transactionIndex": 127,
-      "timestamp": 1761765045
-    },
-    "attackerAddresses": [
-      "0x2a49c6fd18bd111d51c4fffa6559be1d950b8eff",
-      "0xf1a3686f4d394e52d9fdf60132e46ebdcd231b01"
-    ]
-  },
   "summary": "Bot contract 0xe143b486's uniswapV3SwapCallback(int256,int256,bytes) pays the positive delta by transferFrom from a payer named in the callback data to msg.sender. The token comes from msg.sender.token0(), and nothing checks that the caller is a genuine pool. The operator EOA 0xc0ffee47 had approved the bot for WETH. The attacker's contract, posing as a pool, called the callback 219 times with the operator as payer and pulled 55.42 WETH.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 218679.91882772677,
-      "valuationTimestamp": 1761765045,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x4200000000000000000000000000000000000006",
-          "symbol": "WETH"
-        },
-        "amount": "55.416592335050228928",
-        "usdValue": 218679.91882772677,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1761765045,
-          "unitPriceUsd": 3946.1090913995945,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact WETH depletion of operator EOA 0xc0ffee479e4cd49eafba87449225e17c53251226, which approved the bot: 219 transferFrom legs of 0.253043800616667712 WETH, then forwarded to the attacker EOA. Valued at the DefiLlama WETH quote.",
-    "realizedAt": 1761765045
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe143b486ab0413df0d6dad2caf6d2f61cac54730",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe143b486ab0413df0d6dad2caf6d2f61cac54730",
-        "codeHash": "0x8de1f538c6580086810071f794e2c9ea7b185e0be25ba7bd495dfa6f492d1039"
-      },
-      "deployment": {
-        "timestamp": 1751473927,
-        "blockNumber": 32342290,
-        "transactionHash": "0x88f258878f828f87f1d74cf75bd2f0e5debac5fe54c9ac05b5a99465e79a753d",
-        "transactionIndex": 16,
-        "creatorAddress": "0xbf0e364225f12c1c0bb7b8668a816a6f13e39ccc"
-      },
-      "ageReset": {
+      "address": "0xe143b486ab0413df0d6dad2caf6d2f61cac54730",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct, non-upgradeable bot runtime; its swap callback has lacked caller validation since deployment. The operator's WETH approval only set exposure."
-      },
-      "codeAgeSeconds": 10291118,
-      "failureModeId": "failure:unknown-base-mev-bot-0xe143b486-unvalidated-swap-callback",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The bot has no verified source. The missing pool check is established from the exploit trace, in which a non-pool contract's callback calls were honored, not from source text."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x88f258878f828f87f1d74cf75bd2f0e5debac5fe54c9ac05b5a99465e79a753d"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x4449114ceaedd11e8f1363c5e53507198323a63cb6958dc26078fc016d0d4b27"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x88f258878f828f87f1d74cf75bd2f0e5debac5fe54c9ac05b5a99465e79a753d"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. Source-1 (block 37487849, index 127): EOA 0x2a49c6fd18bd111d51c4fffa6559be1d950b8eff calls its contract 0xf1a3686f4d394e52d9fdf60132e46ebdcd231b01 (selector 0x1a8a3165). debug_traceTransaction(callTracer) shows 256 CALLs to bot 0xe143b486ab0413df0d6dad2caf6d2f61cac54730 with uniswapV3SwapCallback (0xfa461e33): amount0Delta 0x0382fdfef85f0a40, a negative amount1Delta, and data (0xc0ffee479e4cd49eafba87449225e17c53251226, 0xf1a3686f...). In each successful call (219) the bot STATICCALLs msg.sender.token0() (0x0dfe1681; the attacker contract returns WETH) and then calls WETH transferFrom(0xc0ffee47..., msg.sender, 253043800616667712). The remaining 37 calls revert. The caller is a contract created by the attacker at block 33535149, not a pool from any factory, so the callback has no pool authentication. The WETH is forwarded to the attacker EOA (final Transfer, 55416592335050228928). Identity/age: eth_getCode empty at 32342289; keccak 0x8de1f538c6580086810071f794e2c9ea7b185e0be25ba7bd495dfa6f492d1039 (5591 bytes) at 32342290 and 37487848. Source-2 (block 32342290, index 16) is a top-level creation by 0xbf0e364225f12c1c0bb7b8668a816a6f13e39ccc. Earliest exercise: Etherscan tokentx for WETH of 0xc0ffee47 from block 32342290 to 37487849, paged backwards in windows of 10000 (27529 transfers), sends WETH only to pools 0x72be417afb0abea66913141c605d313bb389b59c (WETH/0x88fb150b) and 0xb2cc224c1c9fee385f8ad6a55b4d94e92359dc59 (WETH/USDC), CoW settlement 0x9008d19f58aabd9ed0d60971565aa8510560ab41, one transfer to 0xb5d99a61a5d34e3edfeea052483f49f7a922e248, and the 219 source-1 legs to 0xf1a3686f.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:44:08Z"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed loss. WETH balanceOf(0xc0ffee47) is 55514876455905996937 at block 37487848 and 98284120855768009 at 37487849; the difference 55416592335050228928 equals the 219 source-1 transferFrom legs (receipt logs 775..993) and the final transfer to 0x2a49c6fd (log 994). The allowance to the bot at block 37487848 was 2996368400181857060576.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:44:08Z"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1761765045/base:0x4200000000000000000000000000000000000006",
-      "observedAt": 1790653402
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 218679.91882772677,
+    "assets": [
+      {
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "55.416592335050228928",
+        "usd": 218679.91882772677
+      }
     ]
   },
-  "discovery": [
-    "web:2025-10-29:unknown-base-contract-0x4449114c"
+  "notes": [
+    "Direct, non-upgradeable bot runtime; its swap callback has lacked caller validation since deployment. The operator's WETH approval only set exposure.",
+    "Exact WETH depletion of operator EOA 0xc0ffee479e4cd49eafba87449225e17c53251226, which approved the bot: 219 transferFrom legs of 0.253043800616667712 WETH, then forwarded to the attacker EOA. Valued at the DefiLlama WETH quote.",
+    "The bot has no verified source. The missing pool check is established from the exploit trace, in which a non-pool contract's callback calls were honored, not from source text."
   ]
 }

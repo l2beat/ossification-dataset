@@ -1,148 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x603b2bbe2a7d0877b22531735ff686a7caad866f6c0435c37b7b49e4bfd9a36c",
-  "protocol": {
-    "name": "bEarn",
-    "slug": "bearn"
-  },
+  "protocol": "bEarn",
   "name": "bEarn BUSD/ibBUSD withdrawal-unit mismatch",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x603b2bbe2a7d0877b22531735ff686a7caad866f6c0435c37b7b49e4bfd9a36c",
-      "blockNumber": 7457125,
-      "transactionIndex": 86,
-      "timestamp": 1621161380
-    },
-    "attackerAddresses": [
-      "0x47f341d896b08daacb344d9021f955247e50d089"
-    ]
-  },
   "summary": "The BUSD Alpaca strategy's withdraw(address,uint256) passed a BUSD-denominated request to FairLaunch as an ibBUSD amount. Because each ibBUSD was worth more than one BUSD, repeated deposit/emergencyWithdraw cycles withdrew excess BUSD and compounded the attacker's credit.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 10859319,
-      "valuationTimestamp": 1621161380,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-3"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
-          "symbol": "BUSD"
-        },
-        "amount": "10859319",
-        "usdValue": 10859319,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1621161380,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "bEarn reports that 26 attack transactions beginning with the anchored transaction drained 10,859,319 BUSD from the affected single-stake BUSD vault. The campaign-wide amount is valued at stablecoin par; it is not narrowed to the first transaction's proceeds."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e",
-        "codeHash": "0xada77033047849187832a245e0e1f814d255430597cfce06d3a321ebd117e1cd"
-      },
-      "deployment": {
-        "timestamp": 1614674002,
-        "blockNumber": 5324911,
-        "transactionHash": "0xdd4031277401d5eca44cc73e153effaee20a983b5b513cbf517e08cc9a9911db",
-        "transactionIndex": 68,
-        "creatorAddress": "0x4c4871e1c48bc7c1e86d9cf3d41846e9a2c24c36"
-      },
-      "ageReset": {
+      "address": "0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct BUSD Alpaca strategy was deployed with the flawed withdrawal-unit handling and its runtime remained byte-identical immediately before the incident."
-      },
-      "codeAgeSeconds": 6487378,
-      "failureModeId": "failure:bearn-busd-ibbusd-withdrawal-unit-mismatch",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xdd4031277401d5eca44cc73e153effaee20a983b5b513cbf517e08cc9a9911db"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x603b2bbe2a7d0877b22531735ff686a7caad866f6c0435c37b7b49e4bfd9a36c"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2021-05/bEarn_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://bearndao.medium.com/bvaults-busd-alpaca-strategy-exploit-post-mortem-and-bearn-s-compensation-plan-b0b38c3b5540"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:05:29Z",
-      "note": "Reviewed the first exploit receipt and 1,000-plus-frame call trace, the strategy creation transaction and receipt, historical runtime and EIP-1967 slot, runtime disassembly, the bank proxy's upgrade history, the commit-pinned reproduction, and bEarn's post-mortem. Each of the 33 deposit/emergencyWithdraw iterations in the anchor causes bVault 0xb390b07fcf76678089cb12d8e615d5fe494b01fb to call BUSD Alpaca strategy 0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e directly, including 33 calls to selector 0xf3fef3a3, withdraw(address,uint256). The post-mortem locates the defect in that strategy function: its BUSD-denominated wantAmount was used as an ibBUSD withdrawal amount. The strategy is a direct 23,127-byte contract created in transaction 0xdd4031277401d5eca44cc73e153effaee20a983b5b513cbf517e08cc9a9911db. Its runtime contains no DELEGATECALL or SELFDESTRUCT, is byte-identical at deployment and block 7457124, and hashes to 0xada77033047849187832a245e0e1f814d255430597cfce06d3a321ebd117e1cd. The bank's implementation upgrade 328,768 seconds before exploitation does not install or change this defect-executing strategy and is excluded from its age. The anchored helper gains 452,868.889740007548480164 BUSD in the first transaction; bEarn's 10,859,319-BUSD loss is the broader 26-transaction campaign total."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xdd4031277401d5eca44cc73e153effaee20a983b5b513cbf517e08cc9a9911db"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The campaign-wide BUSD amount follows bEarn's primary post-mortem rather than a complete structured set of all 26 attack transaction hashes."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 10859319,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "10859319",
+        "usd": 10859319
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2021-05/bEarn_exp.sol",
+    "https://bearndao.medium.com/bvaults-busd-alpaca-strategy-exploit-post-mortem-and-bearn-s-compensation-plan-b0b38c3b5540"
+  ],
   "notes": [
+    "The direct BUSD Alpaca strategy was deployed with the flawed withdrawal-unit handling and its runtime remained byte-identical immediately before the incident.",
+    "bEarn reports that 26 attack transactions beginning with the anchored transaction drained 10,859,319 BUSD from the affected single-stake BUSD vault. The campaign-wide amount is valued at stablecoin par; it is not narrowed to the first transaction's proceeds.",
+    "The campaign-wide BUSD amount follows bEarn's primary post-mortem rather than a complete structured set of all 26 attack transaction hashes.",
     "The defect-executing target is the direct BUSD Alpaca strategy, not the bVault bank proxy through which users entered and exited the strategy."
   ]
 }

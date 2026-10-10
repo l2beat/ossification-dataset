@@ -1,174 +1,39 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3274b6090685b842aca80b304a4dcee0f61ef8b6afee10b7c7533c32fb75486d",
-  "protocol": {
-    "name": "Tornado Cash",
-    "slug": "tornado-cash"
-  },
+  "protocol": "Tornado Cash",
   "name": "Tornado Cash Governance executes an unpinned proposal target",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3274b6090685b842aca80b304a4dcee0f61ef8b6afee10b7c7533c32fb75486d",
-      "blockNumber": 17299139,
-      "transactionIndex": 38,
-      "timestamp": 1684567511
-    },
-    "attackerAddresses": [
-      "0x592340957ebc9e4afb0e9af221d06fdddf789de9",
-      "0x092123663804f8801b9b086b03b98d706f77bd59"
-    ]
-  },
   "summary": "Governance.execute(uint256) reads only proposal.target and re-checks Address.isContract(target) before target.delegatecall(executeProposal()). The Proposal struct stores an address and never binds the code that was voted on, so the deployed code cannot tell that the runtime at the approved address changed after the ballot closed. Configuration.sol states the intended invariant in the deployed source itself - VOTING_DELAY is documented as needed 'to prevent reorg attacks that replace the proposal' - but the implemented protection covers only reorgs, not SELFDESTRUCT plus CREATE2 redeployment at the same address. Proposal 20's target 0xc503893b3e3c0c6b909222b45f2a3a259a52752d carried a benign 1513-byte runtime (hash 0xf7caba6622c5dfc3a02619f85f224ed0fff459af31bdeaa586eb04828cd00149) from its creation at block 17249477 through block 17299105, was self-destructed to empty code at block 17299106, and held a different 5079-byte runtime (hash 0x6ae6d1594daf6781285e59fbe5a02e67b868acf133401847ec022a93c2cd3bce) from block 17299107 onwards. Thirty-two blocks later the Governance proxy delegatecalled that substituted runtime, which wrote 100 lockedBalance entries of 10,000e18 and one of 200,000e18 into Governance storage slot 59 - 1,200,000 TORN of voting weight that was never deposited - against roughly 70,000 legitimate votes. The violated invariant is that an executed proposal performs the action token holders approved; the boundary test finds no parameter value that restores it, because EXECUTION_DELAY, VOTING_PERIOD, QUORUM_VOTES and PROPOSAL_THRESHOLD constrain timing and weight, never the identity of the code at the approved address.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 2173500,
-      "valuationTimestamp": 1684567511,
-      "method": "reported",
-      "sourceIds": [
-        "source-2",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x77777feddddffc19ff86db637967013e6c6a116c",
-          "symbol": "TORN"
-        },
-        "amount": "483000",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-2",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "realizedAt": 1684631735,
-    "notes": "The quantity is exact and reconstructed from receipts, not from reporting. Reversing keccak256(abi.encode(address, 59)) over the 102 Governance storage slots written by the anchor transaction identifies 49 of the addresses whose lockedBalance was fabricated; those 49 addresses then withdrew from the TornadoVault 0x2f50508a8a3d323b91336fa3ea6ae50e55f32185 in three transactions (4,000 TORN in 0x65fa5b47, 6,000 TORN in 0xdf9dbfe1 and 473,000 TORN in 0x13e2b735), totalling exactly 483,000.000000000000000000 TORN of other users' locked deposits, all consolidated into 0x092123663804f8801b9b086b03b98d706f77bd59. Marking that quantity at the DefiLlama TORN spot price of USD 6.40 at the anchor timestamp would give USD 3.09 million and is not realisable: 483,000 TORN was roughly a tenth of circulating supply and the attacker's own dumping into thin DEX liquidity realised only 493.24082618920283 ETH (about USD 0.9 million at the ETH price of that day) for roughly 444,727 TORN, leaving 38,302.57 TORN transferred on unsold at block 17329628. The recorded USD figure is therefore the reported one, Halborn's USD 2,173,500 for the 483,000 TORN, which prices the stolen deposits at about USD 4.50, between the attacker's DEX realisation and the pre-incident spot. The 1,646.9 TORN that the anchor transaction moved from the staking contract into Governance is the relayer-penalty action that voters actually approved and is not counted. Nothing was recovered; the attacker later restored governance control but kept the TORN."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5efda50f22d34f262c29268506c5fa42cb56a1ce",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xa9689ed4a82a288e267b11ae8fe137fb4cb2177e",
-        "codeHash": "0x08cecb654f8221cc51d5f67b1ea4d252e005a9650df2cb2b466a5aaeed85e173"
-      },
-      "deployment": {
-        "timestamp": 1608261835,
-        "blockNumber": 11474695,
-        "transactionHash": "0xab822174f2b6177867d53eeea05ed7e80965b9b412f42f5a55674fe900399019",
-        "transactionIndex": 294,
-        "creatorAddress": "0xce0042b868300000d44a59004da54a005ffdcf9f"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1645437598,
-        "blockNumber": 14248730,
-        "transactionHash": "0x9f53afcd3c4a8d0c2c79a977aa0dc45f5ade3bc17c21e8f5067b9b345cf2bd76",
-        "transactionIndex": 13,
-        "logIndex": 12,
-        "mechanism": {
-          "type": "event",
-          "address": "0x5efda50f22d34f262c29268506c5fa42cb56a1ce",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The second and last pre-exploit EIP-1967 Upgraded event on the Governance proxy selected the GovernanceStakingUpgrade implementation, which was deployed in the same transaction by the proxy itself while executing an earlier proposal."
-      },
-      "codeAgeSeconds": 39129913,
-      "failureModeId": "failure:governance-proposal-target-code-not-pinned",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x5efda50f22d34f262c29268506c5fa42cb56a1ce",
+      "code": "0xa9689ed4a82a288e267b11ae8fe137fb4cb2177e",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x9f53afcd3c4a8d0c2c79a977aa0dc45f5ade3bc17c21e8f5067b9b345cf2bd76"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3274b6090685b842aca80b304a4dcee0f61ef8b6afee10b7c7533c32fb75486d"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Reviewed the anchor receipt, its callTracer and diffMode prestateTracer output, the verified GovernanceStakingUpgrade sources, the proposal-target code history, the Governance proxy creation trace, the proxy's complete Upgraded log history, and the post-exploit vault withdrawals. Anchor: transaction 0x3274b6090685b842aca80b304a4dcee0f61ef8b6afee10b7c7533c32fb75486d is status 1 at block 17299139 index 38, timestamp 1684567511; the brief's hash 0x3274b6090685b842aca80b304a4dcee0f61ef8b6afee10b7c7d51b2c1eb70663 does not exist on chain. The top-level call is execute(20) on Governance proxy 0x5efda50f22d34f262c29268506c5fa42cb56a1ce, which DELEGATECALLs implementation 0xa9689ed4a82a288e267b11ae8fe137fb4cb2177e, which DELEGATECALLs 0xc503893b3e3c0c6b909222b45f2a3a259a52752d with selector 0x373058b8 (executeProposal()) and emits ProposalExecuted(20) at log index 89. Code history: the proxy was created by CREATE2 from the EIP-2470 singleton factory 0xce0042b868300000d44a59004da54a005ffdcf9f inside transaction 0xab822174f2b6177867d53eeea05ed7e80965b9b412f42f5a55674fe900399019 at block 11474695 index 294, top-level sender 0x4e7b3769921c8dfbdb3d1b4c73558db079a180c7 (the Tornado deployer, not the attacker). Scanning topic 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b on the proxy from genesis to the exploit block returns exactly two Upgraded events: block 13298714 selecting 0x454d870a72e29d5e5697f635128d18077bd04c60 and block 14248730 index 13 log index 12 selecting 0xa9689ed4a82a288e267b11ae8fe137fb4cb2177e. The EIP-1967 implementation slot still held 0xa9689ed4 at block 17299138, and the 13,665-byte implementation runtime hashes to 0x08cecb654f8221cc51d5f67b1ea4d252e005a9650df2cb2b466a5aaeed85e173 both at its deployment block 14248730 and at block 17299138, so the applicable age is 1684567511 - 1645437598 = 39,129,913 seconds. Note that the l2beat-side seed inventory's log timestamp for that block (1645434526) is a provider artefact; eth_getBlockByNumber gives 1645437598, which is used here. Root cause: the deployed Governance.execute() binds a proposal to an address only. Proposal 20 was created in transaction 0x34605f1d6463a48b818157f7b26d040f8dd329273702a0618e9e74fe350e6e0d at block 17249553 with target 0xc503893b3e3c0c6b909222b45f2a3a259a52752d and a voting window of 1683962654 to 1684394654. eth_getCode on that target returns the 1513-byte benign runtime 0xf7caba6622c5dfc3a02619f85f224ed0fff459af31bdeaa586eb04828cd00149 at every block from 17249477 to 17299105, empty code at 17299106, and a 5079-byte runtime 0x6ae6d1594daf6781285e59fbe5a02e67b868acf133401847ec022a93c2cd3bce from 17299107 through the exploit, reverting to the benign runtime by block 17400000. The benign runtime that voters approved contains a selector 0x63a599a4 whose body is SELFDESTRUCT, which is how the swap was staged. The substituted runtime is attacker-installed and is explicitly not the age basis; the aged artifact is the victim's own Governance implementation, which predates adversarial control by 453 days and executes in the anchor transaction. Loss: the diffMode state diff shows 102 new Governance storage entries, 100 of value 10,000e18, one of 200,000e18 and one of 1. Recomputing keccak256(abi.encode(addr, 59)) - slot 59 is lockedBalance after the 50-word Initializable gap and the eight Configuration words - matched 49 of those slots to addresses that subsequently drained the vault, and the three withdrawal receipts sum to exactly 483,000 TORN, which is the figure Halborn reports at USD 2,173,500. Boundary test: no parameter value of EXECUTION_DELAY, VOTING_PERIOD, VOTE_EXTEND_TIME, QUORUM_VOTES or PROPOSAL_THRESHOLD makes the deployed code correct, since the substitution can be performed in the block immediately preceding execution, so this is a missing-validation code defect rather than configuration."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xab822174f2b6177867d53eeea05ed7e80965b9b412f42f5a55674fe900399019"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9f53afcd3c4a8d0c2c79a977aa0dc45f5ade3bc17c21e8f5067b9b345cf2bd76"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-tornado-cash-hack-may-2023"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x34605f1d6463a48b818157f7b26d040f8dd329273702a0618e9e74fe350e6e0d"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x65fa5b475f34a954a10f88f2c84f316a048a0e67d273c7abb098717b1a4a46a3",
-        "0xdf9dbfe14f7bfb2c7280cb4de6dfc211064c9d88c22be5ff3dc5647a96cdd4d1",
-        "0x13e2b7359dd1c13411342fd173750a19252f5b0d92af41be30f9f62167fc5b94"
-      ]
-    }
-  ],
-  "discovery": [
-    "seed:tornado-cash:2023-05-20:tornado-cash-governance-takeover-via-mutated-proposal",
-    "web:2023-05-20:tornado-cash-governance"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The USD total is the reported valuation of an exact TORN quantity. TORN was too illiquid for the stolen 483,000 to be marked at the anchor spot price, and the attacker's realised DEX proceeds cover only part of the quantity, so the figure carries reporting rather than receipt provenance."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 2173500,
+    "assets": [
+      {
+        "token": "0x77777feddddffc19ff86db637967013e6c6a116c",
+        "symbol": "TORN",
+        "amount": "483000"
+      }
     ]
   },
+  "refs": [
+    "https://www.halborn.com/blog/post/explained-the-tornado-cash-hack-may-2023",
+    "eip155:1:0x34605f1d6463a48b818157f7b26d040f8dd329273702a0618e9e74fe350e6e0d",
+    "eip155:1:0x65fa5b475f34a954a10f88f2c84f316a048a0e67d273c7abb098717b1a4a46a3",
+    "eip155:1:0xdf9dbfe14f7bfb2c7280cb4de6dfc211064c9d88c22be5ff3dc5647a96cdd4d1",
+    "eip155:1:0x13e2b7359dd1c13411342fd173750a19252f5b0d92af41be30f9f62167fc5b94"
+  ],
   "notes": [
+    "The second and last pre-exploit EIP-1967 Upgraded event on the Governance proxy selected the GovernanceStakingUpgrade implementation, which was deployed in the same transaction by the proxy itself while executing an earlier proposal.",
+    "The quantity is exact and reconstructed from receipts, not from reporting. Reversing keccak256(abi.encode(address, 59)) over the 102 Governance storage slots written by the anchor transaction identifies 49 of the addresses whose lockedBalance was fabricated; those 49 addresses then withdrew from the TornadoVault 0x2f50508a8a3d323b91336fa3ea6ae50e55f32185 in three transactions (4,000 TORN in 0x65fa5b47, 6,000 TORN in 0xdf9dbfe1 and 473,000 TORN in 0x13e2b735), totalling exactly 483,000.000000000000000000 TORN of other users' locked deposits, all consolidated into 0x092123663804f8801b9b086b03b98d706f77bd59. Marking that quantity at the DefiLlama TORN spot price of USD 6.40 at the anchor timestamp would give USD 3.09 million and is not realisable: 483,000 TORN was roughly a tenth of circulating supply and the attacker's own dumping into thin DEX liquidity realised only 493.24082618920283 ETH (about USD 0.9 million at the ETH price of that day) for roughly 444,727 TORN, leaving 38,302.57 TORN transferred on unsold at block 17329628. The recorded USD figure is therefore the reported one, Halborn's USD 2,173,500 for the 483,000 TORN, which prices the stolen deposits at about USD 4.50, between the attacker's DEX realisation and the pre-incident spot. The 1,646.9 TORN that the anchor transaction moved from the staking contract into Governance is the relayer-penalty action that voters actually approved and is not counted. Nothing was recovered; the attacker later restored governance control but kept the TORN.",
+    "The USD total is the reported valuation of an exact TORN quantity. TORN was too illiquid for the stolen 483,000 to be marked at the anchor spot price, and the attacker's realised DEX proceeds cover only part of the quantity, so the figure carries reporting rather than receipt provenance.",
     "The seed inventory classified this row governance-design on the reasoning that the mutated contract sat outside the victim. Review reverses that: the mutated contract is the vehicle, but the failing check is inside the victim's own deployed implementation, which authorises a delegatecall against an address it never binds to the approved code."
   ]
 }

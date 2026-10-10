@@ -1,159 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xa02b159fb438c8f0fb2a8d90bc70d8b2273d06b55920b26f637cab072b7a0e3e",
-  "protocol": {
-    "name": "SWAPP",
-    "slug": "swapp"
-  },
+  "protocol": "SWAPP",
   "name": "SWAPP Staking unchecked cToken transferFrom deposit credit",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xa02b159fb438c8f0fb2a8d90bc70d8b2273d06b55920b26f637cab072b7a0e3e",
-      "blockNumber": 22957533,
-      "transactionIndex": 49,
-      "timestamp": 1752979823
-    },
-    "attackerAddresses": [
-      "0x657a2b6fe37ced2f31fd7513095dbfb126a53601",
-      "0x7f1f536223d6a84ad4897a675f04886ce1c3b7a1"
-    ]
-  },
   "summary": "SWAPP's Staking.deposit calls transferFrom on the deposited token without checking its boolean result and credits the caller's staking balance regardless, while emergencyWithdraw pays that balance out for any non-stablecoin token. Compound cTokens signal a failed transferFrom by returning false instead of reverting, so the attacker deposited the Staking contract's entire cUSDC balance without owning any cUSDC, had it credited, and immediately emergency-withdrew the contract's real cUSDC, which backed users' USDC stablecoin deposits.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 32200.952256861634,
-      "valuationTimestamp": 1752979811,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x39aa39c021dfbae8fac545936693ac917d5e7563",
-          "symbol": "cUSDC"
-        },
-        "amount": "1286577.59164064",
-        "usdValue": 32200.952256861634,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1752979811,
-          "unitPriceUsd": 0.0250283795288235,
-          "sourceIds": [
-            "source-1",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact gross depletion of the Staking contract's cUSDC in the single anchor transaction: receipt log 0x13c transfers 128657759164064 base units (1286577.59164064 cUSDC) from Staking to the attack contract, taking Staking's cUSDC balance from exactly that amount at block 22957532 to zero; no attacker input is involved because the matching deposit transferred nothing. The unit price is cUSDC.exchangeRateStored() at block 22957532 (250283795288235, i.e. 0.0250283795288235 USDC per cUSDC) with USDC at par; the stored rate omits 333 blocks of unaccrued interest, so the value is a marginal floor. A later deposit on 2025-12-22 credited another 57250164371717 cUSDC without a transfer but found no cUSDC left to withdraw, so it adds no loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x245a551ee0f55005e510b239c917fa34b41b3461",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x245a551ee0f55005e510b239c917fa34b41b3461",
-        "codeHash": "0x39603ccc2f517163600e4cddc45650e583c8e8b2fed6d628e95aeeb49a98118f"
-      },
-      "deployment": {
-        "timestamp": 1624212418,
-        "blockNumber": 12672708,
-        "transactionHash": "0x2768e9872a62fef8d726e06de9841cd742a294cb45919d061e5e26e81cdb41b1",
-        "transactionIndex": 111,
-        "creatorAddress": "0xde121cc755c1d1786dd46fff7e373e9372fd79d8"
-      },
-      "ageReset": {
+      "address": "0x245a551ee0f55005e510b239c917fa34b41b3461",
+      "reset": {
         "kind": "deployment",
-        "description": "Staking is an immutable non-proxy contract; its runtime is byte-identical at its creation block and immediately before the exploit, and the unchecked transferFrom is in that runtime."
-      },
-      "codeAgeSeconds": 128767405,
-      "failureModeId": "failure:swapp-staking-unchecked-ctoken-transferfrom",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x2768e9872a62fef8d726e06de9841cd742a294cb45919d061e5e26e81cdb41b1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa02b159fb438c8f0fb2a8d90bc70d8b2273d06b55920b26f637cab072b7a0e3e"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-07/SWAPPStaking_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2768e9872a62fef8d726e06de9841cd742a294cb45919d061e5e26e81cdb41b1"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T16:22:52Z",
-      "note": "Verified Staking source at https://etherscan.io/address/0x245a551ee0f55005e510b239c917fa34b41b3461#code; reproduce Etherscan V2 contract.getsourcecode, chainid=1: ContractName Staking, compiler v0.7.6+commit.7338295f, optimizer on, 200 runs, standard-JSON input with eight sources; SHA-256 of the returned SourceCode string f393be31fd6e4786247493abd7e49fb6467f9a8bca674052e0cff470afeeeb07. In Staking.sol inspect deposit (unchecked IERC20(tokenAddress).transferFrom on the non-stablecoin branch followed by balances[msg.sender][tokenAddress] += amount) and emergencyWithdraw (require !checkStableCoin(token) and getCurrentEpoch() - lastWithdrawEpochId[token] >= 10, then token.transfer(msg.sender, balances[msg.sender][token]))."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T16:22:52Z",
-      "note": "Reviewed root cause, first exercise, loss and age history. Anchor source-1: eth_getTransactionReceipt status 1, block 22957533 index 49, timestamp 1752979823; a contract-creation transaction from EOA 0x657a2b6fe37ced2f31fd7513095dbfb126a53601 (nonce 1675) whose constructor, as attack contract 0x7f1f536223d6a84ad4897a675f04886ce1c3b7a1, runs the attack. debug_traceTransaction(callTracer): getCurrentEpoch 0xb97dd9e2 returns 54; 54 manualEpochInit 0xea2c38ae calls for cUSDC epochs 0..53; cUSDC.approve(Staking, max); cUSDC.balanceOf(attack contract) = 0; Staking.deposit(cUSDC, 128657759164064, 0) 0xf45346dc, inside which cUSDC.allowance returns max and cUSDC.transferFrom(attack contract, Staking, 128657759164064) 0x23b872dd returns 0x00 (false, Compound's non-reverting failure path: comptroller 0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b transferAllowed returns 0, then transferTokens fails on the zero source balance) and emits no Transfer; Staking then credits balances[attacker][cUSDC] and emits Deposit. emergencyWithdraw(cUSDC) 0x6ff1c9bc then calls cUSDC.transfer(attack contract, 128657759164064), which returns true: receipt log 0x13c is cUSDC Transfer 128657759164064 from Staking 0x245a551ee0f55005e510b239c917fa34b41b3461 to the attack contract, and log 0x140 forwards it to the EOA. Defect (source-4): Staking.deposit calls IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount) on the non-stablecoin branch without checking the returned bool (the contract imports SafeERC20 but does not use safeTransferFrom there) and then adds amount to balances[msg.sender][tokenAddress]; emergencyWithdraw pays balances[msg.sender][token] for any non-stablecoin token once getCurrentEpoch() - lastWithdrawEpochId[token] >= 10. Any caller can therefore claim the contract's whole balance of a token whose transferFrom returns false instead of reverting; the contract's own cUSDC, minted by _transferToCompound from USDC stablecoin deposits, is such a token. First exercise: eth_getLogs on Staking from creation block 12672708 to 26077089 returns 637 Deposit(address,address,uint256) logs (topic 0x5548c837ab068cf56a2c2479df0882a4922fd203edb7517321831d95078c5f62) over six tokens (UNI-V2 0x5548f847fd9a1d3487d5fbb2e8d73972803c4cce 239, USDC 228, USDT 102, DAI 64, cUSDC 2, cDAI 2). Joining each log with Etherscan V2 account.tokentx for Staking (2053 transfers, complete under offset 10000) by transaction hash and token leaves exactly two deposits with no matching inbound transfer: source-1 and 0xf072fa280ac0a96351e7467af9a329513cabaaf46fcf4863b247f06741f69101 (block 24069528, 57250164371717 cUSDC credited to 0xe295a4cd81c04f9f8c3c34bb2b3934c08395b915). USDC, USDT, DAI and UNI-V2 revert on a failed transferFrom, so no earlier deposit could exercise the path; source-1 is the earliest. The later phantom credit never paid out: Staking's cUSDC balanceOf is 128657759164064 at block 22957532 and 0 at 22957533, 24069528 and head, and the four EmergencyWithdraw logs (topic 0xf24ef89f38eadc1bde50701ad6e4d6d11a2dc24f7cf834a486991f3883328504) are a genuine UNI-V2 exit by 0xa0c27fab43c3bf6be8cdb0cbec1bd2d0f6200c42 at block 20843893 of exactly its block-12872041 deposit, source-1, and two cDAI round trips at blocks 24070802 and 24071034 whose receipts show the cDAI transferred in and out in the same transaction (no victim depletion). The 216 Withdraw logs involve only UNI-V2, USDC, USDT and DAI. Loss: gross depletion is the 128657759164064 base units (8 decimals) = 1286577.59164064 cUSDC of receipt log 0x13c, all supplied by the victim contract; the attacker supplied nothing. Valued through eth_call cUSDC.exchangeRateStored() at block 22957532 = 250283795288235 (accrualBlockNumber 22957200), i.e. 0.0250283795288235 USDC per cUSDC, with USDC at par: 32,200.952256 USD, matching the PoC's reported 32,196.28 USD. exchangeRateCurrent would be marginally higher because 333 blocks of interest had not accrued, so the stored rate is a slight floor."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T16:22:52Z",
-      "note": "Reviewed target identity and age. Staking 0x245a551ee0f55005e510b239c917fa34b41b3461 is called directly (no DELEGATECALL on the path; the verified source contains no delegatecall or selfdestruct and the EIP-1967 implementation slot is zero at block 22957532). Etherscan V2 contract.getcontractcreation and eth_getTransactionReceipt of source-3 give a top-level creation by 0xde121cc755c1d1786dd46fff7e373e9372fd79d8 at block 12672708 index 111 (timestamp 1624212418) with contractAddress equal to the Staking address. eth_getCode is 0x at block 12672707; keccak256(runtime) is 0x39603ccc2f517163600e4cddc45650e583c8e8b2fed6d628e95aeeb49a98118f at blocks 12672708, 22957532 and head. The defect is in this immutable runtime; token addresses (cUsdc, usdc, dai, usdt, wbtcSwappLP) are compile-time constants, and the only state the exploit needs, lastWithdrawEpochId[cUSDC] being at least 10 epochs old, is the default of a token never withdrawn, not a configuration change. Deployment supplies the age: 1752979823 - 1624212418 = 128,767,405 seconds (about 4.08 years). No other record carries this runtime hash."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2025-07/SWAPPStaking_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 32200.952256861634,
+    "assets": [
+      {
+        "token": "0x39aa39c021dfbae8fac545936693ac917d5e7563",
+        "symbol": "cUSDC",
+        "amount": "1286577.59164064",
+        "usd": 32200.952256861634
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-07/SWAPPStaking_exp.sol"
+  ],
   "notes": [
+    "Staking is an immutable non-proxy contract; its runtime is byte-identical at its creation block and immediately before the exploit, and the unchecked transferFrom is in that runtime.",
+    "Exact gross depletion of the Staking contract's cUSDC in the single anchor transaction: receipt log 0x13c transfers 128657759164064 base units (1286577.59164064 cUSDC) from Staking to the attack contract, taking Staking's cUSDC balance from exactly that amount at block 22957532 to zero; no attacker input is involved because the matching deposit transferred nothing. The unit price is cUSDC.exchangeRateStored() at block 22957532 (250283795288235, i.e. 0.0250283795288235 USDC per cUSDC) with USDC at par; the stored rate omits 333 blocks of unaccrued interest, so the value is a marginal floor. A later deposit on 2025-12-22 credited another 57250164371717 cUSDC without a transfer but found no cUSDC left to withdraw, so it adds no loss.",
     "DeFiHackLabs' PoC header links 'Vulnerable Contract Code' to 0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6 (ResupplyFi), which is why the coverage matcher associated this lead with the ResupplyFi record; the exploited contract is SWAPP Staking 0x245a551ee0f55005e510b239c917fa34b41b3461 and the episode is unrelated to ResupplyFi."
   ]
 }

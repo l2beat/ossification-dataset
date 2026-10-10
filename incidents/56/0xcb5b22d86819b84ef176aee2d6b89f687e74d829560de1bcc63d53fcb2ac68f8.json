@@ -1,153 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xcb5b22d86819b84ef176aee2d6b89f687e74d829560de1bcc63d53fcb2ac68f8",
-  "protocol": {
-    "name": "SOF",
-    "slug": "sof"
-  },
+  "protocol": "SOF",
   "name": "SOF sell hook burns the sold amount from the SOF/USDT pair before the sale",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xcb5b22d86819b84ef176aee2d6b89f687e74d829560de1bcc63d53fcb2ac68f8",
-      "blockNumber": 81140062,
-      "transactionIndex": 49,
-      "timestamp": 1771058728
-    },
-    "attackerAddresses": [
-      "0x29e5f70ebab2b5b830609e0f2b8a357f2295ebfd",
-      "0xa82f1941f2b5561241d797a90af6020808041f41",
-      "0xc4db5bc25b502a366903e93e2229e1386ef9dd3f"
-    ]
-  },
   "summary": "SOF._update handles a sale to the SOF/USDT pair by moving 90% of the sold amount from the pair's own balance to DEAD and calling sync() before the seller's tokens arrive. Buys revert unless the recipient is fee-excluded, so the attacker bought 991,223 SOF with flash-loaned USDT for a fee-excluded mining contract, leaving 787.9 SOF in the pair, then sold 875.45 SOF: the hook burned the remaining 787.9 SOF from the pair, and the sale received all of the pair's USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 248626.24897043663,
-      "valuationTimestamp": 1771058728,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "248626.248970436629615614",
-        "usdValue": 248626.24897043663,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1771058728,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDT depletion of the SOF/USDT pair 0x1f3863d274594f25c6203c9272857f0d51b1c010 in the single exploit transaction. The 313,567,718.11 USDT buy leg and the flash loans (fees 22,689.81 USDT to lenders) are attacker inputs or financing and are not netted against gross depletion, so the loss exceeds the attacker's 225,936.43 USDT profit. The 991,223.16 SOF bought for the mining contract and the pair's SOF are the same liquidity and are not added."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xaeb414d0a64dfca14fd41b28efc78f437008df42",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xaeb414d0a64dfca14fd41b28efc78f437008df42",
-        "codeHash": "0x0c3e09e93cc45baeedc5c47c1307755d91b0e2aa6f24c65cfe458e94f448ee0f"
-      },
-      "deployment": {
-        "timestamp": 1769755288,
-        "blockNumber": 78244243,
-        "transactionHash": "0xf9549056ca26224c48ee23859205f1c464dc36c8d28c02dbdcaaffe79e3ce51e",
-        "transactionIndex": 22,
-        "creatorAddress": "0x1ef506e30088d6067e84ec5189fdb3151e8d7890"
-      },
-      "ageReset": {
+      "address": "0xaeb414d0a64dfca14fd41b28efc78f437008df42",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable SOF runtime (no DELEGATECALL or SELFDESTRUCT) whose _update burns 90% of every non-excluded sale from the pair and syncs; the constructor creates the pair and fee-excludes the token itself, which already suffices as a buy recipient, so the later excludeFromFees calls are not necessary to the exploit."
-      },
-      "codeAgeSeconds": 1303440,
-      "failureModeId": "failure:sof-sell-burns-pair-reserve-before-sale",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xf9549056ca26224c48ee23859205f1c464dc36c8d28c02dbdcaaffe79e3ce51e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xcb5b22d86819b84ef176aee2d6b89f687e74d829560de1bcc63d53fcb2ac68f8"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf9549056ca26224c48ee23859205f1c464dc36c8d28c02dbdcaaffe79e3ce51e"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:23:11Z",
-      "note": "Lead from BlockSec (source-6), which links the pair 0x1f3863d2... as if it were the token; the token is 0xaeb414d0a64dfca14fd41b28efc78f437008df42 (pair token1). source-1: contract creation at 81140062:49 by EOA 0x29e5f70ebab2b5b830609e0f2b8a357f2295ebfd (a SOMining participant since block 79215015) deploying 0xa82f1941f2b5561241d797a90af6020808041f41, which creates 0xc4db5bc25b502a366903e93e2229e1386ef9dd3f. debug_traceTransaction(callTracer) and receipt: nested USDT flash loans; EOA sends 875.450644617833690603 SOF to 0xc4db (log 265); 0xc4db pays 313567718.114225 USDT to the pair (log 266) and the pair sends 991223.161422616 SOF to SOMining 0x3f7cd445f39971c18a4fe303893c6c502b2f68d9 (log 268; isExcludedFromFees true, excluded by the owner at 78925626), leaving 787.9 SOF; 0xc4db sells 875.45 SOF via the router: takeFee moves 10% to the token/DEAD/feeAddress (logs 271-274), then the hook moves 787.905580156050321543 SOF pair->0x...dead (log 275) and calls sync (log 276: SOF reserve 10000000000 wei), then 787.9 SOF enter the pair (log 278) and the pair pays 313816344.363195 USDT (log 279). Verified source (source-4) SOF._update: fee-excluded from/to bypass; `_isPairs[from]` (buy) reverts \"not alw buy\"; `_isPairs[to]` (sell) runs takeFee then super._update(_uniswapV2Pair, _destroyAddress, amount - taxAmount) and pair.sync() before transferring the seller's amount - taxAmount; the burn is sized only by the seller's amount and has no reserve floor. Artifact: eth_getCode empty at 78244242; keccak(runtime) 0x0c3e09e93cc45baeedc5c47c1307755d91b0e2aa6f24c65cfe458e94f448ee0f (7444 bytes) at 78244243 and 81140061; source-2 receipt creates it at 78244243:22 from 0x1ef506e30088d6067e84ec5189fdb3151e8d7890; cast disassemble has no DELEGATECALL/SELFDESTRUCT. Admin: Etherscan txlist of the token to 81140062 (75 txs): setTokenAdd(3, STAKING 0xb8603c4f...) 78249972, transferOwnership to 0x87c70104971308f0c02d431542c0e9cafbd8a22e 78297111, excludeFromFees(owner / 0xbdcf26f0f5cf5a3cf4819cdeea33f72a7d1433e7 / SOMining) 78305411/78877045/78925626, withDrawalToken 80579456; none changes the sell burn, and the constructor-excluded token address would equally serve as buy recipient, so deployment supplies the age: codeAgeSeconds = 1771058728 - 1769755288 = 1303440. First exercise: eth_getLogs SOF Transfer(from = pair), blocks 78244243..81200000: 946 logs, 935 buys to the three fee-excluded project contracts and 11 pair->DEAD sell burns; the 10 before source-1 (80843946..81130232, 0.9 to 1863.6 SOF burned) are ordinary single sells without a same-transaction reserve reduction; source-1 is the first drain, after which the pair holds 0.004 USDT."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Verified SOF source at https://bscscan.com/address/0xaeb414d0a64dfca14fd41b28efc78f437008df42#code; reproduce with Etherscan V2 contract.getsourcecode chainid=56: ContractName SOF, v0.8.24+commit.e11b9ed9, 200 runs, SHA-256 of returned SourceCode 1d4cf57f146cdbd294a8bede823049fe421fde25fab194752cb3830f1e9c8f68. Inspect constructor, _update, takeFee and _antiFlashloanGuard."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:23:11Z",
-      "note": "Loss: eth_call USDT 0x55d398326f99059ff775485246999027b3197955 balanceOf(pair 0x1f3863d274594f25c6203c9272857f0d51b1c010) = 248626252963337040723457 at 81140061 and 3992900411107843 at 81140062 (pair SOF 992011067002781980605404 -> 787905580166050321543). Netting all USDT Transfer logs of source-1: pair -248626248970436629615614, attacker EOA +225936434999827836448132, flash lenders +22689813970608793167482 in fees. BSC-USD has 18 decimals and is valued at par."
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 248626.24897043663,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "248626.248970436629615614",
+        "usd": 248626.24897043663
+      }
     ]
   },
-  "discovery": [
-    "web:2026-02-14:sof"
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
+  ],
+  "notes": [
+    "Direct immutable SOF runtime (no DELEGATECALL or SELFDESTRUCT) whose _update burns 90% of every non-excluded sale from the pair and syncs; the constructor creates the pair and fee-excludes the token itself, which already suffices as a buy recipient, so the later excludeFromFees calls are not necessary to the exploit.",
+    "Exact USDT depletion of the SOF/USDT pair 0x1f3863d274594f25c6203c9272857f0d51b1c010 in the single exploit transaction. The 313,567,718.11 USDT buy leg and the flash loans (fees 22,689.81 USDT to lenders) are attacker inputs or financing and are not netted against gross depletion, so the loss exceeds the attacker's 225,936.43 USDT profit. The 991,223.16 SOF bought for the mining contract and the pair's SOF are the same liquidity and are not added."
   ]
 }

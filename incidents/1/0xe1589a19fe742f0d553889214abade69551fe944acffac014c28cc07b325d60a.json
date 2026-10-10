@@ -1,228 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xe1589a19fe742f0d553889214abade69551fe944acffac014c28cc07b325d60a",
-  "protocol": {
-    "name": "Notional Finance",
-    "slug": "notional-finance"
-  },
+  "protocol": "Notional Finance",
   "name": "Notional V1 Escrow uint128 truncation in free-collateral ETH conversion",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xe1589a19fe742f0d553889214abade69551fe944acffac014c28cc07b325d60a",
-      "blockNumber": 25900220,
-      "transactionIndex": 0,
-      "timestamp": 1788479927
-    },
-    "attackerAddresses": [
-      "0xdacc235a494750193695a111d715c2ca12b5ce38",
-      "0xec434a2f9b7b93aad1bed77d6bc512a75ae90d78",
-      "0x84a060ed81316e6741af216a099cfea8bcdd3489",
-      "0x5872b67d58cef954b52deb8e97f9f614bb12fa3d",
-      "0x265ccff3673bcab03867988081cd51bfd919c03c",
-      "0x4a3508c5ac0677325932f3bc786ae7a1c3e9caff"
-    ]
-  },
   "summary": "Notional V1 Escrow.convertBalancesToETH (ExchangeRate._convertToETH) casts abs(balance) to uint128 without a bound check, so a net currency balance of -2^128 converts to 0 ETH. Via public ERC1155Trade.safeTransferFrom fCash pair mints the attacker made one account owe exactly 2^128 DAI fCash while passing the free-collateral check, used the unbacked 2^128-1 receiver leg as collateral to mint matured DAI/USDC claims sized to the escrow balances, then settled and withdrew all DAI and USDC from the escrow.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1727634.090676613,
-      "valuationTimestamp": 1788480000,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "69257.372677950923155658",
-        "usdValue": 69240.5894315106,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1788480000,
-          "unitPriceUsd": 0.9997576684504282,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "1658524.864122",
-        "usdValue": 1658393.5012451024,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1788480000,
-          "unitPriceUsd": 0.9999207953527021,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact escrow depletion in source-3: the Escrow proxy's entire DAI and USDC balances. The attacker supplied no tokens (source-1 moves no ERC-20). WETH and WBTC held by the escrow were not taken by the attacker. A third-party liquidation at block 25900571 is excluded (liquidator paid USDC for WETH collateral).",
-    "realizedAt": 1788480095
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9abd0b8868546105f6f48298eadc1d9c82f7f683",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x8a134e651432a902041643668940c9a9cd270633",
-        "codeHash": "0x5ab55c8b062d5bee1662c9df0ba674b142356c1b0badfd8e31af491480a02e28"
-      },
-      "deployment": {
-        "timestamp": 1602064663,
-        "blockNumber": 11007909,
-        "transactionHash": "0x424224d40a1ec4a693c91ef9b3efeb167cc2ca47e54f45b6e44b66a0b82b31a5",
-        "transactionIndex": 168,
-        "creatorAddress": "0xc981d9e52684a25e528ba63552df122af8327d4e"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1607339508,
-        "blockNumber": 11405308,
-        "transactionHash": "0xd94e36eef287cfb85953b59d63cec559deb79c8b10d217fa87b1c3564a6a5e5f",
-        "transactionIndex": 217,
-        "logIndex": 389,
-        "mechanism": {
-          "type": "event",
-          "address": "0x9abd0b8868546105f6f48298eadc1d9c82f7f683",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The first of two Upgraded events on the Escrow proxy selected Escrow implementation 0x8a134e65, which inlines the truncating ExchangeRate._convertToETH; the second (block 25901449, the post-incident fix) follows the exploit."
-      },
-      "codeAgeSeconds": 181140419,
-      "failureModeId": "failure:notional-v1-escrow-uint128-truncation-free-collateral",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-9",
-          "source-10",
-          "source-11"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x9abd0b8868546105f6f48298eadc1d9c82f7f683",
+      "code": "0x8a134e651432a902041643668940c9a9cd270633",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd94e36eef287cfb85953b59d63cec559deb79c8b10d217fa87b1c3564a6a5e5f"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe1589a19fe742f0d553889214abade69551fe944acffac014c28cc07b325d60a"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/NotionalFinance_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xc3f3e318f7ab2d0daaba59e6ec901d25d1fe8a89aafe2b2b62e3b9aee1a24efa"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. debug_traceTransaction(callTracer) of source-1 (block 25900220, tx 0, attacker EOA 0xdacc235a creates exploit contract 0xec434a2f): the constructor creates four helpers and calls ERC1155Trade proxy 0xbba89957 (impl 0x6f102516) safeTransferFrom(selector 0xf242432a) with asset type byte 0xa8 (CASH_RECEIVER), so payer=from: (1) id 0x200006a9a0a00a8 (cash group 2 = currency 1 DAI, maturity 1788480000) value 1 to 0x5872b67d; (2) id 0x200006b10b100a8 value 2^128-1 to 0x84a060ed. Portfolios proxy 0x0a472111 (impl 0xfce1c68e).mintfCashPair checks freeCollateral(payer), which STATICCALLs Escrow proxy 0x9abd0b88 convertBalancesToETH (0x215b92fe, delegatecall to impl 0x8a134e65): after leg (2) input [0,-340282366920938463463374607431768211456,0,0] returns [0,0,0,0], so fc=0 passes. Cause (source-5): ExchangeRate._convertToETH does uint128 absBalance = uint128(balance.abs()); 2^128 truncates to 0. Reproduce: eth_call Escrow proxy convertBalancesToETH([0,-2^128,0,0]) at block 25900219 returns [0,0,0,0]; with -(2^128-1) it returns [0,-190480797877231089539167114479984666,0,0]. 0x84a060ed then mints DAI receiver 69257372677950923155658 to 0x265ccff3 and USDC receiver (cash group 3) 1658524864122 to 0x4a3508c5, collateralized by its unbacked 2^128-1 receiver leg (convert input [0,298329352496312526619766614701929338342,-1658524864122,0]). Source-3 (block 25900234, tx 8) settles those claims after maturity and withdraws. The ERC-1155 pair mint and Portfolios summation are designed behavior bounded per call to 2^128-1; the invariant break is the unchecked truncation compiled only into the Escrow implementation, so Escrow is the single target. First exercise: eth_getLogs on ERC1155Trade proxy blocks 11008006..25900220 returns 4 TransferSingle (0xc3d58168...) logs, all in source-1 (safeTransferFrom emits it on every success; safeBatchTransferFrom reverts); cash-market trades and deposits cannot reach a 2^128 balance. Age: eth_getCode of 0x8a134e65 empty at 11396622, keccak 0x5ab55c8b...2e28 at 11396623 (creation 0x74999c5ba6958d25e3f5b9c4efe31dc63bbaf98fd6963e786ce692541a873a44), 11405308 and 25900219. Proxy code keccak 0x7961ba00...c81f at 11007909 and 25900219, empty at 11007908; CREATE2 by factory 0xc981d9e5 in the deployment tx per callTracer. EIP-1967 slot 0x360894a1...2bbc: 0xd890154a at 11007909..11405307, 0x8a134e65 at 11405308..25901448, 0x7885484e at 25901449. eth_getLogs Upgraded (0xbc7cd75a) on the proxy from 11007909 to latest returns two: source-9 (block 11405308, tx 217, log 389, Safe 0x22341fb5 execTransaction via ProxyAdmin 0x09dba4fa) and the post-incident fix 0x012fc554b165b3b3ccf3121018ae26503cab50031fa84adea29253b1cd5831d9 (block 25901449). Configuration review (source-10) finds no value necessary to the truncation after 11405308.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:58:25Z"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified source for Escrow impl 0x8a134e651432a902041643668940c9a9cd270633 (Etherscan V2 contract.getsourcecode chainid=1): standard-JSON of 47 files, v0.6.4+commit.1dca32f3, optimizer 200 runs; SHA-256 of the returned SourceCode string cef547505a13d60c8fe89e5c825a98bb80982e165771fd7a7996cf11edec658b. Same source set is verified for Portfolios impl 0xfce1c68e and ERC1155Trade impl 0x6f102516. Inspect utils/ExchangeRate.sol _convertToETH (uint128(balance.abs()) cast), Escrow.convertBalancesToETH, Portfolios._freeCollateral and mintfCashPair (free-collateral check on the payer only), ERC1155Trade.safeTransferFrom (value <= MAX_UINT_128, pair mint)."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed gross loss. eth_getTransactionReceipt of source-3: log 0x23 DAI Transfer Escrow proxy 0x9abd0b88 -> 0x265ccff3 of 69257372677950923155658; log 0x27 USDC Transfer Escrow -> 0x4a3508c5 of 1658524864122; logs 0x25/0x29 forward both to attacker EOA 0xdacc235a. balanceOf(Escrow) at block 25900233: DAI 69257372677950923155658, USDC 1658524864122; at 25900234 both 0, so the escrow's entire balances were taken. Source-1 has no ERC-20 Transfer logs (attacker input zero). Etherscan tokentx for the escrow from block 25890000 shows no other attacker outflow before the fix at block 25901449; escrow WETH (23.897838291461241816 at 25900219) and WBTC (0.00499717) were not taken by the attacker. Tx 0x6c7ca03df356282bdce23788103f8950d788dd0c5c2491ad9f31b3e3e679bcef (block 25900571) is a third-party LiquidateBatch (event 0xd54ff80d) where the liquidator deposits USDC for WETH, as in earlier liquidation 0xf16a994f48bcbf103b3860b5141dc997f0ec19825526890181bd2f703fcd8a79; not exploit loss. Attacker funds later moved via 0x8aaf01b6 and 0xc95496c9 to Tornado Cash router 0xd90e2f92.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:58:25Z"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788480000/ethereum:0x6b175474e89094c44da98b954eedeac495271d0f",
-      "observedAt": 1790621997
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788480000/ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      "observedAt": 1790621997
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xd94e36eef287cfb85953b59d63cec559deb79c8b10d217fa87b1c3564a6a5e5f"
-    },
-    {
-      "id": "source-10",
-      "type": "review-note",
-      "note": "Configuration review. eth_getLogs on Escrow proxy blocks 11007909..25900219, excluding Deposit/Withdraw/Liquidate: NewCurrency WETH 11007909, DAI 11008237, USDC 11492295, WBTC 11576597; UpdateExchangeRate(1,0) 11008242 and 11656218, (2,0) 11492517, (3,0) 11576599; SetDiscounts 11008076, 11396441, 12161168; OwnershipTransferred to Safe 0x22341fb5 11008373; Upgraded 11405308; LiquidateBatch 25541217. Portfolios proxy: SetMaxAssets 11007972; SetHaircuts 11008079, 11498089; NewCashGroup 1 11008258, 2 11008284, 3 11493061; UpdateCashGroup(1) 11562247; OwnershipTransferred 11008377; Upgraded to 0xfce1c68e at 11405324 (sole). ERC1155Trade proxy: Upgraded 11185699 and 11405295 (to 0x6f102516), OwnershipTransferred, ApprovalForAll, BatchOperation only. The truncation zeroes any -2^128 balance independent of oracle rate, buffer, discounts or haircuts, and it was exercised in DAI (currency 1, cash group 2, both configured before 11405308); the later USDC listing and cash group 3 only widened exposure. No post-activation configuration value is necessary to the vulnerable condition.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:58:25Z"
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x424224d40a1ec4a693c91ef9b3efeb167cc2ca47e54f45b6e44b66a0b82b31a5"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-6"
+  "loss": {
+    "usd": 1727634.090676613,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "69257.372677950923155658",
+        "usd": 69240.5894315106
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1658524.864122",
+        "usd": 1658393.5012451024
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-03:notional-finance"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/NotionalFinance_exp.sol",
+    "eip155:1:0xc3f3e318f7ab2d0daaba59e6ec901d25d1fe8a89aafe2b2b62e3b9aee1a24efa"
+  ],
+  "notes": [
+    "The first of two Upgraded events on the Escrow proxy selected Escrow implementation 0x8a134e65, which inlines the truncating ExchangeRate._convertToETH; the second (block 25901449, the post-incident fix) follows the exploit.",
+    "Exact escrow depletion in source-3: the Escrow proxy's entire DAI and USDC balances. The attacker supplied no tokens (source-1 moves no ERC-20). WETH and WBTC held by the escrow were not taken by the attacker. A third-party liquidation at block 25900571 is excluded (liquidator paid USDC for WETH collateral)."
   ]
 }

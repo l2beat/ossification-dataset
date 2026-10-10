@@ -1,172 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0x4b75157d64bb371380bc83256ee36034effb07c532b8623a34154aa881df9798",
-  "protocol": {
-    "name": "Unknown Arbitrum LP manager 0x09c12514",
-    "slug": "unknown-arbitrum-lp-manager-0x09c12514"
-  },
+  "protocol": "Unknown Arbitrum LP manager 0x09c12514",
   "name": "Unknown Arbitrum LP manager public withdraw swaps user positions with no minimum output",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0x4b75157d64bb371380bc83256ee36034effb07c532b8623a34154aa881df9798",
-      "blockNumber": 303809032,
-      "transactionIndex": 5,
-      "timestamp": 1738990070
-    },
-    "attackerAddresses": [
-      "0xa07dcdb6bf4001a88f8d1a53a3698279488dd7d0",
-      "0xeed907ad9adfbf7ef86dd6a98246f41d609f5b9d"
-    ]
-  },
   "summary": "Two byte-identical, unverified Uniswap V3 WETH/USDC position managers, 0x09c12514 and 0x3b329559, expose withdraw(address user, uint128 liquidity) (0x08fab167) to any caller. It removes and collects the user's position, sells all WETH for USDC via SwapRouter exactInputSingle with amountOutMinimum 0 and no price limit, and sends the USDC to the user. The attacker flash-borrowed 20,000 WETH from Aave and sold 7,825 WETH into the 0.05% pool. It then called withdraw for all 11 open positions in both managers, so the positions' WETH was sold at the depressed price. Finally it swapped back and kept 71.54 WETH.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 230548.9161313564,
-      "valuationTimestamp": 1738990070,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "78.611616434521354757",
-        "usdValue": 207516.58671535642,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1738990070,
-          "unitPriceUsd": 2639.77,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-          "symbol": "USDC"
-        },
-        "amount": "23032.329416",
-        "usdValue": 23032.329416,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1738990070,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The 11 positions (tokenIds 4184891, 4184901, 4190157, 4190178, 4192245, 4193097, 4193103, 4193166, 4193167, 4193506, 4193585) were worth 78.611616434521354757 WETH and 23815.920221 USDC, principal plus uncollected fees, at the pre-exploit pool state (block 303809031). Users received 783.590805 USDC back in the same calls, so the USDC component is 23815.920221 - 783.590805. The position value is simulated rather than read from logs, hence medium confidence. The attacker's net gain of 71.543669283808496020 WETH is lower because of pool fees, flash-loan premium and the attacker's own swap costs.",
-    "realizedAt": 1738990070
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x09c12514535d676c6f48d284d12604320a368048",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x09c12514535d676c6f48d284d12604320a368048",
-        "codeHash": "0x1656fcdf9931f63d7edf599658a3b4e69217bd87234fc15ebcc9d97fd8b8d7d9"
-      },
-      "deployment": {
-        "timestamp": 1734967152,
-        "blockNumber": 287808065,
-        "transactionHash": "0x9829fbe854509463e6a6ee73af573e5cd1e99b541fc9b052462dc05eb907ddf6",
-        "transactionIndex": 4,
-        "creatorAddress": "0x7fc2fd35bfbd67b71a974c17ab433782f8e92c71"
-      },
-      "ageReset": {
+      "address": "0x09c12514535d676c6f48d284d12604320a368048",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct, non-upgradeable manager runtime with the public zero-minimum withdraw. It is the later of two byte-identical siblings; 0x3b329559046cb4d0f5f105c5acc71932a47f4e98 was deployed at block 287807994 and exploited in the same transaction. The operator's collectFees and re-range calls change positions, not withdraw authorization or slippage."
-      },
-      "codeAgeSeconds": 4022918,
-      "failureModeId": "failure:unknown-arbitrum-lp-manager-0x09c12514-public-zero-min-withdraw",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The managers have no verified source. Selector names come from the public signature database. The missing caller check and zero minimum are established from the exploit trace (calldata of withdraw and exactInputSingle), not from source text."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x9829fbe854509463e6a6ee73af573e5cd1e99b541fc9b052462dc05eb907ddf6"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x4b75157d64bb371380bc83256ee36034effb07c532b8623a34154aa881df9798"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x9829fbe854509463e6a6ee73af573e5cd1e99b541fc9b052462dc05eb907ddf6"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:39:53Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. In source-1 (block 303809032, index 5), EOA 0xa07dcdb6 calls its contract 0xeed907ad with b8fc37f5([0x09c12514, 0x3b329559]). debug_traceTransaction(callTracer) shows an Aave V3 flashLoanSimple of 20000e18 WETH. In executeOperation, pool 0xc6962004f452be9203591991d15f6b388e09e8d0.swap(zeroForOne) sells 7825378997201032290299 WETH for 9716971.54 USDC, and a tiny position is minted. For each manager the attacker calls getAllUsers (0xe2842d79), getUserInfo (0x6386c1c7) and getPositionData (0x0f415acb), then withdraw(user, liquidity) (0x08fab167): 6 calls on 0x09c12514 and 5 on 0x3b329559. In each call the manager does NonfungiblePositionManager decreaseLiquidity and collect, then SwapRouter 0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45 exactInputSingle(WETH->USDC, fee 500, recipient manager, amountOutMinimum 0, sqrtPriceLimitX96 0), transfers the USDC to the user and burns the NFT. The first user is 0xea684303 (tokenId 4190178). The attacker swaps back, repays and sends 71543669283808496020 WETH to the EOA. Identity/age: eth_getCode of 0x09c12514 is empty at 287808064. keccak at 287808065 and 303809031 is the recorded hash (15492 bytes, no DELEGATECALL; the only 0xff byte is in the metadata after offset 15439). Source-2 (index 4) is a top-level creation by 0x7fc2fd35. Sibling 0x3b329559 has the same hash from block 287807994 (0x86a16d2e133383ddd2c5f6c055f844705d67291ec4654e453e4d77a01635443e). History: Etherscan txlist returns 229 transactions for 0x09c12514 and 145 for 0x3b329559. Operator 0x7fc2fd35 made withdraws on behalf of users, collectFees (0xa480ca79), f3982817(user, tick) re-ranges and one 48036cee; users called d415396d deposits and their own withdraws. Every direct withdraw is a single top-level call without an in-transaction price move. Etherscan tokentx lists 2119 and 1334 transfers. Their transaction hashes outside the direct txlists are source-1 plus three 0x902cc9bf airdrop-contract transactions (0x0046c556..., 0x7c0b9888..., 0xe7c1365a...) that only send tokens. So no earlier contract invoked withdraw."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:39:53Z",
-      "note": "Reviewed loss. The 11 withdraw frames in source-1 give (manager, user, tokenId, liquidity, USDC sent to user). At block 303809031, eth_call NonfungiblePositionManager 0xc36442b4a4522e871399cd717abdd847ab11fe88 decreaseLiquidity((tokenId, liquidity, 0, 0, 9999999999)) and collect((tokenId, manager, 2^128-1, 2^128-1)), both from the owning manager, give principal plus fees totalling 78611616434521354757 WETH (token0) and 23815920221 USDC (token1). For example, tokenId 4184901 has 34152331816799186808 + 121508734629283638 WETH and 7549354081 + 322584692 USDC. The USDC transfers to users in source-1 total 783590805. The USDC component is the difference. WETH is valued at the DefiLlama quote (source-6)."
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1738990070/arbitrum:0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-      "observedAt": 1790656659
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 230548.9161313564,
+    "assets": [
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "78.611616434521354757",
+        "usd": 207516.58671535642
+      },
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "23032.329416",
+        "usd": 23032.329416
+      }
     ]
   },
-  "discovery": [
-    "web:2025-02-08:unknown-arbitrum-contract-0x4b75157d"
+  "notes": [
+    "Direct, non-upgradeable manager runtime with the public zero-minimum withdraw. It is the later of two byte-identical siblings; 0x3b329559046cb4d0f5f105c5acc71932a47f4e98 was deployed at block 287807994 and exploited in the same transaction. The operator's collectFees and re-range calls change positions, not withdraw authorization or slippage.",
+    "The 11 positions (tokenIds 4184891, 4184901, 4190157, 4190178, 4192245, 4193097, 4193103, 4193166, 4193167, 4193506, 4193585) were worth 78.611616434521354757 WETH and 23815.920221 USDC, principal plus uncollected fees, at the pre-exploit pool state (block 303809031). Users received 783.590805 USDC back in the same calls, so the USDC component is 23815.920221 - 783.590805. The position value is simulated rather than read from logs, hence medium confidence. The attacker's net gain of 71.543669283808496020 WETH is lower because of pool fees, flash-loan premium and the attacker's own swap costs.",
+    "The managers have no verified source. Selector names come from the public signature database. The missing caller check and zero minimum are established from the exploit trace (calldata of withdraw and exactInputSingle), not from source text."
   ]
 }

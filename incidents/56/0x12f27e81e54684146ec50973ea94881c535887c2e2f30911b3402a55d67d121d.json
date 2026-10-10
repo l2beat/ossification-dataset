@@ -1,159 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x12f27e81e54684146ec50973ea94881c535887c2e2f30911b3402a55d67d121d",
-  "protocol": {
-    "name": "iVest DAO",
-    "slug": "ivest-dao"
-  },
+  "protocol": "iVest DAO",
   "name": "iVest donation-on-burn double debit",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x12f27e81e54684146ec50973ea94881c535887c2e2f30911b3402a55d67d121d",
-      "blockNumber": 41289498,
-      "transactionIndex": 19,
-      "timestamp": 1723438359
-    },
-    "attackerAddresses": [
-      "0x4645863205b47a0a3344684489e8c446a437d66c"
-    ]
-  },
   "summary": "Transfers to the zero address trigger the token's _MakeDonation path, which debits the sender's balance a second time; repeatedly sending iVest to the PancakeSwap pair and calling skim/sync shrank the pair's token reserve and let the attacker swap the reserve out for WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 172148.54514558267,
-      "valuationTimestamp": 1723438335,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "338.875088869257198253",
-        "usdValue": 172148.54514558267,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1723438335,
-          "unitPriceUsd": 508,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The receipt shows 1,200 WBNB entering PancakeSwap iVest/WBNB pair 0x2607118d363789f841d952f02e359bfa483955f9 and 1,538.875088869257198253 WBNB leaving it, for 338.875088869257198253 WBNB of net depletion; archive pair balances at the surrounding block boundary reproduce that amount. The attacker input is netted out; the 0.6-WBNB flash-loan fee is not deducted from victim depletion. The closest preceding DefiLlama BNB price is $508 at 1723438335."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x786fcf76dc44b29845f284b81f5680b6c47302c6",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x786fcf76dc44b29845f284b81f5680b6c47302c6",
-        "codeHash": "0xe9a24aab772f62ded1a30d505ae07e6f7bbdc98fcfe5de544f5a23025e451036"
-      },
-      "deployment": {
-        "timestamp": 1718489801,
-        "blockNumber": 39645570,
-        "transactionHash": "0xd7ca33e2db0b61bdf2d1bff571bacd73c52b76cc06285717d7df85c12298cd8c",
-        "transactionIndex": 10,
-        "creatorAddress": "0x3421d514fcd2cf1303bc13d88bcb3e75e8032642"
-      },
-      "ageReset": {
+      "address": "0x786fcf76dc44b29845f284b81f5680b6c47302c6",
+      "reset": {
         "kind": "deployment",
-        "description": "iVest is a directly deployed token. Its 19,856-byte runtime is absent one block before creation and has code hash 0xe9a24aab772f62ded1a30d505ae07e6f7bbdc98fcfe5de544f5a23025e451036 at deployment and immediately before exploitation; both EIP-1967 code-selection slots are zero. The zero-address donation double debit is in the deployed transfer path and does not depend on later configuration."
-      },
-      "codeAgeSeconds": 4948558,
-      "failureModeId": "failure:ivest-zero-address-donation-double-debit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xd7ca33e2db0b61bdf2d1bff571bacd73c52b76cc06285717d7df85c12298cd8c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x12f27e81e54684146ec50973ea94881c535887c2e2f30911b3402a55d67d121d"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://crypto.training/hacks/2024-08-ivestdao/"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-08/IvestDao_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T10:22:03Z",
-      "note": "Reviewed the successful exploit receipt and call trace, commit-pinned reproduction, technical analysis, victim-pair balances, direct creation receipt, archive runtime code, and EIP-1967 slots. The helper sends 40 WBNB into the iVest/WBNB pair 30 times, then calls skim(address(0)) four times. The iVest transfer path treats the zero-address transfer as a donation but continues into ordinary transfer accounting, debiting the pair again; skim and sync repeatedly shrink the recorded iVest reserve before the final swap. Across the transaction the pair receives exactly 1,200 WBNB and sends 1,538.875088869257198253 WBNB, matching its 338.875088869257198253-WBNB archive balance decrease. The 0.6-WBNB flash-loan fee reduces attacker proceeds to 338.275088869257198253 WBNB but does not reduce gross victim depletion. iVest was directly created in block 39,645,570 index 10. Code is absent at block 39,645,569, and the 19,856-byte runtime hashes to 0xe9a24aab772f62ded1a30d505ae07e6f7bbdc98fcfe5de544f5a23025e451036 at creation and immediately before exploitation. Both EIP-1967 slots are zero, and the defect is independent of mutable token settings, so deployment is the latest age reset 4,948,558 seconds before exploitation."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd7ca33e2db0b61bdf2d1bff571bacd73c52b76cc06285717d7df85c12298cd8c"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1723438359/coingecko:binancecoin?searchWidth=4h",
-      "observedAt": 1787998923
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-08/IvestDao_exp.sol",
-    "seed:ivest-dao:2024-08-12:ivest-donation-on-burn-double-debit",
-    "web:2024-08-12:ivest-dao"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 172148.54514558267,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "338.875088869257198253",
+        "usd": 172148.54514558267
+      }
     ]
   },
+  "refs": [
+    "https://crypto.training/hacks/2024-08-ivestdao/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/IvestDao_exp.sol"
+  ],
   "notes": [
+    "iVest is a directly deployed token. Its 19,856-byte runtime is absent one block before creation and has code hash 0xe9a24aab772f62ded1a30d505ae07e6f7bbdc98fcfe5de544f5a23025e451036 at deployment and immediately before exploitation; both EIP-1967 code-selection slots are zero. The zero-address donation double debit is in the deployed transfer path and does not depend on later configuration.",
+    "The receipt shows 1,200 WBNB entering PancakeSwap iVest/WBNB pair 0x2607118d363789f841d952f02e359bfa483955f9 and 1,538.875088869257198253 WBNB leaving it, for 338.875088869257198253 WBNB of net depletion; archive pair balances at the surrounding block boundary reproduce that amount. The attacker input is netted out; the 0.6-WBNB flash-loan fee is not deducted from victim depletion. The closest preceding DefiLlama BNB price is $508 at 1723438335.",
     "Replaces the seed's reported $156,000 estimate with exact victim-pair depletion, consistent with the web lead's rounded $172,000 report."
   ]
 }

@@ -1,151 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x9b9a6dd05526a8a4b40e5e1a74a25df6ecccae6ee7bf045911ad89a1dd3f0814",
-  "protocol": {
-    "name": "Alkimiya",
-    "slug": "alkimiya"
-  },
+  "protocol": "Alkimiya",
   "name": "Alkimiya SilicaPools uint128 share-supply truncation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x9b9a6dd05526a8a4b40e5e1a74a25df6ecccae6ee7bf045911ad89a1dd3f0814",
-      "blockNumber": 22146340,
-      "transactionIndex": 0,
-      "timestamp": 1743176087
-    },
-    "attackerAddresses": [
-      "0xfde0d1575ed8e06fbf36256bcdfa1f359281455a",
-      "0x80bf7db69556d9521c03461978b8fc731dbbd4e4",
-      "0x4585fe77225b41b697c938b018e2ac67ac5a20c0"
-    ]
-  },
   "summary": "SilicaPools accepted a uint256 share quantity but narrowed it without a checked cast when updating the pool's uint128 sharesMinted accounting, while minting the full uint256 quantity as ERC-1155 long and short balances. The attacker minted 2^128 + 1 of each, making recorded supply wrap to 1, transferred away 2^128 - 1, and retained 2 short shares. After starting and ending the permissionless pool, redeemShort treated those 2 shares as twice the recorded supply and paid twice the deposited collateral, consuming the pool's pre-existing WBTC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 96176.5420806,
-      "valuationTimestamp": 1743176087,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "1.14015390",
-        "usdValue": 96176.5420806,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1743176087,
-          "unitPriceUsd": 84354,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Archive balance calls show SilicaPools held exactly 114,015,390 WBTC satoshis before the exploit transaction and zero after it, establishing gross depletion of 1.14015390 WBTC independently of attacker financing. During the transaction a Morpho flash loan supplied 10 WBTC; the attacker added 0.56125794 WBTC directly and collateralizedMint transferred another 1.70141184 WBTC into SilicaPools. redeemShort then transferred the pool's full 3.40282368 WBTC balance out, the flash loan was repaid, and the exploit contract's final transfer sent 1.14015390 WBTC of proceeds onward. DefiLlama's BTC price of $84,354 values the depletion at $96,176.54."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xf3f84ce038442ae4c4dcb6a8ca8bacd7f28c9bde",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xf3f84ce038442ae4c4dcb6a8ca8bacd7f28c9bde",
-        "codeHash": "0x06a741556ad882988c01a76f50aeba22ac17a8cb87721a54f22b11162c31b1f6"
-      },
-      "deployment": {
-        "timestamp": 1720987763,
-        "blockNumber": 20307036,
-        "transactionHash": "0x9a1668a3ef60930317bba8b94a84fd1ac190617be621e6be2c47c503023e5466",
-        "transactionIndex": 0,
-        "creatorAddress": "0x3bd5f5f368bdfdb86b0513b36b80569b7c90555c"
-      },
-      "ageReset": {
+      "address": "0xf3f84ce038442ae4c4dcb6a8ca8bacd7f28c9bde",
+      "reset": {
         "kind": "deployment",
-        "description": "SilicaPools is a direct non-proxy contract. Its 19,196-byte runtime is absent in the preceding block and hashes identically at deployment and immediately before the exploit. Owner-set treasury, bounty and pause values do not alter the unbounded uint256 input, unchecked uint128 accounting conversion, or ERC-1155 mint quantity that caused the failure."
-      },
-      "codeAgeSeconds": 22188324,
-      "failureModeId": "failure:silicapools-uint128-share-supply-truncation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x9a1668a3ef60930317bba8b94a84fd1ac190617be621e6be2c47c503023e5466"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9b9a6dd05526a8a4b40e5e1a74a25df6ecccae6ee7bf045911ad89a1dd3f0814"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-03/Alkimiya_io_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9a1668a3ef60930317bba8b94a84fd1ac190617be621e6be2c47c503023e5466"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T06:21:31Z",
-      "note": "Reviewed the successful transaction receipt and call trace, SilicaPools' explorer-verified solc 0.8.20 source, the commit-pinned reproduction, archive balance and code calls, the direct creation transaction, and the contract's code and configuration history. Block 22146340 index 0 is a successful call from MEV searcher 0xfde0d1575ed8e06fbf36256bcdfa1f359281455a to exploit contract 0x80bf7db69556d9521c03461978b8fc731dbbd4e4 and is the first successful defect execution in this frontrun campaign. The trace flash-borrows 1,000,000,000 WBTC satoshis, transfers 56,125,794 satoshis directly to SilicaPools, then calls collateralizedMint with PoolParams floor 41, cap 46, an attacker-controlled index, current start/end timestamps and WBTC payout, plus shares = type(uint128).max + 2 = 2^128 + 1. In _collateralizedMint, the verified code computes and transfers 170,141,184 satoshis of collateral, executes sState.sharesMinted += uint128(shares), and then mints the full uint256 shares to both ERC-1155 token IDs. The conversion records 1 share. Two safeTransferFrom calls discard type(uint128).max long and short shares, leaving the attacker with 2 of each against recorded total supply 1. The attacker-controlled permissionless index returns decimals 31, shares 1 and balance 0, allowing startPool and endPool in the same transaction; redeemShort therefore calculates a payout of 340,282,368 satoshis, twice the attacker's deposited collateral. SilicaPools' WBTC balance is exactly 114,015,390 satoshis at block 22146339 and zero at block 22146340. After repaying Morpho, the exploit contract transfers 114,015,390 satoshis onward, matching the full pre-existing victim balance. Artifact history: 0xf3f84ce038442ae4c4dcb6a8ca8bacd7f28c9bde was created directly by 0x3bd5f5f368bdfdb86b0513b36b80569b7c90555c in block 20307036 index 0. Code is empty at block 20307035 and its 19,196-byte runtime hashes to 0x06a741556ad882988c01a76f50aeba22ac17a8cb87721a54f22b11162c31b1f6 at deployment and block 22146339. Both standard proxy slots are zero, explorer metadata marks it non-proxy, and disassembly contains no DELEGATECALL, CREATE, CREATE2 or SELFDESTRUCT. The only mutable global parameters govern ownership, treasury, fees, bounties and pausing; none bounds shares or changes the mismatched accounting and mint types. Deployment is therefore the latest causal age reset, 22,188,324 seconds before exploitation."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1743176087/coingecko:bitcoin",
-      "observedAt": 1787898450
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2025-03/Alkimiya_io_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 96176.5420806,
+    "assets": [
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "1.14015390",
+        "usd": 96176.5420806
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-03/Alkimiya_io_exp.sol"
+  ],
+  "notes": [
+    "SilicaPools is a direct non-proxy contract. Its 19,196-byte runtime is absent in the preceding block and hashes identically at deployment and immediately before the exploit. Owner-set treasury, bounty and pause values do not alter the unbounded uint256 input, unchecked uint128 accounting conversion, or ERC-1155 mint quantity that caused the failure.",
+    "Archive balance calls show SilicaPools held exactly 114,015,390 WBTC satoshis before the exploit transaction and zero after it, establishing gross depletion of 1.14015390 WBTC independently of attacker financing. During the transaction a Morpho flash loan supplied 10 WBTC; the attacker added 0.56125794 WBTC directly and collateralizedMint transferred another 1.70141184 WBTC into SilicaPools. redeemShort then transferred the pool's full 3.40282368 WBTC balance out, the flash loan was repaid, and the exploit contract's final transfer sent 1.14015390 WBTC of proceeds onward. DefiLlama's BTC price of $84,354 values the depletion at $96,176.54."
+  ]
 }

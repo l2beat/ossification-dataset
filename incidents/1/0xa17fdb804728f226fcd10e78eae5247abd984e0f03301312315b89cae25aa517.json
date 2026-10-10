@@ -1,193 +1,44 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xa17fdb804728f226fcd10e78eae5247abd984e0f03301312315b89cae25aa517",
-  "protocol": {
-    "name": "HedgeyFinance",
-    "slug": "hedgeyfinance"
-  },
+  "protocol": "HedgeyFinance",
   "name": "Hedgey Finance ClaimCampaigns unvalidated locker approval (Ethereum)",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xa17fdb804728f226fcd10e78eae5247abd984e0f03301312315b89cae25aa517",
-      "blockNumber": 19687887,
-      "transactionIndex": 23,
-      "timestamp": 1713510359
-    },
-    "attackerAddresses": [
-      "0xded2b1a426e1b7d415a40bcad44e98f47181dda2",
-      "0xc793113f1548b97e37c409f39244ee44241bf2b3"
-    ]
-  },
   "summary": "ClaimCampaigns.createLockedCampaign did not validate the claimLockup.tokenLocker address, so a campaign created with an attacker-controlled locker left ClaimCampaigns holding a token allowance to that locker that survived cancelCampaign, letting the attacker spend the protocol's full token balance afterwards.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1987902.6082287668,
-      "valuationTimestamp": 1713522155,
-      "method": "other",
-      "sourceIds": [
-        "source-3",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "1303910.12",
-        "usdValue": 1303910.12,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1713510359,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-8"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x88b9f5c66342ebaf661b3e2836b807c8cb1b3195",
-          "symbol": "NOBL"
-        },
-        "amount": "48019408",
-        "usdValue": 683992.4882287668,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1713522155,
-          "unitPriceUsd": null,
-          "sourceIds": [
-            "source-7",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-7",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Loss is the main attacker campaign (0xded2b1a4 driving attack contract 0xc793113f) on Ethereum, measured as exact victim depletion of the ClaimCampaigns contract 0xbc452fdc. USDC: the contract's USDC balance went from 1,303,910.12 (1,303,910,120,000 base units) to 0; the drain transaction 0x2606d459 moved exactly that amount from ClaimCampaigns to the attacker EOA. In the anchor transaction the attacker's own 1,305,000 USDC flash-supplied to fund the campaign flows in and back out (net zero) and is an attacker-supplied input, not victim loss. NOBL (0x88b9f5c6): the attacker received exactly 48,019,408 NOBL from ClaimCampaigns (victim->attacker gross, with 0 NOBL sent back), then dumped it through DEX routers. NOBL is illiquid and was not spot-marked: valuation uses realised proceeds. The attacker's entire Ethereum haul was consolidated into a single 1,987,902.6082287668 DAI transfer to cash-out wallet 0xd84f48b7 in transaction 0x1c2fe7c2 (nonce 103). That net take decomposes as the 1,303,910.12 USDC (valued 1:1) plus 683,992.4882287668 DAI of NOBL sale proceeds (gross DAI received across the campaign was 2,038,902.61, of which ~51,000 DAI was the attacker's own spend acquiring ~684,313 seed NOBL, an excluded attacker input). This ~$1.99M matches Halborn's reported ~$2.1M Ethereum split. The same public vulnerability was independently exploited in separate transactions by other actors (0xf0cad3 drained 120,800 MASA, 0x462412 drained 22,393.28 BLOCK, 0xc0ffeebabe drained 72,688.46 ARC, 0xd1aff3 drained 1,957,142.85773 CO), each after the main campaign; those are distinct campaigns by distinct senders and are not counted here. Later recoveries/returns are not netted.",
-    "realizedAt": 1713522155
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xbc452fdc8f851d7c5b72e1fe74dfb63bb793d511",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xbc452fdc8f851d7c5b72e1fe74dfb63bb793d511",
-        "codeHash": "0x725bc4ce48b9a71a4fd491b1f7bdcf29c772d92f8ee7a5cd6c3264f570f70db4"
-      },
-      "deployment": {
-        "timestamp": 1700669051,
-        "blockNumber": 18628345,
-        "transactionHash": "0x49716bc8be54164fde7964d1284cd2a69058f39dc22b5dfd1bb3e515bcfbeb22",
-        "transactionIndex": 334,
-        "creatorAddress": "0x5a4bc2bda1f6b9929b6efdcef4728246bec4c635"
-      },
-      "ageReset": {
+      "address": "0xbc452fdc8f851d7c5b72e1fe74dfb63bb793d511",
+      "reset": {
         "kind": "deployment",
-        "description": "Top-level deployment of the direct, non-proxy ClaimCampaigns runtime. EIP-1967 implementation slot is zero and the runtime hash is byte-identical at the deployment block and immediately before the exploit."
-      },
-      "codeAgeSeconds": 12841308,
-      "failureModeId": "failure:hedgey-finance:unvalidated-claim-locker-approval",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+        "tx": "0x49716bc8be54164fde7964d1284cd2a69058f39dc22b5dfd1bb3e515bcfbeb22"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa17fdb804728f226fcd10e78eae5247abd984e0f03301312315b89cae25aa517"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-04/HedgeyFinance_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2606d459a50ca4920722a111745c2eeced1d8a01ff25ee762e22d5d4b1595739"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x49716bc8be54164fde7964d1284cd2a69058f39dc22b5dfd1bb3e515bcfbeb22"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://medium.com/hedgey/hedgey-exploit-post-mortem-784e9860fd8d"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-hedgey-finance-hack-april-2024"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1c2fe7c247d9f470ef920195d4f55c1135a0d8158caf2fc8dab52bde8976d155"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5",
-      "reviewedAt": "2026-08-29T18:53:48Z",
-      "note": "Re-scoped the loss to exact Ethereum victim depletion and confirmed the anchor. The attacker EOA 0xded2b1a4 deployed attack contract 0xc793113f at nonce 1 (block 19687858) and made a no-op setup call to it at nonce 2 (block 19687872) whose call tree makes zero sub-calls and never touches ClaimCampaigns; the earliest transaction that executes the defect is nonce 3, the recorded anchor 0xa17fdb at block 19687887 index 23, whose call trace reaches ClaimCampaigns 0xbc452fdc 21 times through createLockedCampaign and cancelCampaign. ClaimCampaigns is a direct contract: its EIP-1967 implementation slot is zero, and its runtime hashes to 0x725bc4ce48b9a71a4fd491b1f7bdcf29c772d92f8ee7a5cd6c3264f570f70db4 both at deployment block 18628345 (top-level created by 0x5a4bc2bda1 in 0x49716bc8) and at block 19687886 immediately before the exploit, giving an age of 12,841,308 s. Loss: I measured ClaimCampaigns token balances with balanceOf at block 19687886 (pre-anchor) and block 19690000 (post-campaign). USDC fell from 1,303,910.12 to 0, and the drain transaction 0x2606d459 (nonce 4) transferred exactly 1,303,910,120,000 USDC base units from ClaimCampaigns to the attacker EOA; the 1,305,000 USDC the attacker flash-supplied inside the anchor flows in and back out net zero and is excluded as an attacker input. The attacker received exactly 48,019,408 NOBL from ClaimCampaigns (victim->attacker gross across the campaign, 0 returned) and dumped it via DEX routers. I summed every DAI Transfer to the attacker EOA over blocks 19687880-19700000: 2,038,902.6082287668 DAI received in total, all forwarded out; the single consolidation transfer to cash-out wallet 0xd84f48b7 in transaction 0x1c2fe7c2 was 1,987,902.6082287668 DAI, equal to the USDC drained (valued 1:1) plus 683,992.4882287668 DAI of NOBL proceeds after excluding ~51,000 DAI the attacker itself spent buying ~684,313 seed NOBL. NOBL is illiquid so it is valued at realised proceeds rather than spot. This ~$1.99M matches Halborn's ~$2.1M Ethereum figure. ClaimCampaigns also lost MASA, BLOCK, ARC and CO to the same bug in the same window, but each of those drains was sent by a different EOA (0xf0cad3, 0x462412, 0xc0ffeebabe, 0xd1aff3) in its own transaction after the main campaign, so they are separate copycat campaigns and are excluded from this incident's loss. The Arbitrum leg of this campaign is deliberately not recorded: the Arbitrum ClaimCampaigns (same address 0xbc452fdc, same deployer) held 77,948,800.12 BONUS (77.9% of the 100,000,000 supply), which attacker 0xc7241e27 drained via attack contract 0xbb52f172 anchored at 0x688aaa6f (block 202588688), but BONUS is deeply illiquid: the attacker's own seed purchase paid 0.002 WETH for ~10.29 BONUS and the attacker still holds 76,848,810 of the drained BONUS today, realising only ~0.016 ETH and 200 USDC. The reported ~$42.6M Arbitrum figure is an unrealisable spot-mark, so no defensible USD value or lower bound of >=1,000 exists for Arbitrum and it fails cohort admission."
-    }
-  ],
-  "discovery": [
-    "seed:hedgeyfinance:2024-04-19:hedgeyfinance"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 1987902.6082287668,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1303910.12",
+        "usd": 1303910.12
+      },
+      {
+        "token": "0x88b9f5c66342ebaf661b3e2836b807c8cb1b3195",
+        "symbol": "NOBL",
+        "amount": "48019408",
+        "usd": 683992.4882287668
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-04/HedgeyFinance_exp.sol",
+    "eip155:1:0x2606d459a50ca4920722a111745c2eeced1d8a01ff25ee762e22d5d4b1595739",
+    "https://medium.com/hedgey/hedgey-exploit-post-mortem-784e9860fd8d",
+    "https://www.halborn.com/blog/post/explained-the-hedgey-finance-hack-april-2024",
+    "eip155:1:0x1c2fe7c247d9f470ef920195d4f55c1135a0d8158caf2fc8dab52bde8976d155"
+  ],
   "notes": [
+    "Top-level deployment of the direct, non-proxy ClaimCampaigns runtime. EIP-1967 implementation slot is zero and the runtime hash is byte-identical at the deployment block and immediately before the exploit.",
+    "Loss is the main attacker campaign (0xded2b1a4 driving attack contract 0xc793113f) on Ethereum, measured as exact victim depletion of the ClaimCampaigns contract 0xbc452fdc. USDC: the contract's USDC balance went from 1,303,910.12 (1,303,910,120,000 base units) to 0; the drain transaction 0x2606d459 moved exactly that amount from ClaimCampaigns to the attacker EOA. In the anchor transaction the attacker's own 1,305,000 USDC flash-supplied to fund the campaign flows in and back out (net zero) and is an attacker-supplied input, not victim loss. NOBL (0x88b9f5c6): the attacker received exactly 48,019,408 NOBL from ClaimCampaigns (victim->attacker gross, with 0 NOBL sent back), then dumped it through DEX routers. NOBL is illiquid and was not spot-marked: valuation uses realised proceeds. The attacker's entire Ethereum haul was consolidated into a single 1,987,902.6082287668 DAI transfer to cash-out wallet 0xd84f48b7 in transaction 0x1c2fe7c2 (nonce 103). That net take decomposes as the 1,303,910.12 USDC (valued 1:1) plus 683,992.4882287668 DAI of NOBL sale proceeds (gross DAI received across the campaign was 2,038,902.61, of which ~51,000 DAI was the attacker's own spend acquiring ~684,313 seed NOBL, an excluded attacker input). This ~$1.99M matches Halborn's reported ~$2.1M Ethereum split. The same public vulnerability was independently exploited in separate transactions by other actors (0xf0cad3 drained 120,800 MASA, 0x462412 drained 22,393.28 BLOCK, 0xc0ffeebabe drained 72,688.46 ARC, 0xd1aff3 drained 1,957,142.85773 CO), each after the main campaign; those are distinct campaigns by distinct senders and are not counted here. Later recoveries/returns are not netted.",
     "Scoped to the main attacker campaign on Ethereum. The same public ClaimCampaigns defect was independently exploited by several other actors on Ethereum (draining MASA, BLOCK, ARC and CO in separate transactions) and on Arbitrum (BONUS); those are distinct campaigns and are not counted here.",
     "The Arbitrum leg is intentionally not recorded as a separate incident: its only material victim asset was BONUS, an illiquid token the attacker could not sell (still holding ~76.8M of the ~77.9M drained), so no evidenced USD value or lower bound of at least 1,000 is available and the reported ~$42.6M is an unrealisable spot-mark."
   ]

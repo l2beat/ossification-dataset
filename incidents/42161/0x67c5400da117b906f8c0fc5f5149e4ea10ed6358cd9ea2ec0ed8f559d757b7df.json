@@ -1,188 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0x67c5400da117b906f8c0fc5f5149e4ea10ed6358cd9ea2ec0ed8f559d757b7df",
-  "protocol": {
-    "name": "Penpie",
-    "slug": "penpie"
-  },
+  "protocol": "Penpie",
   "name": "Penpie Pendle-market reward reentrancy (Arbitrum)",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0x67c5400da117b906f8c0fc5f5149e4ea10ed6358cd9ea2ec0ed8f559d757b7df",
-      "blockNumber": 249749773,
-      "transactionIndex": 6,
-      "timestamp": 1725390852
-    },
-    "attackerAddresses": [
-      "0x7a2f4d625fb21f5e51562ce8dc2e722e12a61d1b"
-    ]
-  },
   "summary": "The Arbitrum PendleStakingSideChain (same defect as Ethereum) harvested rewards from a permissionlessly registered Pendle market without a shared reentrancy guard, so the attacker re-entered depositMarket() during batchHarvestMarketRewards() to double-count its LP entitlement and withdrew Penpie's staked gUSDC-market Pendle LP as reward.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 678983.02022,
-      "valuationTimestamp": 1725390852,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xd3443ee1e91af28e5fb858fbd0d72a63ba8046e0",
-          "symbol": "gUSDC"
-        },
-        "amount": "616348.200200",
-        "usdValue": 678983.02022,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1725382691,
-          "unitPriceUsd": 1.1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x03577ffa91edb93ac3aee081efbe6f323da949e1",
-          "symbol": "YT-gUSDC-26DEC2024"
-        },
-        "amount": "114673.157598",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Arbitrum-only gross victim depletion, measured from the single successful drain receipt 0x67c5400d. The drain is an atomic flash-borrow: the attacker contract 0x4bc9815b borrows 621667.936099 gUSDC from Balancer (0xba1222...), mints SY-gUSDC and Pendle LP, deposits the LP into PendleStaking proxy 0x6db96bbeb, re-enters depositMarket during harvest to double-count, withdraws twice the deposited LP (its own plus an equal slice of Penpie's inventory), redeems it and repays the flash loan. The flash loan nets to zero within the receipt, so the attack contract's end-of-tx net positive balance is the extraction: 616348.200200 gUSDC plus 114673.157598 YT-gUSDC. Proxy 0x6db96bbeb's net outflow of 330469.756983 gUSDC-market PENDLE-LPT (0xa877a0e1) reconciles with these redemptions. The USD total values only the liquid gUSDC (a Gains Network yield-bearing USDC vault token) at its DefiLlama pre-incident price of 1.10 (observation 1725382691, before the drain); the paired YT-gUSDC is recorded with exact quantity but null USD because it is a decaying, thinly traded yield token, so the figure is a slight lower bound. This Arbitrum leg is separate from and not duplicated in the Ethereum record (eip155:1:0x56e09abb...); together they make up the reported ~$27M-$28M cross-chain campaign. Later Penpie recovery negotiations are not netted.",
-    "realizedAt": 1725390852
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6db96bbeb081d2a85e0954c252f2c1dc108b3f81",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xc64b3f60024b57d25246a6fecf2aa1260eae5b71",
-        "codeHash": "0x6c0ddc54e9b87f0586708f83a7fb9e602c202eb96678b18b7c7b5adb72c64414"
-      },
-      "deployment": {
-        "timestamp": 1685868006,
-        "blockNumber": 97640969,
-        "transactionHash": "0xfe0c4eae8b1550cd9d3af2a2c7f812131782c435a530be8d90cb4a24dffc4e99",
-        "transactionIndex": 2,
-        "creatorAddress": "0x0cdb34e6a4d635142bb92fe403d38f636bbb77b8"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1717136983,
-        "blockNumber": 216852071,
-        "transactionHash": "0xd7a6dbc9cdbfeb31c302831a83fad469236135999a5e3cd54c7fd6b8ed1c8ad0",
-        "transactionIndex": 5,
-        "logIndex": 41,
-        "mechanism": {
-          "type": "event",
-          "address": "0x6db96bbeb081d2a85e0954c252f2c1dc108b3f81",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The final pre-incident Upgraded(address) event reselected PendleStakingSideChain implementation 0xc64b3f60024b57d25246a6fecf2aa1260eae5b71 (10th and last Upgraded event before the incident)."
-      },
-      "codeAgeSeconds": 8253869,
-      "failureModeId": "failure:penpie-harvest-reentrancy-inflated-rewards",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+      "address": "0x6db96bbeb081d2a85e0954c252f2c1dc108b3f81",
+      "code": "0xc64b3f60024b57d25246a6fecf2aa1260eae5b71",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd7a6dbc9cdbfeb31c302831a83fad469236135999a5e3cd54c7fd6b8ed1c8ad0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x67c5400da117b906f8c0fc5f5149e4ea10ed6358cd9ea2ec0ed8f559d757b7df"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xfe0c4eae8b1550cd9d3af2a2c7f812131782c435a530be8d90cb4a24dffc4e99"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xd7a6dbc9cdbfeb31c302831a83fad469236135999a5e3cd54c7fd6b8ed1c8ad0"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://zokyo.io/blog/penpie-postmortem/"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://blog.cube3.ai/2024/09/04/penpie-exploit-postmortem-cube3-web3-hack-detection/"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1725388000/arbitrum:0xd3443ee1e91af28e5fb858fbd0d72a63ba8046e0?searchWidth=6h",
-      "observedAt": 1788033111
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5",
-      "reviewedAt": "2026-08-29T19:51:51Z",
-      "note": "Established the Arbitrum leg of the Penpie campaign as a separate incident. Anchor: 0x67c5400d is transaction index 6 of Arbitrum block 249749773 (timestamp 1725390852), nonce 6 of attacker EOA 0x7a2f4d62. Its earlier reentrancy attempt at nonce 4 (0xdf01895e) reverted (isError=1), so this is the earliest successful defect execution on Arbitrum; the same EOA is the Ethereum attacker. Target identity: victim 0x6db96bbeb is a TransparentUpgradeableProxy whose EIP-1967 impl slot reads 0xc64b3f60024b57d25246a6fecf2aa1260eae5b71 (BscScan/Arbiscan-verified PendleStakingSideChain) at incident block 249749773, runtime hashing to 0x6c0ddc54e9b87f0586708f83a7fb9e602c202eb96678b18b7c7b5adb72c64414 at both the last pre-incident Upgraded event (block 216852071, tx 0xd7a6dbc9, log 41, ts 1717136983) and the incident; code age 8253869 s. Ten Upgraded events precede the incident; the current impl slot reads a different, post-incident implementation (0x6cc9645d, empty code at the incident block), confirming 0xc64b3f60 as the incident-time artifact. The proxy was deployed by the same operator 0x0cdb34e6 as the Ethereum PendleStaking. The attacker-registered market and its SY token are attack machinery, not a target. Loss: traced every ERC20 Transfer in the drain receipt. The flash-borrowed 621667.936099 gUSDC is returned to Balancer; the attack contract 0x4bc9815b nets +616348.200200 gUSDC and +114673.157598 YT-gUSDC, and proxy 0x6db96bbeb nets -330469.756983 gUSDC-market Pendle LP, which redeems to those amounts. gUSDC is valued at its DefiLlama pre-incident price (1.10 at 1725382691, a Gains Network yield-bearing USDC vault token); YT-gUSDC is recorded with null USD as a decaying yield token, so 678,983 is a slight lower bound. This loss is disjoint from the Ethereum record and not double-counted."
-    }
-  ],
-  "discovery": [
-    "seed:penpie:2024-09-03:penpie"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The USD total values only the liquid gUSDC at its DefiLlama incident price; the paired YT-gUSDC the attacker also kept is recorded with exact quantity but null USD, so the measured figure is a slight lower bound."
-    ],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 678983.02022,
+    "assets": [
+      {
+        "token": "0xd3443ee1e91af28e5fb858fbd0d72a63ba8046e0",
+        "symbol": "gUSDC",
+        "amount": "616348.200200",
+        "usd": 678983.02022
+      },
+      {
+        "token": "0x03577ffa91edb93ac3aee081efbe6f323da949e1",
+        "symbol": "YT-gUSDC-26DEC2024",
+        "amount": "114673.157598"
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://zokyo.io/blog/penpie-postmortem/",
+    "https://blog.cube3.ai/2024/09/04/penpie-exploit-postmortem-cube3-web3-hack-detection/"
+  ],
+  "notes": [
+    "The final pre-incident Upgraded(address) event reselected PendleStakingSideChain implementation 0xc64b3f60024b57d25246a6fecf2aa1260eae5b71 (10th and last Upgraded event before the incident).",
+    "Arbitrum-only gross victim depletion, measured from the single successful drain receipt 0x67c5400d. The drain is an atomic flash-borrow: the attacker contract 0x4bc9815b borrows 621667.936099 gUSDC from Balancer (0xba1222...), mints SY-gUSDC and Pendle LP, deposits the LP into PendleStaking proxy 0x6db96bbeb, re-enters depositMarket during harvest to double-count, withdraws twice the deposited LP (its own plus an equal slice of Penpie's inventory), redeems it and repays the flash loan. The flash loan nets to zero within the receipt, so the attack contract's end-of-tx net positive balance is the extraction: 616348.200200 gUSDC plus 114673.157598 YT-gUSDC. Proxy 0x6db96bbeb's net outflow of 330469.756983 gUSDC-market PENDLE-LPT (0xa877a0e1) reconciles with these redemptions. The USD total values only the liquid gUSDC (a Gains Network yield-bearing USDC vault token) at its DefiLlama pre-incident price of 1.10 (observation 1725382691, before the drain); the paired YT-gUSDC is recorded with exact quantity but null USD because it is a decaying, thinly traded yield token, so the figure is a slight lower bound. This Arbitrum leg is separate from and not duplicated in the Ethereum record (eip155:1:0x56e09abb...); together they make up the reported ~$27M-$28M cross-chain campaign. Later Penpie recovery negotiations are not netted.",
+    "The USD total values only the liquid gUSDC at its DefiLlama incident price; the paired YT-gUSDC the attacker also kept is recorded with exact quantity but null USD, so the measured figure is a slight lower bound."
+  ]
 }

@@ -1,281 +1,64 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x70fb4c6a27445bb638618e801a792135638effa1d24b3ec37b0225736fae2567",
-  "protocol": {
-    "name": "UF DAO",
-    "slug": "ufdao"
-  },
+  "protocol": "UF DAO",
   "name": "UF DAO stale XDAO Shop public offer mints LP below treasury value",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x70fb4c6a27445bb638618e801a792135638effa1d24b3ec37b0225736fae2567",
-      "blockNumber": 18256132,
-      "transactionIndex": 115,
-      "timestamp": 1653925945
-    },
-    "attackerAddresses": [
-      "0xa675d0d6eb15409a5e4101f18d796c6dd161c747",
-      "0xc578d755cd56255d3ff6e92e1b6371ba945e3984",
-      "0x1bbed50a248cfd2ce498e2219c92f86ad657e7ac"
-    ]
-  },
   "summary": "Shop.buyPublicOffer(address,uint256) is permissionless and mints the caller _lpAmount LP for _lpAmount * publicOffers[dao].rate / 1e18 of the offer currency, while LP.burn redeems pro rata against the whole DAO treasury through Dao.burnLp. Nothing ties the static rate to treasury value per LP and the offer has no cap or expiry, so UF DAO's still-active offer of 1 LP per 1 USDC kept selling a claim on the treasury for less than the claim was worth as the treasury grew: 4.31 USDC per LP at the first exercise on 2022-05-30 and 13,235 USDC per LP at the 2023-01-11 leg, against an unchanged 6.8 LP supply.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 89992.4436788162,
-      "valuationTimestamp": 1673475204,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-7",
-        "source-8",
-        "source-9",
-        "source-10",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "21.452716690293480029",
-        "usdValue": 21.45271669029348,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1653925945,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-9",
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-9",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "0.009525684428216540",
-        "usdValue": 2.99432185142139,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1653925821,
-          "unitPriceUsd": 314.3419114905538,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-9",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "89958.965929193266975646",
-        "usdValue": 89958.96592919326,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1673475204,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-8",
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-8",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "0.032316017467209068",
-        "usdValue": 9.030711081211575,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1673475181,
-          "unitPriceUsd": 279.45,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-8",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Two campaign legs against the same offer, each measured as transaction-local depletion of the UF DAO treasury 0x2101e0f648a2b5517fd2c5d9618582e9de7a651a, with the exercising caller's own payments netted off. Leg one, 2022-05-30, is five buy-and-burn round trips by 0xa675d0d6eb15409a5e4101f18d796c6dd161c747 across ten transactions from block 18256132 to block 18257186: 31 USDC in, 52.452716690293480029 USDC out, net 21.452716690293480029 USDC, plus 0.009525684428216540 BNB of pro-rata native payout, which matches the DAO's native balance falling from 0.01 to 0.000474315571783460 over the same span. Leg two, 2023-01-11, is transaction 0x933d19d7d822e84e34ca47ac733226367fbee0d9c0c89d88d431c4f99629d77a: 1,111.622391174831097929 USDC in, 91,070.588320368098073575 out, net 89,958.965929193266975646 USDC, with the DAO's USDC balance falling from 90,000.668202254645779194 to 41.702273061378803548, plus 0.032316017467209068 BNB matching the native balance move from 0.032328555433316689 to 0.000012537966107621. Both callers funded their purchases themselves, so those inflows are attacker-supplied campaign input rather than victim loss; the 2023 attacker's 90,070.588320368098073575 USDC receipt, the seed inventory's headline, exceeds the victim depletion by exactly his 1,111.622391174831097929 USDC input. USDC is valued at par and BNB at a contemporaneous price for each leg, so the aggregate method is other; valuationTimestamp is the later leg, which is also realizedAt.",
-    "realizedAt": 1673475204
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366",
+      "reset": {
+        "kind": "config",
+        "tx": "0x8b43f967c9360e63a871f7ae8bc0d5857fddd44086eb4657b0e4056e527038f9",
         "address": "0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366",
-        "codeHash": "0xc5f7a45739f062d4c088f0615b1eb1883796d1b4c31fe2ba7e53262dfcf0e975"
-      },
-      "deployment": {
-        "timestamp": 1636892733,
-        "blockNumber": 12641962,
-        "transactionHash": "0x52f077455d0ddb6b5e542f07fb88aafa92d0d6ace4113c8c06d21538b2efa252",
-        "transactionIndex": 136,
-        "creatorAddress": "0x5befa2d163e40e148df83921e1cc59e044df5471"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1636988963,
-        "blockNumber": 12672157,
-        "transactionHash": "0x8b43f967c9360e63a871f7ae8bc0d5857fddd44086eb4657b0e4056e527038f9",
-        "transactionIndex": 702,
-        "logIndex": 853,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366",
-          "callData": "0xd249a9780000000000000000000000002101e0f648a2b5517fd2c5d9618582e9de7a651a",
-          "valueBefore": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000008ac76a51cc950d9822d68b83fe1ad97b32cd580d0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-        },
-        "description": "UF DAO governance executed Shop.initPublicOffer(true, USDC, 1e18) through Dao.execute, writing publicOffers[0x2101e0f648a2b5517fd2c5d9618582e9de7a651a] from (false, 0x0, 0) to (true, 0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d, 1000000000000000000). That write is what makes buyPublicOffer callable for this DAO and fixes the 1 LP per 1 USDC price both legs arbitraged; it was never repeated or revised."
-      },
-      "codeAgeSeconds": 16936982,
-      "failureModeId": "failure:xdao-shop-public-offer-mint-below-nav",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-5",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "Age is measured from the public-offer configuration write, which postdates the Shop runtime deployment by 96,230 seconds; a deployment basis would give 17,033,212 seconds."
-        ],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "call": "0xd249a9780000000000000000000000002101e0f648a2b5517fd2c5d9618582e9de7a651a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x70fb4c6a27445bb638618e801a792135638effa1d24b3ec37b0225736fae2567"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-01/UFDao_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/BlockSecTeam/status/1613507804412940289"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-09-15T09:29:58Z",
-      "note": "Anchor: 0x70fb4c6a27445bb638618e801a792135638effa1d24b3ec37b0225736fae2567 at block 18256132 index 115, timestamp 1653925945, status 1, gas 93788. EOA 0xa675d0d6eb15409a5e4101f18d796c6dd161c747 called Shop 0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366 selector 0xd2ea9853 buyPublicOffer(0x2101e0f648a2b5517fd2c5d9618582e9de7a651a, 1e18); because publicOffers[dao].rate is 1e18 the Shop moved 1.000000000000000000 USDC to the DAO and minted the caller 1e18 LP 0xf887a2dac0dd432997c970bce597a94ead4a8c25. At block 18256131 the DAO held 29.320918944939259223 USDC against a 6.8e18 LP supply, so one LP was backed by 4.31 USDC and sold for 1. The paired LP.burn 0x56e4a49679d6d366d07d433a4c3a6051f0fa70ac3ffb33165f0dd2c2005ed32d at block 18256176 computed share 128205128205128205 of 1e18 and Dao.burnLp returned 3.887297300633238358 USDC and 0.001282051282051282 BNB. Defect: Shop.buyPublicOffer is permissionless and prices a pro-rata treasury claim at a static per-DAO rate that no code path reconciles with treasury value per LP, and the offer has no cap or expiry; LP.burn and Dao.burnLp behaved as designed and are not separately aged. Earliest-exercise scan: every exercise of this defect against UF DAO must mint LP through Shop.buyPublicOffer, whose LP.mint is onlyShop, and must redeem through LP.burn, the sole caller of Dao.burnLp, so both legs of every exercise appear as an LP Transfer to or from the zero address. All Transfer logs of the LP contract were enumerated from its creation block 12672117 to block 24705059, which is the complete life of the instance and starts before the public offer was configured at block 12672157, so nothing earlier is possible for this DAO. That scan returns twelve mints and eleven burns. The nine before 2022-05-30 all belong to 0x71f8261aad73b5208847822af70489bf1f7f735e, holder of 101e18 of the 202.001e18 governance-token supply and the signer of the DAO's own votings, one of them a zero-price private offer created at block 13548210 through a different mapping; across those nine transactions the DAO's USDC changed by -0.999999999999999995, so they are the DAO transacting with its own treasury rather than an outside exercise. The first exercise by an address holding no governance token is 0xa675d0d6eb15409a5e4101f18d796c6dd161c747 at block 18256132, and the next is the 2023-01-11 leg. What remains unscanned: the Shop runtime is shared XDAO infrastructure that has emitted 1,390 LpCreated events since block 12641962, and exercises of the same code against other DAOs' offers were not enumerated; each such DAO carries its own initPublicOffer write and therefore its own age reset, so they would be separate incidents rather than earlier legs of this one. Identity: 0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366 is Etherscan-verified Shop and is not a proxy. The EIP-1967 implementation, beacon, admin and rollback slots are all zero at block 24705058, all 1,390 logs it has ever emitted carry the single topic 0xac4bd1fef3edbe329718924027e53821b2496a5710d5ffd3afb2b3789e746d62 (LpCreated), and its 14,197-byte runtime hashes to 0xc5f7a45739f062d4c088f0615b1eb1883796d1b4c31fe2ba7e53262dfcf0e975 at block 12641962, at block 18256131 and at block 24705058, with no code at block 12641961. It was created top-level by 0x5befa2d163e40e148df83921e1cc59e044df5471 at nonce 0 in transaction 0x52f077455d0ddb6b5e542f07fb88aafa92d0d6ace4113c8c06d21538b2efa252, block 12641962 index 136, timestamp 1636892733, unrelated to either attacker. Age reset: publicOffers for this DAO lives at keccak256(abi.encode(dao, 3)) = 0x08836794a680a7890bc125f3c7181a90f6120649f437be18782f6c5594efc278 and the following word, because ReentrancyGuard._status occupies slot 0. Both words are zero at block 12672156 and hold 0x00000000000000000000008ac76a51cc950d9822d68b83fe1ad97b32cd580d01 and 0x0de0b6b3a7640000 at block 12672157; eth_call publicOffers(dao) returns three zero words then (true, 0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d, 1e18) across the same boundary and still returns that at block 18256131 and at block 24705058. The writing transaction is 0x8b43f967c9360e63a871f7ae8bc0d5857fddd44086eb4657b0e4056e527038f9 at block 12672157 index 702, a successful Dao.execute whose Executed log 853 carries target 0xca49ecf7e7bb9bbc9d1d295384663f6ba5c0e366 and payload 0x56819c80 true/USDC/1e18, authorised by a signature recovering to DAO member 0x71f8261aad73b5208847822af70489bf1f7f735e. Later resets ruled out: only the DAO can write publicOffers[dao], only through Dao.execute or Dao.executePermitted, and of the 111 Executed and 0 ExecutedP events the DAO ever emitted exactly five target the Shop - createLp at 12672117, this initPublicOffer at 12672157, and createPrivateOffer 0x1f20b102 at 13548210, 16279081 and 16511419, which touch a different mapping. The offer words are unchanged at every point of a 24-point scan from 12672022 to 24705058 and the Shop runtime hash is unchanged over the same span, so there is no implementation change, beacon, diamond cut or later configuration write. Basis: the write is necessary to the exploit, since isActive false makes buyPublicOffer revert and a rate at or above treasury value per LP removes the profit, so it is not a mere exposure parameter; the treasury accumulation that followed only scaled the loss and reset nothing. Loss: leg one sums the USDC Transfer logs and callTracer native transfers of the ten 2022-05-30 transactions, 31 USDC in and 52.452716690293480029 out for a net 21.452716690293480029 USDC, with buys of 1, 10, 10, 5 and 5 LP returning 3.887297300633238358, 21.686679550182155273, 14.730322675073729516, 6.362974330105989849 and 5.785442834298367033 USDC, and 0.009525684428216540 BNB of native payout that equals the DAO's native balance falling from 0.01 at block 18256131 to 0.000474315571783460 at block 18257186. Leg two gives the DAO 1,111.622391174831097929 USDC in and 91,070.588320368098073575 out for a net 89,958.965929193266975646 USDC, confirmed by the balance falling to 41.702273061378803548, plus 0.032316017467209068 BNB. DefiLlama observed BNB at 314.3419114905538 USD at timestamp 1653925821 and at 279.45 USD at timestamp 1673475181, 124 and 23 seconds before the respective legs; USDC 0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d is Binance-Peg USD Coin with 18 decimals and is valued at par. The 2023 attacker 0xc578d755cd56255d3ff6e92e1b6371ba945e3984 made only one CREATE between blocks 24600000 and 25200000, the exploit contract 0x1bbed50a248cfd2ce498e2219c92f86ad657e7ac, so no sibling DAO was drained in that campaign."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x52f077455d0ddb6b5e542f07fb88aafa92d0d6ace4113c8c06d21538b2efa252"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8b43f967c9360e63a871f7ae8bc0d5857fddd44086eb4657b0e4056e527038f9"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1673475204/coingecko:binancecoin",
-      "observedAt": 1789462175
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x933d19d7d822e84e34ca47ac733226367fbee0d9c0c89d88d431c4f99629d77a"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x70fb4c6a27445bb638618e801a792135638effa1d24b3ec37b0225736fae2567",
-        "0x56e4a49679d6d366d07d433a4c3a6051f0fa70ac3ffb33165f0dd2c2005ed32d",
-        "0xc9a2f0f2763e4516fad687c5b5b54eebf24e04780f63f1216a51d46fc4239042",
-        "0x1a9f677898acf27c79a242e70b4de39b723fea9a6d166e97d02c63452b5fb93d",
-        "0x4ea18e5daec48e652e5e6a698d9765d953f1b93e2d116b0ceca1806b9d5cc80f",
-        "0xd00d7552f71e7491d434accea21bf3f339572278b2e93389ed7af33d9ed71919",
-        "0xa0504cbe64e00b352cb669283d5c26546309a2c823ae13e6ca697ed47877d33e",
-        "0x440ebc05325b1b61b285fb2270d11f394e320264432119d9357a139f86f99045",
-        "0x8fe6b172a6bdbf38a96474c855f497a25b90cb436ba1472d9925aceee7cfb5e7",
-        "0xd9f58e294fbc9d41dead3cf04525d6fbedab3f830266dbe56003abd28f2eefa5"
-      ]
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1653925945/coingecko:binancecoin",
-      "observedAt": 1789464462
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-01/UFDao_exp.sol",
-    "seed:ufdao:2023-01-11:uf-dao-shop-incorrect-parameter-setting"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The Shop runtime is shared XDAO infrastructure serving every DAO on BSC; the earliest-exercise scan covers the UF DAO LP instance only, so exercises of the same code against other DAOs' offers, which carry their own configuration writes, are not enumerated here."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 89992.4436788162,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "21.452716690293480029",
+        "usd": 21.45271669029348
+      },
+      {
+        "symbol": "BNB",
+        "amount": "0.009525684428216540",
+        "usd": 2.99432185142139
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "89958.965929193266975646",
+        "usd": 89958.96592919326
+      },
+      {
+        "symbol": "BNB",
+        "amount": "0.032316017467209068",
+        "usd": 9.030711081211575
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-01/UFDao_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1613507804412940289",
+    "eip155:56:0x933d19d7d822e84e34ca47ac733226367fbee0d9c0c89d88d431c4f99629d77a",
+    "eip155:56:0x56e4a49679d6d366d07d433a4c3a6051f0fa70ac3ffb33165f0dd2c2005ed32d",
+    "eip155:56:0xc9a2f0f2763e4516fad687c5b5b54eebf24e04780f63f1216a51d46fc4239042",
+    "eip155:56:0x1a9f677898acf27c79a242e70b4de39b723fea9a6d166e97d02c63452b5fb93d",
+    "eip155:56:0x4ea18e5daec48e652e5e6a698d9765d953f1b93e2d116b0ceca1806b9d5cc80f",
+    "eip155:56:0xd00d7552f71e7491d434accea21bf3f339572278b2e93389ed7af33d9ed71919",
+    "eip155:56:0xa0504cbe64e00b352cb669283d5c26546309a2c823ae13e6ca697ed47877d33e",
+    "eip155:56:0x440ebc05325b1b61b285fb2270d11f394e320264432119d9357a139f86f99045",
+    "eip155:56:0x8fe6b172a6bdbf38a96474c855f497a25b90cb436ba1472d9925aceee7cfb5e7",
+    "eip155:56:0xd9f58e294fbc9d41dead3cf04525d6fbedab3f830266dbe56003abd28f2eefa5"
+  ],
+  "notes": [
+    "UF DAO governance executed Shop.initPublicOffer(true, USDC, 1e18) through Dao.execute, writing publicOffers[0x2101e0f648a2b5517fd2c5d9618582e9de7a651a] from (false, 0x0, 0) to (true, 0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d, 1000000000000000000). That write is what makes buyPublicOffer callable for this DAO and fixes the 1 LP per 1 USDC price both legs arbitraged; it was never repeated or revised.",
+    "Two campaign legs against the same offer, each measured as transaction-local depletion of the UF DAO treasury 0x2101e0f648a2b5517fd2c5d9618582e9de7a651a, with the exercising caller's own payments netted off. Leg one, 2022-05-30, is five buy-and-burn round trips by 0xa675d0d6eb15409a5e4101f18d796c6dd161c747 across ten transactions from block 18256132 to block 18257186: 31 USDC in, 52.452716690293480029 USDC out, net 21.452716690293480029 USDC, plus 0.009525684428216540 BNB of pro-rata native payout, which matches the DAO's native balance falling from 0.01 to 0.000474315571783460 over the same span. Leg two, 2023-01-11, is transaction 0x933d19d7d822e84e34ca47ac733226367fbee0d9c0c89d88d431c4f99629d77a: 1,111.622391174831097929 USDC in, 91,070.588320368098073575 out, net 89,958.965929193266975646 USDC, with the DAO's USDC balance falling from 90,000.668202254645779194 to 41.702273061378803548, plus 0.032316017467209068 BNB matching the native balance move from 0.032328555433316689 to 0.000012537966107621. Both callers funded their purchases themselves, so those inflows are attacker-supplied campaign input rather than victim loss; the 2023 attacker's 90,070.588320368098073575 USDC receipt, the seed inventory's headline, exceeds the victim depletion by exactly his 1,111.622391174831097929 USDC input. USDC is valued at par and BNB at a contemporaneous price for each leg, so the aggregate method is other; valuationTimestamp is the later leg, which is also realizedAt.",
+    "The Shop runtime is shared XDAO infrastructure serving every DAO on BSC; the earliest-exercise scan covers the UF DAO LP instance only, so exercises of the same code against other DAOs' offers, which carry their own configuration writes, are not enumerated here.",
+    "Age is measured from the public-offer configuration write, which postdates the Shop runtime deployment by 96,230 seconds; a deployment basis would give 17,033,212 seconds."
+  ]
 }

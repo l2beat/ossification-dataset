@@ -1,189 +1,45 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xe59fa48212c4ee716c03e648e04f0ca390f4a4fc921a890fded0e01afa4ba96d",
-  "protocol": {
-    "name": "RES Token",
-    "slug": "res-token"
-  },
+  "protocol": "RES Token",
   "name": "RES token fee settlement against manipulable pair state",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xe59fa48212c4ee716c03e648e04f0ca390f4a4fc921a890fded0e01afa4ba96d",
-      "blockNumber": 21948017,
-      "transactionIndex": 2,
-      "timestamp": 1665051350
-    },
-    "attackerAddresses": [
-      "0x986b2e2a1cf303536138d8ac762447500fd781c6",
-      "0xff333de02129af88aae101ab777d3f5d709fec6f",
-      "0x3f693effc53908d517f186a20431f756c90c2229"
-    ]
-  },
   "summary": "BEP20TokenA (RES) settles its transfer fees against AMM state the caller controls in the same transaction. _distB() pays the fee out of the contract's ALL treasury in an amount computed by _atoB()/_tokenACalcTokenB() from live getReserves() of the RES/USDT and USDT/ALL PancakeSwap pairs, and _isBuySwap()/_isSellSwap() arm that path from the pair's raw balanceOf rather than from any manipulation-resistant price, so donating USDT into the RES/USDT pair turns a negligible buy fee into an arbitrarily large ALL payout. The external thisAToB() has no caller restriction and sells the contract's accumulated RES balance into the same pair, then calls _burn(_swapV2Pair, burnNumber) for the full pre-swap amount before sync(); because that sell is itself fee-charged, the burn destroys more RES than the pair received, so the pair pays out USDT for tokens it does not keep.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 291391.54798034247,
-      "valuationTimestamp": 1665051350,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "BSC-USD"
-        },
-        "amount": "257246.702416323995089511",
-        "usdValue": 257246.702416324,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1665051350,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "BSC-USD"
-        },
-        "amount": "34144.845564018428936002",
-        "usdValue": 34144.845564018426,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1665051350,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Two-transaction campaign by the same sender and the same exploit contract: the anchor at 21948017:2 and 0xef19a4dfd69874d5efda3e38b5a19cae4e0b0bdc95769760bd85ede4d15609ac at 21948032:27. The components are the exact BSC-USD depletion of the two pools the defect drained, measured as balance differences across the campaign: the RES/USDT pair 0x05ba2c512788bd95cd6d61d3109c53a14b01c82a fell from 260,015.849847947963440692 to 2,769.147431623968351181 and the ALL/USDT pair 0x1b214e38c5e861c56e12a69b6baa0b45efe5c8eb from 41,761.128268609605264847 to 7,616.282704591176328845. The attacker's own flash-loaned USDT donations into the RES/USDT pair are attacker-supplied inputs and cancel out of these balance differences. The attacker withdrew 209,203.869337859626567655 and 81,468.554169573186212332 BSC-USD to the sender EOA, 290,672.423507432812779987 in total; the 719.124472909611245526 difference from gross depletion is flash-loan fees retained by the lenders, which do not reduce gross victim depletion. The RES contract's ALL (0x04c0f31c0f59496cf195d2d7f1da908152722de7) treasury was additionally depleted by 14,123.190011430917566372 ALL; 2,178.904310074536854027 of those tokens are the counterpart the ALL/USDT pair received for the USDT already counted, and the remainder cannot be valued because ALL's only market is that same drained pair, so the ALL leg is excluded rather than marked at a pre-attack spot price the attacker could not have realised."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xeccd8b08ac3b587b7175d40fb9c60a20990f8d21",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xeccd8b08ac3b587b7175d40fb9c60a20990f8d21",
-        "codeHash": "0xec70a7c099ca13caeb43e9d2b24619c64141b9ff81ae9a54031c416e23e64636"
-      },
-      "deployment": {
-        "timestamp": 1658322363,
-        "blockNumber": 19716684,
-        "transactionHash": "0x04c70aae4393d2b22c3ea1d97c663bb3bd2ebe593d61ea6385f432bc10c1d912",
-        "transactionIndex": 179,
-        "creatorAddress": "0xf53ff2f90ab93a429b5c6ac0e62825e50ccee195"
-      },
-      "ageReset": {
+      "address": "0xeccd8b08ac3b587b7175d40fb9c60a20990f8d21",
+      "reset": {
         "kind": "deployment",
-        "description": "The 24,510-byte Solidity 0.5.16 BEP20TokenA runtime was installed by top-level CREATE in this transaction and is byte-identical at block 19716684 and at block 21948016, the block before the exploit."
-      },
-      "codeAgeSeconds": 6728987,
-      "failureModeId": "failure:res-token-fee-settlement-from-manipulable-pair-state",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x04c70aae4393d2b22c3ea1d97c663bb3bd2ebe593d61ea6385f432bc10c1d912"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe59fa48212c4ee716c03e648e04f0ca390f4a4fc921a890fded0e01afa4ba96d"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-10/RES_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://quillaudits.medium.com/res-token-290k-flash-loan-exploit-quillaudits-9300657fff7b"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "seed-inventory note retained for provenance: onchain review: RES 0xecCD8B08Ac3B587B7175D40Fb9C60a20990F8D21 created 2022-07-20T13:06:03Z by 0xf53ff2f90ab93a429b5c6ac0e62825e50ccee195, unrelated to attack sender 0x986b2e2a1cf303536138d8ac762447500fd781c6; no EIP-1967 Upgraded events, age measured from deployment. DeFiHackLabs carries two PoCs (RES_exp and RES_exp2) for this same incident; one row is recorded. lossUsd uses the 290,671 USDT stated in the PoC header and the QuillAudits write-up."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T01:40:00Z",
-      "note": "Reviewed the anchor receipt and 3,438-frame call trace, the Etherscan-verified BEP20TokenA source, the deployment receipt, runtime bytecode at deployment and immediately before the exploit, the attacker EOA's full transaction list, the token's complete ALL-payout log history, and per-block balances of every account the money passed through. The anchor 0xe59fa482... is successful at 21948017:2 and calls RES 0xeccd8b08ac3b587b7175d40fb9c60a20990f8d21 directly in 34 frames with no DELEGATECALL, so the token itself is the defect-bearing runtime; the PancakeSwap pair 0x05ba2c512788bd95cd6d61d3109c53a14b01c82a runs stock Cake-LP code and is a victim, not the target. Root cause read from the verified source: _transfer routes buys through _isBuySwap/_distBuyFee and _distB, and _distB computes its ALL payout as _atoB(amountA), i.e. two chained _tokenACalcTokenB() calls that read getReserves() of the RES/USDT and USDT/ALL pairs at call time; thisAToB() is external with no modifier and _thisAToB() swaps _balances[address(this)] into the pair and then _burn(_swapV2Pair, burnNumber) before sync(). Both paths execute in the anchor: log 106 shows the pair's reserves inflated to 10,274,136.736514808378277308 USDT after six flash-loan-funded donations, log 108/112 the token selling 118,713.29810460 RES into the pair for 8,299,153.098464700338369656 USDT, log 116 the same 118,713.29810460 RES burned straight out of the pair, log 117 the sync, and logs 126/127 the ALL treasury paying 833.166669449666336800 to the attacker helper and 856.797163716336401880 to the LP address. Anchor minimality: scanning every ALL Transfer whose sender is the RES contract from genesis shows the first transaction moving more than 10 ALL out of the treasury is this anchor; the only comparable follow-up is the same attacker's second run at 21948032:27. Campaign loss reconstructed from balances at blocks 21948016 and 21948032: the RES/USDT pair lost 257,246.702416323995089511 BSC-USD and the ALL/USDT pair 34,144.845564018428936002 BSC-USD, 291,391.547980342424025513 in total, against 290,672.423507432812779987 the attacker withdrew to the EOA in transactions 0x333e79a8... and 0x1637766a...; the 719.12 gap is flash-loan fees. Code history: created by top-level CREATE in 0x04c70aae... at 19716684:179 by 0xf53ff2f90ab93a429b5c6ac0e62825e50ccee195, an address unrelated to the attacker; the runtime hashes to 0xec70a7c099ca13caeb43e9d2b24619c64141b9ff81ae9a54031c416e23e64636 at both block 19716684 and block 21948016, the contract is not a proxy and has no upgrade mechanism, so the code was 6,728,987 s (77.88 days) old."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0xef19a4dfd69874d5efda3e38b5a19cae4e0b0bdc95769760bd85ede4d15609ac",
-        "0x333e79a87ffef35df7a3bc08bdc7ab0501cc89d90e5912e6de38f6199f7bd8e1",
-        "0x1637766ab4c19275471ac8550791a575626de85770ac26c641e05c912725fedd"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x04c70aae4393d2b22c3ea1d97c663bb3bd2ebe593d61ea6385f432bc10c1d912"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The RES contract's ALL-token treasury depletion of 14,123.190011430917566372 ALL is excluded from the USD figure because the ALL token's only market is the pair the campaign drained, so no defensible price exists; the recorded loss is therefore a lower bound on total victim depletion."
-    ],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 291391.54798034247,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "BSC-USD",
+        "amount": "257246.702416323995089511",
+        "usd": 257246.702416324
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "BSC-USD",
+        "amount": "34144.845564018428936002",
+        "usd": 34144.845564018426
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/RES_exp.sol",
+    "https://quillaudits.medium.com/res-token-290k-flash-loan-exploit-quillaudits-9300657fff7b",
+    "eip155:56:0xef19a4dfd69874d5efda3e38b5a19cae4e0b0bdc95769760bd85ede4d15609ac",
+    "eip155:56:0x333e79a87ffef35df7a3bc08bdc7ab0501cc89d90e5912e6de38f6199f7bd8e1",
+    "eip155:56:0x1637766ab4c19275471ac8550791a575626de85770ac26c641e05c912725fedd"
+  ],
   "notes": [
+    "The 24,510-byte Solidity 0.5.16 BEP20TokenA runtime was installed by top-level CREATE in this transaction and is byte-identical at block 19716684 and at block 21948016, the block before the exploit.",
+    "Two-transaction campaign by the same sender and the same exploit contract: the anchor at 21948017:2 and 0xef19a4dfd69874d5efda3e38b5a19cae4e0b0bdc95769760bd85ede4d15609ac at 21948032:27. The components are the exact BSC-USD depletion of the two pools the defect drained, measured as balance differences across the campaign: the RES/USDT pair 0x05ba2c512788bd95cd6d61d3109c53a14b01c82a fell from 260,015.849847947963440692 to 2,769.147431623968351181 and the ALL/USDT pair 0x1b214e38c5e861c56e12a69b6baa0b45efe5c8eb from 41,761.128268609605264847 to 7,616.282704591176328845. The attacker's own flash-loaned USDT donations into the RES/USDT pair are attacker-supplied inputs and cancel out of these balance differences. The attacker withdrew 209,203.869337859626567655 and 81,468.554169573186212332 BSC-USD to the sender EOA, 290,672.423507432812779987 in total; the 719.124472909611245526 difference from gross depletion is flash-loan fees retained by the lenders, which do not reduce gross victim depletion. The RES contract's ALL (0x04c0f31c0f59496cf195d2d7f1da908152722de7) treasury was additionally depleted by 14,123.190011430917566372 ALL; 2,178.904310074536854027 of those tokens are the counterpart the ALL/USDT pair received for the USDT already counted, and the remainder cannot be valued because ALL's only market is that same drained pair, so the ALL leg is excluded rather than marked at a pre-attack spot price the attacker could not have realised.",
+    "The RES contract's ALL-token treasury depletion of 14,123.190011430917566372 ALL is excluded from the USD figure because the ALL token's only market is the pair the campaign drained, so no defensible price exists; the recorded loss is therefore a lower bound on total victim depletion.",
     "The campaign exercises two related defects in one code artifact - spot-reserve pricing of the ALL fee payout in _distB and the sell-then-burn in _thisAToB. They share the same runtime and the same code age, so they are recorded as a single composite failure mode rather than as two targets that would produce two curve observations from one loss."
   ]
 }

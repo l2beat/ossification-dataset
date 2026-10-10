@@ -1,193 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x619c44af9fedb8f5feea2dcae1da94b6d7e5e0e7f4f4a99352b6c4f5e43a4661",
-  "protocol": {
-    "name": "Sumer Money",
-    "slug": "sumermoney"
-  },
+  "protocol": "Sumer Money",
   "name": "Sumer Money sdrETH repayBorrowBehalf refund reentrancy",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x619c44af9fedb8f5feea2dcae1da94b6d7e5e0e7f4f4a99352b6c4f5e43a4661",
-      "blockNumber": 13076769,
-      "transactionIndex": 59,
-      "timestamp": 1712942885
-    },
-    "attackerAddresses": [
-      "0xbb344544ad328b5492397e967fe81737855e7e77",
-      "0x13d27a2d66ea33a4bc581d5fefb0b2a8defe9fe7",
-      "0xff32d7182f60a107f662af3486929cb63b1d4c9c"
-    ]
-  },
   "summary": "Sumer Money's CEther market sdrETH implements repayBorrowBehalf(address) by refunding any excess msg.value with a gas-forwarding msg.sender.call before it calls the nonReentrant repayBorrowBehalfInternal. During that callback the repaid ETH is already part of getCashPrior() while totalBorrows still carries the debt it settles, so exchangeRateStoredInternal() = (totalCash + totalBorrows - totalReserves) / totalSupply double-counts the same ETH. The attacker drained the market's cash with borrow(), repaid it with one wei of excess, and inside the refund callback the sdrETH exchange rate stood at 2.000000282255694646 instead of the 1.000000141462699840 the market carried a moment earlier: they redeemed their full 150 ETH deposit for half their sdrETH and, with the other half still valued at the doubled rate as Comptroller collateral, borrowed 310,000 USDC from sdrUSDC and 10.877 cbETH from sdrcbETH that were never repaid.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 349248.70267784095,
-      "valuationTimestamp": 1712942885,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-          "symbol": "USDC"
-        },
-        "amount": "309999.999999",
-        "usdValue": 309999.999999,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1712942885,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",
-          "symbol": "cbETH"
-        },
-        "amount": "10.877097943908610977",
-        "usdValue": 39248.70267884096,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1712942788,
-          "unitPriceUsd": 3608.38,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The two components are the exact net ERC-20 depletion of the Sumer markets in the single exploit transaction: sdrUSDC 0x142017b52c99d3dfe55e49d79df0baf7f4478c0c lost 309,999.999999 USDC and sdrcbETH 0x6345af6da3ebd9df468e37b473128fd3079c4a4b lost 10.877097943908610977 cbETH, both borrowed by 0x13d27a2d66ea33a4bc581d5fefb0b2a8defe9fe7 inside the reentrant frame and both still outstanding at block 13076770. The 150 WETH plus 645,000 USDC Balancer flash loan and the 645,000 USDC of sdrUSDC collateral were attacker-supplied and fully returned, so they are not loss; sdrETH's own ETH balance nets to zero across the transaction. The attacker sold the stolen cbETH twelve minutes later for 11.560845752555412057 WETH, which at the DefiLlama ETH price of USD 3,388.05 is USD 39,168 against the USD 39,249 marked here, so the sale did not move the cbETH market and the incident-price mark is realisable. Not counted: 74.999989365185081199 sdrETH left unredeemed at 0x13d27a2d and still held there, an unbacked residual claim on the sdrETH market rather than an extraction."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x7b5969bb51fa3b002579d7ee41a454ac691716dc",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x23811c17bac40500decd5fb92d4feb972ae1e607",
-        "codeHash": "0x4b8a9f06d0d9c4f5cf43ebb5b4069775d1b2c67a670fd62aaf7d127238af8821"
-      },
-      "deployment": {
-        "timestamp": 1704751391,
-        "blockNumber": 8981022,
-        "transactionHash": "0x6277d9d9b658f2c54a4edca4d39ea423dca2614f83f37bc9c768b6be27acdc77",
-        "transactionIndex": 5,
-        "creatorAddress": "0x5c85a7ae2b6d29c38cdf360553f8acbc4e684c31"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1705530007,
-        "blockNumber": 9370330,
-        "transactionHash": "0x0e582d28316dd7f456868657ca75071d08324dc38f255f2b127db925e2effa7a",
-        "transactionIndex": 3,
-        "logIndex": 4,
-        "mechanism": {
-          "type": "event",
-          "address": "0x7b5969bb51fa3b002579d7ee41a454ac691716dc",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The sdrETH proxy emitted exactly two EIP-1967 Upgraded events before the exploit: block 8981022 selecting 0x574027c70abd7b25953b2cd060ed7827fd2c7b03 at creation, and this one at block 9370330 log index 4 selecting the defective CEther implementation 0x23811c17bac40500decd5fb92d4feb972ae1e607. The proxy's implementation slot still held that artifact at block 13076768."
-      },
-      "codeAgeSeconds": 7412878,
-      "failureModeId": "failure:sumer-cether-repay-borrow-behalf-refund-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+      "address": "0x7b5969bb51fa3b002579d7ee41a454ac691716dc",
+      "code": "0x23811c17bac40500decd5fb92d4feb972ae1e607",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x0e582d28316dd7f456868657ca75071d08324dc38f255f2b127db925e2effa7a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x619c44af9fedb8f5feea2dcae1da94b6d7e5e0e7f4f4a99352b6c4f5e43a4661"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-04/SumerMoney_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x6277d9d9b658f2c54a4edca4d39ea423dca2614f83f37bc9c768b6be27acdc77"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x03eb10b1951f0d7c6516ec9fa548ab0a9dfdb1c31aaeabe86c7cb81126b92cc6"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x0e582d28316dd7f456868657ca75071d08324dc38f255f2b127db925e2effa7a"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1712942885/base:0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",
-      "observedAt": 1787702581
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:10:00Z",
-      "note": "Anchor: attacker EOA 0xbb344544ad328b5492397e967fe81737855e7e77 sent nonce 0 (deployment of exploit contract 0x13d27a2d66ea33a4bc581d5fefb0b2a8defe9fe7), nonce 1 (a 1e10-wei funding call whose callTracer output is a single frame with no Sumer contact) and nonce 2, the anchor, so the anchor is the earliest successful Sumer-executing transaction; its nonces 3 onward are Universal Router sales of the proceeds and transfers to 0x2f59e9086ec8130e21bd052065a9e6b2497bb102 and 0x80c67432656d59144ceff962e8faf8926599bcf8, none of which touch Sumer. Root cause read from the Etherscan-verified CEther source of implementation 0x23811c17bac40500decd5fb92d4feb972ae1e607: repayBorrowBehalf(address) refunds msg.value minus the borrow balance through msg.sender.call{value: ...}('') with all gas forwarded, outside the nonReentrant modifier that only guards repayBorrowBehalfInternal. The receipt confirms the arithmetic exactly: sdrETH cash before the campaign was 0.358797170664290045 ETH (AccrueInterest log 3), the helper borrowed 150.358797170664290045 ETH (Borrow log 31), repaid 150.358797170664290046 so the refund was 1 wei, and inside that callback Redeem log 43 returned 150.000000000000000000 ETH for 74.999989415412944554 sdrETH, an exchange rate of 2.000000282255694646 against the 1.000000141462699840 implied by the mint at log 6 moments earlier. Targeting: the delegatecall in the anchor trace runs 0x23811c17... under proxy 0x7b5969bb51fa3b002579d7ee41a454ac691716dc, whose EIP-1967 slot 0x360894a1...382bbc holds 0x23811c17... at block 13076768; the implementation runtime hashes to 0x4b8a9f06d0d9c4f5cf43ebb5b4069775d1b2c67a670fd62aaf7d127238af8821 both at its creation block 9370325 and at block 13076768. eth_getLogs for topic0 0xbc7cd75a...c2d3b on the proxy from genesis to the exploit block returns exactly two Upgraded events, at blocks 8981022 and 9370330; the later one is lastCodeChange, giving 1712942885 - 1705530007 = 7,412,878 s. Loss reconstructed from the receipt's Transfer logs and a diffMode prestateTracer run: sdrUSDC -309,999.999999 USDC and sdrcbETH -10.877097943908610977 cbETH to the attacker EOA, sdrETH ETH delta zero, flash loan repaid in full. Both borrows still read on-chain at block 13076770 as 310000000000 and 10877097943908610977 against 0x13d27a2d. USD 349,248.70 at DefiLlama cbETH 3,608.38 plus USDC at par."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 349248.70267784095,
+    "assets": [
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "309999.999999",
+        "usd": 309999.999999
+      },
+      {
+        "token": "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",
+        "symbol": "cbETH",
+        "amount": "10.877097943908610977",
+        "usd": 39248.70267884096
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-04/SumerMoney_exp.sol",
+    "eip155:8453:0x03eb10b1951f0d7c6516ec9fa548ab0a9dfdb1c31aaeabe86c7cb81126b92cc6"
+  ],
+  "notes": [
+    "The sdrETH proxy emitted exactly two EIP-1967 Upgraded events before the exploit: block 8981022 selecting 0x574027c70abd7b25953b2cd060ed7827fd2c7b03 at creation, and this one at block 9370330 log index 4 selecting the defective CEther implementation 0x23811c17bac40500decd5fb92d4feb972ae1e607. The proxy's implementation slot still held that artifact at block 13076768.",
+    "The two components are the exact net ERC-20 depletion of the Sumer markets in the single exploit transaction: sdrUSDC 0x142017b52c99d3dfe55e49d79df0baf7f4478c0c lost 309,999.999999 USDC and sdrcbETH 0x6345af6da3ebd9df468e37b473128fd3079c4a4b lost 10.877097943908610977 cbETH, both borrowed by 0x13d27a2d66ea33a4bc581d5fefb0b2a8defe9fe7 inside the reentrant frame and both still outstanding at block 13076770. The 150 WETH plus 645,000 USDC Balancer flash loan and the 645,000 USDC of sdrUSDC collateral were attacker-supplied and fully returned, so they are not loss; sdrETH's own ETH balance nets to zero across the transaction. The attacker sold the stolen cbETH twelve minutes later for 11.560845752555412057 WETH, which at the DefiLlama ETH price of USD 3,388.05 is USD 39,168 against the USD 39,249 marked here, so the sale did not move the cbETH market and the incident-price mark is realisable. Not counted: 74.999989365185081199 sdrETH left unredeemed at 0x13d27a2d and still held there, an unbacked residual claim on the sdrETH market rather than an extraction."
+  ]
 }

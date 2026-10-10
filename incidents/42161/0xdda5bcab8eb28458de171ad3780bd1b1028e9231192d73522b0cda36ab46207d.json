@@ -1,172 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xdda5bcab8eb28458de171ad3780bd1b1028e9231192d73522b0cda36ab46207d",
-  "protocol": {
-    "name": "ShapeShift FOX Colony",
-    "slug": "shapeshift-fox-colony"
-  },
+  "protocol": "ShapeShift FOX Colony",
   "name": "FOX Colony EtherRouter meta-transaction resolver takeover",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xdda5bcab8eb28458de171ad3780bd1b1028e9231192d73522b0cda36ab46207d",
-      "blockNumber": 462441493,
-      "transactionIndex": 1,
-      "timestamp": 1778687150
-    },
-    "attackerAddresses": [
-      "0xeed236afb6967f74099a0a6bf078bc6b865fbf28"
-    ]
-  },
   "summary": "The FOX Colony EtherRouter exposed executeMetaTransaction, which self-called with address(this).call and therefore passed DSAuth's src == address(this) trust check, so the attacker meta-signed setResolver to point the router at a malicious resolver deployed two blocks earlier, then called drain() through the hijacked resolver to sweep the full USDC balance and the FOX balance, swapping the FOX for WETH in the same transaction.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 137141.17563,
-      "valuationTimestamp": 1778687150,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-          "symbol": "USDC"
-        },
-        "amount": "132704.591501",
-        "usdValue": 132704.591501,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1778687150,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "1.94950646964378266",
-        "usdValue": 4436.584129,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1778687150,
-          "unitPriceUsd": 2275.747322631228,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact receipt accounting: one Transfer of 132,704.591501 USDC from the router to the attacker EOA, plus 841086.343608217839604694 FOX (0xf929de51d91c77e42f5090069e0ad7a09e513c73) from the router into the attack contract and on into the pair, swapped in-tx for 1.949506469643782660 WETH paid to the attacker EOA. The WETH leg is priced at the 2026-05-13 CoinGecko daily close. The Blockaid-reported second $50k leg has no identified transaction and is not included. No attacker-supplied campaign inputs besides gas."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5c59d0ec51729e40c413903be6a4612f4e2452da",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5c59d0ec51729e40c413903be6a4612f4e2452da",
-        "codeHash": "0x32be4612ee13d9473fecf9060c092d3bd8feda73610e09a7e5df296092e22f2d"
-      },
-      "deployment": {
-        "timestamp": 1713887545,
-        "blockNumber": 204044764,
-        "transactionHash": "0xf6a8ab993480bc264255238c2e2187926259b0613a8f85dcaffee27ea2cdb0f8",
-        "transactionIndex": 2,
-        "creatorAddress": "0x47734ca463c5e920eaeb12e52fda4f631c1eedfe"
-      },
-      "ageReset": {
+      "address": "0x5c59d0ec51729e40c413903be6a4612f4e2452da",
+      "reset": {
         "kind": "deployment",
-        "description": "Directly deployed EtherRouter runtime combining executeMetaTransaction self-calls with DSAuth authorization since creation. No code-mutation path touches the router runtime; the resolver pointer lives in separate storage, and the runtime hashes identically at deployment and immediately before the incident."
-      },
-      "codeAgeSeconds": 64799605,
-      "failureModeId": "failure:fox-colony-metatransaction-selfcall-resolver-takeover",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0xf6a8ab993480bc264255238c2e2187926259b0613a8f85dcaffee27ea2cdb0f8"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xdda5bcab8eb28458de171ad3780bd1b1028e9231192d73522b0cda36ab46207d"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xf6a8ab993480bc264255238c2e2187926259b0613a8f85dcaffee27ea2cdb0f8"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://slowmist.medium.com/analysis-of-the-exploit-trust-chain-flaw-in-shapeshift-fox-colony-authorization-mechanism-b35a61865a80"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://www.cryptotimes.io/2026/05/15/how-hackers-drained-132k-from-shapeshift-fox-colony-in-one-transaction/"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://api.coingecko.com/api/v3/coins/ethereum/history?date=13-05-2026",
-      "observedAt": 1788457351
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Muse Spark",
-      "reviewedAt": "2026-09-03T17:42:31Z",
-      "note": "Anchor: 0xdda5bcab8eb28458de171ad3780bd1b1028e9231192d73522b0cda36ab46207d (block 462441493:1, 2026-05-13T15:45:50Z) is the single exploit transaction, sent by EOA 0xeed236afb6967f74099a0a6bf078bc6b865fbf28, creating attack contract 0x835a701fd76b96a76ee84de037d41f059ee29f5c whose constructor runs the whole attack. Two setup transactions from the same EOA in the two preceding blocks match the SlowMist reconstruction exactly: 0x6e4085f674833a5951623f5ac89103b819afa1a7b2f4174586e0fee9c69109ca deploys the malicious resolver 0x4e321af09012e15a67756522187c05b108b7ee0a and 0xa89251c0e26bda1d0c9bba63c0899b651d0998571df317c660822b04832aecef deploys the drain implementation 0x0b971e0a8ecc7d5b2465c903cf75aeaedbfc39e2. Receipt logs show the router 0x5c59d0ec51729e40c413903be6a4612f4e2452da emitting its resolver event, then 132,704.591501 USDC router-to-attacker and 841086.343608217839604694 FOX router-to-attack-contract-to-pair with 1.949506469643782660 WETH pair-to-attacker. Deployer 0xf4ab92a14c7cbc232e8293c59dffbd98fbdf9b3e originated the deployment through CREATE3 factory 0x47734ca463c5e920eaeb12e52fda4f631c1eedfe (the immediate creation-trace creator) and is unrelated to the attacker; no compromised-key path is evidenced, access came solely through the meta-transaction self-call satisfying DSAuth. Age: the router runtime was created in 0xf6a8ab993480bc264255238c2e2187926259b0613a8f85dcaffee27ea2cdb0f8 at block 204044764:2, and eth_getCode at block 204044765 hashes identically to the pre-exploit runtime (0x32be4612ee13d9473fecf9060c092d3bd8feda73610e09a7e5df296092e22f2d), giving 1778687150 minus 1713887545 equals 64799605 seconds."
-    }
-  ],
-  "discovery": [
-    "web:2026-05-13:shapeshift-fox-colony"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 137141.17563,
+    "assets": [
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "132704.591501",
+        "usd": 132704.591501
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "1.94950646964378266",
+        "usd": 4436.584129
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://slowmist.medium.com/analysis-of-the-exploit-trust-chain-flaw-in-shapeshift-fox-colony-authorization-mechanism-b35a61865a80",
+    "https://www.cryptotimes.io/2026/05/15/how-hackers-drained-132k-from-shapeshift-fox-colony-in-one-transaction/"
+  ],
+  "notes": [
+    "Directly deployed EtherRouter runtime combining executeMetaTransaction self-calls with DSAuth authorization since creation. No code-mutation path touches the router runtime; the resolver pointer lives in separate storage, and the runtime hashes identically at deployment and immediately before the incident.",
+    "Exact receipt accounting: one Transfer of 132,704.591501 USDC from the router to the attacker EOA, plus 841086.343608217839604694 FOX (0xf929de51d91c77e42f5090069e0ad7a09e513c73) from the router into the attack contract and on into the pair, swapped in-tx for 1.949506469643782660 WETH paid to the attacker EOA. The WETH leg is priced at the 2026-05-13 CoinGecko daily close. The Blockaid-reported second $50k leg has no identified transaction and is not included. No attacker-supplied campaign inputs besides gas."
+  ]
 }

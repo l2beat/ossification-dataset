@@ -1,181 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x26081ccd74296e45ccfb6031cea37a162748e0b81a110f9e657b155ee23f79da",
-  "protocol": {
-    "name": "LEDS",
-    "slug": "leds"
-  },
+  "protocol": "LEDS",
   "name": "LEDS chained unguarded deflationary burns collapse the pair reserve",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x26081ccd74296e45ccfb6031cea37a162748e0b81a110f9e657b155ee23f79da",
-      "blockNumber": 85402544,
-      "transactionIndex": 13,
-      "timestamp": 1772977289
-    },
-    "attackerAddresses": [
-      "0x1f9b4d11cf1ec19972fdf73f94af22e928f91000",
-      "0xe941c0dd2196aa6806735a1d1668bdd15a896602"
-    ]
-  },
   "summary": "The LEDS token implementation exposes several independent burn mechanisms that each remove LEDS from the LEDS/WBNB pair and sync: triggerDailyBurnAndMint, a deferred sell-burn accumulated in stor_18, a to==router burn branch, and the public flush 0x17a06174 which burns the whole accumulated stor_18 from the pair with no access control. Inside flash loans the attacker deposited for LP rewards, chained these burns to reduce the pair's LEDS reserve to 2 wei while its WBNB reserve stayed, then reverse-swapped to drain the WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 64219.07063692128,
-      "valuationTimestamp": 1772977289,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "104.561194082248581109",
-        "usdValue": 64219.07063692128,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1772977289,
-          "unitPriceUsd": 614.1769056922409,
-          "sourceIds": [
-            "source-6",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Net WBNB the attacker's contract 0xe941c0dd forwarded to the attacker EOA 0x1f9b4d11 (104.56119408224858 WBNB), which equals its WBNB balance gain in the transaction; the Moolah/Venus/Aave/PancakeV4 flash-loan legs are repaid in full. The LEDS/WBNB pair 0xd109a84a1afec068e70cdb11a75e14a856a96f3f held 205.529 WBNB before and 1.926 after; its full 203.603 WBNB decrease is not used because the attacker also added and removed liquidity (LP supply rose 20,376 to the attacker) and the token's deflation forwards part of the reserve to project wallets, so the attacker's realised WBNB is the clean victim loss and matches the reported ~$64K. Valued at the DefiLlama WBNB price.",
-    "realizedAt": 1772977289
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x491a70122412faebb97ae0cd75c0c2869ae65179",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xfb625061902643b0da1d2cb8461cfb3db3b7a48f",
-        "codeHash": "0x8f981b10e5cfa0fcfc8091e49ca23ff73899fa54a8abadf10d809c39b9115988"
-      },
-      "deployment": {
-        "timestamp": 1772624217,
-        "blockNumber": 84618073,
-        "transactionHash": "0x85de42242e50c6c6b6958f78e7d8dbb2a8077010a53ab9e42253fe29082c948a",
-        "transactionIndex": 27,
-        "creatorAddress": "0xeadd55cf2ecaa09f2667d5a53dd1e825f05777a0"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1772691207,
-        "blockNumber": 84766909,
-        "transactionHash": "0xb2c8787de57089220b9cd8a6126d0e212217dc1bef39d5ba6ebf6982b1a5a1e9",
-        "transactionIndex": 10,
-        "logIndex": 69,
-        "mechanism": {
-          "type": "event",
-          "address": "0x491a70122412faebb97ae0cd75c0c2869ae65179",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Fourth and last UpgradeableBeacon/ERC1967 upgrade before the exploit: ProxyAdmin 0x1c429... upgradeToAndCall (0x4f1ef286) by 0xff486124 switched the LEDS proxy to implementation 0xfb625061, which carries the chained burn mechanisms and the public flush. Earlier implementations were 0xe66f51a6 (creation, block 84618073), 0xc98e2572 (84620197) and 0x5a54cb75 (84766642)."
-      },
-      "codeAgeSeconds": 286082,
-      "failureModeId": "failure:leds-chained-unguarded-pair-burns",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-5",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x491a70122412faebb97ae0cd75c0c2869ae65179",
+      "code": "0xfb625061902643b0da1d2cb8461cfb3db3b7a48f",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xb2c8787de57089220b9cd8a6126d0e212217dc1bef39d5ba6ebf6982b1a5a1e9"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x26081ccd74296e45ccfb6031cea37a162748e0b81a110f9e657b155ee23f79da"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb2c8787de57089220b9cd8a6126d0e212217dc1bef39d5ba6ebf6982b1a5a1e9"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T00:17:42Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. LEDS is an ERC1967 proxy 0x491a70122412faebb97ae0cd75c0c2869ae65179; the exploited implementation 0xfb625061 is unverified (Etherscan V2 getsourcecode empty), so behaviour is read from the disassembly (selectors include 0x1847cc20 triggerDailyBurnAndMint, 0xde1b1942 claimLPReward, 0x21f7aacb pendingPoolBurn, 0xb6b55f25 deposit, and 0x17a06174 which, simulated via debug_traceCall from an arbitrary sender with slot 24 overridden, executes a burn Transfer from the pair to 0xdead and pair.sync() with no auth check) and confirmed against the BlockSec analysis (source-4). debug_traceTransaction(callTracer) of source-1 (block 85402544, index 13; EOA 0x1f9b4d11 -> contract 0xe941c0dd): WBNB flash loans, repeated deposit()+triggerDailyBurnAndMint(), claimLPReward via distributor 0x0ce444e7, a router-receiver buy that burns to 0xdead, then 0x17a06174 flushing the accumulated stor_18 (receipt sync log 2007 leaves the pair's LEDS reserve at 2 wei) and reverse swaps draining WBNB. First exercise: the pair's LEDS reserve is collapsed only in source-1; eth_getLogs of LEDS Transfer(to=0xdead) since the 0xfb625061 upgrade (block 84766909) returns 7 burns in 5 transactions - the 4 outside source-1 (blocks 84775604..84993891) are the owner 0x039a55758f's scheduled triggerDailyBurnAndMint daily deflation (~22-24M LEDS each, no reserve collapse or WBNB drain), so source-1 is the first exploit of the chained-burn path. Age: EIP-1967 Upgraded logs on the proxy are four before the exploit (blocks 84618073, 84620197, 84766642 and source-2 at 84766909 index 10 log 69, topic1 0xfb625061); the implementation slot reads 0x5a54cb75 at 84766908 and 0xfb625061 at 84766909 and 85402543. Implementation 0xfb625061 is a top-level creation (block 84766896, index 190, by 0xeadd55cf); eth_getCode 0x at 84766895, keccak256 0x8f981b10e5cfa0fcfc8091e49ca23ff73899fa54a8abadf10d809c39b9115988 at 84766896 and 85402543. The proxy runtime keccak256 is 0x0959a24babb02d4d6c6ef27aaec9c34e824a2c55d24b13a8b3dae8401138e1c4 at block 85402543; it was created at block 84618073 index 27 by 0xeadd55cf (source-2 of deployment). Admin/config review: nonce-bounded enumeration of the operator 0x039a55758f (blocks 84766909..85402543, 194 calls) and prestateTracer diffs plus debug_traceCall replays overriding every changed LEDS slot to its pre-exploit value leave the 104.56 WBNB payout unchanged, so no configuration value is causal and the last implementation activation supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-2-mar-8-2026"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x868e52d4850598f78d10dc863a32492a1c9dca1963a9b65e629faf0fcc6fef00"
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x85de42242e50c6c6b6958f78e7d8dbb2a8077010a53ab9e42253fe29082c948a"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T00:17:42Z",
-      "note": "Reviewed loss. eth_call WBNB(0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c).balanceOf: pair 0xd109a84a 205529217748776328731 at block 85402543 and 1926307758514954158 at 85402544; attacker EOA 0x1f9b4d11 0 and 104561194082248581109 (its full gain). Receipt: WBNB flows from the attacker contract 0xe941c0dd to the EOA total 104561194082248581109 wei (log 1 of the WBNB flow table), and the flash loans (Moolah 357962 WBNB round-trip, etc.) net to zero. Loss counted 104.561194082248581109 WBNB at USD 614.1769056922409 (source-7)."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1772977289/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790635497
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 64219.07063692128,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "104.561194082248581109",
+        "usd": 64219.07063692128
+      }
     ]
   },
-  "discovery": [
-    "web:2026-03-08:leds"
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-2-mar-8-2026",
+    "eip155:56:0x868e52d4850598f78d10dc863a32492a1c9dca1963a9b65e629faf0fcc6fef00"
+  ],
+  "notes": [
+    "Fourth and last UpgradeableBeacon/ERC1967 upgrade before the exploit: ProxyAdmin 0x1c429... upgradeToAndCall (0x4f1ef286) by 0xff486124 switched the LEDS proxy to implementation 0xfb625061, which carries the chained burn mechanisms and the public flush. Earlier implementations were 0xe66f51a6 (creation, block 84618073), 0xc98e2572 (84620197) and 0x5a54cb75 (84766642).",
+    "Net WBNB the attacker's contract 0xe941c0dd forwarded to the attacker EOA 0x1f9b4d11 (104.56119408224858 WBNB), which equals its WBNB balance gain in the transaction; the Moolah/Venus/Aave/PancakeV4 flash-loan legs are repaid in full. The LEDS/WBNB pair 0xd109a84a1afec068e70cdb11a75e14a856a96f3f held 205.529 WBNB before and 1.926 after; its full 203.603 WBNB decrease is not used because the attacker also added and removed liquidity (LP supply rose 20,376 to the attacker) and the token's deflation forwards part of the reserve to project wallets, so the attacker's realised WBNB is the clean victim loss and matches the reported ~$64K. Valued at the DefiLlama WBNB price."
   ]
 }

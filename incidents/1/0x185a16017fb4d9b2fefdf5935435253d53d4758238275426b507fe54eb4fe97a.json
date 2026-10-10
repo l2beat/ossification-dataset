@@ -1,165 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a",
-  "protocol": {
-    "name": "EquilibriaEPendle",
-    "slug": "equilibriaependle"
-  },
+  "protocol": "EquilibriaEPendle",
   "name": "Equilibria transferable-share reward replay",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a",
-      "blockNumber": 23203452,
-      "transactionIndex": 0,
-      "timestamp": 1755948059
-    },
-    "attackerAddresses": [
-      "0x4dccc719f277ebeb8f7fdb68cd4b105e5bc325db",
-      "0x326dc2ff9045ae79ca3e395d584d3b56af1f310e",
-      "0xc9a5643ed8e4cd68d16fe779d378c0e8e7225a54",
-      "0xd2b35201d373dad3366887c27613228535d48274"
-    ]
-  },
   "summary": "VaultEPendle did not update reward debt on share transfers and public getReward(account) let fresh receivers re-claim the same native rewards repeatedly.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 64238.842466590555,
-      "valuationTimestamp": 1755948060,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-5",
-        "source-6",
-        "source-3"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "symbol": "ETH",
-          "tokenAddress": null
-        },
-        "amount": "13.599119865909616611",
-        "usdValue": 64238.842466590555,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1755948060,
-          "unitPriceUsd": 4723.75,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-5",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "realizedAt": 1755956687,
-    "notes": "Five successful reward-replay transactions plus one funding-only attempt form one episode. CALL-value outflows minus all campaign inflows, including recycled payouts and the standalone 0.664440216358314284 ETH topup, equal 13.599119865909616611 ETH. This matches vault balance depletion from 13.603353927190515249 to 0.004234061280898638 ETH over blocks 23203451\u201323204165. Net loss is used because pooled attacker inputs cannot be assigned individually to the residual balance. Gas, builder payments and later recoveries are not deductions. All ETH is valued at the first-exploit historical price; the campaign lasts under three hours."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xd30d6fd662c0d92b49f3c3e478e125ba1d968059",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x615b0b54e585ab83ba1c94a734cd4499dec1c956",
-        "codeHash": "0xbc38d07577af13a82cebd4d14004f2854970322a6831f9ec5a82b681a269693d"
-      },
-      "deployment": {
-        "timestamp": 1697179271,
-        "blockNumber": 18339748,
-        "transactionHash": "0x5ddfad83147c8ac1c291a28b722811168368bc21a4cc7439dc9981db045b5306",
-        "transactionIndex": 138,
-        "creatorAddress": "0xc493bd1d8d794357e79da84613b67533afc4d337"
-      },
-      "ageReset": {
-        "kind": "deployment"
-      },
-      "codeAgeSeconds": 58768788,
-      "failureModeId": "failure:equilibria-vault-transfer-reward-debt",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0xd30d6fd662c0d92b49f3c3e478e125ba1d968059",
+      "code": "0x615b0b54e585ab83ba1c94a734cd4499dec1c956",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x5ddfad83147c8ac1c291a28b722811168368bc21a4cc7439dc9981db045b5306"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-08/EquilibriaEPendle_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-11T11:53:44Z",
-      "note": "Reviewed anchor receipt and call trace, all five reward-replay traces, funding-only trace, victim internal history from deployment through the campaign and later payouts, verified VaultEPendle and transparent-proxy source at https://etherscan.io/address/0x615b0b54e585ab83ba1c94a734cd4499dec1c956#code and https://etherscan.io/address/0xd30d6fd662c0d92b49f3c3e478e125ba1d968059#code. Inherited ERC20 transfer hooks are empty; getReward(account) computes historical rewards from current shares and recipient reward debt. Moving the same shares through fresh receivers repeats claims. Deposits and reward funding affect exposure, not this invariant. The first trace transfers shares between receivers and pays 13.288906724554726420 ETH; attacker history and pre-anchor victim native-transfer history reveal no earlier reward replay. The transparent proxy emits only its initial Upgraded event through block 23203451; deployment/pre-exploit EIP-1967 slots select the recorded implementation and both runtime hashes match. The implementation has no external upgrade or arbitrary storage-write route. Proxy deployment therefore activates the defect. Later same-artifact exercises by two additional senders are merged; a fourth sender only tops up. In chronological source-5 order the signed vault depletion amounts in wei are 13288906724554726420, 310215450491518453, -660210356095182773, 664440216358314284, -664440216358314284, 660208046958554511. Only successful CALL values transfer ETH; DELEGATECALL inherited values are excluded. The bounded direct victim transaction history contains only two zero-value calls. Summed depletion matches exact start/end balances. The tiny July 2026 payout 0xd551e99c3885eaec3752fe5b836f476a2ceedb0eb474cb70316816a635c1974d executes withdrawAll through replacement implementation 0xcf0946eb559e4fa469cebaeef628121151520d85, not this reward replay, and is excluded."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5ddfad83147c8ac1c291a28b722811168368bc21a4cc7439dc9981db045b5306"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a",
-        "0xc16984edf1ac3e50f1a10842310c7ab3983ab0d1f9f5eb6fb859a59e416048f8",
-        "0xa4dcf1482d0430b17a68d25138a16e9dd6a7d0c9cc11be559d0e7e63ead40137",
-        "0x45047ffa6d8f380b9914053b3fbcc6333422b4ccd7bb6ac829a6c39637aa090f",
-        "0x17e0c48827879a648e0a3778a2e447a3614e81c7b228d7098f079c22aff47247",
-        "0x0a60d7fb1d459ebee1ddcd62d1a8fcb8faa9aa1ebbb3203f90bea7dd888af8aa"
-      ]
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama / CoinGecko",
-      "url": "https://coins.llama.fi/prices/historical/1755948059/coingecko:ethereum",
-      "observedAt": 1789127543
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 64238.842466590555,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "13.599119865909616611",
+        "usd": 64238.842466590555
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2025-08/EquilibriaEPendle_exp.sol",
-    "seed:equilibriaependle:2025-08-23:equilibriaependle"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-08/EquilibriaEPendle_exp.sol",
+    "eip155:1:0xc16984edf1ac3e50f1a10842310c7ab3983ab0d1f9f5eb6fb859a59e416048f8",
+    "eip155:1:0xa4dcf1482d0430b17a68d25138a16e9dd6a7d0c9cc11be559d0e7e63ead40137",
+    "eip155:1:0x45047ffa6d8f380b9914053b3fbcc6333422b4ccd7bb6ac829a6c39637aa090f",
+    "eip155:1:0x17e0c48827879a648e0a3778a2e447a3614e81c7b228d7098f079c22aff47247",
+    "eip155:1:0x0a60d7fb1d459ebee1ddcd62d1a8fcb8faa9aa1ebbb3203f90bea7dd888af8aa"
+  ],
+  "notes": [
+    "Five successful reward-replay transactions plus one funding-only attempt form one episode. CALL-value outflows minus all campaign inflows, including recycled payouts and the standalone 0.664440216358314284 ETH topup, equal 13.599119865909616611 ETH. This matches vault balance depletion from 13.603353927190515249 to 0.004234061280898638 ETH over blocks 23203451–23204165. Net loss is used because pooled attacker inputs cannot be assigned individually to the residual balance. Gas, builder payments and later recoveries are not deductions. All ETH is valued at the first-exploit historical price; the campaign lasts under three hours."
   ]
 }

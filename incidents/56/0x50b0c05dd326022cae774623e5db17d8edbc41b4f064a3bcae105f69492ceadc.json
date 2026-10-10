@@ -1,263 +1,53 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x50b0c05dd326022cae774623e5db17d8edbc41b4f064a3bcae105f69492ceadc",
-  "protocol": {
-    "name": "Belt Finance",
-    "slug": "belt-finance"
-  },
+  "protocol": "Belt Finance",
   "name": "Belt Finance beltBUSD Ellipsis LP mispricing",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x50b0c05dd326022cae774623e5db17d8edbc41b4f064a3bcae105f69492ceadc",
-      "blockNumber": 7838862,
-      "transactionIndex": 47,
-      "timestamp": 1622315374
-    },
-    "attackerAddresses": [
-      "0xbfaaba3337c51e97ed4546b4631e8efdbab63077",
-      "0x4eb362934d56f2669a712cb92d316cd465921b5d",
-      "0x8937dd570e3cb32df77e39c0805d17e88f9d14ae"
-    ]
-  },
   "summary": "StrategyEllipsisImpl.eps3ToWant() values the strategy's staked 3EPS position as the raw sum of the BUSD, USDC and USDT ERC-20 balances held by the Ellipsis StableSwap pool, scaled by the strategy's LP share. That sum is not the pool's StableSwap invariant and moves with any single-transaction swap, so wantLockedTotal() is an attacker-controlled spot quantity. MultiStrategyTokenImpl consumes it unfiltered: _deposit() mints beltBUSD shares from the calcPoolValueInToken() delta and _withdraw() redeems shares at pool * shares / totalSupply, paying out of whichever strategy holds the most assets. Cycling deposit -> Ellipsis exchange() -> withdraw inside one transaction therefore minted shares against a depressed Ellipsis valuation and redeemed them against an inflated one, draining BUSD out of the Venus strategy.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 46944373.92777555,
-      "valuationTimestamp": 1622316583,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
-          "symbol": "BUSD"
-        },
-        "amount": "46944373.927775550409686974",
-        "usdValue": 46944373.92777555,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1622316583,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Measured from the victim vault's own accounting. beltBUSD 0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0 reports calcPoolValueInToken() = 221115445.035265077214489032 BUSD on 217103856.217843203380419587 shares at block 7838861 (immediately before the first successful attack transaction) and 174161472.163601099685723562 BUSD on 217091891.155444809406501592 shares at block 7839266 (immediately after the last one), i.e. price per share falls from 1.018477740963737758 to 0.802247708270668928 BUSD. The raw pool drop is 46953972.871663977528765470 BUSD; 9598.943888427119078496 BUSD of that is the value of the 11965.062398393973917995 shares legitimately redeemed by other users inside the same 20-minute window, leaving 46944373.927775550409686974 BUSD of exploit-attributable depletion. Per-strategy, bVenusBUSD 0x53a53a9e10abe9d18d009f6f962f51dc8b1d6edc falls from 66067863.16 to 6063192.61 BUSD while bEllipsisBUSD 0x2ec2ddd12566b66f4da248b1ecdee8619b5c56cd rises from 65923134.14 to 78973831.82 BUSD; the other four strategies are unchanged. The attacker-supplied PancakeSwap flash-loan principal is repaid inside each transaction and is not counted. Of the depletion, 6234753.171048180404312114 BUSD reached attacker address 0x8937dd570e3cb32df77e39c0805d17e88f9d14ae and the remainder was dissipated as Ellipsis imbalance value and PancakeSwap flash-loan fees paid out of vault assets; both are gross victim depletion and are not netted out. BUSD is valued at par. Belt's later user compensation is a recovery and does not reduce the exploit-time gross loss. The 4Belt Vyper pool's 5.51% mark-down is a downstream consequence of this same beltBUSD depletion and is not counted separately.",
-    "realizedAt": 1622316583
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4cdb64df300a2b8f6f0e5c72909b9fbcf3b3f135",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xa56e834fbc2087024d329aa69eec1392d0a8d4c4",
-        "codeHash": "0x40b8026462e5410a3eeada58af8ffcd7a1503c521cbf1b54c5f849ef69ee1182"
-      },
-      "deployment": {
-        "timestamp": 1618350685,
-        "blockNumber": 6540868,
-        "transactionHash": "0x124070722d898cccdee6d125d680b5cedb21d6c1affa3a28ec54a9c094bfa6bd",
-        "transactionIndex": 4,
-        "creatorAddress": "0x7111d0f651a331bc2b9eefcfe56d8a03f92601a1"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1619596403,
-        "blockNumber": 6952957,
-        "transactionHash": "0xe970d569f0e02f5d9f5512f883a7908f364284aa33b789d6828a34a3097da9c2",
-        "transactionIndex": 431,
-        "logIndex": 359,
-        "mechanism": {
-          "type": "event",
-          "address": "0x4cdb64df300a2b8f6f0e5c72909b9fbcf3b3f135",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Second and last pre-exploit Upgraded event from the StrategyEllipsis proxy, selecting implementation 0xa56e834fbc2087024d329aa69eec1392d0a8d4c4. The EIP-1967 implementation slot still holds that address at block 7838861 and the implementation runtime is byte-identical from its own deployment through the exploit."
-      },
-      "codeAgeSeconds": 2718971,
-      "failureModeId": "failure:curve-lp-valued-by-raw-pool-token-balances",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2",
-          "source-11"
-        ]
+      "address": "0x4cdb64df300a2b8f6f0e5c72909b9fbcf3b3f135",
+      "code": "0xa56e834fbc2087024d329aa69eec1392d0a8d4c4",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xe970d569f0e02f5d9f5512f883a7908f364284aa33b789d6828a34a3097da9c2"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xff997862e88785ceacc8b3ce791c0a487682ee98",
-        "codeHash": "0x731b2db5993498af31dd006583f7fa035de01847dd331592a3025e4006a49e38"
-      },
-      "deployment": {
-        "timestamp": 1618350814,
-        "blockNumber": 6540911,
-        "transactionHash": "0x353855116d070156090e396ce1ef8d07395e866a8dadd06675b4d3ccb081b780",
-        "transactionIndex": 12,
-        "creatorAddress": "0x7111d0f651a331bc2b9eefcfe56d8a03f92601a1"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1618641059,
-        "blockNumber": 6637440,
-        "transactionHash": "0x2e301ee8a6e7c4711662126951e4fb2ea41e0c900dc016764fb222a2e5ff1ac6",
-        "transactionIndex": 90,
-        "logIndex": 328,
-        "mechanism": {
-          "type": "event",
-          "address": "0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The only pre-exploit Upgraded event from the beltBUSD MultiStrategyToken proxy, selecting implementation 0xff997862e88785ceacc8b3ce791c0a487682ee98. The EIP-1967 implementation slot still holds that address at block 7838861 and the implementation runtime is byte-identical from its own deployment through the exploit."
-      },
-      "codeAgeSeconds": 3674315,
-      "failureModeId": "failure:belt-multistrategy-share-price-from-spot-strategy-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-5",
-          "source-6",
-          "source-10"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-2",
-          "source-11"
-        ]
+      "address": "0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0",
+      "code": "0xff997862e88785ceacc8b3ce791c0a487682ee98",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x2e301ee8a6e7c4711662126951e4fb2ea41e0c900dc016764fb222a2e5ff1ac6"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x50b0c05dd326022cae774623e5db17d8edbc41b4f064a3bcae105f69492ceadc"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T14:10:00Z",
-      "note": "Campaign reconstructed from chain state, not from reporting. Attacker EOA 0xbfaaba3337c51e97ed4546b4631e8efdbab63077 created exploit contract 0x4eb362934d56f2669a712cb92d316cd465921b5d in transaction 0xaae7d00613cfe41b2e0124b882a9e7a07bf102edc0d5615b5ade7d41bb79a2fa at block 7838174, then sent fifteen calls to selector 0x6add6bd6; the first two (blocks 7838502 and 7838684) reverted, so the anchor is the earliest successful one, 0x50b0c05dd326022cae774623e5db17d8edbc41b4f064a3bcae105f69492ceadc at block 7838862 index 47, status 1, timestamp 1622315374. Eight calls succeeded in total (blocks 7838862, 7838872, 7838876, 7839001, 7839132, 7839136, 7839140, 7839265); three further calls by the attacker EOA and two by copycats reverted and are excluded. The callTracer trace of the anchor has 4199 frames and shows the PancakeSwap flash-swap loop calling beltBUSD 0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0 with deposit(uint256,uint256) eight times and withdraw(uint256,uint256) seven times, interleaved with exchange(int128,int128,uint256,uint256) on the Ellipsis StableSwap 0x160caed03795365f3a589f10c379ffa7d75d4e76. Inside those calls the StrategyEllipsis proxy 0x4cdb64df300a2b8f6f0e5c72909b9fbcf3b3f135 is entered 64 times, 63 of them wantLockedTotal() (0x42da4eb3), and beltBUSD is entered 23 times; both DELEGATECALL their declared implementations within their own execution context. Reading the deployed sources: StrategyEllipsisImpl.eps3ToWant() returns (BUSD+USDC+USDT balanceOf(ellipsisSwapAddress)) * curEps3Bal / totalSupply(3EPS), a raw reserve sum rather than the StableSwap invariant, and wantLockedTotal() adds only the idle want balance; MultiStrategyTokenImpl.calcPoolValueInToken() sums getBalanceOfOneStrategy over the six strategies and _deposit/_withdraw mint and burn beltBUSD directly against that spot number, with _withdraw paying out of findMostLockedStrategy(). Both are code defects that hold for every parameter value: no strategy list, ratio, or fee setting makes a raw-reserve LP price manipulation-resistant, and the vault applies no invariant, delay, or bound to the valuations it consumes. The Ellipsis pool balances move from 373079739/290502809/171264773 to 416641137/290110416/171274529 BUSD/USDC/USDT and its virtual price from 1.001646511056555684 to 1.037965523235372353 across the campaign, confirming the manipulation. Code history: StrategyEllipsis proxy created by 0x7111d0f651a331bc2b9eefcfe56d8a03f92601a1 at block 6540868 index 4; eth_getLogs over topic 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b from creation to block 7838861 returns exactly two Upgraded events, 0x60c61639d43bafc214a74dce28192a6de4255c28 at block 6637362 and 0xa56e834fbc2087024d329aa69eec1392d0a8d4c4 at block 6952957 index 431 log 359, and the EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc still holds the latter at block 7838861. beltBUSD proxy created by the same deployer at block 6540911 index 12; the same scan returns exactly one Upgraded event, 0xff997862e88785ceacc8b3ce791c0a487682ee98 at block 6637440 index 90 log 328, still in the slot at block 7838861. Both implementation runtimes hash identically at their deployment block, at block 7838861, and today: 0x40b8026462e5410a3eeada58af8ffcd7a1503c521cbf1b54c5f849ef69ee1182 (12985 bytes) and 0x731b2db5993498af31dd006583f7fa035de01847dd331592a3025e4006a49e38 (16375 bytes). Resulting ages are 2718971 and 3674315 seconds. Loss recomputed from the vault's own calcPoolValueInToken()/totalSupply() at blocks 7838861 and 7839266 as described in loss.notes; the 6234753.171048180404312114 BUSD credited to 0x8937dd570e3cb32df77e39c0805d17e88f9d14ae across the eight receipts matches the widely reported 6.23M attacker profit, and the 60004917.985223011664813989 BUSD net outflow from Venus vBUSD 0x95c78222b3d6e262426483d42cfa53685a67ab9d in the same receipts matches the per-strategy accounting. The frequently quoted 50M headline is a project-side figure that mixes attacker profit with fee dissipation; the reproduced vault depletion is 46944373.93 BUSD."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x124070722d898cccdee6d125d680b5cedb21d6c1affa3a28ec54a9c094bfa6bd"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe970d569f0e02f5d9f5512f883a7908f364284aa33b789d6828a34a3097da9c2"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x353855116d070156090e396ce1ef8d07395e866a8dadd06675b4d3ccb081b780"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2e301ee8a6e7c4711662126951e4fb2ea41e0c900dc016764fb222a2e5ff1ac6"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x50b0c05dd326022cae774623e5db17d8edbc41b4f064a3bcae105f69492ceadc",
-        "0xc4d4156aab1fca85c99e85352b836274d3c53bafe98a2c9867b68950e1eafde9",
-        "0xb57acfeab13d52664416aa2ada9b490e340292731fced049fc8c4a730b7af700",
-        "0xcca1ebf01e694bb4c447f6018eebb34a3b829cff9ea1ec5fce236eb3cc2ef99c",
-        "0x7719e1bae25dbe80539edea37c962e941ec4141145e6eabe63540b7178ffd0d0",
-        "0xd790026feda9a16646647e9df0779dc4a7b173053369847691b8f3f678da1f66",
-        "0xf598e092ab82ce08798f9dab7ea6ade64f152aa91db897f3449b23ab591baa1d",
-        "0x7b3b727a56d1649ee325c42416a1199f4a9b4f4eb024a60b5848a7b1485953b1"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "post-mortem",
-      "url": "https://halborn.com/explained-the-belt-finance-hack-may-2021/"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x35f0860bdb55646f5631617c7100739a2a45370bfc1a10d96283520303f5667b"
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1e205434cb48f88f641a4213e98dc1f5b2ea2fdd955739c1cfe764bfac0eebf9"
-    },
-    {
-      "id": "source-11",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T07:30:00Z",
-      "note": "Knot collapse. StrategyEllipsisImpl raw-balance LP valuation and MultiStrategyTokenImpl spot share pricing produced one loss and neither alone does: the vault only mints and redeems against the number the strategy reports. The pair is one conjunctive failure. The strategy implementation upgrade at block 6952957 is the later reset and completed the exploitable combination, so target-1 supplies the single knot and target-2 is supporting."
-    }
-  ],
-  "discovery": [
-    "web:2021-05-29:belt-finance"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 46944373.92777555,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "46944373.927775550409686974",
+        "usd": 46944373.92777555
+      }
     ]
-  }
+  },
+  "refs": [
+    "eip155:56:0xc4d4156aab1fca85c99e85352b836274d3c53bafe98a2c9867b68950e1eafde9",
+    "eip155:56:0xb57acfeab13d52664416aa2ada9b490e340292731fced049fc8c4a730b7af700",
+    "eip155:56:0xcca1ebf01e694bb4c447f6018eebb34a3b829cff9ea1ec5fce236eb3cc2ef99c",
+    "eip155:56:0x7719e1bae25dbe80539edea37c962e941ec4141145e6eabe63540b7178ffd0d0",
+    "eip155:56:0xd790026feda9a16646647e9df0779dc4a7b173053369847691b8f3f678da1f66",
+    "eip155:56:0xf598e092ab82ce08798f9dab7ea6ade64f152aa91db897f3449b23ab591baa1d",
+    "eip155:56:0x7b3b727a56d1649ee325c42416a1199f4a9b4f4eb024a60b5848a7b1485953b1",
+    "https://halborn.com/explained-the-belt-finance-hack-may-2021/",
+    "eip155:56:0x35f0860bdb55646f5631617c7100739a2a45370bfc1a10d96283520303f5667b",
+    "eip155:56:0x1e205434cb48f88f641a4213e98dc1f5b2ea2fdd955739c1cfe764bfac0eebf9"
+  ],
+  "notes": [
+    "Second and last pre-exploit Upgraded event from the StrategyEllipsis proxy, selecting implementation 0xa56e834fbc2087024d329aa69eec1392d0a8d4c4. The EIP-1967 implementation slot still holds that address at block 7838861 and the implementation runtime is byte-identical from its own deployment through the exploit.",
+    "The only pre-exploit Upgraded event from the beltBUSD MultiStrategyToken proxy, selecting implementation 0xff997862e88785ceacc8b3ce791c0a487682ee98. The EIP-1967 implementation slot still holds that address at block 7838861 and the implementation runtime is byte-identical from its own deployment through the exploit.",
+    "Measured from the victim vault's own accounting. beltBUSD 0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0 reports calcPoolValueInToken() = 221115445.035265077214489032 BUSD on 217103856.217843203380419587 shares at block 7838861 (immediately before the first successful attack transaction) and 174161472.163601099685723562 BUSD on 217091891.155444809406501592 shares at block 7839266 (immediately after the last one), i.e. price per share falls from 1.018477740963737758 to 0.802247708270668928 BUSD. The raw pool drop is 46953972.871663977528765470 BUSD; 9598.943888427119078496 BUSD of that is the value of the 11965.062398393973917995 shares legitimately redeemed by other users inside the same 20-minute window, leaving 46944373.927775550409686974 BUSD of exploit-attributable depletion. Per-strategy, bVenusBUSD 0x53a53a9e10abe9d18d009f6f962f51dc8b1d6edc falls from 66067863.16 to 6063192.61 BUSD while bEllipsisBUSD 0x2ec2ddd12566b66f4da248b1ecdee8619b5c56cd rises from 65923134.14 to 78973831.82 BUSD; the other four strategies are unchanged. The attacker-supplied PancakeSwap flash-loan principal is repaid inside each transaction and is not counted. Of the depletion, 6234753.171048180404312114 BUSD reached attacker address 0x8937dd570e3cb32df77e39c0805d17e88f9d14ae and the remainder was dissipated as Ellipsis imbalance value and PancakeSwap flash-loan fees paid out of vault assets; both are gross victim depletion and are not netted out. BUSD is valued at par. Belt's later user compensation is a recovery and does not reduce the exploit-time gross loss. The 4Belt Vyper pool's 5.51% mark-down is a downstream consequence of this same beltBUSD depletion and is not counted separately.",
+    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+  ]
 }

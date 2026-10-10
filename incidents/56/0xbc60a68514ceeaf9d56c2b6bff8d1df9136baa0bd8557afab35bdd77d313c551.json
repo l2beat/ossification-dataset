@@ -1,187 +1,39 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xbc60a68514ceeaf9d56c2b6bff8d1df9136baa0bd8557afab35bdd77d313c551",
-  "protocol": {
-    "name": "Bamboo AI",
-    "slug": "bamboo"
-  },
+  "protocol": "Bamboo AI",
   "name": "Bamboo AI spoofable sale activation and pair-burn drain",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xbc60a68514ceeaf9d56c2b6bff8d1df9136baa0bd8557afab35bdd77d313c551",
-      "blockNumber": 29667516,
-      "transactionIndex": 47,
-      "timestamp": 1688470828
-    },
-    "attackerAddresses": [
-      "0x00703face6621bd207d3b4ac9867058190c0bb09",
-      "0xcdf0eb202cfd1f502f3fdca9006a4b5729aadebc",
-      "0x16c4da1afe64634ab72968d8f7f9a80518b84e61",
-      "0x7f7d46aa776ed3f676b0e2c6368d86f1564ff5a2",
-      "0xf84efa8a9f7e68855cf17eaac9c2f97a9d131366",
-      "0x10f30e05a877e48503387391075dd693836d9701"
-    ]
-  },
   "summary": "BambooAI._transfer sets sale = block.number whenever sender == addressDev and recipient == the pair, and once sale > 0 every transfer from a non-pair sender runs updatePool, which moves amount/100 of the pair's BAMBOO balance to a hardcoded address and calls sync. transferFrom(addressDev, pair, 0) needs no allowance, so anyone could activate the pair burn; repeated self-transfers or transfer-and-skim loops then shrank the pair's BAMBOO reserve and sold into the inflated price, draining the WBNB side.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 56579.97,
-      "valuationTimestamp": 1688471864,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "230.243237591379867937",
-        "usdValue": 56579.97,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1688471864,
-          "unitPriceUsd": 245.74,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Net WBNB depletion of the BAMBOO/WBNB pair 0x0557713d02a15a69dea5dd4116047e50f521c1b1 in the six drain transactions of source-7 (blocks 29668035..29668055, four actors), each netting its flash-loan legs within the transaction. The first drain (216.3359 WBNB) came from 0x16c4da1afe64634ab72968d8f7f9a80518b84e61, one block after trading opened; the anchor account's own drain (source-7 third hash) took 11.9136 WBNB. The BAMBOO moved from the pair to the hardcoded address is excluded as the token was worthless after the drain. WBNB is valued at the last DefiLlama point before the first drain.",
-    "realizedAt": 1688472446
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xed56784bc8f2c036f6b0d8e04cb83c253e4a6a94",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1687012599,
-        "blockNumber": 29182874,
-        "transactionHash": "0x250211422bbe3731b458cb7fb6c5bd22ffcd70f334f873eec2015ee22a37a536",
-        "transactionIndex": 141,
-        "creatorAddress": "0x0afdb87594acd4ec6fe68b81772c093b74a6143c"
-      },
-      "ageReset": {
+      "address": "0xed56784bc8f2c036f6b0d8e04cb83c253e4a6a94",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable direct BambooAI runtime; addressDev, uniswapPair, isMarketPair and the hardcoded burn recipient are fixed in the constructor and the forgeable sale trigger needs no later configuration. setTrading(true) at block 29668034 follows the anchor and so cannot reset the age."
-      },
-      "codeAgeSeconds": 1458229,
-      "failureModeId": "failure:bamboo-spoofable-sale-activation-pair-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-9"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0xed56784bc8f2c036f6b0d8e04cb83c253e4a6a94",
-        "codeHash": "0x67eb8edb6ca113414dfa5f2e0a98a4001037bce02053e185bfaab1f7c9649767"
+        "tx": "0x250211422bbe3731b458cb7fb6c5bd22ffcd70f334f873eec2015ee22a37a536"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbc60a68514ceeaf9d56c2b6bff8d1df9136baa0bd8557afab35bdd77d313c551"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-07/Bamboo_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:32:35Z",
-      "note": "Reviewed anchor, root cause and earliest use. debug_traceTransaction(callTracer) of source-1 (block 29667516, index 47): 0x00703face6621bd207d3b4ac9867058190c0bb09 calls its contract 0xcdf0eb202cfd1f502f3fdca9006a4b5729aadebc (selector 0xabe10687, args token, pair), which reads getSaleAt() = 0 and addressDev() = 0x0afdb87594acd4ec6fe68b81772c093b74a6143c, then calls transferFrom(addressDev, pair, 0) (0x23b872dd), returning true; receipt log 0 is a zero-value Transfer dev->pair. eth_getStorageAt(token, 12) (sale) is 0 at block 29667515 and 0x1c4b0bc (= 29667516) from block 29667516; sale is only ever written with a nonzero block number, so source-1 is its first write and the first activation of updatePool. The tradingOpen check passes because sender is the owner. Slot 7 (presaleAddr | tradingOpen<<160) flips tradingOpen to 1 in owner setTrading(true) 0xa413811a343063a85c5e7ecd455f41725288b8e83f622b9541fe33e9991a64d4 (block 29668034, index 122). Drains then exercise updatePool: receipts of source-7 show 300 BAMBOO self-transfers (0xda41af9d..., 0x5abde380..., 0xc19ea3f4..., 0xc8918afb..., 0xdf3f4729...) or 401 transfer+skim rounds (0x88a6c2c3..., the PoC transaction), each followed by a pair Sync, bracketed by a WBNB->BAMBOO buy and a BAMBOO->WBNB sell. eth_getLogs on the pair, blocks 29613000..29700000 (2193 logs): seven transactions have 4 or more Sync events: these six drains and 0x539e46c96582c8fb7497c1dd19c24d24b98512ac6bc357f99e97dc1c0426f1f2 (6 Syncs, a net 0.09374 WBNB buy). sale was 0 before source-1, so no earlier updatePool drain was possible."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x250211422bbe3731b458cb7fb6c5bd22ffcd70f334f873eec2015ee22a37a536"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified BambooAI source at https://bscscan.com/address/0xed56784bc8f2c036f6b0d8e04cb83c253e4a6a94#code; reproduce Etherscan V2 contract.getsourcecode chainid=56. Compiler v0.8.19+commit.7dd6d404, optimizer 200 runs, not a proxy. SHA-256 of the returned SourceCode (UTF-8, no trailing newline): dc42f174f2fe4e72eeaea4462c7e192b390cb23481d1f95686d44f9b7b5bc89c. Inspect _transfer (sale = block.number when sender == addressDev && recipient == uniswapPair; updatePool(amount) when !isMarketPair[sender] && sale > 0), updatePool (moves amount/100 of _balances[uniswapPair] to Factory without a Transfer event, then sync()), transferFrom (allowance.sub(0) allows zero-value spoofed transfers) and the constant routerHash = 0xf1d8f914dc5693de077c4dc10005703c8389ab43 used as Factory."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:32:35Z",
-      "note": "Reviewed gross loss. eth_getLogs WBNB (0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c) Transfer with from = pair and with to = pair, blocks 29600000..29700000 (498 and 140 logs). Per-transaction out minus in: 0xda41af9d... 216335894667002153211, 0x5abde380... 827832207001536660, 0x88a6c2c3... 11913601282999043657, 0xc19ea3f4... 882115328187182108, 0xc8918afb... 128158489386258221, 0xdf3f4729... 155635616803694080; sum 230243237591379867937 wei. All six have status 1. The pair held 235.125 WBNB from presale finalize 0x688a19a459336f6a699e8dff0f3566d8ac3552b8019aa5db7d15613e83f5b8f5 (block 29613202) through block 29668034 and 0.001713738141958602 WBNB after block 29668300. Unit price from source-8."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0xda41af9d60d62eef28444b4c42f80754140767efb8ecef1b68b4fb1c11baa789",
-        "0x5abde3804002e3625dddb48407204d107eae65069df938489737eadcd79f282f",
-        "0x88a6c2c3ce86d4e0b1356861b749175884293f4302dbfdbfb16a5e373ab58a10",
-        "0xc19ea3f4b66d1571af60d4ec9430624bbf76caa535f18a345c071b31d709d5c3",
-        "0xc8918afb183d0e356a47b5f0e5bf3ab09452310c279e3d06368b0c658fdfe3a7",
-        "0xdf3f472917686af1728d4e662b93240620190eda1d5bf29fd211ca0655896096"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1688472000/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790620327
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:32:35Z",
-      "note": "Reviewed artifact identity and age history. eth_getCode(token) empty at 29182873; keccak256 of runtime 0x67eb8edb6ca113414dfa5f2e0a98a4001037bce02053e185bfaab1f7c9649767 at deployment block 29182874, at 29667515 and at 29668054. Source-4 receipt: status 1, top-level creation, index 141, by 0x0afdb87594acd4ec6fe68b81772c093b74a6143c (the owner and addressDev), unrelated to the attacker accounts. No proxy, delegatecall or selfdestruct in source-5. Etherscan txlist of the token, blocks 0..29668036 (538 txs): besides transfer/approve only 23 setAddressPresale calls by the owner (blocks 29493880..29666242) and setTrading(true) at 29668034; no setMarketPairStatus, setIsBot, router or tax change. presaleAddr does not bear on the defect. The forgeable sale trigger and updatePool are constructor-fixed and exercisable from deployment (owner-sender transfers pass the tradingOpen gate), so deployment supplies the age at the source-1 anchor: 1458229 s. Trading-open is a necessary later condition for the public drains but follows the anchor."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 56579.97,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "230.243237591379867937",
+        "usd": 56579.97
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-07/Bamboo_exp.sol",
-    "seed:bamboo:2023-07-04:bamboo-spot-price-manipulation"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Bamboo_exp.sol",
+    "eip155:56:0xda41af9d60d62eef28444b4c42f80754140767efb8ecef1b68b4fb1c11baa789",
+    "eip155:56:0x5abde3804002e3625dddb48407204d107eae65069df938489737eadcd79f282f",
+    "eip155:56:0x88a6c2c3ce86d4e0b1356861b749175884293f4302dbfdbfb16a5e373ab58a10",
+    "eip155:56:0xc19ea3f4b66d1571af60d4ec9430624bbf76caa535f18a345c071b31d709d5c3",
+    "eip155:56:0xc8918afb183d0e356a47b5f0e5bf3ab09452310c279e3d06368b0c658fdfe3a7",
+    "eip155:56:0xdf3f472917686af1728d4e662b93240620190eda1d5bf29fd211ca0655896096"
+  ],
+  "notes": [
+    "Immutable direct BambooAI runtime; addressDev, uniswapPair, isMarketPair and the hardcoded burn recipient are fixed in the constructor and the forgeable sale trigger needs no later configuration. setTrading(true) at block 29668034 follows the anchor and so cannot reset the age.",
+    "Net WBNB depletion of the BAMBOO/WBNB pair 0x0557713d02a15a69dea5dd4116047e50f521c1b1 in the six drain transactions of source-7 (blocks 29668035..29668055, four actors), each netting its flash-loan legs within the transaction. The first drain (216.3359 WBNB) came from 0x16c4da1afe64634ab72968d8f7f9a80518b84e61, one block after trading opened; the anchor account's own drain (source-7 third hash) took 11.9136 WBNB. The BAMBOO moved from the pair to the hardcoded address is excluded as the token was worthless after the drain. WBNB is valued at the last DefiLlama point before the first drain."
   ]
 }

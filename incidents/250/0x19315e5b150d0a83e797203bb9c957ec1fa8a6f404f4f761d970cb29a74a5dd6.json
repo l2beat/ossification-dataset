@@ -1,127 +1,29 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:250:0x19315e5b150d0a83e797203bb9c957ec1fa8a6f404f4f761d970cb29a74a5dd6",
-  "protocol": {
-    "name": "Grim Finance",
-    "slug": "grim-finance"
-  },
+  "protocol": "Grim Finance",
   "name": "Grim Finance GrimBoostVault depositFor reentrancy",
-  "incident": {
-    "chainId": 250,
-    "exploit": {
-      "transactionHash": "0x19315e5b150d0a83e797203bb9c957ec1fa8a6f404f4f761d970cb29a74a5dd6",
-      "blockNumber": 25345003,
-      "transactionIndex": 7,
-      "timestamp": 1639849155
-    },
-    "attackerAddresses": [
-      "0xdefc385d7038f391eb0063c2f7c238cfb55b206c"
-    ]
-  },
   "summary": "GrimBoostVault.depositFor(token, amount, user) took the deposit token as a caller-supplied parameter and minted shares around an unguarded external transferFrom call, so the attacker passed its own contract as the token and re-entered depositFor from that callback, minting eight tranches of vault shares against a single SpiritSwap BTC/WFTM LP deposit before burning them all in withdrawAll to drain the vault.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 30000000,
-      "valuationTimestamp": 1639849155,
-      "method": "reported",
-      "sourceIds": [
-        "source-2",
-        "source-5"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "The $30 million figure is the rounded aggregate loss across Grim Finance vaults affected by the same depositFor reentrancy campaign. Rekt reports approximately $30 million and Beefy's incident report estimates $32 million; this record uses the conservative rounded estimate."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x660184ce8af80e0b1e5a1172a16168b15f4136bf",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x660184ce8af80e0b1e5a1172a16168b15f4136bf",
-        "codeHash": "0x753e4cd9dd083db2dc40f090d11ad54008e2db79a6a1212ca3d096ae39556c89"
-      },
-      "deployment": {
-        "timestamp": 1630366055,
-        "blockNumber": 15934352,
-        "transactionHash": "0x163c49f8dcfc3c3242f6ff30b64445497b808c46e2f2c0e85c433314b678d9e0",
-        "transactionIndex": 0,
-        "creatorAddress": "0xaa4273346d21a935bdf1302418d9531342d8142c"
-      },
-      "ageReset": {
+      "address": "0x660184ce8af80e0b1e5a1172a16168b15f4136bf",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct deployment of the GrimBoostVault runtime executed in the exploit."
-      },
-      "codeAgeSeconds": 9483100,
-      "failureModeId": "failure:grim-depositfor-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x163c49f8dcfc3c3242f6ff30b64445497b808c46e2f2c0e85c433314b678d9e0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0x19315e5b150d0a83e797203bb9c957ec1fa8a6f404f4f761d970cb29a74a5dd6"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://rekt.news/grim-finance-rekt/"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2021-12/Grim_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:39:22Z",
-      "note": "Reviewed the successful exploit receipt, replayed execution trace, direct creation receipt, archive runtime at deployment and immediately before the exploit, pre-exploit trace state, commit-pinned reproduction, Rekt analysis, and Beefy's incident report. The trace calls GrimBoostVault.depositFor recursively eight times through the attacker-controlled token callback, mints 316.434974081378761303 shares against one real BTC/WFTM LP transfer, and burns those shares in withdrawAll. GrimBoostVault is a direct 8,488-byte runtime with hash 0x753e4cd9dd083db2dc40f090d11ad54008e2db79a6a1212ca3d096ae39556c89 at deployment and immediately before the exploit; its disassembly contains no DELEGATECALL, SELFDESTRUCT, or CREATE2. The creation transaction is a successful top-level EOA deployment. Published incident analyses attribute approximately $30 million to $32 million of aggregate Grim vault losses to the same depositFor defect."
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://beefy.finance/articles/incident-report-grim-holiday-hack-beefy-whitehat-response/"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0x163c49f8dcfc3c3242f6ff30b64445497b808c46e2f2c0e85c433314b678d9e0"
-    }
+  "loss": {
+    "usd": 30000000,
+    "assets": []
+  },
+  "refs": [
+    "https://rekt.news/grim-finance-rekt/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-12/Grim_exp.sol",
+    "https://beefy.finance/articles/incident-report-grim-holiday-hack-beefy-whitehat-response/"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Published reports round the campaign-wide loss to approximately $30 million or $32 million; the record uses the conservative $30 million estimate."
-    ],
-    "reviewSourceIds": [
-      "source-4"
-    ]
-  }
+  "notes": [
+    "Direct deployment of the GrimBoostVault runtime executed in the exploit.",
+    "The $30 million figure is the rounded aggregate loss across Grim Finance vaults affected by the same depositFor reentrancy campaign. Rekt reports approximately $30 million and Beefy's incident report estimates $32 million; this record uses the conservative rounded estimate.",
+    "Published reports round the campaign-wide loss to approximately $30 million or $32 million; the record uses the conservative $30 million estimate."
+  ]
 }

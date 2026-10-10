@@ -1,157 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3b19e152943f31fe0830b67315ddc89be9a066dc89174256e17bc8c2d35b5af8",
-  "protocol": {
-    "name": "Uwerx",
-    "slug": "uwerx"
-  },
+  "protocol": "Uwerx",
   "name": "Uwerx WERX fee burn charged to the sending Uniswap pair",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3b19e152943f31fe0830b67315ddc89be9a066dc89174256e17bc8c2d35b5af8",
-      "blockNumber": 17826203,
-      "transactionIndex": 49,
-      "timestamp": 1690965899
-    },
-    "attackerAddresses": [
-      "0x6057a831d43c395198a10cf2d7d6d6a063b1fce4",
-      "0xda2ccfc4557ba55eada3cbebd0aeffcf97fc14ca"
-    ]
-  },
   "summary": "WERX's ERC20._transfer() credits the recipient the full `amount` and then, when `to == uniswapPoolAddress`, charges an extra 1% on top by calling _burn(from, burnAmount) against the sender, while emitting decorative 97/2/1 Transfer events that do not match the balance updates. Because UniswapV2Pair.skim(to) is permissionless and makes the pair itself the `from` of a WERX transfer, anyone can donate tokens to the pair, skim them to `uniswapPoolAddress` and have 1% of the donated amount burned out of the pair's own reserve. The attacker donated 4,429,817.738575912760684500 WERX, exactly 100x the pair's remaining reserve, so the 1% burn destroyed the entire WERX side of pair 0xa41529982bcccdfa1105c6f08024df787ca758c4 and let him buy back all 174.79 WETH for dust. No value of uniswapPoolAddress repairs this: pointing it at the real pair leaves skim(pair) reaching the same _burn(from == pair) path.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 324542.8313879492,
-      "valuationTimestamp": 1690965899,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "174.786100489116297833",
-        "usdValue": 324542.8313879492,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1690965899,
-          "unitPriceUsd": 1856.8,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Realised proceeds, not a spot mark of the pool. The WERX/WETH pair 0xa41529982bcccdfa1105c6f08024df787ca758c4 held 5,097,936.050192694905259125 WERX and 174.786100489116297837 WETH immediately before the exploit; afterwards its WETH balance is 4 wei, so 174.786100489116297833 WETH left the pair, and the attacker's helper unwrapped exactly that amount and forwarded it to the EOA (its ETH balance rose 174.780439904115240779 after gas). The 20,000 WETH Balancer flash loan was repaid in the same transaction and is not loss. The WERX side of the pool was destroyed too, but the attacker's own extraction collapsed the WERX price to nothing, so that quantity could not have been sold at the pre-exploit spot and is deliberately not valued; the reported ~$650k pool TVL would be such a spot mark. The follow-up transaction 0x54698b1e30efdf5cd958475e7603dc24bc50a39e077ccaa23b6c4ec707e7bbda re-ran the identical code path 29 blocks later against the already empty pair and moved zero net value (the attacker's ETH balance fell 0.004247182253782881 on gas), so it adds nothing to the loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4306b12f8e824ce1fa9604bbd88f2ad4f0fe3c54",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x4306b12f8e824ce1fa9604bbd88f2ad4f0fe3c54",
-        "codeHash": "0x85be1755a04831b187915155806d991b113c9c6a1eb3f07e654ff913ca140f27"
-      },
-      "deployment": {
-        "timestamp": 1675786763,
-        "blockNumber": 16578050,
-        "transactionHash": "0x287613047e1da9fd706af42934d1381220a9c17dffb652a44787e0528b4db18e",
-        "transactionIndex": 113,
-        "creatorAddress": "0x6a2a1481c09d55da3a733fae5691ee72f344555e"
-      },
-      "ageReset": {
+      "address": "0x4306b12f8e824ce1fa9604bbd88f2ad4f0fe3c54",
+      "reset": {
         "kind": "deployment",
-        "description": "WERX is a plain non-upgradeable Solidity 0.8.17 contract with no proxy and no delegatecall; its 7,401-byte runtime is byte-identical at the creation block and immediately before the exploit."
-      },
-      "codeAgeSeconds": 15179136,
-      "failureModeId": "failure:werx-skim-triggered-fee-burn-from-pair",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x287613047e1da9fd706af42934d1381220a9c17dffb652a44787e0528b4db18e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3b19e152943f31fe0830b67315ddc89be9a066dc89174256e17bc8c2d35b5af8"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-08/Uwerx_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/deeberiroz/status/1686683788795846657"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x287613047e1da9fd706af42934d1381220a9c17dffb652a44787e0528b4db18e"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x3b19e152943f31fe0830b67315ddc89be9a066dc89174256e17bc8c2d35b5af8",
-        "0x54698b1e30efdf5cd958475e7603dc24bc50a39e077ccaa23b6c4ec707e7bbda"
-      ]
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Anchor: 0x3b19e152... is status 1 at block 17826203 index 49, timestamp 1690965899, sent by 0x6057a831d43c395198a10cf2d7d6d6a063b1fce4 at nonce 1. That EOA has 20 transactions in total: nonce 0 deploys the helper 0xda2ccfc4557ba55eada3cbebd0aeffcf97fc14ca at block 17826183, nonce 1 is this anchor, nonce 2 (0x54698b1e...) repeats the same selector 0x31eb34a4 at block 17826232, and everything from block 18485347 on is Tornado-style cash-out. The anchor is therefore the earliest successful defect-executing transaction and the campaign is two transactions. Root cause corrected against the seed row's summary, which described a loop of tiny transfers deducting the fee from the pair: the 49-frame callTracer shows a single donation and one skim. Sequence: Balancer flash loan of 20,000 WETH; pair sync(); router 0x7a250d56 swapExactTokensForTokensSupportingFeeOnTransferTokens buys 5,053,637.872806935777652180 WERX leaving pair reserves 44,298.177385759127606945 WERX / 20,174.786100489116297837 WETH; WERX.transfer(pair, 4,429,817.738575912760684500), exactly 100x the remaining reserve; pair.skim(0x0000000000000000000000000000000000000001) at frame 23 (selector 0xbc25cf77). The verified Solidity 0.8.17 source shows ERC20._transfer doing `_balances[from] -= amount; _balances[to] += amount;` and then, only when `to == uniswapPoolAddress`, emitting Transfer(from,to,97%) and Transfer(from,marketing,2%) as decoration before `_burn(from, burnAmount)` charges the remaining 1% to the sender on top of the full transfer. Storage confirms the branch predicate: slot 0 _owner 0x6a2a1481c09d55da3a733fae5691ee72f344555e, slot 1 marketingWalletAddress 0x991c13b817ede749fbe5f51527af58db3e859cd9, slot 2 uniswapPoolAddress 0x0000000000000000000000000000000000000001, still the constructor placeholder, which is why the skim destination hits the fee branch while the ordinary transfer at frame 22 does not. The receipt's log sequence matches exactly: log 92 Transfer(helper, pair, 4,429,817.738575912760684500) with no fee split, then logs 93-95 Transfer(pair, 0x..01, 4,296,923.206418635377863965), Transfer(pair, 0x991c13b8, 88,596.354771518255213690) and Transfer(pair, 0x0, 44,298.177385759127606845), and the following Sync reports reserve0 of 100 wei, i.e. the pair's whole WERX reserve minus dust was burned. Setting uniswapPoolAddress to the real pair would not fix it, because skim(pair) then makes _transfer(pair, pair, amount) take the same branch and _burn(from == pair, 1%) still destroys reserve, so this is a code defect and not a configuration one. Target: the executing and defect-bearing contract is the WERX token 0x4306b12f8e824ce1fa9604bbd88f2ad4f0fe3c54 itself, not the UniswapV2 pair, which runs stock code; WERX has no proxy and takes no DELEGATECALL in the trace. It was created by 0x6a2a1481c09d55da3a733fae5691ee72f344555e, unrelated to the attacker, in transaction 0x287613047e... at block 16578050 index 113, and its 7,401-byte runtime hashes to 0x85be1755a04831b187915155806d991b113c9c6a1eb3f07e654ff913ca140f27 at the creation block, at block 17000000 and at block 17826202, so deployment is the correct basis and codeAgeSeconds = 1690965899 - 1675786763 = 15179136 s (175.7 days). Loss: the pair's WETH balance is 174.786100489116297837 at block 17826202 and 4 wei at block 17826203; the attacker EOA gained 174.780439904115240779 ETH net of gas in that block, and the second transaction moved zero net value."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 324542.8313879492,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "174.786100489116297833",
+        "usd": 324542.8313879492
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-08/Uwerx_exp.sol",
+    "https://twitter.com/deeberiroz/status/1686683788795846657",
+    "eip155:1:0x54698b1e30efdf5cd958475e7603dc24bc50a39e077ccaa23b6c4ec707e7bbda"
+  ],
   "notes": [
+    "WERX is a plain non-upgradeable Solidity 0.8.17 contract with no proxy and no delegatecall; its 7,401-byte runtime is byte-identical at the creation block and immediately before the exploit.",
+    "Realised proceeds, not a spot mark of the pool. The WERX/WETH pair 0xa41529982bcccdfa1105c6f08024df787ca758c4 held 5,097,936.050192694905259125 WERX and 174.786100489116297837 WETH immediately before the exploit; afterwards its WETH balance is 4 wei, so 174.786100489116297833 WETH left the pair, and the attacker's helper unwrapped exactly that amount and forwarded it to the EOA (its ETH balance rose 174.780439904115240779 after gas). The 20,000 WETH Balancer flash loan was repaid in the same transaction and is not loss. The WERX side of the pool was destroyed too, but the attacker's own extraction collapsed the WERX price to nothing, so that quantity could not have been sold at the pre-exploit spot and is deliberately not valued; the reported ~$650k pool TVL would be such a spot mark. The follow-up transaction 0x54698b1e30efdf5cd958475e7603dc24bc50a39e077ccaa23b6c4ec707e7bbda re-ran the identical code path 29 blocks later against the already empty pair and moved zero net value (the attacker's ETH balance fell 0.004247182253782881 on gas), so it adds nothing to the loss.",
     "The seed record's summary attributed the burn to a loop of tiny transfers deducting the fee from the pair's balance; the actual mechanism is a single 100x-reserve donation followed by a permissionless skim into the unset uniswapPoolAddress placeholder."
   ]
 }

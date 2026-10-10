@@ -1,159 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xf7c21600452939a81b599017ee24ee0dfd92aaaccd0a55d02819a7658a6ef635",
-  "protocol": {
-    "name": "Onyx Protocol",
-    "slug": "onyx-protocol"
-  },
+  "protocol": "Onyx Protocol",
   "name": "Onyx Protocol empty-market rounding",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xf7c21600452939a81b599017ee24ee0dfd92aaaccd0a55d02819a7658a6ef635",
-      "blockNumber": 18476513,
-      "transactionIndex": 2,
-      "timestamp": 1698832727
-    },
-    "attackerAddresses": [
-      "0x085bdff2c522e8637d4154039db8746bb8642bff",
-      "0x5083956303a145f70ba9f3d80c5e6cb5ac842706"
-    ]
-  },
   "summary": "The freshly listed oPEPE market could be redeemed down to two wei of supply, while direct PEPE transfers increased cash without minting shares. This inflated the exchange rate used for collateral, and redeemUnderlying's integer division then burned only one wei to recover the donation, allowing the attacker to borrow the other Onyx markets nearly empty and recycle the manipulated collateral.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 2140000,
-      "valuationTimestamp": 1698832727,
-      "method": "reported",
-      "sourceIds": [
-        "source-3",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "1156.9",
-        "usdValue": 2088000,
-        "valuation": {
-          "method": "reported",
-          "timestamp": 1698832727,
-          "unitPriceUsd": null,
-          "sourceIds": [
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "MetaTrust reports approximately 1,156.9 ETH-equivalent ($2.088 million) from the anchor transaction and another $60,000 of MATIC, UNI, APE, USDP, and WETH in the follow-up transaction, for approximately $2.14 million gross across the incident. The structured WETH component records the anchor transaction's post-swap profit; exact per-token amounts for the follow-up are not published."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x9dcb6bc351ab416f35aeab1351776e2ad295abc4",
-        "codeHash": "0x6fcf9b510e8d637527cd02c771298ca98e7326b40cba134805ef512381cd2ee0"
-      },
-      "deployment": {
-        "timestamp": 1698335891,
-        "blockNumber": 18435429,
-        "transactionHash": "0x37688007f4377a3c489c03977dc07b023f7edc74060f1e2a42cc7e92592e2574",
-        "transactionIndex": 75,
-        "creatorAddress": "0xb112e904ae10df48d87762d26e7e61c9e3e35200"
-      },
-      "ageReset": {
+      "address": "0x5fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750",
+      "code": "0x9dcb6bc351ab416f35aeab1351776e2ad295abc4",
+      "reset": {
         "kind": "deployment",
-        "description": "The oPEPE delegator was deployed with the older defect-bearing implementation selected in its constructor; the implementation pointer remained unchanged through both exploit transactions."
-      },
-      "codeAgeSeconds": 496836,
-      "failureModeId": "failure:empty-market-donation-rounding",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0x37688007f4377a3c489c03977dc07b023f7edc74060f1e2a42cc7e92592e2574"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xf7c21600452939a81b599017ee24ee0dfd92aaaccd0a55d02819a7658a6ef635"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T12:11:40Z",
-      "note": "Reviewed the incident anchor and live call trace, prior archive-RPC history audit, oPEPE creation transaction, implementation slot and runtime at deployment and immediately before the exploit, pinned reproduction, verified protocol code, MetaTrust incident analysis, and Onyx's official incident response. The exploit uses oPEPE delegator 0x5fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750 and delegates the affected calls to the defect-bearing OErc20Delegate implementation 0x9dcb6bc351ab416f35aeab1351776e2ad295abc4. The implementation's exchange-rate and redeemUnderlying arithmetic lets an attacker reduce oPEPE supply to two wei, inflate cash by direct PEPE donation, value that dust as collateral, and recover the donation while burning one wei. The complete history scan from deployment block 18435429 through the later exploit found one NewImplementation event in the creation transaction, zero EIP-1967 Upgraded events, and the same implementation pointer in storage slot 18 at deployment and immediately before the exploit. Its 22,395-byte runtime has hash 0x6fcf9b510e8d637527cd02c771298ca98e7326b40cba134805ef512381cd2ee0 at both historical blocks. The applicable age is therefore 496,836 seconds from proxy deployment to the anchor transaction. MetaTrust reports $2.088 million from the anchor and $60,000 from a follow-up transaction."
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://metatrust.io/blogs/post/how-onyxs-governance-and-vulnerability-became-hackers-golden-shovels"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x37688007f4377a3c489c03977dc07b023f7edc74060f1e2a42cc7e92592e2574"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "d5167541cd4c982cd4d29e583089b2a1a5caa6e6",
-      "path": "src/test/2023-11/OnyxProtocol_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x27a3788d504af542681436bfdecf1823f7a8a691d04309ad33e6d3825e899746"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://community.onyx.org/t/the-onyxprotocol-experienced-an-exploit/1125"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $2.14 million incident loss is reported across two exploit transactions; exact per-token gross outflows for the $60,000 follow-up are not published in the cited analysis."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 2140000,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "1156.9",
+        "usd": 2088000
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://metatrust.io/blogs/post/how-onyxs-governance-and-vulnerability-became-hackers-golden-shovels",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2023-11/OnyxProtocol_exp.sol",
+    "eip155:1:0x27a3788d504af542681436bfdecf1823f7a8a691d04309ad33e6d3825e899746",
+    "https://community.onyx.org/t/the-onyxprotocol-experienced-an-exploit/1125"
+  ],
+  "notes": [
+    "The oPEPE delegator was deployed with the older defect-bearing implementation selected in its constructor; the implementation pointer remained unchanged through both exploit transactions.",
+    "MetaTrust reports approximately 1,156.9 ETH-equivalent ($2.088 million) from the anchor transaction and another $60,000 of MATIC, UNI, APE, USDP, and WETH in the follow-up transaction, for approximately $2.14 million gross across the incident. The structured WETH component records the anchor transaction's post-swap profit; exact per-token amounts for the follow-up are not published.",
+    "The $2.14 million incident loss is reported across two exploit transactions; exact per-token gross outflows for the $60,000 follow-up are not published in the cited analysis."
+  ]
 }

@@ -1,193 +1,69 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x3f1973fe56de5ecd59a815d3b14741cf48385903b0ccfe248f7f10c2765061f7",
-  "protocol": {
-    "name": "Melo Token",
-    "slug": "melo-token"
-  },
+  "protocol": "Melo Token",
   "name": "Melo unrestricted mint sold into USDT liquidity",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x3f1973fe56de5ecd59a815d3b14741cf48385903b0ccfe248f7f10c2765061f7",
-      "blockNumber": 27960446,
-      "transactionIndex": 6,
-      "timestamp": 1683338179
-    },
-    "attackerAddresses": [
-      "0x9bf2c7c21f3c488a1855dcd49158841c23e5c35b"
-    ]
-  },
   "summary": "MEL exposed mint(address,uint256,string) without authorization or supply limits. Callers minted arbitrary balances and sold them into the MEL/USDT pair, depleting its USDT. The initial transaction and later repetitions exercise the same immutable token defect.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 92338.99436335763,
-      "valuationTimestamp": 1683338179,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "92338.994363357639483171",
-        "usdValue": 92338.99436335763,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1683338179,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "realizedAt": 1760144211,
-    "confidence": "high",
-    "notes": "Merged 31 mint-and-sale transactions through 2025-10-11, including later actors repeating the same fault. USDT proceeds value the fabricated MEL at disposal, with USDT at $1. Subtract 0.000000062597217262 USDT supplied by a later exploiter to the pair; ordinary token purchases and sales are excluded. No recovery or financing-fee deduction."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9a1aef8c9ada4224ad774afdac07c24955c92a54",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1683298588,
-        "creatorAddress": "0x09ceac97ae16d86126edc0cdf12acb81efd7e15d",
-        "transactionHash": "0x19bb6107a1364f986b533be46aeebc387b326c5dcf5fd570c357c51b5bfaade0",
-        "blockNumber": 27947265,
-        "transactionIndex": 183
-      },
-      "ageReset": {
-        "kind": "deployment"
-      },
-      "codeAgeSeconds": 39591,
-      "failureModeId": "failure:melo-unrestricted-mint",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x9a1aef8c9ada4224ad774afdac07c24955c92a54",
-        "codeHash": "0xa55f168ce3d3d7c02fba0646d92a1188e13e2863135af904d9ab02368f5b9bdb"
+      "address": "0x9a1aef8c9ada4224ad774afdac07c24955c92a54",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x19bb6107a1364f986b533be46aeebc387b326c5dcf5fd570c357c51b5bfaade0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x3f1973fe56de5ecd59a815d3b14741cf48385903b0ccfe248f7f10c2765061f7"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-05/Melo_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/peckshield/status/1654667621139349505"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-28T07:18:38Z",
-      "note": "Reviewed anchor, root cause, merged loss and complete target age history. Etherscan V2 getsourcecode for MEL (https://bscscan.com/address/0x9a1aef8c9ada4224ad774afdac07c24955c92a54#code) identifies cERC20: public mint invokes _mint without authorization; only balances, allowances, supply and immutable-in-practice metadata are stored. There is no upgrade, external call, SELFDESTRUCT or configuration setter. Source-5 receipt establishes direct creation by the recorded creator. eth_getCode at blocks 27947265 and 27960445 is byte-identical and hashes to codeArtifact.codeHash. Source-1 callTracer invokes mint selector 0xd3fc9864; Transfer log 71 creates 146965900.2021899513963488 MEL, log 74 transfers it to pair 0x6a8c4448763c08adeb80adebf7a29b9477fa0628, and USDT log 76 pays 90488.670389646322334139 to the attacker. This corrects the seed claim of arbitrary pair-token removal. First-use scan: eth_getLogs for MEL Transfer from zero over [27947265,124482922] finds only constructor issuance before source-1; all 3079 MEL Transfer logs through that upper bound were checked. Etherscan V2 account/tokentx for USDT at the pair, startblock=27947265,endblock=124482922,sort=asc,page=1,offset=10000 returns 181 entries, including 38 pair outflows at/after source-1. Reproduced their receipts and callTracer traces. Source-6 lists the 31 outflows funded by unauthorized mints, totaling 92338.994363420236700433 USDT; subtract the 0.000000062597217262 USDT input in 0xd3198b4888e9464945b05a6aee0fe3894e8899cabb288f33945a01c280617e26. Seven other outflows are ordinary resale of purchased MEL: sellers 0x00000000001f8b68515efb546542397d3293ccfd (two), 0x0000000000f92b9350f41fa6cd93be16ff7649db, 0xb8e02d517b733541df04c7404864546e21e50df4, 0xaaf89b4ecae9d843446ffd316dbdfee69fb0ed5e and 0xcde689f011340b7152df4eacbb38ef823348711e (two; received from buyer 0x509cbb19b4bc8ede5e36a2fe0ff7a053092e3ba2), and are excluded. Separate-transaction mint provenance is supplied by source-7. USDT has 18 decimals. Sum USDT Transfer amounts from the pair in source-6 minus its campaign input to reproduce loss; do not count onward transfers again. Later actors minting into this same runtime are merged, not new knots; final loss is block 64193011. Coverage is bounded at block 124482922 (2026-09-28); future repetitions require updating this record."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x19bb6107a1364f986b533be46aeebc387b326c5dcf5fd570c357c51b5bfaade0"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x3f1973fe56de5ecd59a815d3b14741cf48385903b0ccfe248f7f10c2765061f7",
-        "0x04635a1352be4ec298eae0c170f5df9468bafff29b4c360d8e39327d56e34f31",
-        "0x10e1c2402ca98558d33eb259be7172105071d4fe543f2874c8436ae38df6bf35",
-        "0x4d4032efedcb73e8b9f7e1fe19e81178635b5508ac621e95b13ebcb548b0bd83",
-        "0x9ce31b2299b3a9c6c39d32bcef70c10ebcf74b0508c3deac9e51ff5a97ea3613",
-        "0x361beb326bcc78e72b527bed1f05d98869ca762a2193aca4e96778e26400ba89",
-        "0x99fb260646450399fe4ca9a3e89a6497e02ec5415bbf5461c8122e89adec70ec",
-        "0xe33cf0dfc180f44d0529ae84ed38ee0c9f5f06cc10737a1c80de8fd54a853710",
-        "0x60d127a89f598aadaa2fb3790c5bbe0bc8fc52fa96056ce7d94f69eb1bd98636",
-        "0x7210e7338e45082296f16c5ca16bc7088bad671d1d7fa9acd9ae9b9f43c26441",
-        "0x347a5985bf6712372659f2ba0dd5acc691eb22e45797ebe7fcb33bbb3c734db5",
-        "0x17e382ae23a65a0045fe84fa03e123863fdfed3d6312402d483f595b41874de5",
-        "0xaa09db39b9711f69e4c6fff85be9a1b86f688553ec3356cb5990dc291b75879f",
-        "0x381167b9a4484e938369fae7f7da4fd07a0ce3818472fa787c5c6a373e3e9609",
-        "0xad31f8cf773fcae443d3c31da38ed1adae1633a8c10666cb03b0b65596cb0e47",
-        "0xd3198b4888e9464945b05a6aee0fe3894e8899cabb288f33945a01c280617e26",
-        "0x4d8fcccf4a47674e0b28d65f1aa7dc8d1fc49f1ae72359c45de7ce028427d361",
-        "0x97c35c1b795812e2e5f4897346ac6e8eaa0bcc974dcf008865752b7e3006c394",
-        "0xe35687f073906b1ec872eda0ae8e84be8d4078de9e89dc5383b38872ceb5c10b",
-        "0xd17de3f52340a6385f72e6ddbf5011ff957cbf87a133b45338f4d5441dc80911",
-        "0xfd2e0dbb2e088d5e46e8473abd37d2b4a9124fa8b7bdc4542ca17d0c1dcb9f83",
-        "0x62d12f3ce0a53df87b6e7441350b93b422c0e202a1d0f95045444fd3d37e4432",
-        "0xb10bce20d6ad9b448134be65aeee7ce0d54c7dd2a604a43e87c51eff08ee55db",
-        "0xdabf4727dbd07ffc3412290719aed0ac4c2e89bb07542633dc50d43a017c5990",
-        "0x82b91c04a5ccadd31a43668de4d6fcb3f34ebe101af9f3aa6865c28739bd0e39",
-        "0xfab7892619905ce6330189ff46aed4e2119e993c2a0d9d9794c2f39b4c32d049",
-        "0xc321b7b853eed858ccc113faa9b0f8b567e09a02641bf9746f2678431f38b7fe",
-        "0xbe4a03542e34c11ac911e5ccb1537901b105f0bee075afa92bba33411e26f168",
-        "0x7561d3a3ffd202d37a1d11379f5aa7bf98365b9d218aff10ce736cdc6beacbda",
-        "0xd4e7924b2937acaf5c643fc1edf4eab9eadebf9ae4120d202bcf8c992fa65eba",
-        "0x5251dc875cfa4040ee4cb2b4a2e864a33b3f85d97c20bd54b395fb236588d705"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x076c4755eea7612be2daf2e7b5d486e4d9cd8d3fdc404fee08413230f2bac958",
-        "0x36f674405d7f0cbd30a0768be77f98c1298f038b5556e4dbc509495f90af6d6c",
-        "0xaee5d652176ebfd7db9775cce1e3c68ea06c80d2a2ee474d300872d4d2e87ef1",
-        "0xd6fa202669933888a9c10625597d0de6648fa5290f8f28655a3ace3d2f00ba12",
-        "0x9bad952537a4e4ca6ea938bb2dbc7f86df8d2bd71130dc29558dfe526b7d1cf7"
-      ]
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Campaign scan ends at BNB Chain block 124482922; the immutable mint defect remains callable, so later losses would extend this episode."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 92338.99436335763,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "92338.994363357639483171",
+        "usd": 92338.99436335763
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/Melo_exp.sol",
+    "https://twitter.com/peckshield/status/1654667621139349505",
+    "eip155:56:0x04635a1352be4ec298eae0c170f5df9468bafff29b4c360d8e39327d56e34f31",
+    "eip155:56:0x10e1c2402ca98558d33eb259be7172105071d4fe543f2874c8436ae38df6bf35",
+    "eip155:56:0x4d4032efedcb73e8b9f7e1fe19e81178635b5508ac621e95b13ebcb548b0bd83",
+    "eip155:56:0x9ce31b2299b3a9c6c39d32bcef70c10ebcf74b0508c3deac9e51ff5a97ea3613",
+    "eip155:56:0x361beb326bcc78e72b527bed1f05d98869ca762a2193aca4e96778e26400ba89",
+    "eip155:56:0x99fb260646450399fe4ca9a3e89a6497e02ec5415bbf5461c8122e89adec70ec",
+    "eip155:56:0xe33cf0dfc180f44d0529ae84ed38ee0c9f5f06cc10737a1c80de8fd54a853710",
+    "eip155:56:0x60d127a89f598aadaa2fb3790c5bbe0bc8fc52fa96056ce7d94f69eb1bd98636",
+    "eip155:56:0x7210e7338e45082296f16c5ca16bc7088bad671d1d7fa9acd9ae9b9f43c26441",
+    "eip155:56:0x347a5985bf6712372659f2ba0dd5acc691eb22e45797ebe7fcb33bbb3c734db5",
+    "eip155:56:0x17e382ae23a65a0045fe84fa03e123863fdfed3d6312402d483f595b41874de5",
+    "eip155:56:0xaa09db39b9711f69e4c6fff85be9a1b86f688553ec3356cb5990dc291b75879f",
+    "eip155:56:0x381167b9a4484e938369fae7f7da4fd07a0ce3818472fa787c5c6a373e3e9609",
+    "eip155:56:0xad31f8cf773fcae443d3c31da38ed1adae1633a8c10666cb03b0b65596cb0e47",
+    "eip155:56:0xd3198b4888e9464945b05a6aee0fe3894e8899cabb288f33945a01c280617e26",
+    "eip155:56:0x4d8fcccf4a47674e0b28d65f1aa7dc8d1fc49f1ae72359c45de7ce028427d361",
+    "eip155:56:0x97c35c1b795812e2e5f4897346ac6e8eaa0bcc974dcf008865752b7e3006c394",
+    "eip155:56:0xe35687f073906b1ec872eda0ae8e84be8d4078de9e89dc5383b38872ceb5c10b",
+    "eip155:56:0xd17de3f52340a6385f72e6ddbf5011ff957cbf87a133b45338f4d5441dc80911",
+    "eip155:56:0xfd2e0dbb2e088d5e46e8473abd37d2b4a9124fa8b7bdc4542ca17d0c1dcb9f83",
+    "eip155:56:0x62d12f3ce0a53df87b6e7441350b93b422c0e202a1d0f95045444fd3d37e4432",
+    "eip155:56:0xb10bce20d6ad9b448134be65aeee7ce0d54c7dd2a604a43e87c51eff08ee55db",
+    "eip155:56:0xdabf4727dbd07ffc3412290719aed0ac4c2e89bb07542633dc50d43a017c5990",
+    "eip155:56:0x82b91c04a5ccadd31a43668de4d6fcb3f34ebe101af9f3aa6865c28739bd0e39",
+    "eip155:56:0xfab7892619905ce6330189ff46aed4e2119e993c2a0d9d9794c2f39b4c32d049",
+    "eip155:56:0xc321b7b853eed858ccc113faa9b0f8b567e09a02641bf9746f2678431f38b7fe",
+    "eip155:56:0xbe4a03542e34c11ac911e5ccb1537901b105f0bee075afa92bba33411e26f168",
+    "eip155:56:0x7561d3a3ffd202d37a1d11379f5aa7bf98365b9d218aff10ce736cdc6beacbda",
+    "eip155:56:0xd4e7924b2937acaf5c643fc1edf4eab9eadebf9ae4120d202bcf8c992fa65eba",
+    "eip155:56:0x5251dc875cfa4040ee4cb2b4a2e864a33b3f85d97c20bd54b395fb236588d705",
+    "eip155:56:0x076c4755eea7612be2daf2e7b5d486e4d9cd8d3fdc404fee08413230f2bac958",
+    "eip155:56:0x36f674405d7f0cbd30a0768be77f98c1298f038b5556e4dbc509495f90af6d6c",
+    "eip155:56:0xaee5d652176ebfd7db9775cce1e3c68ea06c80d2a2ee474d300872d4d2e87ef1",
+    "eip155:56:0xd6fa202669933888a9c10625597d0de6648fa5290f8f28655a3ace3d2f00ba12",
+    "eip155:56:0x9bad952537a4e4ca6ea938bb2dbc7f86df8d2bd71130dc29558dfe526b7d1cf7"
+  ],
+  "notes": [
+    "Merged 31 mint-and-sale transactions through 2025-10-11, including later actors repeating the same fault. USDT proceeds value the fabricated MEL at disposal, with USDT at $1. Subtract 0.000000062597217262 USDT supplied by a later exploiter to the pair; ordinary token purchases and sales are excluded. No recovery or financing-fee deduction.",
+    "Campaign scan ends at BNB Chain block 124482922; the immutable mint defect remains callable, so later losses would extend this episode."
+  ]
 }

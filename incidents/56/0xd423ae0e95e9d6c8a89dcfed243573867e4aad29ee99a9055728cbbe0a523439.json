@@ -1,132 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd423ae0e95e9d6c8a89dcfed243573867e4aad29ee99a9055728cbbe0a523439",
-  "protocol": {
-    "name": "Elephant Money",
-    "slug": "elephant-money"
-  },
+  "protocol": "Elephant Money",
   "name": "Elephant Status manipulable sweep pricing",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd423ae0e95e9d6c8a89dcfed243573867e4aad29ee99a9055728cbbe0a523439",
-      "blockNumber": 34114761,
-      "transactionIndex": 0,
-      "timestamp": 1701858478
-    },
-    "attackerAddresses": [
-      "0xbbcc139933d1580e7c40442e09263e90e6f1d66d"
-    ]
-  },
   "summary": "Permissionless sweep() sized and executed a zero-minimum-output Treasury-funded buyback from live PancakeSwap reserves, so the attacker skewed the BUSD/WBNB spot price, triggered the buyback against that price, reversed the trade, and retained the spread.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 114393.95820331553,
-      "valuationTimestamp": 1701858478,
-      "method": "stablecoin-par",
-      "sourceIds": ["source-1", "source-3", "source-5", "source-6"]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
-          "symbol": "BUSD"
-        },
-        "amount": "114393.958203315523088130",
-        "usdValue": 114393.95820331553,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1701858478,
-          "unitPriceUsd": 1,
-          "sourceIds": ["source-1"]
-        },
-        "sourceIds": ["source-1", "source-6"]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Net loss is the exact BUSD transfer from the attack helper to the attacker EOA after four flash-loan principals and fees were repaid; both attacker and helper started with zero BUSD and the helper ended with zero. The Treasury lost 193,627.110417113639371428 BUSD to the manipulated buyback, but the transaction also acquired and burned fee-on-transfer ELEPHANT and paid pool fees, so the vulnerability-attributable gross depletion cannot be isolated without a counterfactual price. The conservative onchain net is valued at par."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8cf0a553ab3896e4832ebcc519a7a60828ab5740",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8cf0a553ab3896e4832ebcc519a7a60828ab5740",
-        "codeHash": "0x579aa5066a65c59e3a7828e78421c77e0f18d61fdc236a641aed0572566f5f4e"
-      },
-      "deployment": {
-        "timestamp": 1663976852,
-        "blockNumber": 21595934,
-        "transactionHash": "0xb454f8d45d2cc0f5cb7c2624c35f26f7078f5929c2e26fc7ec553bd58a7c4e0c",
-        "transactionIndex": 32,
-        "creatorAddress": "0x16e76819ac1f0dfbecc48dfe93b198830e0c85eb"
-      },
-      "ageReset": {
+      "address": "0x8cf0a553ab3896e4832ebcc519a7a60828ab5740",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct Elephant Status runtime was created in this transaction and remained byte-identical through the pre-exploit block; no target-originated delegatecall or later code-selection event appears before or during the exploit."
-      },
-      "codeAgeSeconds": 37881626,
-      "failureModeId": "failure:elephant-status-manipulable-spot-buyback",
-      "evidence": {
-        "identitySourceIds": ["source-1", "source-3", "source-5", "source-6"],
-        "ageSourceIds": ["source-4", "source-6"]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": ["source-6"]
+        "tx": "0xb454f8d45d2cc0f5cb7c2624c35f26f7078f5929c2e26fc7ec553bd58a7c4e0c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd423ae0e95e9d6c8a89dcfed243573867e4aad29ee99a9055728cbbe0a523439"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Phalcon_xyz/status/1732354930529435940"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-12/ElephantStatus_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb454f8d45d2cc0f5cb7c2624c35f26f7078f5929c2e26fc7ec553bd58a7c4e0c"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://crypto.training/hacks/2023-12-elephantstatus/"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T12:25:00Z",
-      "note": "Reviewed the exploit receipt and call trace, commit-pinned reproduction, reconstructed sweep behavior, technical analysis, direct deployment receipt, historical runtime, balance changes, and transfer logs. The trace flash-borrows BUSD from four Pancake V3 pools, skews the Pancake V2 BUSD/WBNB pool, calls sweep() at 0x8cf0a553ab3896e4832ebcc519a7a60828ab5740, and has that contract withdraw 193627.110417113639371428 BUSD from Treasury before buying ELEPHANT through the manipulated pool with no minimum output. After the reverse swap and four repayments, the helper transfers exactly 114393.958203315523088130 BUSD to the attacker EOA; attacker and helper balances were zero before the transaction and the helper is zero after it. The defect-bearing address is a direct 10,040-byte runtime created at block 21595934. Its hash is 0x579aa5066a65c59e3a7828e78421c77e0f18d61fdc236a641aed0572566f5f4e at deployment and pre-exploit block 34114760, and the exploit trace contains no target-originated DELEGATECALL. Code age is 37,881,626 seconds."
-    }
+  "loss": {
+    "usd": 114393.95820331553,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "114393.958203315523088130",
+        "usd": 114393.95820331553
+      }
+    ]
+  },
+  "refs": [
+    "https://twitter.com/Phalcon_xyz/status/1732354930529435940",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/ElephantStatus_exp.sol",
+    "https://crypto.training/hacks/2023-12-elephantstatus/"
   ],
-  "discovery": [
-    "dfhl:src/test/2023-12/ElephantStatus_exp.sol",
-    "seed:elephant-money:2023-12-06:elephant-status-unprotected-sweep"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": ["source-6"]
-  }
+  "notes": [
+    "The direct Elephant Status runtime was created in this transaction and remained byte-identical through the pre-exploit block; no target-originated delegatecall or later code-selection event appears before or during the exploit.",
+    "Net loss is the exact BUSD transfer from the attack helper to the attacker EOA after four flash-loan principals and fees were repaid; both attacker and helper started with zero BUSD and the helper ended with zero. The Treasury lost 193,627.110417113639371428 BUSD to the manipulated buyback, but the transaction also acquired and burned fee-on-transfer ELEPHANT and paid pool fees, so the vulnerability-attributable gross depletion cannot be isolated without a counterfactual price. The conservative onchain net is valued at par."
+  ]
 }

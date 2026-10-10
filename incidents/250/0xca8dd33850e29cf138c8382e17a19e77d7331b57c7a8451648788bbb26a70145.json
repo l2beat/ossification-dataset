@@ -1,174 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:250:0xca8dd33850e29cf138c8382e17a19e77d7331b57c7a8451648788bbb26a70145",
-  "protocol": {
-    "name": "OneRing Finance",
-    "slug": "onering-finance"
-  },
+  "protocol": "OneRing Finance",
   "name": "OneRing OShare vault share price from spot strategy valuation",
-  "incident": {
-    "chainId": 250,
-    "exploit": {
-      "transactionHash": "0xca8dd33850e29cf138c8382e17a19e77d7331b57c7a8451648788bbb26a70145",
-      "blockNumber": 34041500,
-      "transactionIndex": 3,
-      "timestamp": 1647888250
-    },
-    "attackerAddresses": [
-      "0x12efed3512ea7b76f79bcde4a387216c7bce905e",
-      "0x6a6d593ed7458b8213fa71f1adc4a9e5fd0b5a58"
-    ]
-  },
   "summary": "The OShare vault implementation prices its shares from IStrategyManager.investedBalanceInUSD(), an aggregate mark that each MasterChef strategy derives from the live token balances of the stable pools it farms via getUSDBalanceFromUnderlyingBalance(). depositSafe() reads that mark before pulling the deposit, routes the deposit into the same pools through assetToUnderlying(), and mints shares from the USD figure the strategies report after the pools have moved; withdraw() reads the same mark again and then settles by removing the caller's pro-rata share of the strategies' LP positions. Both legs of a deposit-then-withdraw round trip therefore read a quantity the deposit itself controls inside one transaction. With an 80,000,000 USDC Solidly flash loan the attacker deposited 79,999,997 USDC into a vault whose pre-deposit mark was 4,448,686.168049134972760253 USD on 4,185,979.962653993796224466 shares, was credited an under-reported 44,599,205.960575506514590319 USD and minted 41,965,509.691846094312718922 shares, and then burned them for 47,696,475.292371545217068603 marked USD which settled as 81,534,750.101089 USDC out of the still-imbalanced pools. Boundary test: the mark is read unconditionally in the executed deposit and withdraw paths with no time average, invariant-based valuation or deviation bound, and the only caller-facing guard is the depositor's own _minAmount argument, so no configured value makes the deployed code correct.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1534753.101089,
-      "valuationTimestamp": 1647888250,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x04068da6c83afcfa0e13ba15a6696662335d5b75",
-          "symbol": "USDC"
-        },
-        "amount": "1534753.101089",
-        "usdValue": 1534753.101089,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1647888250,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion from the anchor receipt's USDC Transfer logs. The vault and its five strategies received 79,999,997 USDC from the attacker and paid 81,534,750.101089 USDC back to it, a net 1,534,753.101089 USDC funded out of the pre-existing OneRing LP positions: against the three farmed pools the strategy set is net positive by 437,413.252303, 839,621.868989 and 257,678.197053 USDC and collects 39.782744 USDC of harvested rewards, which sums to the same 1,534,753.101089. The attacker-supplied 80,000,000 USDC Solidly flash-loan principal is netted inside the same measurement and is not counted as loss; the 80,080.080081 USDC flash-loan fee is a financing cost that does not reduce gross victim depletion, so the attacker's own retained proceeds are the smaller 1,454,672.244369 USDC that the commonly reported 1.45 million figure describes. As corroboration the strategy manager's investedBalanceInUSD() falls from 4,448,686.168141524586181482 to 2,806,491.940626862259327592 across the exploit block, a 1,642,194.227514662326853890 USD drop, but that mark is itself spot-derived and still reflects the imbalance the attack left in the pools, so the receipt-derived USDC figure is used. USDC is valued at par."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4e332d616b5ba1edfd87c899e534d996c336a2fc",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xc06826f52f29b34c5d8b2c61abf844cebcf78abf",
-        "codeHash": "0xd8a4c86cdd57a43c93ce3812ed0e88627a1b635569b8e7778f02efb0a4e0aaa4"
-      },
-      "deployment": {
-        "timestamp": 1638534872,
-        "blockNumber": 23872504,
-        "transactionHash": "0x61ae1b2973549cbda1e09b68c96f9c155603f48ac26586cf09a73781e5bb58aa",
-        "transactionIndex": 2,
-        "creatorAddress": "0x94c1deb52be70d6f281e6cdf2cd99c9e839808c4"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1647486115,
-        "blockNumber": 33628407,
-        "transactionHash": "0x8192d04666f224a6f0e9f946766379bf7c3ba1d9e372d9b8f1a95d63b38c7fb1",
-        "transactionIndex": 0,
-        "logIndex": 0,
-        "mechanism": {
-          "type": "event",
-          "address": "0x4e332d616b5ba1edfd87c899e534d996c336a2fc",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "ProxyAdmin 0xc4d46363bbfb732a79278c202bf941585c83d36a executed upgrade(0x4e332d61..,0xc06826f5..) here, moving the EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc from 0xff47fe9e785a59499eacb0ad5757662a6dfc8020 to 0xc06826f52f29b34c5d8b2c61abf844cebcf78abf. A binary search over that slot places the transition exactly at this block, and an exhaustive eth_getLogs scan of the Upgraded topic on the proxy from block 33628408 to 34041499 returns no further event, so this is the last pre-exploit executable-code change."
-      },
-      "codeAgeSeconds": 402135,
-      "failureModeId": "failure:onering-vault-share-price-from-spot-strategy-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x4e332d616b5ba1edfd87c899e534d996c336a2fc",
+      "code": "0xc06826f52f29b34c5d8b2c61abf844cebcf78abf",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x8192d04666f224a6f0e9f946766379bf7c3ba1d9e372d9b8f1a95d63b38c7fb1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0xca8dd33850e29cf138c8382e17a19e77d7331b57c7a8451648788bbb26a70145"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T19:40:00Z",
-      "note": "Reviewed the anchor receipt, its 803-frame callTracer trace and prestateTracer output, the proxy's implementation-slot history, the creation and upgrade transactions, and the SlowMist and OneRing post-mortems. The anchor 0xca8dd33850e29cf138c8382e17a19e77d7331b57c7a8451648788bbb26a70145 is status 1 at block 34041500 index 3, timestamp 1647888250, sent by 0x12efed3512ea7b76f79bcde4a387216c7bce905e to attack contract 0x6a6d593ed7458b8213fa71f1adc4a9e5fd0b5a58. It is the only campaign transaction: an eth_getLogs scan of every log emitted by the vault over blocks 33900000-34041600 returns 220 logs and the attack contract appears in exactly one transaction, the anchor, whose logs 145 and 152 are the only mint and burn of its shares. In the trace the vault 0x4e332d616b5ba1edfd87c899e534d996c336a2fc DELEGATECALLs implementation 0xc06826f52f29b34c5d8b2c61abf844cebcf78abf for depositSafe (0x580ab673), withdraw (0x00f714ce), balanceOf and decimals; the implementation reads strategy manager 0x8b12522260d4ec64b93a7b087b084437bf9927ee investedBalanceInUSD() (0x1b055b29), which returns 4448686.168049134972760253 before the deposit and 52454108.199231767832161821 at the start of withdraw, and each strategy computes its leg with getUSDBalanceFromUnderlyingBalance (0xf50bfb8c) over live pool balances. Share arithmetic reproduces exactly: assetToUnderlying returns 44599205.960575506514590319 USD for the 79999997 USDC deposit, 44599205.960575506514590319 * 4185979.962653993796224466 / 4448686.168049134972760253 equals the 41965509.691846094312718922 shares minted, and 41965509.691846094312718922 / (4185979.962653993796224466 + 41965509.691846094312718922) * 52454108.199231767832161821 equals the 47696475.292371545217068603 USD passed to the strategy withdrawal, which settled as 81534750.101089 USDC. Target identity and code history: the proxy has no code at block 23872503 and was created by top-level CREATE from 0x94c1deb52be70d6f281e6cdf2cd99c9e839808c4 in 0x61ae1b2973549cbda1e09b68c96f9c155603f48ac26586cf09a73781e5bb58aa at block 23872504 index 2, an address unrelated to the attacker; a binary search over EIP-1967 slot 0x360894a1..2bbc puts the last implementation change at block 33628407, where the slot moves from 0xff47fe9e785a59499eacb0ad5757662a6dfc8020 to 0xc06826f52f29b34c5d8b2c61abf844cebcf78abf and the proxy emits Upgraded at transaction index 0, log index 0 with topic1 equal to the new implementation; scanning the Upgraded topic from 33628408 to 34041499 returns nothing. The implementation itself first has code at block 33628149, 243 seconds before the upgrade, and its runtime hashes to 0xd8a4c86cdd57a43c93ce3812ed0e88627a1b635569b8e7778f02efb0a4e0aaa4 at blocks 33628149, 33628407, 33800000, 34000000 and 34041499 and in the anchor prestate, so the artifact did not change after installation. codeAgeSeconds is 1647888250 - 1647486115 = 402135 (4.65 days). Loss reconstructed from the receipt's USDC Transfer logs as 1534753.101089 USDC of victim depletion."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0x8192d04666f224a6f0e9f946766379bf7c3ba1d9e372d9b8f1a95d63b38c7fb1"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0x61ae1b2973549cbda1e09b68c96f9c155603f48ac26586cf09a73781e5bb58aa"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://slowmist.medium.com/post-mortem-analysis-of-onering-incident-d6166354e46e"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://medium.com/oneringfinance/onering-finance-exploit-post-mortem-after-oshare-hack-602a529db99b"
-    },
-    {
-      "id": "source-7",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-03/OneRing_exp.sol"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2022-03/OneRing_exp.sol",
-    "seed:onering-finance:2022-03-21:onering-vault-share-pricing-manipulation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Neither the vault implementation 0xc06826f52f29b34c5d8b2c61abf844cebcf78abf nor the strategy implementations have verified source on any explorer reachable today: Etherscan v2 no longer serves chain 250 and Sourcify has no entry. The root cause was established from the execution trace, the reproduced share arithmetic and the SlowMist and OneRing post-mortems rather than from compiled source.",
-      "Five distinct strategy implementations supplied the manipulable per-pool USD marks. They are not byte-identical siblings, so no single representative strategy target is recorded; only the vault implementation that consumes the marks in its share accounting is aged here."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 1534753.101089,
+    "assets": [
+      {
+        "token": "0x04068da6c83afcfa0e13ba15a6696662335d5b75",
+        "symbol": "USDC",
+        "amount": "1534753.101089",
+        "usd": 1534753.101089
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://slowmist.medium.com/post-mortem-analysis-of-onering-incident-d6166354e46e",
+    "https://medium.com/oneringfinance/onering-finance-exploit-post-mortem-after-oshare-hack-602a529db99b",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/OneRing_exp.sol"
+  ],
+  "notes": [
+    "ProxyAdmin 0xc4d46363bbfb732a79278c202bf941585c83d36a executed upgrade(0x4e332d61..,0xc06826f5..) here, moving the EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc from 0xff47fe9e785a59499eacb0ad5757662a6dfc8020 to 0xc06826f52f29b34c5d8b2c61abf844cebcf78abf. A binary search over that slot places the transition exactly at this block, and an exhaustive eth_getLogs scan of the Upgraded topic on the proxy from block 33628408 to 34041499 returns no further event, so this is the last pre-exploit executable-code change.",
+    "Exact victim depletion from the anchor receipt's USDC Transfer logs. The vault and its five strategies received 79,999,997 USDC from the attacker and paid 81,534,750.101089 USDC back to it, a net 1,534,753.101089 USDC funded out of the pre-existing OneRing LP positions: against the three farmed pools the strategy set is net positive by 437,413.252303, 839,621.868989 and 257,678.197053 USDC and collects 39.782744 USDC of harvested rewards, which sums to the same 1,534,753.101089. The attacker-supplied 80,000,000 USDC Solidly flash-loan principal is netted inside the same measurement and is not counted as loss; the 80,080.080081 USDC flash-loan fee is a financing cost that does not reduce gross victim depletion, so the attacker's own retained proceeds are the smaller 1,454,672.244369 USDC that the commonly reported 1.45 million figure describes. As corroboration the strategy manager's investedBalanceInUSD() falls from 4,448,686.168141524586181482 to 2,806,491.940626862259327592 across the exploit block, a 1,642,194.227514662326853890 USD drop, but that mark is itself spot-derived and still reflects the imbalance the attack left in the pools, so the receipt-derived USDC figure is used. USDC is valued at par.",
+    "Neither the vault implementation 0xc06826f52f29b34c5d8b2c61abf844cebcf78abf nor the strategy implementations have verified source on any explorer reachable today: Etherscan v2 no longer serves chain 250 and Sourcify has no entry. The root cause was established from the execution trace, the reproduced share arithmetic and the SlowMist and OneRing post-mortems rather than from compiled source.",
+    "Five distinct strategy implementations supplied the manipulable per-pool USD marks. They are not byte-identical siblings, so no single representative strategy target is recorded; only the vault implementation that consumes the marks in its share accounting is aged here."
+  ]
 }

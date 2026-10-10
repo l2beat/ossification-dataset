@@ -1,166 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xe89fe640ec5241edfca7d8dcae77a0a4270dee15e4bbd043fc60e393aabf41e1",
-  "protocol": {
-    "name": "AROS",
-    "slug": "aros"
-  },
+  "protocol": "AROS",
   "name": "AROS claim flow zeroed its own AMM pair reserve",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xe89fe640ec5241edfca7d8dcae77a0a4270dee15e4bbd043fc60e393aabf41e1",
-      "blockNumber": 101353585,
-      "transactionIndex": 12,
-      "timestamp": 1780165447
-    },
-    "attackerAddresses": [
-      "0x6f548693937039c8c4343e01c5bd42c5986508f5",
-      "0x240f473a094096b4fb41d480ca57a7cc22c924e5"
-    ]
-  },
   "summary": "The AROS token's claim flow pays users out of the project's own PancakeSwap V2 AROS/USDT pair and then force-syncs it: claimPrincipal calls _pullFromLP and claimYield calls _drainFromLPTo three times, each moving AROS out of lpPair, and both end with IUniswapV2Pair.sync(). Nothing floors the remaining reserve. Holding an ordinary claim signature for 910,060.523010163297636200 AROS, the attacker first bought the pair down to exactly that balance with 206,410,902.218 flash-loaned USDT (routing the purchased AROS to the whitelisted feeRecipient so the tradingRestricted (R1) hook let the outflow through), then executed the two claims. The trailing sync() wrote the pair's AROS reserve to zero, so PancakeV2 swap()'s invariant check balance0Adjusted*balance1Adjusted >= reserve0*reserve1*1e6 degenerated to >= 0 and 729,507.137147434919290830 AROS bought the pair's entire 206,712,181.771544840545053791 USDT balance.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 301279.5528158876,
-      "valuationTimestamp": 1780165447,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "301279.552815887592509194",
-        "usdValue": 301279.5528158876,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1780165447,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
-          "symbol": "AROS"
-        },
-        "amount": "622117209.361571546199176230",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Victim depletion is measured on the AROS/USDT PancakeSwap V2 pair 0x3104d26ae74b49eec61675a873b38414329c5edd. Its USDT balance fell from 301279.552818728952544597 to 0.000002841360035403 across the single exploit transaction, so 301279.552815887592509194 USDT left the pair; USDT on BSC is valued at par. The attacker's own 206410902.218537 USDT purchase leg and the flash-loan principals from Moolah, Venus, Aave and Balancer are attacker-supplied inputs and are netted out, and the flash-loan fees that reduced his realised take to 295314.043814755023404189 USDT do not reduce gross depletion. The pair also lost 622117209.361571546199176230 AROS (622846716.498718981118467060 to 729507.137147434919290830), almost all of it forwarded to the AROS feeRecipient 0xecbf62c834a09559ffd044a75f4e46e53df62eed; that leg is left unvalued because this pair was AROS's only market and the same transaction destroyed it, so no pre-attack spot price was realisable for that quantity."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xd948279f89bd3198d9e81f4bf3a44ea558225c68",
-        "codeHash": "0x02876252788895e2f4ff3a5b36e381e3a9ec133cd8bb154f73324ff268afd05b"
-      },
-      "deployment": {
-        "timestamp": 1779802046,
-        "blockNumber": 100547423,
-        "transactionHash": "0x875b55c6c3c70facb270ac3e3b8f781bd50ab8f8e44f31c1c8bec16008632fba",
-        "transactionIndex": 68,
-        "creatorAddress": "0xc3a16304bf00ecb165d1aa83fd0db6a2ca6c9adc"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1779802046,
-        "blockNumber": 100547423,
-        "transactionHash": "0x875b55c6c3c70facb270ac3e3b8f781bd50ab8f8e44f31c1c8bec16008632fba",
-        "transactionIndex": 68,
-        "logIndex": 251,
-        "mechanism": {
-          "type": "event",
-          "address": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The ERC1967 proxy emitted its only Upgraded event in its own creation transaction, selecting implementation 0xd948279f89bd3198d9e81f4bf3a44ea558225c68. A full eth_getLogs scan of the Upgraded topic on the proxy from genesis to the exploit block returns exactly this one log, and the pre-exploit implementation slot still holds that address."
-      },
-      "codeAgeSeconds": 363401,
-      "failureModeId": "failure:token-claim-drains-amm-reserve-via-forced-sync",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
+      "code": "0xd948279f89bd3198d9e81f4bf3a44ea558225c68",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x875b55c6c3c70facb270ac3e3b8f781bd50ab8f8e44f31c1c8bec16008632fba"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe89fe640ec5241edfca7d8dcae77a0a4270dee15e4bbd043fc60e393aabf41e1"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-05/AROS_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x875b55c6c3c70facb270ac3e3b8f781bd50ab8f8e44f31c1c8bec16008632fba"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Reviewed the 762-frame callTracer trace and 161-log receipt of the anchor, the Etherscan-verified AROS implementation source, the proxy's full Upgraded-event history, and the attacker EOA's complete BSC transaction list. Corrections to the migrated row: the seed row's summary said reward logic let a flashloan-funded position claim principal and yield far exceeding real entitlement, which the chain contradicts. Both claims carry genuine EIP-712 signatures: the two ecrecover precompile frames return the configured claimSigner 0xa24198418bf2bfe264d087b891f91cd5a1e50c1d, and I independently reproduced the claimPrincipal digest 0x63ea7ff819225613d3e86d4bfc3344305e7be2ed3ba0a6db97cdad82552b7b13 from CLAIM_PRINCIPAL_TYPEHASH, msg.sender 0x6f548693937039c8c4343e01c5bd42c5986508f5, periodFrom 1, periodTo 3, amount 199269.156103688477492300 and deadline 1780166180 against the live domain separator 0xa029a38007cfa749fe494fe53126ef5d269ca66c15bb2d92896e87c172b0f039. The claimed totals (199269.156103688477492300 principal plus 568633.093525179856115100 user, 71079.136690647482014400 referral and 71079.136690647482014400 dividend yield) are within maxClaimPerTx 1e25 and the 8 percent daily drain cap, and the attacker EOA had six earlier purchaseProduct calls on the AROS sale contract 0x1575da54eebb56a1db13268a51d55c00ca0c9d60 plus a referral binding, so these are ordinary user entitlements, not a signer-key compromise. The real defect is that the claim path pays out of lpPair and then calls sync(): the pair's stored AROS reserve went 622846716.50 -> 910060.52 (buy) -> 710791.37 -> 0.00 across the two claims' Sync logs, after which 729507.137147434919290830 AROS extracted the pair's whole 206712181.771544840545053791 USDT balance because the k-check multiplies by a zero reserve. Target identity: executionAddress is the ERC1967 proxy 0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5, which the trace shows DELEGATECALLing 0xd948279f89bd3198d9e81f4bf3a44ea558225c68 for approve, balanceOf, transfer, transferFrom, claimPrincipal 0x4dfcd1ab and claimYield 0xcb4f8b0c; the PancakeSwap pair itself is stock code and is not the target. The implementation runtime is byte-identical at its creation block 100547397 and at 101353584 and hashes to 0x02876252788895e2f4ff3a5b36e381e3a9ec133cd8bb154f73324ff268afd05b. The proxy was created top-level by 0xc3a16304bf00ecb165d1aa83fd0db6a2ca6c9adc at 100547423:68 and emitted its single Upgraded event there at logIndex 251, giving 1780165447-1779802046 = 363401 s. Anchor: the attacker's transaction list shows nonces 17 to 25 are helper-contract creations and EIP-7702 self-sends and nonces 28 onward are USDT payouts, so this nonce-26 transaction is the earliest and only successful defect-executing transaction. Loss corrected from the seed row's rounded 295000, which was the attacker's post-fee take, to the pair's exact USDT depletion 301279.552815887592509194."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The 622117209.361571546199176230 AROS also drained from the pair is recorded without a USD value because the exploit destroyed the token's only market in the same transaction."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 301279.5528158876,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "301279.552815887592509194",
+        "usd": 301279.5528158876
+      },
+      {
+        "token": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
+        "symbol": "AROS",
+        "amount": "622117209.361571546199176230"
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/AROS_exp.sol"
+  ],
+  "notes": [
+    "The ERC1967 proxy emitted its only Upgraded event in its own creation transaction, selecting implementation 0xd948279f89bd3198d9e81f4bf3a44ea558225c68. A full eth_getLogs scan of the Upgraded topic on the proxy from genesis to the exploit block returns exactly this one log, and the pre-exploit implementation slot still holds that address.",
+    "Victim depletion is measured on the AROS/USDT PancakeSwap V2 pair 0x3104d26ae74b49eec61675a873b38414329c5edd. Its USDT balance fell from 301279.552818728952544597 to 0.000002841360035403 across the single exploit transaction, so 301279.552815887592509194 USDT left the pair; USDT on BSC is valued at par. The attacker's own 206410902.218537 USDT purchase leg and the flash-loan principals from Moolah, Venus, Aave and Balancer are attacker-supplied inputs and are netted out, and the flash-loan fees that reduced his realised take to 295314.043814755023404189 USDT do not reduce gross depletion. The pair also lost 622117209.361571546199176230 AROS (622846716.498718981118467060 to 729507.137147434919290830), almost all of it forwarded to the AROS feeRecipient 0xecbf62c834a09559ffd044a75f4e46e53df62eed; that leg is left unvalued because this pair was AROS's only market and the same transaction destroyed it, so no pre-attack spot price was realisable for that quantity.",
+    "The 622117209.361571546199176230 AROS also drained from the pair is recorded without a USD value because the exploit destroyed the token's only market in the same transaction."
+  ]
 }

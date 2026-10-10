@@ -1,154 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x9c919da34696425913f32587f00d2838031a8726a2c5ddfa39e33a45b36e6427",
-  "protocol": {
-    "name": "RWC Token",
-    "slug": "rwc-token"
-  },
+  "protocol": "RWC Token",
   "name": "RWC deferred sell burn removes pair RWC and syncs on demand",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x9c919da34696425913f32587f00d2838031a8726a2c5ddfa39e33a45b36e6427",
-      "blockNumber": 123134630,
-      "transactionIndex": 95,
-      "timestamp": 1789972735
-    },
-    "attackerAddresses": [
-      "0x7a674349b84975726b948c4f5054aada5e419edb",
-      "0x4e0af13be91f953a1f7dd9b43011a09e9f452ef8",
-      "0xa5b02a184f2bc91234c5a3ab821f59df7fb076d3"
-    ]
-  },
   "summary": "RWC._transfer queues 40% of every sold amount (first 100M-token tier) as pendingPoolBurn and, on the next sell or through the permissionless executePendingPoolBurn(), subtracts that amount from the PancakeSwap pair's own RWC balance, credits DEAD and calls pair.sync(). The burn is paid by the pool's reserve rather than by the seller and can be triggered by anyone at any time, including by a zero-amount transfer to the pair. A flash-loan attacker looped buy, sell and executePendingPoolBurn 29 times, burning 38657.98 of the pair's 52156.45 RWC, ratcheting the RWC price up and selling back, and drained 109460.85 USDT from the RWC/USDT pair in one transaction.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 109460.85476122559,
-      "valuationTimestamp": 1789972735,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "109460.854761225592889657",
-        "usdValue": 109460.85476122559,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1789972735,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDT depletion of the RWC/USDT pair 0x053207705669538a2b3851bcd1279572c0f55e40 in the single exploit transaction (pair balance 155361.577596537419707755 at block 123134629, 45900.722835311826818098 at block 123134630). Destination split from the receipt: 39964.071600905055157624 USDT to the attacker EOA, 62547.104844288483958918 to companyWallet 0xde2f6153f49e3134b88e98e3e86c0ae0411cc11b and 6949.678316032053773115 to platformWallet/deployer 0x911ea5a98fb8f238ffcb86c8a531d69afc7b4cde through the token's own sell-fee swap. The fee-routed part is counted because it left the pool only through the attacker's manipulated sells; the pool's liquidity had been added by 0x3aefe6c935131e6b853deacad9e566603eec0223 and its LP tokens sent to DEAD, so the depleted USDT was the backing of RWC holders. The 2495286.020489131224935440 USDT flash loan from 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c was repaid within the transaction and is not loss.",
-    "realizedAt": 1789972735
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c",
-        "codeHash": "0x9d93d20a3db92d20374e754d4d5e99bc5382c6ea3d23b40da260c9f73f26c136"
-      },
-      "deployment": {
-        "timestamp": 1789282234,
-        "blockNumber": 121600792,
-        "transactionHash": "0x0b197066df924abf4c245c30c43dd9bb284dd7fcc9014d40f1511c83726cf0fb",
-        "transactionIndex": 78,
-        "creatorAddress": "0x911ea5a98fb8f238ffcb86c8a531d69afc7b4cde"
-      },
-      "ageReset": {
+      "address": "0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-proxy RWC token created directly by an EOA; its constructor computes and stores swapPair and the 40%/1% burn tiers. Runtime hash is identical at the deployment block and immediately before the exploit, and the owner's only later configuration calls were setFeeExempt/setLimitExempt on unrelated wallets."
-      },
-      "codeAgeSeconds": 690501,
-      "failureModeId": "failure:rwc-deferred-sell-burn-from-pair-permissionless-sync",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x0b197066df924abf4c245c30c43dd9bb284dd7fcc9014d40f1511c83726cf0fb"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x9c919da34696425913f32587f00d2838031a8726a2c5ddfa39e33a45b36e6427"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x0b197066df924abf4c245c30c43dd9bb284dd7fcc9014d40f1511c83726cf0fb"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T21:49:44Z",
-      "note": "Anchor from TenArmor alert (source-6). source-1 is a contract-creation tx (nonce 0) by EOA 0x7a674349b84975726b948c4f5054aada5e419edb at 123134630:95, status 1, timestamp 1789972735; it deploys 0x4e0af13be91f953a1f7dd9b43011a09e9f452ef8, which deploys 0xa5b02a184f2bc91234c5a3ab821f59df7fb076d3 and selfdestructs. debug_traceTransaction(callTracer): 0xa5b0 flashLoan(USDT, 2495286020489131224935440) from 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c; in the callback it calls RWC updateDailyReferencePrice() (0x15e20b55), transfer(pair,0) (a zero-amount sell that runs _executePendingPoolBurn), then loops swapTokensForExactTokens (buy) / swapExactTokensForTokensSupportingFeeOnTransferTokens (sell) / executePendingPoolBurn() (0xcc387261) / transfer(pair,0)+skim, ending with 25 rounds of sell 227184751749338739480 wei RWC + executePendingPoolBurn; 37 executePendingPoolBurn calls, 29 pair.sync() calls. Receipt: 29 Transfer(pair -> 0x...dead) logs on RWC (logIndex 607..1164) totalling 38657980303471065541460; DEAD balance 0 at block 123134629, so no pool burn had ever executed before this tx (first exercise). Pair RWC balance 52156448160161232098053 -> 13475926701764882714045. Verified source (source-5) RWC._transfer: on isSell && !isFeeExempt[from] it runs _executePendingPoolBurn() (balanceOf[swapPair] -= pendingPoolBurn; balanceOf[DEAD] += ...; IPair(swapPair).sync(), guarded only by pairBalance >= burn + minimumPairRwcReserve (1e22)) and then adds _calculateBurnAmount(amount) (4000/10000 below DEAD balance 100M tokens) to pendingPoolBurn; executePendingPoolBurn() is external with no access control. Boundary test: the pair burn transfers reserve value from LPs to whoever holds RWC and is sized by the caller's own sells, so it is exploitable for every positive burn rate and every pair; no admin value makes it safe other than disabling burns; executable-code defect. Code history: Etherscan getcontractcreation and source-2 receipt: contractAddress 0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c created at 121600792:78 by EOA 0x911ea5a98fb8f238ffcb86c8a531d69afc7b4cde, block timestamp 1789282234. eth_getCode at 121600791 = 0x; keccak(eth_getCode) at 121600792 and at 123134629 = 0x9d93d20a3db92d20374e754d4d5e99bc5382c6ea3d23b40da260c9f73f26c136 (13454 bytes); no proxy or delegatecall. Admin review: Etherscan txlist of the owner, blocks 121600000..123134630, has 16 txs; those to the token are the deployment, two transfers, 7 setFeeExempt and 6 setLimitExempt on wallets 0x89f2d5b7.., 0xe9cb97ab.., 0xeb6fe67d.., 0x3ea33d5a.., 0x3aefe6c9.. (none is the attacker or pair); no setSwapPair/setBurnTiers/setMinimumPairRwcReserve/setFeeRates call. State read at 123134629: swapPair = 0x053207705669538a2b3851bcd1279572c0f55e40 (constructor-computed, PancakeSwap factory 0xca143ce32fe78f1f7019d7d551a6402fc5350c73), burnTierLength 2, minimumPairRwcReserve 1e22, pendingPoolBurn 58194654412674697251, totalSoldToPair 145486636031686743132. codeAgeSeconds = 1789972735 - 1789282234 = 690501 (7.99 d). Later pair USDT activity (blocks 123134726..124092694) consists of small ordinary swaps; no repeat exploit."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T21:49:44Z",
-      "note": "Loss: eth_call USDT 0x55d398326f99059ff775485246999027b3197955 balanceOf(pair 0x053207705669538a2b3851bcd1279572c0f55e40) = 155361577596537419707755 at block 123134629 and 45900722835311826818098 at block 123134630 (difference 109460854761225592889657); source-1 is the only tx touching the pair's USDT in that block. Netting all USDT Transfer logs in the source-1 receipt by address: pair -109460854761225592889657, attacker EOA 0x7a674349b84975726b948c4f5054aada5e419edb +39964071600905055157624, companyWallet 0xde2f6153f49e3134b88e98e3e86c0ae0411cc11b +62547104844288483958918, platformWallet 0x911ea5a98fb8f238ffcb86c8a531d69afc7b4cde +6949678316032053773115; flash lender nets 0. BSC-USD has 18 decimals and is valued at par."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified RWC source at https://bscscan.com/address/0x1337120d4aa3a7f4b5bc7c38f742ad62d4a8bf5c#code; reproduce with Etherscan V2 contract.getsourcecode chainid=56. ContractName RWC, compiler v0.8.34+commit.80d5c536, optimizer 200 runs; SHA-256 of the returned SourceCode string 27a042e2bb3ced6335b5f0997eb6e947178523e2b46972b314945aea44a51056. Inspect _transfer, _executePendingPoolBurn, executePendingPoolBurn and _calculateBurnAmount."
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://x.com/TenArmorAlert/status/2101925758214316524"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 109460.8547612256,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "109460.854761225592889657",
+        "usd": 109460.8547612256
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-21:rwc-token"
+  "refs": [
+    "https://x.com/TenArmorAlert/status/2101925758214316524"
+  ],
+  "notes": [
+    "Non-proxy RWC token created directly by an EOA; its constructor computes and stores swapPair and the 40%/1% burn tiers. Runtime hash is identical at the deployment block and immediately before the exploit, and the owner's only later configuration calls were setFeeExempt/setLimitExempt on unrelated wallets.",
+    "Exact USDT depletion of the RWC/USDT pair 0x053207705669538a2b3851bcd1279572c0f55e40 in the single exploit transaction (pair balance 155361.577596537419707755 at block 123134629, 45900.722835311826818098 at block 123134630). Destination split from the receipt: 39964.071600905055157624 USDT to the attacker EOA, 62547.104844288483958918 to companyWallet 0xde2f6153f49e3134b88e98e3e86c0ae0411cc11b and 6949.678316032053773115 to platformWallet/deployer 0x911ea5a98fb8f238ffcb86c8a531d69afc7b4cde through the token's own sell-fee swap. The fee-routed part is counted because it left the pool only through the attacker's manipulated sells; the pool's liquidity had been added by 0x3aefe6c935131e6b853deacad9e566603eec0223 and its LP tokens sent to DEAD, so the depleted USDT was the backing of RWC holders. The 2495286.020489131224935440 USDT flash loan from 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c was repaid within the transaction and is not loss."
   ]
 }

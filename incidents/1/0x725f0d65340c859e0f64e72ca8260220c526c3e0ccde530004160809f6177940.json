@@ -1,171 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x725f0d65340c859e0f64e72ca8260220c526c3e0ccde530004160809f6177940",
-  "protocol": {
-    "name": "Bedrock",
-    "slug": "bedrock-defi"
-  },
+  "protocol": "Bedrock",
   "name": "Bedrock uniBTC vault native mint without price conversion",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x725f0d65340c859e0f64e72ca8260220c526c3e0ccde530004160809f6177940",
-      "blockNumber": 20836584,
-      "transactionIndex": 129,
-      "timestamp": 1727375303
-    },
-    "attackerAddresses": [
-      "0x0c8da4f8b823bee4d5dab73367d45b5135b50fab",
-      "0x1e1d02d663228e5d47f1de64030b39632a3b787d",
-      "0x2bfb373017349820dda2da8230e6b66739be9f96",
-      "0xee800b1b63893ca1e1b0fa8fefdc10fac9b980f7"
-    ]
-  },
   "summary": "The uniBTC Vault's payable mint() treats msg.value as \"native BTC\" and mints uniBTC at _amount / EXCHANGE_RATE_BASE (1e10), i.e. one 8-decimal uniBTC per whole 18-decimal native coin, with no ETH/BTC price conversion. That path is only sound on BTC-gas chains; on Ethereum it minted BTC-denominated uniBTC one-for-one against ETH. The implementation activated at block 20826624 also replaced the native-mint guard require(address(this).balance <= caps[NATIVE_BTC]) with require(ISupplyFeeder(supplyFeeder).totalSupply(NATIVE_BTC) <= caps[NATIVE_BTC]); with caps[NATIVE_BTC] = 0 and the supply feeder reporting 0 for NATIVE_BTC, the check that had previously blocked every native mint on Ethereum passed, opening the path.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1711485.8184311974,
-      "valuationTimestamp": 1727375303,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "649.604054576756594919",
-        "usdValue": 1711485.8184311974,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1727375303,
-          "unitPriceUsd": 2634.66,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Single-transaction extraction. Inside the anchor transaction the attacker contract 0x1e1d02d663228e5d47f1de64030b39632a3b787d flash-borrowed 30.8 WETH from Balancer, unwrapped it, called Vault.mint{value: 30.8 ether}() and received 30.8 uniBTC (3,080,000,000 units, 8 decimals), sold 28.81420431 uniBTC into the Uniswap v3 uniBTC/WBTC 0.05% pool 0x3a32f5040bc4d8417e78e236eb2c48c90e003fda for 27.83925883 WBTC (worth about USD 1,810,471 at the incident timestamp), routed that WBTC through the WBTC/WETH pool 0x4585fe77225b41b697c938b018e2ac67ac5a20c0 for 680.404054576756594919 WETH, repaid the 30.8 WETH flash loan and deposited the remaining 649.604054576756594919 ETH into Aave v3 for 0xee800b1b63893ca1e1b0fa8fefdc10fac9b980f7, which withdrew it 43 blocks later. The measured loss is that 649.604054576756594919 ETH of realised extraction; the 30.8 ETH the attacker paid into the vault stayed with Bedrock and is not added back, and the 1.98579569 uniBTC left unsold in the attacker contract is not counted. Between blocks 20836664 and 20837340 roughly two dozen copycat addresses executed the same native mint for about 6.8 ETH in total; they are not attributed to this attacker and are excluded from the number, which is why contemporaneous reporting of about USD 2 million exceeds the USD 1.71 million measured here. Nothing was recovered: Bedrock's deployer 0x899c284a89e113056a72dc9ade5b60e80dd3c94f sent an onchain whitehat offer to both attacker addresses on 2024-09-27 and got no response, and between 2024-10-01 blocks 20871292 and 20871405 the beneficiary address moved 650.1 ETH into Tornado Cash. Fuzzland disclosed in 2025 that a former employee was the attacker and said it reimbursed affected parties off-chain; that is a third-party reimbursement, not a return of the stolen assets, and it is not netted out."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x047d41f2544b7f63a8e991af2068a363d210d6da",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x702696b2aa47fd1d4feaaf03ce273009dc47d901",
-        "codeHash": "0x5e6136a222f106082c86909ba21413e027be81d314fc5ff3304ef083f21b9dd4"
-      },
-      "deployment": {
-        "timestamp": 1712998547,
-        "blockNumber": 19645601,
-        "transactionHash": "0x9f6813ffca82ead81b7c90fc2f6c777382348a3d98761eccfd6c7f6ae7c0315c",
-        "transactionIndex": 157,
-        "creatorAddress": "0x899c284a89e113056a72dc9ade5b60e80dd3c94f"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1727255243,
-        "blockNumber": 20826624,
-        "transactionHash": "0x18ebc6166e021d7c9f5d8366823d2388987dec697164a63fc370e4176ee3145a",
-        "transactionIndex": 62,
-        "logIndex": 338,
-        "mechanism": {
-          "type": "event",
-          "address": "0x047d41f2544b7f63a8e991af2068a363d210d6da",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Fourth and last pre-exploit Upgraded event on the TransparentUpgradeableProxy, emitted as log 338 of a Gnosis Safe execTransaction at block 20826624, selecting implementation 0x702696b2aa47fd1d4feaaf03ce273009dc47d901 in topic1. The EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc reads 0x702696b2aa47fd1d4feaaf03ce273009dc47d901 at block 20836583 and 0xc0c9e78bfc3996e8b68d872b29340816495d7e89 at block 20826623, so this event is the change that put the exploited code in service."
-      },
-      "codeAgeSeconds": 120060,
-      "failureModeId": "failure:bedrock-unibtc-vault-native-mint-no-price-conversion",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+      "address": "0x047d41f2544b7f63a8e991af2068a363d210d6da",
+      "code": "0x702696b2aa47fd1d4feaaf03ce273009dc47d901",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x18ebc6166e021d7c9f5d8366823d2388987dec697164a63fc370e4176ee3145a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x725f0d65340c859e0f64e72ca8260220c526c3e0ccde530004160809f6177940"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-09/Bedrock_DeFi_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9f6813ffca82ead81b7c90fc2f6c777382348a3d98761eccfd6c7f6ae7c0315c"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x18ebc6166e021d7c9f5d8366823d2388987dec697164a63fc370e4176ee3145a"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1727375303/coingecko:ethereum",
-      "observedAt": 1787644191
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://www.quillaudits.com/blog/hack-analysis/bedrock-2million-exploit"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T10:40:00Z",
-      "note": "Anchor kept. The v1 anchor 0x725f0d65 is a contract-creation transaction whose constructor deploys 0x1e1d02d663228e5d47f1de64030b39632a3b787d and immediately runs the attack in the same successful transaction, so it executes the defect and finalises the loss; it is also the first ever NATIVE_BTC mint on the vault. Enumerating Minted(address,uint256) (topic 0x30385c845b448a36257a6a1716e6ad2e1bc2cbe333cde1e69fe849ad6511adfe) on the vault from the upgrade block 20826624 to block 20870000 shows every earlier mint used WBTC or another wrapped token; the first 0xbedfffffffffffffffffffffffffffffffffffff mint is this transaction, and the copycat native mints all follow it. The attacker EOA 0x2bfb373017349820dda2da8230e6b66739be9f96 has exactly three Ethereum transactions and no transactions on BSC, Arbitrum, Optimism, Base or Polygon; the beneficiary 0xee800b1b63893ca1e1b0fa8fefdc10fac9b980f7 likewise has no transactions on those chains; and 0x047d41f2544b7f63a8e991af2068a363d210d6da has no code on BSC, Arbitrum, Optimism, Base or Mantle. The campaign is therefore Ethereum-only and this record is scoped to Ethereum. Execution context is the TransparentUpgradeableProxy 0x047d41f2544b7f63a8e991af2068a363d210d6da, which the trace shows delegatecalling 0x702696b2aa47fd1d4feaaf03ce273009dc47d901 for mint(); that implementation's runtime code hash is 0x5e6136a222f106082c86909ba21413e027be81d314fc5ff3304ef083f21b9dd4 at both block 20826624 and block 20836583. Complete code history: the proxy emitted exactly four Upgraded events between its creation block 19645601 and block 20836583 - block 19645601 log 325 to 0x317b8e2739616c9ea30c4f7e51c1d48c47876ef6 (creation transaction 0x9f6813ff, transaction index 157, creator 0x899c284a89e113056a72dc9ade5b60e80dd3c94f), block 20280582 log 52 to 0x47237218650608082d41b8b707305da2be108e45, block 20561723 log 181 to 0xc0c9e78bfc3996e8b68d872b29340816495d7e89, and block 20826624 log 338 transaction index 62 to 0x702696b2aa47fd1d4feaaf03ce273009dc47d901. The EIP-1967 implementation slot confirms the ordering: 0xc0c9e78b at block 20826623 and 0x702696b2 at block 20836583. Code age is therefore 120060 s (1 d 9 h 21 m). The upgrade transaction 0x18ebc616 is a Gnosis Safe execTransaction from Bedrock's own multisig path, not attacker-installed. Reading both verified sources confirms the regression: 0xc0c9e78b guarded the native mint with require(address(this).balance <= caps[NATIVE_BTC], \"USR003\"), and with caps[NATIVE_BTC] = 0 and the vault holding 0 ETH at block 20836583 any native mint would have reverted; 0x702696b2 replaced it with require(ISupplyFeeder(supplyFeeder).totalSupply(NATIVE_BTC) <= caps[NATIVE_BTC], \"USR003\"), and the trace shows supply feeder 0x94c7f81e3b0458daa721ca5e29f6ced05ccce2b3 returning 0 for NATIVE_BTC, so 0 <= 0 passed. _amounts(uint256) is unchanged across both and always returns _amount / 1e10, i.e. no ETH/BTC price conversion. Loss is the 649.604054576756594919 ETH the attacker realised in the anchor transaction, priced at the DefiLlama ETH observation at 1727375278 of USD 2634.66, giving USD 1,711,485.82; the WBTC leg drained from the uniBTC/WBTC pool (27.83925883 WBTC, about USD 1,810,471) is the mirror measurement and is stated in the loss notes. Recoveries are excluded and none occurred onchain: 650.1 ETH went into Tornado Cash on 2024-10-01."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 1711485.8184311974,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "649.604054576756594919",
+        "usd": 1711485.8184311974
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-09/Bedrock_DeFi_exp.sol",
+    "https://www.quillaudits.com/blog/hack-analysis/bedrock-2million-exploit"
+  ],
+  "notes": [
+    "Fourth and last pre-exploit Upgraded event on the TransparentUpgradeableProxy, emitted as log 338 of a Gnosis Safe execTransaction at block 20826624, selecting implementation 0x702696b2aa47fd1d4feaaf03ce273009dc47d901 in topic1. The EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc reads 0x702696b2aa47fd1d4feaaf03ce273009dc47d901 at block 20836583 and 0xc0c9e78bfc3996e8b68d872b29340816495d7e89 at block 20826623, so this event is the change that put the exploited code in service.",
+    "Single-transaction extraction. Inside the anchor transaction the attacker contract 0x1e1d02d663228e5d47f1de64030b39632a3b787d flash-borrowed 30.8 WETH from Balancer, unwrapped it, called Vault.mint{value: 30.8 ether}() and received 30.8 uniBTC (3,080,000,000 units, 8 decimals), sold 28.81420431 uniBTC into the Uniswap v3 uniBTC/WBTC 0.05% pool 0x3a32f5040bc4d8417e78e236eb2c48c90e003fda for 27.83925883 WBTC (worth about USD 1,810,471 at the incident timestamp), routed that WBTC through the WBTC/WETH pool 0x4585fe77225b41b697c938b018e2ac67ac5a20c0 for 680.404054576756594919 WETH, repaid the 30.8 WETH flash loan and deposited the remaining 649.604054576756594919 ETH into Aave v3 for 0xee800b1b63893ca1e1b0fa8fefdc10fac9b980f7, which withdrew it 43 blocks later. The measured loss is that 649.604054576756594919 ETH of realised extraction; the 30.8 ETH the attacker paid into the vault stayed with Bedrock and is not added back, and the 1.98579569 uniBTC left unsold in the attacker contract is not counted. Between blocks 20836664 and 20837340 roughly two dozen copycat addresses executed the same native mint for about 6.8 ETH in total; they are not attributed to this attacker and are excluded from the number, which is why contemporaneous reporting of about USD 2 million exceeds the USD 1.71 million measured here. Nothing was recovered: Bedrock's deployer 0x899c284a89e113056a72dc9ade5b60e80dd3c94f sent an onchain whitehat offer to both attacker addresses on 2024-09-27 and got no response, and between 2024-10-01 blocks 20871292 and 20871405 the beneficiary address moved 650.1 ETH into Tornado Cash. Fuzzland disclosed in 2025 that a former employee was the attacker and said it reimbursed affected parties off-chain; that is a third-party reimbursement, not a return of the stolen assets, and it is not netted out."
+  ]
 }

@@ -1,149 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x65a29faf44c5be567e9ea2aa419254263a1b8553799258d9e36769a06ceac109",
-  "protocol": {
-    "name": "OPC",
-    "slug": "opc"
-  },
+  "protocol": "OPC",
   "name": "OPC trading helper burns sold tokens out of its pair",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x65a29faf44c5be567e9ea2aa419254263a1b8553799258d9e36769a06ceac109",
-      "blockNumber": 47974588,
-      "transactionIndex": 0,
-      "timestamp": 1743505545
-    },
-    "attackerAddresses": [
-      "0xd69d3fa2b786d2bc69b4a119e5b954983c29ff14",
-      "0x5cff3beef0aa6f48dcba718fafe4a9a46a799edf"
-    ]
-  },
   "summary": "Every OPC trade goes through the unverified helper 0xa642e668. On a sell (db3f7000 with flag 1), it swaps 95% of the tokens into the OPC/USDT pair, burns 90% of the sold amount from the pair with burnFrom, and calls sync(), so the pair's OPC reserve barely grows while USDT flows out. Its e3bb6e96 liquidity removal also pays the caller the helper's entire OPC balance. The attacker flash-borrowed 10M USDT and bought OPC with the helper as recipient, then swept it out with e3bb6e96. It made 100 helper sells, each burning OPC from the pair, and dumped the rest, taking 112,750 USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 112749.68143701534,
-      "valuationTimestamp": 1743505545,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "112749.681437015338724737",
-        "usdValue": 112749.68143701534,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1743505545,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDT depletion of the OPC/USDT pair 0xa05548891a30bc92b767ca86817a1cd06288bb9a in the exploit transaction. The attacker's 10M USDT flash liquidity is circular and excluded. The deployer's later owner withdrawal of the remaining 15433 USDT (source-6) is a separate privileged action and is not counted.",
-    "realizedAt": 1743505545
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa642e66873111deb830739b90c03fd6981a34332",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa642e66873111deb830739b90c03fd6981a34332",
-        "codeHash": "0x033bc5bbc19b8f4ef4043688ec17f84beb0c0e31f2253360cad1c5f9f74612b0"
-      },
-      "deployment": {
-        "timestamp": 1743397135,
-        "blockNumber": 47938454,
-        "transactionHash": "0xa134092661c9ab193de21c7639c8a510e77a9d8feec8607a8cda78bc518aafcf",
-        "transactionIndex": 0,
-        "creatorAddress": "0x485eea0724c4dd0335ddab624c8a630b97aa1826"
-      },
-      "ageReset": {
+      "address": "0xa642e66873111deb830739b90c03fd6981a34332",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct, non-upgradeable helper runtime containing the sell-path pair burn and the balance-sweeping liquidity removal. The owner's four setup calls before the first trade only wire the pair and open trading; they set no erroneous value."
-      },
-      "codeAgeSeconds": 108410,
-      "failureModeId": "failure:opc-helper-0xa642e668-sell-burns-pair-reserve",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "Helper, token and pair have no verified source. The pair-burn and balance-sweep logic are established from the exploit trace (call arguments and amounts), not from source text."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xa134092661c9ab193de21c7639c8a510e77a9d8feec8607a8cda78bc518aafcf"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x65a29faf44c5be567e9ea2aa419254263a1b8553799258d9e36769a06ceac109"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa134092661c9ab193de21c7639c8a510e77a9d8feec8607a8cda78bc518aafcf"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:19:08Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. In source-1 (block 47974588, index 0), EOA 0xd69d3fa2 calls its contract 0x5cff3bee (fe18379f). debug_traceTransaction(callTracer) shows the following. (1) A helper buy: db3f7000(10e18, 0) pulls 10 USDT, swaps 9.8 via router 0x06cdd259bf80490a2981cfe21422f467a4b956ba and pays out OPC 0x049afd7d2b67d6d2da2ead41c325a10a4a61419f, then calls OPC.burnFrom(pair, 25200e18) (0x79cc6790) and pair.sync (0xfff6cae9). (2) 8cb494a3 adds liquidity. (3) 10M USDT is flash-borrowed from 0x36696169c63e42cd08ce11f5deebbcebae652050 and swapped via 0x06cdd259 with recipient = the helper, for 21454564296831298667758733061 OPC. (4) e3bb6e96(1e18) removes 0.95 LP and then transfers the helper's entire OPC balance, 21454564301794313657278153006, to the caller. (5) There are 100 sells db3f7000(X, 1). In the first, X = 2751604542499618753326064: the helper swaps 2614024315374637815659760 (95%) for 94951.83 USDT, burnFrom(pair, 2476444088249656877993457) (90%), returns 137580227124980937666303 OPC and 2637.55 USDT to the pair, pays 92314.28 USDT to the caller, and syncs. The pair's OPC reserve thus grows by only 10% of each sale. Across the transaction the helper makes 201 burnFrom(pair) calls totalling 765435350.89 OPC. The attacker then dumps the remaining OPC through the router and repays. Proceeds went to Tornado-style deposits (13d98d13) of 100 and 10 BNB at 0x0d5550d52428e7e3175bfc9550207e4ad3859b17, blocks 47974759..47974854. Identity/age: eth_getCode is empty at 47938453. keccak at 47938454 and 47974587 is the recorded hash (17263 bytes, no DELEGATECALL or SELFDESTRUCT before the metadata at offset 17210). Source-2 (index 0) is a top-level creation by 0x485eea07. Admin review: Etherscan txlist for the helper, blocks 0..47974588, has 1917 transactions: 1793+21 db3f7000, 92+1 8cb494a3, 5 e3bb6e96, and 4 owner calls before the first trade (61261c3a(pair, owner) at 47938551, 08b2f1b2(pair) at 47938578, 43abdb3e(1) at 47938592, bc5d2d03() at 47938748) that only wire and open trading; 1335 distinct callers. The pair 0xa0554889 is a custom pair (factory() = 0xfd998f8d7e4fe9a8ef8da31fcf7177b1b2903b9f) created by the deployer with 51800 USDT in 0x81843fa2f9bf8cbb0eb39da90acc5b715b7ee786d769672c16b2a14b42553e91. It has an owner token-transfer function 43f9e098(token, to, amount), used only after the exploit (source-6). No link between attacker and deployer was found: the attacker EOA was funded with 3.07 BNB by an internal transfer from 0x55877bd7f2ee37bde55ca4b271a3631f3a7ef121 (block 47974464), and its proceeds went to the deposits above. Earliest exercise: Etherscan tokentx for USDT of the pair, blocks 47938515..47976385, returns 2122 transfers. Only source-1 (gross 10263984.32 in, 10376734.00 out) and source-6 (15433 out) move more than 3000 USDT out of the pair; no earlier transaction pumps and repeatedly sells."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:19:08Z",
-      "note": "Reviewed loss. USDT balanceOf(pair 0xa05548891a30bc92b767ca86817a1cd06288bb9a) is 128081354039377877333585 at block 47974587 and 15331672602362538608848 at 47974588. The difference, 112749681437015338724737 (18 decimals), equals the pair's net USDT outflow in source-1's tokentx rows. USDT is valued at par."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x13431dcc646978c3c80931e14d38093a5b3a7b4cecc5c1fad6ce518aab9fde7b"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 112749.68143701534,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "112749.681437015338724737",
+        "usd": 112749.68143701534
+      }
     ]
   },
-  "discovery": [
-    "web:2025-04-01:opc"
+  "refs": [
+    "eip155:56:0x13431dcc646978c3c80931e14d38093a5b3a7b4cecc5c1fad6ce518aab9fde7b"
+  ],
+  "notes": [
+    "Direct, non-upgradeable helper runtime containing the sell-path pair burn and the balance-sweeping liquidity removal. The owner's four setup calls before the first trade only wire the pair and open trading; they set no erroneous value.",
+    "Exact USDT depletion of the OPC/USDT pair 0xa05548891a30bc92b767ca86817a1cd06288bb9a in the exploit transaction. The attacker's 10M USDT flash liquidity is circular and excluded. The deployer's later owner withdrawal of the remaining 15433 USDT (source-6) is a separate privileged action and is not counted.",
+    "Helper, token and pair have no verified source. The pair-burn and balance-sweep logic are established from the exploit trace (call arguments and amounts), not from source text."
   ]
 }

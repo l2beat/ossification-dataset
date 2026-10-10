@@ -1,172 +1,42 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x995e880635f4a7462a420a58527023f946710167ea4c6c093d7d193062a33b01",
-  "protocol": {
-    "name": "Barley Finance",
-    "slug": "barley-finance"
-  },
+  "protocol": "Barley Finance",
   "name": "wBARL pod flash-loan bond reentrancy",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x995e880635f4a7462a420a58527023f946710167ea4c6c093d7d193062a33b01",
-      "blockNumber": 19106655,
-      "transactionIndex": 5,
-      "timestamp": 1706464499
-    },
-    "attackerAddresses": [
-      "0x7b3a6eff1c9925e509c2b01a389238c1fcc462b6"
-    ]
-  },
   "summary": "The wBARL WeightedIndex pod's flash() sent out the pod's entire BARL reserve and only checked the balance after the callback, so the attacker called bond() inside the callback and minted pod shares against the flash-loaned BARL, repeating it before debonding.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 133971.27171106517,
-      "valuationTimestamp": 1706464499,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-4",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "59.050958554556785566",
-        "usdValue": 133971.27171106517,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1706464495,
-          "unitPriceUsd": 2268.74,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is exact net WETH depletion from the wBARL pod, BARL/DAI pool, and DAI/WETH pool treated as one incident victim set. In the anchor receipt the union conserves exactly 180,115,268.225698757678458280 BARL and 119,220.660871058657167624 DAI while sending 52.133956080457251524 WETH. The second receipt conserves exactly 34,460,652.829973374255498438 BARL and 15,727.075468297283066862 DAI while sending 6.917002474099534042 WETH. BARL and DAI therefore cancel inside the union, leaving 59.050958554556785566 WETH gross depletion. Four precursor transfers fund the helper with 400 DAI, which it pays as 40 ten-DAI flash fees to separate recipient 0xd719345fe7030aeae8e2e9eb0e00e299f3a1ce15; those funds never enter the victim union and do not offset WETH depletion. After the second receipt the helper holds zero DAI, BARL, and WETH, while the EOA holds exactly the summed WETH. Its later exact unwrap, separate DAI disposal, and native distributions do not return value to the victim set and are outside the gross boundary. Archive union WETH balances reconcile both incident blocks after separately accounting for unrelated pool inputs. The closest preceding DefiLlama ETH observation is $2,268.74 at 1706464495, four seconds before the anchor. Exact loss is $133,971.27171106517, replacing the seed's rounded $130,000 estimate.",
-    "realizedAt": 1706464799
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x04c80bb477890f3021f03b068238836ee20aa0b8",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x04c80bb477890f3021f03b068238836ee20aa0b8",
-        "codeHash": "0x1087aac050442f4f86d91fc9419262927aa23f89948020a521d098b59b842a17"
-      },
-      "deployment": {
-        "timestamp": 1706273675,
-        "blockNumber": 19090907,
-        "transactionHash": "0xa2ac13be8ce86b7f913e082563e9ac9c1bf78200748837f53a3edfb015daca58",
-        "transactionIndex": 89,
-        "creatorAddress": "0x1aa354a9b333be75141ad8270313e34b6f51e3d4"
-      },
-      "ageReset": {
+      "address": "0x04c80bb477890f3021f03b068238836ee20aa0b8",
+      "reset": {
         "kind": "deployment",
-        "description": "The wBARL pod is directly deployed. Its 16,571-byte runtime is absent one block before creation and has code hash 0x1087aac050442f4f86d91fc9419262927aa23f89948020a521d098b59b842a17 at deployment and immediately before the incident. The EIP-1967 implementation, admin, and beacon slots are zero, and the incident trace contains no delegatecall from the pod. Deployment is therefore the latest age reset."
-      },
-      "codeAgeSeconds": 190824,
-      "failureModeId": "failure:barley-wbarl-flash-bond-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xa2ac13be8ce86b7f913e082563e9ac9c1bf78200748837f53a3edfb015daca58"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x995e880635f4a7462a420a58527023f946710167ea4c6c093d7d193062a33b01"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Phalcon_xyz/status/1751788389139992824"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-01/BarleyFinance_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T12:35:58Z",
-      "note": "Reviewed the sender's bounded nonce history, all nine successful campaign transactions and both incident receipts, call traces, archive token balances, the wBARL pod and both routed pools, verified deployed source, commit-pinned technical reproduction, published analysis, direct pod creation receipt, runtime code and EIP-1967 slots, and the independently preceding ETH price. The anchor succeeds at Ethereum block 19106655 index 5, timestamp 1706464499, and its trace reaches direct wBARL pod 0x04c80bb477890f3021f03b068238836ee20aa0b8 42 times without delegatecall. The pinned reproduction and deployed source establish that re-entering bond during the flash callback mints pod shares against flash-borrowed BARL before repayment is checked. Campaign transactions are sender nonces 4 through 12: helper 0x356e7481b957be0165d6751a49b4b7194aef18d5 deployment; two loop-count configurations; four DAI funding transfers totaling 400 DAI; and two incident calls. Each call performs 20 cycles and pays 200 DAI as twenty ten-DAI fees to separate recipient 0xd719345fe7030aeae8e2e9eb0e00e299f3a1ce15. These fees never enter the victim union. In the anchor receipt, the wBARL pod, BARL/DAI pool 0x4eb37415b8077e1bfbee5556a3073592d18f9f4c, and DAI/WETH pool 0x60594a405d53811d3bc4766596efd80fd545a270 jointly receive and send exactly 180,115,268.225698757678458280 BARL and 119,220.660871058657167624 DAI, while sending 52.133956080457251524 WETH. In the second call 0x2a50db3d...876c at block 19106680 index 53, timestamp 1706464799, the same union receives and sends exactly 34,460,652.829973374255498438 BARL and 15,727.075468297283066862 DAI, while sending 6.917002474099534042 WETH. BARL and DAI cancel inside this implicated pod-plus-pools victim set; exact gross loss is therefore 59.050958554556785566 WETH. After the second receipt the helper holds zero DAI, BARL, and WETH, and the sender holds exactly that WETH total. The next sender transaction unwraps exactly 59.050958554556785566 WETH. A later swap of the sender's separate remaining DAI, its unwrap, and native distributions do not return value to the victim set and are outside the gross boundary. Archive union WETH balances reconcile each incident block with unrelated pool activity separated: at block 19106655, 1,036.104633835523413197 opening + 45.101726897241277041 unrelated inflow - 52.133956080457251524 incident outflow = 1,029.072404652307438714 ending; at block 19106680, 1,034.233628112886900917 + 0.4 unrelated inflow - 6.917002474099534042 incident outflow = 1,027.716625638787366875. The pod was directly created by 0x1aa354a9b333be75141ad8270313e34b6f51e3d4 in 0xa2ac13be...a58 at block 19090907 index 89, timestamp 1706273675. Code is absent one block earlier, and the 16,571-byte runtime hashes to 0x1087aac050442f4f86d91fc9419262927aa23f89948020a521d098b59b842a17 at deployment and immediately before the incident. All three EIP-1967 slots are zero. Deployment is the latest age reset, 1706464499 - 1706273675 = 190,824 seconds. The closest preceding DefiLlama ETH point is $2,268.74 at 1706464495, four seconds before the anchor; exact loss is $133,971.27171106517."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa2ac13be8ce86b7f913e082563e9ac9c1bf78200748837f53a3edfb015daca58"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x02400a41ba4a8e6173c5cba8077af8c56ce55f689c8d2b634515ab2458c52826",
-        "0x954604de22bc0fe57a132b77b7e9831a138100a5c38dbfd76beab35b754771fa",
-        "0xa685928b5102349a5cc50527fec2e03cb136c233505471bdd4363d0ab077a69a",
-        "0xaaa197c7478063eb1124c8d8b03016fe080e6ec4c4f4a4e6d7f09022084e3390",
-        "0x2b32972bacac11262588a2d7d72a440478a09359c3380a9efa1d9d1b19b6209e",
-        "0xbc7766e18163a9c0fd29ef2135bade924b17c547945d0eaf5813059c3a195a57",
-        "0x995e880635f4a7462a420a58527023f946710167ea4c6c093d7d193062a33b01",
-        "0x75c5faeb0577b3f5db10e7fb905050c0d80979331163e851ae253e951bca161c",
-        "0x2a50db3dac1b4468d226deb53cb34737669b5f93848ac04d4e296ade06f9876c"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1706464400/coingecko:ethereum?searchWidth=4h",
-      "observedAt": 1788006958
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-01/BarleyFinance_exp.sol",
-    "seed:barley-finance:2024-01-28:wbarl-pod-flash-loan-bond-reentrancy",
-    "web:2024-01-29:barley-finance"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 133971.27171106517,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "59.050958554556785566",
+        "usd": 133971.27171106517
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://twitter.com/Phalcon_xyz/status/1751788389139992824",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/BarleyFinance_exp.sol",
+    "eip155:1:0x02400a41ba4a8e6173c5cba8077af8c56ce55f689c8d2b634515ab2458c52826",
+    "eip155:1:0x954604de22bc0fe57a132b77b7e9831a138100a5c38dbfd76beab35b754771fa",
+    "eip155:1:0xa685928b5102349a5cc50527fec2e03cb136c233505471bdd4363d0ab077a69a",
+    "eip155:1:0xaaa197c7478063eb1124c8d8b03016fe080e6ec4c4f4a4e6d7f09022084e3390",
+    "eip155:1:0x2b32972bacac11262588a2d7d72a440478a09359c3380a9efa1d9d1b19b6209e",
+    "eip155:1:0xbc7766e18163a9c0fd29ef2135bade924b17c547945d0eaf5813059c3a195a57",
+    "eip155:1:0x75c5faeb0577b3f5db10e7fb905050c0d80979331163e851ae253e951bca161c",
+    "eip155:1:0x2a50db3dac1b4468d226deb53cb34737669b5f93848ac04d4e296ade06f9876c"
+  ],
+  "notes": [
+    "The wBARL pod is directly deployed. Its 16,571-byte runtime is absent one block before creation and has code hash 0x1087aac050442f4f86d91fc9419262927aa23f89948020a521d098b59b842a17 at deployment and immediately before the incident. The EIP-1967 implementation, admin, and beacon slots are zero, and the incident trace contains no delegatecall from the pod. Deployment is therefore the latest age reset.",
+    "Gross loss is exact net WETH depletion from the wBARL pod, BARL/DAI pool, and DAI/WETH pool treated as one incident victim set. In the anchor receipt the union conserves exactly 180,115,268.225698757678458280 BARL and 119,220.660871058657167624 DAI while sending 52.133956080457251524 WETH. The second receipt conserves exactly 34,460,652.829973374255498438 BARL and 15,727.075468297283066862 DAI while sending 6.917002474099534042 WETH. BARL and DAI therefore cancel inside the union, leaving 59.050958554556785566 WETH gross depletion. Four precursor transfers fund the helper with 400 DAI, which it pays as 40 ten-DAI flash fees to separate recipient 0xd719345fe7030aeae8e2e9eb0e00e299f3a1ce15; those funds never enter the victim union and do not offset WETH depletion. After the second receipt the helper holds zero DAI, BARL, and WETH, while the EOA holds exactly the summed WETH. Its later exact unwrap, separate DAI disposal, and native distributions do not return value to the victim set and are outside the gross boundary. Archive union WETH balances reconcile both incident blocks after separately accounting for unrelated pool inputs. The closest preceding DefiLlama ETH observation is $2,268.74 at 1706464495, four seconds before the anchor. Exact loss is $133,971.27171106517, replacing the seed's rounded $130,000 estimate."
+  ]
 }

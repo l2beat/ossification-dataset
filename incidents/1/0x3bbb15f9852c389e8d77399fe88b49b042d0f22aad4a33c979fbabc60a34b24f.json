@@ -1,185 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f",
-  "protocol": {
-    "name": "Audius",
-    "slug": "audius"
-  },
+  "protocol": "Audius",
   "name": "Audius Governance proxy re-initialization",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f",
-      "blockNumber": 15201736,
-      "transactionIndex": 61,
-      "timestamp": 1658616877
-    },
-    "attackerAddresses": [
-      "0xa0c7bd318d69424603cbf91e9969870f21b8ab4c",
-      "0xa62c3ced6906b188a4d4a3c981b79f2aabf2107f",
-      "0xbdbb5945f252bc3466a319cdcc3ee8056bf2e569"
-    ]
-  },
   "summary": "AudiusAdminUpgradeabilityProxy declares `address private proxyAdmin` in ordinary storage slot 0, while the delegated Governance logic inherits OpenZeppelin's Initializable, whose `bool private initialized` and `bool private initializing` are packed into byte 0 and byte 1 of the same slot 0. The Governance proxy's admin is its own address 0x4deca517d6817b6510798b7328f2314d3003abac, so byte 1 reads 0xab and `initializing` is permanently true. The `initializer` modifier's guard `require(initializing || isConstructor() || !initialized)` therefore always passes and, because `isTopLevelCall = !initializing` is false, never re-arms. Governance.initialize(address,uint256,uint256,uint256,uint16,address) stayed callable by anyone for the life of the deployed proxy; the attacker re-ran it to install himself as guardian, then submitted and evaluated his own proposal, which moved the community treasury's AUDIO balance out.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1091400.861974381,
-      "valuationTimestamp": 1658617863,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x18aaa7115705e8be94bffebde57af9bfc265b998",
-          "symbol": "AUDIO"
-        },
-        "amount": "18564497.819999999999735541",
-        "usdValue": 1091400.861974381,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1658617863,
-          "unitPriceUsd": 0.05878967869513751,
-          "sourceIds": [
-            "source-7",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Proposal 85 moved exactly 18564497.819999999999735541 AUDIO from the Governance/community treasury 0x4deca517d6817b6510798b7328f2314d3003abac to the attacker helper in 0x4227bca8ed4b8915c7eec0e14ad3748a88c4371d4176e716e8007249b9980dc9 (log 0x2b). Twenty-seven seconds later the attacker swapped the entire position through the single Uniswap V2 AUDIO/WETH pair 0xc730ef0f4973da9cc0ab8ab291890d3e77f58f79 and received 704.177543861243828018 ETH in 0x82fc23992c7433fffad0e28a1b8d11211dc4377de83e88088d79f24f4a3f28b3. That one swap took AUDIO from a 0.3667 USD spot mark to a realised 0.0588 USD per token, so the realised ETH proceeds are used as the valuation, priced at the DefiLlama ETH observation nearest the sale. Spot-marking the 18.56M AUDIO would imply 6.8M USD, a price at which the quantity could not have been sold. Nothing was recovered. Gas and the attacker's earlier failed proposals do not adjust the depletion.",
-    "realizedAt": 1658617923
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4deca517d6817b6510798b7328f2314d3003abac",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8",
-        "codeHash": "0x874e23b77179162e528aae1af8fa45eefde15b71495c13093b723a3367bac00c"
-      },
-      "deployment": {
-        "timestamp": 1603333553,
-        "blockNumber": 11103280,
-        "transactionHash": "0x1c865588300c717cb1e71dc699bb23b26b4ad929967394ab74816a4b1a83228a",
-        "transactionIndex": 54,
-        "creatorAddress": "0xde21d46753633a177223faa6e56e8f6cd24cca04"
-      },
-      "ageReset": {
+      "address": "0x4deca517d6817b6510798b7328f2314d3003abac",
+      "code": "0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8",
+      "reset": {
         "kind": "deployment",
-        "description": "The Governance proxy was created with implementation 0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8 selected in its constructor, which is the moment the defect-bearing artifact became active for this execution context. The implementation contract itself was created two blocks earlier in 0x8776e874401ca138c391d835a079f153348157963d76c77f3ebcbe164d196100. No Upgraded(address) event was ever emitted by the proxy before the exploit, and the EIP-1967 implementation slot still held 0x35dd16... at block 15201735."
-      },
-      "codeAgeSeconds": 55283324,
-      "failureModeId": "failure:audius-governance-initializer-storage-collision",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-9"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5",
-          "source-9"
-        ]
+        "tx": "0x1c865588300c717cb1e71dc699bb23b26b4ad929967394ab74816a4b1a83228a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://blog.audius.co/posts/audius-governance-takeover-post-mortem-7-23-22"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-07/Audius_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1c865588300c717cb1e71dc699bb23b26b4ad929967394ab74816a4b1a83228a"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T10:45:16Z",
-      "note": "Reviewed the exploit and deployment transactions, execution trace, proxy runtime and EIP-1967 implementation state, official post-mortem, commit-pinned reproduction, and loss valuation. The exploit delegates through the Governance proxy to 0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8. Verified proxy source makes Upgraded(address) the implementation-change path; a complete log scan from deployment through the exploit returned no Upgraded event. The constructor-selected implementation and proxy runtime remained unchanged through the exploit."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x4227bca8ed4b8915c7eec0e14ad3748a88c4371d4176e716e8007249b9980dc9"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1658617923/coingecko:ethereum",
-      "observedAt": 1787687969
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x82fc23992c7433fffad0e28a1b8d11211dc4377de83e88088d79f24f4a3f28b3"
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T20:33:40Z",
-      "note": "Re-review that re-anchored the record and rebuilt the loss from receipts. Anchor: the campaign's earliest successful defect-executing transaction is 0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f at 15201736:61, timestamp 1658616877, status 1, in which the attacker helper 0xa62c3ced6906b188a4d4a3c981b79f2aabf2107f calls selector 0x55c66ac1 = initialize(address,uint256,uint256,uint256,uint16,address) on the Governance proxy 0x4deca517d6817b6510798b7328f2314d3003abac, which DELEGATECALLs 0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8; METHODOLOGY anchors an unprotected-initializer incident on that call, so the previously used treasury-drain transaction 0x4227bca8... (15201799:8) is now loss evidence and realizedAt. Code history: Etherscan getcontractcreation puts the proxy at 11103280:54 in 0x1c865588300c717cb1e71dc699bb23b26b4ad929967394ab74816a4b1a83228a from 0xde21d46753633a177223faa6e56e8f6cd24cca04 and the implementation two blocks earlier at 11103278; the EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc read 0x...35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8 at block 15201798 and the implementation runtime at that block hashes to 0x874e23b77179162e528aae1af8fa45eefde15b71495c13093b723a3367bac00c; a full eth_getLogs scan of the proxy shows no Upgraded event, so the artifact is unchanged since the proxy's deployment and codeAgeSeconds = 1658616877 - 1603333553 = 55283324 (639.9 d). Loss: log 0x2b of 0x4227bca8... transfers exactly 18564497819999999999735541 AUDIO wei from the treasury to 0xbdbb5945f252bc3466a319cdcc3ee8056bf2e569; the whole balance was swapped 27 s later in 0x82fc23992c7433fffad0e28a1b8d11211dc4377de83e88088d79f24f4a3f28b3 through Uniswap V2 pair 0xc730ef0f4973da9cc0ab8ab291890d3e77f58f79, and the callTracer shows exactly 704177543861243828018 wei returned to the attacker EOA. 704.177543861243828018 ETH x 1549.8944427989857 USD/ETH (DefiLlama observation at 1658617863) = 1091400.86 USD; the previous 6.8M USD figure spot-marked AUDIO at 0.3667 USD, a price destroyed by the attacker's own sale. Storage collision verified directly: eth_getStorageAt(0x4deca517d6817b6510798b7328f2314d3003abac, slot 0) at block 15201735 returns 0x0000000000000000000000004deca517d6817b6510798b7328f2314d3003abac, the proxy's own address held in AudiusAdminUpgradeabilityProxy's `address private proxyAdmin`; the Governance implementation reads byte 0 of that word as Initializable.initialized (0xac, true) and byte 1 as Initializable.initializing (0xab, true), and the modifier `require(initializing || isConstructor() || !initialized)` short-circuits on the first term, so the guard is permanently open."
-    }
-  ],
-  "discovery": [
-    "web:2022-07-23:audius-governance",
-    "seed:audius:2022-07-23:audius-governance-proxy-re-initialization"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5",
-      "source-9"
+  "loss": {
+    "usd": 1091400.861974381,
+    "assets": [
+      {
+        "token": "0x18aaa7115705e8be94bffebde57af9bfc265b998",
+        "symbol": "AUDIO",
+        "amount": "18564497.819999999999735541",
+        "usd": 1091400.861974381
+      }
     ]
   },
+  "refs": [
+    "https://blog.audius.co/posts/audius-governance-takeover-post-mortem-7-23-22",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-07/Audius_exp.sol",
+    "eip155:1:0x4227bca8ed4b8915c7eec0e14ad3748a88c4371d4176e716e8007249b9980dc9",
+    "eip155:1:0x82fc23992c7433fffad0e28a1b8d11211dc4377de83e88088d79f24f4a3f28b3"
+  ],
   "notes": [
+    "The Governance proxy was created with implementation 0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8 selected in its constructor, which is the moment the defect-bearing artifact became active for this execution context. The implementation contract itself was created two blocks earlier in 0x8776e874401ca138c391d835a079f153348157963d76c77f3ebcbe164d196100. No Upgraded(address) event was ever emitted by the proxy before the exploit, and the EIP-1967 implementation slot still held 0x35dd16... at block 15201735.",
+    "Proposal 85 moved exactly 18564497.819999999999735541 AUDIO from the Governance/community treasury 0x4deca517d6817b6510798b7328f2314d3003abac to the attacker helper in 0x4227bca8ed4b8915c7eec0e14ad3748a88c4371d4176e716e8007249b9980dc9 (log 0x2b). Twenty-seven seconds later the attacker swapped the entire position through the single Uniswap V2 AUDIO/WETH pair 0xc730ef0f4973da9cc0ab8ab291890d3e77f58f79 and received 704.177543861243828018 ETH in 0x82fc23992c7433fffad0e28a1b8d11211dc4377de83e88088d79f24f4a3f28b3. That one swap took AUDIO from a 0.3667 USD spot mark to a realised 0.0588 USD per token, so the realised ETH proceeds are used as the valuation, priced at the DefiLlama ETH observation nearest the sale. Spot-marking the 18.56M AUDIO would imply 6.8M USD, a price at which the quantity could not have been sold. Nothing was recovered. Gas and the attacker's earlier failed proposals do not adjust the depletion.",
     "The same anchor transaction also re-initialized the Registry proxy 0xe6d97b2099f142513be7a2a068be040656ae4591 and the Staking proxy 0x4d7968ebfd390d5e7926cb3587c39eff2f9fb225, which are deployed behind the same AudiusAdminUpgradeabilityProxy pattern. They are separate implementations and no loss is attributed to them, so they are recorded here as context rather than as additional targets."
   ]
 }
