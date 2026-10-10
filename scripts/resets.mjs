@@ -95,7 +95,11 @@ const codeAt = memo((address, block) => call('eth_getCode', address, blockTag(bl
 const slotAt = memo((address, slot, block) => call('eth_getStorageAt', address, slot, blockTag(block)))
 const transaction = memo((tx) => call('eth_getTransactionByHash', tx))
 const receipt = memo((tx) => call('eth_getTransactionReceipt', tx))
-const txBlock = async (tx) => hexInt((await transaction(tx)).blockNumber)
+const txBlock = async (tx) => {
+  const found = await transaction(tx)
+  if (!found) throw new Error(`transaction ${tx} not found on eip155:${chain}`)
+  return hexInt(found.blockNumber)
+}
 let traced = 0
 const traceBlock = memo(async (block, kind) => {
   if (traced++ >= TRACED_BLOCKS) return null
