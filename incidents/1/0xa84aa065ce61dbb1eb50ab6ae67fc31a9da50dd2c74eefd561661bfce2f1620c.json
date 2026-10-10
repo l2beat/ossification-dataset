@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Curve",
-  "name": "Curve pETH/ETH Vyper lock reentrancy",
-  "summary": "Vyper 0.2.15 allocated the same named nonreentrant lock to different storage slots in different functions. The pETH/ETH pool's native-ETH callback therefore allowed cross-function reentrancy from remove_liquidity() into add_liquidity(), minting an invalid claim on pool reserves.",
+  "name": "Curve factory ETH pool Vyper lock reentrancy (pETH, alETH)",
+  "summary": "Vyper 0.2.15 gave each function's @nonreentrant('lock') its own storage slot, so the factory ETH plain-pool template had no shared lock. From the raw-ETH callback in remove_liquidity() the attacker re-entered add_liquidity() before LP supply was reduced, minting LP at an inflated rate and withdrawing it.",
   "targets": [
     {
       "address": "0x9848482da3ee3076165ce6497eda906e66bb85c5",
@@ -14,24 +14,31 @@
     }
   ],
   "loss": {
-    "usd": 11460969.464399068,
+    "usd": 34179809.77,
     "assets": [
       {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "6106.654659206663837483",
-        "usd": 11460969.464399068
+        "symbol": "ETH",
+        "amount": "13366.356228556668338641",
+        "usd": 25122864.73
+      },
+      {
+        "token": "0x0100546f2cd4c9d97f798ffc9755e47865ff7ee6",
+        "symbol": "alETH",
+        "amount": "4821.550464760440887778",
+        "usd": 9056945.04
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0xb676d789bb8b66a08105c844a49c2bcffb400e5c1cfabd4bc30cca4bff3c9801"
+  ],
   "refs": [
-    "eip155:1:0xd27491757b3a4bc9287ed44ce5c43de9f32131264548ce139f0a702c3d5f389e",
     "https://github.com/vyperlang/vyper/security/advisories/GHSA-5824-cm3x-3c38",
     "https://www.llamarisk.com/research/curve-pool-reentrancy-exploit-postmortem",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Curve_exp01.sol"
   ],
   "notes": [
-    "Curve's factory deployed an immutable 45-byte EIP-1167 clone whose runtime embeds implementation 0x6326debbaa15bcfe603d831e7d75f4fc10d9b43e. Both clone and implementation runtimes remained unchanged through the exploit.",
-    "The exploit receipt records exactly 86,106.654659206663837483 WETH wrapped after the pool operations, 80,000 WETH repaid to Balancer, and 6,106.654659206663837483 WETH transferred as net proceeds. Later recovery is separate from exploit-time loss. Other Vyper-affected pools were attacked independently and are not included."
+    "pETH/ETH, msETH/ETH and alETH/ETH are EIP-1167 clones of the same factory implementation, so the alETH drain the same afternoon is a copycat of this incident (rule 4). The msETH drain was c0ffeebabe.eth front-running an attacker and returning the proceeds to Metronome, an affiliated rescue, and is excluded. CRV/ETH is separately compiled code and stays its own incident.",
+    "Loss is the gross ETH both pools lost plus the alETH the alETH pool lost, not the attackers' net proceeds after repaying their flash loans."
   ]
 }

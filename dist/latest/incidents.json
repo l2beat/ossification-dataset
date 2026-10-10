@@ -11929,9 +11929,9 @@
     "chainId": 1,
     "tx": "0xa84aa065ce61dbb1eb50ab6ae67fc31a9da50dd2c74eefd561661bfce2f1620c",
     "protocol": "Curve",
-    "name": "Curve pETH/ETH Vyper lock reentrancy",
-    "summary": "Vyper 0.2.15 allocated the same named nonreentrant lock to different storage slots in different functions. The pETH/ETH pool's native-ETH callback therefore allowed cross-function reentrancy from remove_liquidity() into add_liquidity(), minting an invalid claim on pool reserves.",
-    "lossUsd": 11460969.464399068,
+    "name": "Curve factory ETH pool Vyper lock reentrancy (pETH, alETH)",
+    "summary": "Vyper 0.2.15 gave each function's @nonreentrant('lock') its own storage slot, so the factory ETH plain-pool template had no shared lock. From the raw-ETH callback in remove_liquidity() the attacker re-entered add_liquidity() before LP supply was reduced, minting LP at an inflated rate and withdrawing it.",
+    "lossUsd": 34179809.77,
     "codeAgeSeconds": 26429604,
     "exploit": {
       "block": 17806056,
@@ -11950,7 +11950,7 @@
       "index": 116,
       "timestamp": 1664293031
     },
-    "claimsSha256": "9b1b64b94e0422c68793cabf242123ca2f230156117023ef5595189f74ce8527"
+    "claimsSha256": "ad395a84185d735e8a629ce29de5ae2a82d9f92bb77f3c716ace6f53c6941856"
   },
   {
     "id": "eip155:100:0xa262141abcf7c127b88b4042aee8bf601f4f3372c9471dbd75cb54e76524f18e",
@@ -13136,33 +13136,6 @@
     "claimsSha256": "a4767171cf48a74114925395eb44852c96aeb684e8a703c1ad7304e8ff17347b"
   },
   {
-    "id": "eip155:1:0x906d06acd236c48a8c8708d7dc50d968b8faad7c7c393e7c01549adf4922b180",
-    "chainId": 1,
-    "tx": "0x906d06acd236c48a8c8708d7dc50d968b8faad7c7c393e7c01549adf4922b180",
-    "protocol": "NFT Trader",
-    "name": "NFT Trader 2022 swap contract counterparty reentrancy",
-    "summary": "The 2022 NFT Trader swap contract settles the creator's ERC-721 leg before the counterparty leg and has no reentrancy guard, so the attacker re-entered from onERC721Received to repoint the open swap at an address that still held an approval and had that address's Bored Ape or Mutant Ape pulled on settlement. Same defect shape as the 2021 BatchSwap contract, but distinct deployed code with its own age.",
-    "lossUsd": 1640350.6763435963,
-    "codeAgeSeconds": 53321076,
-    "exploit": {
-      "block": 18798295,
-      "index": 102,
-      "timestamp": 1702725683
-    },
-    "target": {
-      "address": "0x13d8faf4a690f5ae52e2d2c52938d1167057b9af",
-      "codeHash": "0xd91249c514889751ab1239777b7309b888b07817671551ed41db8cdbd3becf7a"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xf18443f23421dea1f3f131d06a5b72598df1136f0e188195d7d9d1bc493e9aef",
-      "block": 14543914,
-      "index": 142,
-      "timestamp": 1649404607
-    },
-    "claimsSha256": "b96277c986e9acebc104b484abe087de07a84dd6dd72148c0c9537b01babcb92"
-  },
-  {
     "id": "eip155:1:0x2a027c8b915c3737942f512fc5d26fd15752d0332353b3059de771a35a606c2d",
     "chainId": 1,
     "tx": "0x2a027c8b915c3737942f512fc5d26fd15752d0332353b3059de771a35a606c2d",
@@ -13553,8 +13526,8 @@
     "tx": "0x074ec9317d8336db37e8c348fbdd7515573ff4088239c77ab429f522509aeeb1",
     "protocol": "Aztec",
     "name": "Aztec Connect RollupProcessorV3 numRealTxs settlement gap",
-    "summary": "Decoder.decodeProof() proves whole 32-tx inner-rollup chunks while processDepositsAndWithdrawals() settles only numRealTxs txs, and numRealTxs sits outside the hashed header, so a deposit in a later slot of the deprecated permissionless RollupProcessorV3 was minted on L2 without its L1 deposit ever being debited.",
-    "lossUsd": 2190000,
+    "summary": "RollupProcessorV3's decoder hashes whole inner-rollup chunks into the proof's public inputs, but processDepositsAndWithdrawals() settles only the first numRealTxs txs. The attacker put deposits after numRealTxs, so the rollup credited notes without debiting any pending L1 deposit, then withdrew them from pooled funds.",
+    "lossUsd": 2295920.22,
     "codeAgeSeconds": 68751828,
     "exploit": {
       "block": 25315715,
@@ -13573,7 +13546,7 @@
       "index": 104,
       "timestamp": 1712688155
     },
-    "claimsSha256": "f749e584dfb68410843cbd4805b0bd6eda2555ca4bade1a3d6211386e432a0b5"
+    "claimsSha256": "00f1c1801e8d490889669ab802c3a654439cec77ec77af323aa2fdb5badd5894"
   },
   {
     "id": "eip155:1:0x62734ce80311e64630a009dd101a967ea0a9c012fabbfce8eac90f0f4ca090d6",
@@ -13581,8 +13554,8 @@
     "tx": "0x62734ce80311e64630a009dd101a967ea0a9c012fabbfce8eac90f0f4ca090d6",
     "protocol": "1inch Fusion v1 Settlement",
     "name": "1inch Fusion v1 Settlement calldata corruption (resolver drain)",
-    "summary": "Settlement._settleOrder() used attacker-controlled interactionLength in unchecked Yul pointer arithmetic. A wrapped length moved the appended suffix backward in memory, overwrote the authenticated resolver field, and made the deprecated Fusion v1 contract call a third-party resolver against its standing token approvals.",
-    "lossUsd": 4500000,
+    "summary": "Settlement._settleOrder() used the attacker-supplied interactionLength in unchecked Yul pointer arithmetic. A wrapped length moved the appended suffix backward in memory, overwriting the authenticated resolver field, so the deprecated Fusion v1 contract called a third-party resolver and spent its standing token approvals.",
+    "lossUsd": 5338859.35,
     "codeAgeSeconds": 69470844,
     "exploit": {
       "block": 21982111,
@@ -13600,7 +13573,7 @@
       "index": 152,
       "timestamp": 1671724079
     },
-    "claimsSha256": "b0ba6811c18d00014f505b6dec186ccf10b29fe4f7da92074cbc9b164c0a0c6f"
+    "claimsSha256": "e1bfddf1c889b45d8bafbfb29458941759ba39b822354fd1a63d315a7da762ce"
   },
   {
     "id": "eip155:10:0x18e34ce214211afedb6008c0cd00d476ce71222643521dbff5e2b65cdb2ccb80",
@@ -13718,9 +13691,9 @@
     "chainId": 1,
     "tx": "0xab306cd2184d23b6ba3e151b10b3b9a0b81f211cc16f4f3b0c79f0b17a59c2b5",
     "protocol": "Aztec",
-    "name": "Aztec 2.0 escape-hatch verifier soundness failure",
-    "summary": "The escape-hatch verifier the deprecated Aztec 2.0 RollupProcessor delegated proof checking to did not bind a note’s output owner to the party entitled to it, so a proof carrying an attacker-chosen outputOwner verified as sound. escapeHatch() forwarded the attacker’s proof, verify() returned true, and the rollup paid the requested withdrawals out of pooled funds without any further ownership check.",
-    "lossUsd": 2202667.1873070416,
+    "name": "Aztec 2.0 escape-hatch circuit data-root binding failure",
+    "summary": "The escape-hatch circuit behind the verification key the Aztec 2.0 RollupProcessor's TurboVerifier used never forced the note-membership root to equal the public old data root L1 checks. The attacker proved ownership of notes in a fabricated tree while publishing the real root, and escapeHatch() paid the withdrawals from the pooled reserves.",
+    "lossUsd": 2201565.77,
     "codeAgeSeconds": 73724760,
     "exploit": {
       "block": 25339094,
@@ -13729,7 +13702,8 @@
     },
     "target": {
       "address": "0x48cb7ba00d087541dc8e2b3738f80fdd1fee8ce8",
-      "codeHash": "0x720803cbe1c6bc6d8cfb917329fc4dfc50693ec518842dd0ccb5277b9343f79b"
+      "code": "0xf3761b450571a49fa8e2af6e37e1eb3516209d56",
+      "codeHash": "0x4cd38972c9687af0952800d26ac8f33d07e4273487360da780627b8e35694a66"
     },
     "reset": {
       "kind": "upgrade",
@@ -13738,7 +13712,7 @@
       "index": 72,
       "timestamp": 1707996527
     },
-    "claimsSha256": "e5203ebda475c4619843b806423f9fc3d7fc141ccd4b906895b9726e6782cba2"
+    "claimsSha256": "f8a6d04ed96f21680ec514d88d043908c4c51f8a2c0924126519c1ce962933b1"
   },
   {
     "id": "eip155:1:0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
@@ -13904,18 +13878,18 @@
     "claimsSha256": "35411fbf8c20c9c573b148af242d4a668ef0fa1974fd2d12c6043472469f3f8f"
   },
   {
-    "id": "eip155:1:0x431341c6d41301b7db3b719ccaec8081adf71b707069ea27d71dcdd374d8e6fa",
+    "id": "eip155:1:0x3dc115307c7b79e9ff0afe4c1a0796c22e366a47b47ed2d82194bcd59bb4bd46",
     "chainId": 1,
-    "tx": "0x431341c6d41301b7db3b719ccaec8081adf71b707069ea27d71dcdd374d8e6fa",
+    "tx": "0x3dc115307c7b79e9ff0afe4c1a0796c22e366a47b47ed2d82194bcd59bb4bd46",
     "protocol": "NFT Trader",
     "name": "NFT Trader BatchSwap counterparty reentrancy",
-    "summary": "BatchSwap.closeSwapIntent() settles the creator's side of a swap with an ERC-721 safeTransferFrom before the counterparty side, and has no reentrancy guard. The attacker re-entered from onERC721Received and called editCounterPart() to point the open swap at any address that still held an ERC-721 approval to the contract, so settlement then pulled that address's token to the attacker.",
-    "lossUsd": 859045.9671000001,
-    "codeAgeSeconds": 80743010,
+    "summary": "BatchSwap.closeSwapIntent() re-reads the swap's counterparty from storage for each leg and has no guard against editCounterPart() during settlement. The attacker closed its own swap, re-entered from onERC721Received on the first leg, and repointed the counterparty at an address holding a WETH or NFT approval to BatchSwap, so the second leg pulled that asset to the attacker.",
+    "lossUsd": 2565600.8,
+    "codeAgeSeconds": 80674454,
     "exploit": {
-      "block": 18797420,
-      "index": 7,
-      "timestamp": 1702715099
+      "block": 18791785,
+      "index": 80,
+      "timestamp": 1702646543
     },
     "target": {
       "address": "0xc310e760778ecbca4c65b6c559874757a4c4ece0",
@@ -13928,7 +13902,7 @@
       "index": 40,
       "timestamp": 1621972089
     },
-    "claimsSha256": "672341f94cc381d86ee0ba8f8a7fafabf2fc425f03e0e855168229ed14a842e5"
+    "claimsSha256": "4ad4cd11ac5677193d94d3ce1985510b06273e6c25250153a6e59a6fade83d41"
   },
   {
     "id": "eip155:1:0xcff84cc137c92e427f720ca1f2b36fbad793f34ec5117eed127060686e6797b1",

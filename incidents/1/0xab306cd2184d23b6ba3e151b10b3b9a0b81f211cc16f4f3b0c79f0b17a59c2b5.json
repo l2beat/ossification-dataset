@@ -1,11 +1,12 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Aztec",
-  "name": "Aztec 2.0 escape-hatch verifier soundness failure",
-  "summary": "The escape-hatch verifier the deprecated Aztec 2.0 RollupProcessor delegated proof checking to did not bind a note’s output owner to the party entitled to it, so a proof carrying an attacker-chosen outputOwner verified as sound. escapeHatch() forwarded the attacker’s proof, verify() returned true, and the rollup paid the requested withdrawals out of pooled funds without any further ownership check.",
+  "name": "Aztec 2.0 escape-hatch circuit data-root binding failure",
+  "summary": "The escape-hatch circuit behind the verification key the Aztec 2.0 RollupProcessor's TurboVerifier used never forced the note-membership root to equal the public old data root L1 checks. The attacker proved ownership of notes in a fabricated tree while publishing the real root, and escapeHatch() paid the withdrawals from the pooled reserves.",
   "targets": [
     {
       "address": "0x48cb7ba00d087541dc8e2b3738f80fdd1fee8ce8",
+      "code": "0xf3761b450571a49fa8e2af6e37e1eb3516209d56",
       "reset": {
         "kind": "upgrade",
         "tx": "0xcd796eeaf302b098f59b3a45867000a2f873d5d5a2a347987f4a6cd307b54d4b"
@@ -13,48 +14,40 @@
     }
   ],
   "loss": {
-    "usd": 2202667.1873070416,
+    "usd": 2201565.77,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "1158",
-        "usd": 2044075.402010789
+        "amount": "1158.759804206229645062",
+        "usd": 2044345.7
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
-        "amount": "150000",
-        "usd": 150000
+        "amount": "150095.695899720407042487",
+        "usd": 150051.95
       },
       {
         "token": "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
         "symbol": "renBTC",
         "amount": "0.46963295",
-        "usd": 7168.1180651733275
-      },
-      {
-        "symbol": "ETH",
-        "amount": "0.759804206229645062",
-        "usd": 1327.971331358666
-      },
-      {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "95.695899720407042487",
-        "usd": 95.69589972040704
+        "usd": 7168.12
       }
     ]
   },
-  "refs": [
+  "campaign": [
     "eip155:1:0x5c196c37a109d74c9797254287a0331f30e0daa637af241bd28fdc43774705c3",
     "eip155:1:0x9e1d6ab7c20ae235409d7dd3a9cd47c04f07293585b3498b8beed82d6f6b03ca",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/AztecEscapeHatch_exp.sol",
-    "https://aztec-labs.com/blog/june-2026-incidents",
     "eip155:1:0x389bce3dad78c09900cb4c9e72397a73b39b8217ae37ef264f3439046737cb0c",
     "eip155:1:0x1aac2de030b7b21af23ff02b47627f9c945dbf0429a25a852b9953487029c4b5"
   ],
+  "refs": [
+    "https://aztec-labs.com/blog/aztec-2-incident.html",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/AztecEscapeHatch_exp.sol",
+    "https://blocksec.com/blog/efi-security-incidents-jaredfromsubway-aztec"
+  ],
   "notes": [
-    "The ninth and final VerifierUpdated event the RollupProcessor emitted before the exploit selected 0x48cb7ba00d087541dc8e2b3738f80fdd1fee8ce8; its verifier storage slot 6 reads that address from block 19233032 through block 25339093, and the exploit trace shows escapeHatch calling it.",
-    "Three escape-hatch transactions from the same EOA drained the rollup: the ETH leg in the anchor transaction, then the DAI leg at block 25339169 and the renBTC leg at block 25339172. The rollup balance falls from 1158.759804206229645062 ETH to 0.759804206229645062 ETH, from 150095.695899720407042487 DAI to 95.695899720407042487 DAI, and from 0.46963295 renBTC to 0, and the attacker address holds exactly the difference afterwards. The residue was swept the next morning by a second actor, fresh EOA 0xb6f89d12ff9a9e394f40b701ac46428de0d1bea5, through two processRollup transactions whose proofs the same TurboVerifier and verification key accepted: 0.759804206229645062 ETH at block 25343196 and 95.695899720407042487 DAI at block 25343289, taking both balances to exactly zero. Those two legs are merged here as further components; ETH is valued at the DefiLlama observation 17 seconds after the ETH leg and DAI at par. Nothing was recovered; the contract’s ownership is renounced so it could not be paused."
+    "Aztec places the flaw in the circuit behind the verification key, not in the verifier arithmetic; the keys live in the VerificationKeys library the TurboVerifier delegatecalls, hence code. The reset is the setVerifier call that pointed the RollupProcessor at this verifier.",
+    "The campaign is the attacker's DAI and renBTC legs and a copycat's sweep of the ETH and DAI residue through processRollup, possible because a public development key was a registered rollup provider; its proofs passed the same verifier. renBTC is valued at the DefiLlama price although it was depegged."
   ]
 }
