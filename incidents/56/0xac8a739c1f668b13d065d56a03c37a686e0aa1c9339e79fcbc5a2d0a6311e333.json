@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BurgerSwap",
-  "name": "BurgerSwap DemaxPair missing k invariant",
-  "summary": "DemaxPair.swap() omits Uniswap V2's constant-product require entirely and only checks that some input arrived, trusting the onlyPlatform router's amount maths, so re-entering the router through an attacker-issued fake token mid-path let the BURGER/WBNB pair be swapped past its invariant.",
+  "name": "BurgerSwap DemaxPlatform reentrant swap on DemaxPair without k check",
+  "summary": "DemaxPlatform computed a multi-hop swap's outputs up front and then pulled each input with transferFrom, so an attacker-issued fake token in the path could re-enter the platform mid-swap. DemaxPair.swap has no constant-product check and trusts the platform's amounts, so the outer swap paid out at stale reserves and drained the pairs.",
   "targets": [
     {
       "address": "0x7ac55ac530f2c29659573bde0700c6758d69e677",
@@ -10,19 +10,82 @@
         "kind": "deployment",
         "tx": "0x4e7ada891aeef1e757d433925da47bbab267340fd4d4f5c71caec902a25f32af"
       }
+    },
+    {
+      "address": "0xbf6527834dbb89cdc97a79fcd62e6c08b19f8ec0",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xac783ecae3aa7f8241932ed6140ad4429c1a341a5d17ad3dc1dc80969975a873"
+      }
     }
   ],
+  "campaign": [
+    "eip155:56:0x40aef37b32748b1eb0e6eff69e2cdb1dbe8f169c8248bf20bf6c29998c1a07da",
+    "eip155:56:0x943cd050af7f9f61243ada4e327b6606bf49ac01d92c86f70f0a6ec7bc2044da",
+    "eip155:56:0x7ba354214b25cedd9ed18c034b8a110c1f04dadcb0aab1ea8be363eaf6d03eb9",
+    "eip155:56:0x655eab143487a82a540ca122a9fcf7536cca58962c4212307915f83937c3be33",
+    "eip155:56:0xde04b4785c3c157b0d7efd717d91828176b885da44317092bf69ccd1f631164d",
+    "eip155:56:0xcf51d68653d9776dfc40e0db3aba2a6f1c63bf48a4266bd94280235e63d7c9dc",
+    "eip155:56:0x4bdfcac1a0a8e836aaa00d165dc0d1873761bd46a574c3d09838d40333eb0e34",
+    "eip155:56:0x28393240efab07f62f0ec3ac96060eae2e6bfd41ad37224d902b3ac6923be5c9",
+    "eip155:56:0xb63a3576ef18e483bb0135f999d1fd54a5530bbf27023a54c61dbd877de328de",
+    "eip155:56:0x0c24adf9e10ba7e133efd5544f1a3a4f93476898e266e1c7b2f393467bdacd40",
+    "eip155:56:0x333ce235762dbc1089cbcdcc8590f22b38c888ed2c2cb9dd1263afcb5f679c3d",
+    "eip155:56:0x2e1c226db4e8df3e08810ee96c35af355f1360487b180f726615b6191969beac"
+  ],
   "loss": {
-    "usd": 7200000,
-    "assets": []
+    "usd": 7013289.04,
+    "assets": [
+      {
+        "token": "0xae9269f27437f0fcbc232d39ec814844a51d6b8f",
+        "symbol": "BURGER",
+        "amount": "436481.145975769689875144",
+        "usd": 3614673.76
+      },
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "4426.548900702654398852",
+        "usd": 1653224.86
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "1436408.088521588657055802",
+        "usd": 1436679.43
+      },
+      {
+        "token": "0xa01000c52b234a92563ba61e5649b7c76e1ba0f3",
+        "symbol": "ROCKS",
+        "amount": "95168.833050005412850593",
+        "usd": 156426.83
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "2.594824846916899386",
+        "usd": 7216.16
+      },
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "22163.839969715149082667",
+        "usd": 22118.4
+      },
+      {
+        "token": "0xafe24e29da7e9b3e8a25c9478376b6ad6ad788dd",
+        "symbol": "xBURGER",
+        "amount": "142129.707497495736587764",
+        "usd": 122949.6
+      }
+    ]
   },
   "refs": [
     "https://rekt.news/burgerswap-rekt/",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-05/BurgerSwap_exp.sol"
   ],
   "notes": [
-    "The vulnerable DemaxPair is an immutable direct runtime CREATE2-deployed by the BurgerSwap factory and unchanged through the exploit.",
-    "Rekt reports $7.2 million stolen in the transaction's repeated exploit sequence, comprising about 4,400 WBNB, 22,000 BUSD, 2.5 ETH, 1.4 million USDT, 432,000 BURGER, 142,000 xBURGER, and 95,000 ROCKS. The components are reported rounded quantities, so the campaign total is retained without false per-asset precision.",
-    "The $7.2 million gross loss and its asset components are rounded published figures rather than a per-transfer incident-time valuation."
+    "Pairs accept swaps only from DemaxConfig.platform(). The age runs from the config call that pointed it at this DemaxPlatform; later platform and config writes (transfer listener, fee values, counters) were not needed by the exploit.",
+    "Victims are the eight DemaxPairs drained over 13 transactions. xBURGER has no DefiLlama price, so it is valued at the attacker's realised rate from selling xBURGER directly for USDT (25,000 xBURGER for 21,626.30 USDT, rule 15). BUSD uses DefiLlama's binance-usd quote."
   ]
 }

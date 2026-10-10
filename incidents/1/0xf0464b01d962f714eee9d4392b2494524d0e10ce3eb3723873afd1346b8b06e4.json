@@ -2,28 +2,51 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Blueberry Protocol",
   "name": "Blueberry PriceOracleProxy unscaled price adapter",
-  "summary": "The money market's PriceOracleProxy implemented getUnderlyingPrice() by returning the CoreOracle's uniformly 18-decimal price unchanged, without the underlying-token decimal normalization required by the lending market, severely undervaluing OHM, USDC, and WBTC borrow balances.",
+  "summary": "The money market's PriceOracleProxy returned the CoreOracle's 18-decimal USD price from getUnderlyingPrice() without normalising for the underlying's decimals, so OHM, USDC and WBTC borrows were valued 1e9–1e12 too low. With 1 ETH of bWETH collateral the exploiter borrowed those markets' entire cash.",
   "targets": [
     {
       "address": "0x16d43cac32329ec286dc14431e0c0e805e6f5174",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xbc46bbe03bed199124c704185734b9a422d664b47ac75c871a0876e72a88967f"
+        "kind": "config",
+        "tx": "0x28e522e8e0a68cd36f567d76ec6c93fcb04a1a7847f30a355262161a70a93b84",
+        "address": "0xffadb0bba4379dfabfb20ca6823f6ec439429ec2",
+        "call": "0x4a584432000000000000000000000000649127d0800a8c68290129f091564ad2f1d62de1"
       }
     }
   ],
   "loss": {
-    "usd": 270000,
-    "assets": []
+    "usd": 1376024.48,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "913262.603416",
+        "usd": 912429.71
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "6.866901",
+        "usd": 352361.29
+      },
+      {
+        "token": "0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5",
+        "symbol": "OHM",
+        "amount": "8616.071267266",
+        "usd": 111233.48
+      }
+    ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-02/BlueberryProtocol_exp.sol",
     "https://medium.com/@blueberryprotocol/2-22-24-exploit-post-mortem-6f6be7c1dcc3",
-    "https://immunefi.com/blog/research/immunefi-crypto-losses-2024-report/"
+    "eip155:1:0xadf75e4538de805e0ac8b7b1c22d3e1c1b87d6c13cd6e64021cc9b06ace951b9",
+    "eip155:1:0xb6748899565cff6c01190f507ea83a7d2efdfba13e119fd0f487f74ce899d25f",
+    "eip155:1:0xc4d45a5143d04d98f11c56f0944ad60426bfbe70b25b5b43a95f0e61a9386a52"
   ],
   "notes": [
-    "The direct PriceOracleProxy runtime was deployed with its CoreOracle pointer fixed in constructor-initialized storage and exposes no mutation function.",
-    "Immunefi reports $1.35 million stolen and $1.08 million recovered, yielding approximately $270,000 net. Blueberry reports that the project replenished the remainder so users ultimately realized no loss.",
-    "The net loss is reconstructed from Immunefi's rounded stolen and recovered USD totals."
+    "The proxy went live via _setPriceOracle on 14 Feb, but every market's borrow cap stayed at 1 wei until _setMarketBorrowCaps made it unlimited about 18 hours before the exploit. A borrow cap is a risk threshold the exploit needed (rule 10); the Borrow unpauses just before only changed pause state.",
+    "c0ffeebabe.eth front-ran the original exploiter, who borrowed nothing a block later (0xb6748899…). Of the 457.5 ETH taken, 366.5 ETH went back to Blueberry's Safe (0xc4d45a51…) and 91 ETH were kept, so this was no affiliated rescue (rule 5) and the return is not subtracted (rule 14).",
+    "The 1 WETH the exploiter deposited as collateral is not a victim asset and is not netted."
   ]
 }

@@ -2,33 +2,37 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Bearn DAO",
   "name": "BvaultsStrategy convertDustToEarned unprotected swap",
-  "summary": "BvaultsStrategy.convertDustToEarned() is callable by anyone and swaps the strategy’s holdings through PancakeSwap with no minimum-output argument and no slippage bound. The attacker flash-loaned the BUSD/ALPACA pool out of balance, called the function so the strategy sold 768,358.95 BUSD into the skewed pool for 513.35 ALPACA, and took the difference when the pool re-balanced.",
+  "summary": "BvaultsStrategy.convertDustToEarned() is public and swaps the strategy's entire want-token balance to the earned token through PancakeSwap with a zero minimum output. The attacker flash-loaned to skew the BUSD→WBNB→ALPACA route, called the function so the strategy sold its BUSD into the skewed pools, and unwound the skew for the difference.",
   "targets": [
     {
       "address": "0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xdd4031277401d5eca44cc73e153effaee20a983b5b513cbf517e08cc9a9911db"
+        "kind": "config",
+        "tx": "0x367af9c97da5afa4ee3f39da9c01fe13514213ace698465dc4a00a3af247c60a",
+        "address": "0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e",
+        "slot": "0xecd60f3aeba4d4356d89dca6293220dcaa16618b1dc102aa36505905bebdb76"
       }
     }
   ],
   "loss": {
-    "usd": 768261.5602647279,
+    "usd": 768023.18,
     "assets": [
       {
         "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
         "symbol": "BUSD",
         "amount": "768358.953227757555088466",
-        "usd": 768358.9532277576
+        "usd": 768023.18
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/BvaultsStrategy_exp.sol",
-    "https://twitter.com/BlockSecTeam/status/1732176228244140494"
+    "https://twitter.com/BlockSecTeam/status/1732176228244140494",
+    "eip155:56:0xc10c0c6a01c6b14a899631fb752445bfa67f0b6151783c127211dee9e9f7f794"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0xada77033047849187832a245e0e1f814d255430597cfce06d3a321ebd117e1cd both at the deployment block 5324911 and at block 34099688, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "The strategy 0x21125d94cfe886e7179c8d2fe8c1ea8d57c73e0e pays out 768358.953227757555088466 BUSD in the single exploit transaction and receives 513.348353791467415682 ALPACA for it, worth USD 97.39 at the DefiLlama ALPACA price for the incident timestamp. The component records the BUSD that left; loss.usd.amount is the net shortfall after crediting that ALPACA, which is why loss.kind is net-loss. The attacker EOA keeps 760889.017097225537647455 BUSD; the difference is the flash-loan fee paid to the pool out of the drained funds. Nothing was recovered."
+    "The reset is setMainPaths, 51 blocks after deployment, which wrote the BUSD→WBNB→ALPACA route the exploit swapped along; without it the swap reverts. The code itself is immutable.",
+    "The operator's emergencyWithraw about 22.6 hours before the exploit pulled the BUSD out of the Alpaca farm into the strategy as idle balance and set strategyStopped. It only enlarged the balance the public swap could sell (a live value and a pause-like flag, rule 10), so it does not reset the age.",
+    "The ALPACA the strategy received for its BUSD is a gain of another asset and is not subtracted (rule 14)."
   ]
 }

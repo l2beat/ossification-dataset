@@ -32,7 +32,9 @@ const CHAINS = {
   30: ['rsk', '0x542fda317318ebf1d3deaf76e0b632741a7e677d', 'rootstock'],
   56: ['bsc', '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c', 'binancecoin', true],
   100: ['xdai', '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d', 'xdai', true],
+  130: ['unichain', '0x4200000000000000000000000000000000000006', 'ethereum', true],
   137: ['polygon', '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', 'matic-network', true],
+  146: ['sonic', '0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38', 'sonic-3'],
   250: ['fantom', '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83', 'fantom'],
   324: ['era', '0x5aea5775959fbc2557cc8789bc1bf90a239d9a91', 'ethereum'],
   369: ['pulse', '0xa1077a294dde1b09bb078844df40758a5d0f9a27', 'pulsechain', true],
@@ -45,6 +47,7 @@ const CHAINS = {
   43114: ['avax', '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7', 'avalanche-2', true],
   59144: ['linea', '0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f', 'ethereum', true],
   81457: ['blast', '0x4300000000000000000000000000000000000004', 'ethereum', true],
+  80094: ['berachain', '0x6969696969696969696969696969696969696969', 'berachain-bera'],
   534352: ['scroll', '0x5300000000000000000000000000000000000004', 'ethereum'],
 }
 // DefiLlama lacks history for many bridged majors (Arbitrum, OP, Polygon, BSC USDT before 2024 or so);

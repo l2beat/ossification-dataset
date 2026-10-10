@@ -7,7 +7,9 @@ const RPC_ENV = {
   56: ['BSC_RPC_URL'],
   57: ['SYSCOIN_RPC_URL'],
   100: ['GNOSIS_RPC_URL'],
+  130: ['UNICHAIN_RPC_URL'],
   137: ['POLYGONPOS_RPC_URL', 'POLYGON_RPC_URL'],
+  146: ['SONIC_RPC_URL'],
   250: ['FANTOM_RPC_URL'],
   324: ['ZKSYNC2_RPC_URL', 'ZKSYNC_RPC_URL'],
   999: ['HYPEREVM_RPC_URL'],
@@ -18,6 +20,7 @@ const RPC_ENV = {
   59144: ['LINEA_RPC_URL'],
   60808: ['BOB_RPC_URL', 'BOBANETWORK_RPC_URL'],
   81457: ['BLAST_RPC_URL'],
+  80094: ['BERACHAIN_RPC_URL'],
   534352: ['SCROLL_RPC_URL'],
 }
 
@@ -29,6 +32,7 @@ const PUBLIC_RPC = {
   999: 'https://rpc.hyperliquid.xyz/evm',
   1030: 'https://evm.confluxrpc.com',
   4114: 'https://rpc.mainnet.citrea.xyz',
+  80094: 'https://rpc.berachain.com',
 }
 
 export const EMPTY_CODE_HASH = '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'

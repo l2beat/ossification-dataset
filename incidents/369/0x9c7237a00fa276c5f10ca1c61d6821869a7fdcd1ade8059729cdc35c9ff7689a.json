@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BetterBank",
   "name": "BetterBank FavorRouterWrapper unvalidated-pair ESTEEM bonus minting",
-  "summary": "FavorRouterWrapper.swapExactTokensForFavorAndTrackBonus only checks that the swap path ends in a registered FAVOR token, so any input token and any PulseX pair qualifies, and the FAVOR token's logBuy then credits an ESTEEM bonus on the bought amount. FAVOR's 50% sell tax applies only to whitelisted market pairs. The attacker created a worthless token, paired it with FAVOR, wash-traded 25 untaxed round trips to farm ESTEEM, redeemed it for freshly minted FAVOR, and sold that FAVOR into the official pairs, draining pDAI, PLSX and WPLS.",
+  "summary": "FavorRouterWrapper.swapExactTokensForFavorAndTrackBonus only checks that the path ends in a registered FAVOR token, so any token and pair qualifies, and FAVOR.logBuy credits an ESTEEM bonus on the amount bought. The attacker wash-traded FAVOR against a worthless token to farm ESTEEM, redeemed it for minted FAVOR and sold that into the official pairs.",
   "targets": [
     {
       "address": "0x30dcc4e72dcd2702449190ce8b88d21f2178cd9c",
@@ -22,51 +22,39 @@
     }
   ],
   "loss": {
-    "usd": 4165073.49,
+    "usd": 5119420.82,
     "assets": [
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "340874504.360636360162048222",
-        "usd": 828693.78
-      },
-      {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "550025000.000000000000000001",
-        "usd": 2758947.4
-      },
-      {
-        "token": "0x95b303987a60c71504d99aa1b13b4da07b0790ab",
-        "symbol": "PLSX",
-        "amount": "9051562270.599955394519949325",
-        "usd": 263980.07
+        "symbol": "pDAI",
+        "amount": "890899504.360636360162048223",
+        "usd": 4468787.55
       },
       {
         "token": "0xa1077a294dde1b09bb078844df40758a5d0f9a27",
         "symbol": "WPLS",
         "amount": "7409355692.988930176285433904",
-        "usd": 313452.24
+        "usd": 342608.61
+      },
+      {
+        "token": "0x95b303987a60c71504d99aa1b13b4da07b0790ab",
+        "symbol": "PLSX",
+        "amount": "9051562270.599955394519949325",
+        "usd": 308024.66
       }
     ]
   },
   "refs": [
-    "eip155:369:0xc651656d2f94476374ee1de240f6bcf4572a5fe732db92d319573a1727409f82",
-    "eip155:369:0x74534b1f86a63c6c722d5845f2b4c08867c2e66b922a6c95cd6b4290664c19bd",
-    "eip155:369:0x28157684b4f095f47e3aca5bad661cbfad84c052e5223f48135a37751ffb59d1",
     "https://securelist.com/betterbank-defi-protocol-esteem-token-bonus-minting/117822/",
     "https://www.quillaudits.com/blog/hack-analysis/betterbank-exploit",
-    "eip155:369:0xd4e8a82fe171db6af6ca10e15094fdea769e6569bb9f5ee6bc29cee6736bcd17",
-    "eip155:369:0x4536f1f07f9e8ac4ed1971511b97096f7d5a5b926788b1f02bf679b925321d0a",
-    "eip155:369:0xe0736e6544ad0561c749465b83ee4801425bbc0f70c19731ec2b83e359ea1ff0",
-    "eip155:369:0xf78caf165bf762b43491e1f8aea15669e164f4fb641592a2e8a31c17a1c597c6",
-    "eip155:369:0x51d91f4974ac5a152e2fda0a854f645826dc6efff4fabf325480718c305a0ff5",
-    "eip155:369:0xb9bcdf6a1cfad30a4c2289c3f3852b4829ff698883706c6c1f05c9bb27b8168f"
+    "eip155:369:0x51d91f4974ac5a152e2fda0a854f645826dc6efff4fabf325480718c305a0ff5"
   ],
   "notes": [
-    "The immutable FavorRouterWrapper runtime contains the missing input-token/pair validation in swapExactTokensForFavorAndTrackBonus. Its only pre-exploit owner calls were three addFavorToken registrations, which leave that validation unchanged.",
-    "setBonusRates(4400, 2500) on PDAIF re-enabled the buy bonus: bonusRate() goes from 0 at block 24243163 to 4400 at block 24243164 and stays 4400 through block 24343024. At bonusRate 0, calculateFavorBonuses returns zero user and treasury bonus, so the wash trades mint no ESTEEM. The value is therefore necessary to the exploited condition. The newly deployed wrapper had been installed as PDAIF's buy wrapper 161 blocks earlier (setBuyWrapper, block 24243003).",
-    "Quantities are exact gross depletion of the three official FAVOR market pairs, netted from each campaign receipt's Transfer logs, and include the 25,000-unit flash-loan premium paid out of each drain. pDAI/PDAIF pair 0xa0126ac1364606bafb150653c7bc9f1af4283dfa loses 890,899,504.360636360162048223 pDAI in the anchor; its balanceOf falls from 1,135,797,919.86 at block 24343024 to 244,898,415.50 at block 24343025. PLSX/PLSXF pair 0x24264d580711474526e8f2a8ccb184f6438bb95c loses 9,051,562,270.599955394519949325 PLSX in source-2, and WPLS/PLSF pair 0xdca85efdce177b24de8b17811cec007fe5098586 loses 7,409,355,692.988930176285433904 WPLS in source-3. The attacker supplied no value: flash loans were repaid in-transaction, and the FAVOR sold into the pairs was minted from farmed ESTEEM. That FAVOR is not netted against the drained reserves. Valuation is realised proceeds wherever the attacker sold, because every sale filled well below the pre-exploit DefiLlama quote. Of 890,874,504.36 pDAI received, 190,874,504.36 were sold for 396,945.3679 Ethereum-bridged DAI and 150,000,000 for 431,748.410207 bridged USDT, both taken at par. That is 0.00243 USD per pDAI against the 0.00501604 quote. All PLSX received sold for 263,979.344321 bridged USDC, and all WPLS for 70.078649042369470052 bridged WETH (4,472.85 USD/ETH, source-13). The realised unit rates are applied to the full depleted quantities, which include the unsold premiums. The remaining 550,000,000.000000000000000001 pDAI was never sold: the attacker transferred it to 0xce04c590344c2bd8e2bfe49a280c1d501dc8c000 in 0x51d91f4974ac5a152e2fda0a854f645826dc6efff4fabf325480718c305a0ff5 (block 24349712), the reported negotiated return. With the 25,000 pDAI premium it is valued at the pre-exploit quote 0.00501604, and the return does not reduce gross loss. The sales ran from block 24343052 to 24348986, after the last campaign transaction; their valuation timestamps are pinned to the anchor, as in other realised-proceeds records. Cross-checks: pricing every quantity at the pre-exploit DefiLlama quotes gives 5,119,420.82 USD, matching the reported ~$5M. Realised proceeds alone total 1,406,124.30 USD, matching Securelist's ~$1.4M net-profit figure. ESTEEM minted to the attacker and the treasury is not counted as loss.",
-    "Not the knot: the combination this wrapper exploits in the anchor became live only when PDAIF's buy bonus was re-enabled at block 24243164 (target-2), 2,150 seconds after this deployment."
+    "The wrapper is immutable; its only owner calls before the exploit were the three addFavorToken registrations. The later reset is PDAIF's setBonusRates(4400, 2500): at bonusRate 0 logBuy credits no ESTEEM, so the exploit needed it, and it came after setBuyWrapper and addFavorToken.",
+    "Victims are the three official FAVOR pairs (pDAI/PDAIF, PLSX/PLSXF, WPLS/PLSF), valued at the DefiLlama quote when drained (rule 14). The attacker later sold part of the pDAI for less and handed 550M pDAI back (0x51d91f49…); neither reduces gross loss."
+  ],
+  "campaign": [
+    "eip155:369:0xc651656d2f94476374ee1de240f6bcf4572a5fe732db92d319573a1727409f82",
+    "eip155:369:0x74534b1f86a63c6c722d5845f2b4c08867c2e66b922a6c95cd6b4290664c19bd"
   ]
 }
