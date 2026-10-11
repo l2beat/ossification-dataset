@@ -150,7 +150,8 @@ export async function derive(chainId, hash, record) {
   const exploit = await anchor(chainId, hash)
   if (!exploit.success) report.failures.push(`exploit ${hash} reverted`)
 
-  const legs = [...(record.campaign ?? [])]
+  // Bundles describe a selection rule and are reproduced by hand, not checked here.
+  const legs = (record.campaign ?? []).filter((leg) => typeof leg === 'string')
   await Promise.all(Array.from({ length: 8 }, async () => {
     for (let id = legs.shift(); id; id = legs.shift()) {
       const [, campaignChain, campaignHash] = id.split(':')

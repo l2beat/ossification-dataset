@@ -60,6 +60,8 @@ function checkRecord({ path: file, chainId, tx, record }, errors) {
   const targets = (record.targets ?? []).map((target) => `${target.address}/${target.code ?? ''}`)
   if (new Set(targets).size !== targets.length) errors.push(`${file}: duplicate target`)
   if (record.campaign?.includes(`eip155:${chainId}:${tx}`)) errors.push(`${file}: campaign repeats the exploit transaction`)
+  for (const bundle of (record.campaign ?? []).filter((leg) => typeof leg === 'object'))
+    if (bundle.from > bundle.to) errors.push(`${file}: campaign bundle ends before it starts`)
 }
 
 function checkResearch(incidentIds, errors) {
@@ -88,7 +90,7 @@ export async function check(root = ROOT) {
   for (const incident of incidents) {
     for (const error of validate(incident.record, schema)) errors.push(`${incident.path}: ${error}`)
     checkRecord(incident, errors)
-    for (const id of incident.record.campaign ?? []) {
+    for (const id of (incident.record.campaign ?? []).filter((leg) => typeof leg === 'string')) {
       if (campaigns.has(id)) errors.push(`${incident.path}: ${id} is also claimed by ${campaigns.get(id)}`)
       campaigns.set(id, incident.path)
     }

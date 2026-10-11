@@ -9,7 +9,7 @@
  *
  *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb] [--tx eip155:<chain>:<hash>,...] [--json]
  *
- * Transactions: the anchor, the campaign and --tx. Without --victims, lists net flows to pick victims.
+ * Transactions: the anchor, the campaign's listed txs (not bundles) and --tx. Without --victims, lists net flows to pick victims.
  */
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -65,7 +65,7 @@ const [, chainId, anchor] = file?.match(/(\d+)\/(0x[0-9a-f]{64})\.json$/) ?? []
 if (!chainId) throw new Error('usage: node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb] [--tx eip155:<chain>:<hash>,...] [--json]')
 const record = JSON.parse(readFileSync(file, 'utf8'))
 const victims = args.includes('--victims') ? new Set(option('--victims')) : null
-const ids = [...new Set([`eip155:${chainId}:${anchor}`, ...(record.campaign ?? []), ...option('--tx')])]
+const ids = [...new Set([`eip155:${chainId}:${anchor}`, ...(record.campaign ?? []).filter((leg) => typeof leg === 'string'), ...option('--tx')])]
 
 const word = (hex) => `0x${hex.slice(-40)}`
 const decimal = (value, decimals) => {

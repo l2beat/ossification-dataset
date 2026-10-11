@@ -27,7 +27,9 @@ transaction exploited.
    not affiliated with the protocol. A rescue counts as affiliated only when
    its proceeds went back to the protocol or its users. Establishing the
    anchor includes scanning the code's history for earlier exploits.
-6. `campaign` lists every further exploit transaction of the incident.
+6. `campaign` lists every further exploit transaction of the incident. A
+   large tail of copycats may be a bundle: a count, a block range and the
+   rule that selects them.
 
 ## Targets
 
@@ -56,8 +58,9 @@ transaction exploited.
     oracles and price sources, market listings and collateral factors,
     registry or mint grants, custody or accounting rules. Pause state, a new
     holder of an unchanged role, live values (balances, prices, accumulators,
-    values updated in normal operation) and values that only change the loss
-    size do not.
+    values updated in normal operation, such as parameters an automated agent
+    pushes) and values that only change the loss size do not; granting that
+    agent its powers does.
 11. Shared code ages from when the exploited context started running it: a
     clone from its creation, a proxy, beacon or diamond user from the route
     change, never from the template's own deployment. An account created
