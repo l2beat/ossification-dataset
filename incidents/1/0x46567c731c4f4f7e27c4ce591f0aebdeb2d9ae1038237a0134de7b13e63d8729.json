@@ -1,65 +1,80 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "OnyxDAO",
-  "name": "Onyx Protocol empty-market and unvalidated liquidation composition",
-  "summary": "The attacker combined Compound-v2 empty-market exchange-rate manipulation in oETH with NFTLiquidation's trust in caller-supplied repay and collateral oTokens. Fake oTokens controlled the liquidation calculation and callback, enabling a real self-liquidation for one unit of repayment after the attacker had borrowed the other markets.",
+  "name": "OnyxDAO NFTLiquidation unvalidated repay oToken",
+  "summary": "NFTLiquidation.liquidateWithSingleRepay accepts any oTokenRepay and sets extraRepayAmount from the caller's repayAmount, which the Comptroller adds to every seize calculation. Having borrowed against flash-loaned oETH and forced a shortfall via oETH redeem rounding, the attacker's fake oToken self-liquidated for 1 wei and seized back its collateral.",
   "targets": [
     {
       "address": "0x323398de3c35f96053d930d25fe8d92132f83d44",
       "code": "0xf10bc5be84640236c71173d1809038af4ee19002",
       "reset": {
+        "kind": "config",
+        "tx": "0xdac0d3b43bf646397b58dbfd31930f3a66dad9e2df8bd622fe08a9e755779716",
+        "address": "0x323398de3c35f96053d930d25fe8d92132f83d44",
+        "slot": "0x4"
+      }
+    },
+    {
+      "address": "0xcc53f8ff403824a350885a345ed4da649e060369",
+      "code": "0x3047d790879714930e83b7a7d8e76c2bb64d87b9",
+      "reset": {
         "kind": "upgrade",
-        "tx": "0xeabe5a4bf5b7e4d872e1cd39d6be2844d636e01f3c0fb4598286319749ae0fda"
+        "tx": "0x362db07619298565cdeb707ab89fd7339ed443263db2fb85a3a6574cb70ecbc4"
       }
     },
     {
       "address": "0x2ccb7d00a9e10d0c3408b5eefb67011abfacb075",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x119814062f85854706aa45c5532759e56fd61e6e63c2748c8b4cca2fd4e61ff0"
+        "kind": "config",
+        "tx": "0x39c531450cb1117211d28e7d8f62e6e6ffa04da3ae57b23967c8214d23dedcd4",
+        "address": "0xcc53f8ff403824a350885a345ed4da649e060369",
+        "call": "0x8e8f294b0000000000000000000000002ccb7d00a9e10d0c3408b5eefb67011abfacb075"
       }
     }
   ],
+  "campaign": [],
   "loss": {
-    "usd": 3800000,
+    "usd": 1681659.17,
     "assets": [
       {
         "token": "0x0bffdd787c83235f6f0afa0faed42061a4619b7a",
         "symbol": "VUSD",
-        "amount": "4107530.423553"
-      },
-      {
-        "token": "0xa2cd3d43c775978a96bdbf12d733d5a1ed94fb18",
-        "symbol": "XCN",
-        "amount": "7350326.135730346092551099"
-      },
-      {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "5148.046590995580075613"
-      },
-      {
-        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-        "symbol": "WBTC",
-        "amount": "0.22990636"
+        "amount": "4107530.423553",
+        "usd": 1600303.58
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
-        "amount": "50780.121544"
+        "amount": "50780.121544",
+        "usd": 50780.12
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.22990636",
+        "usd": 14792.64
+      },
+      {
+        "token": "0xa2cd3d43c775978a96bdbf12d733d5a1ed94fb18",
+        "symbol": "XCN",
+        "amount": "7350326.135730346092551099",
+        "usd": 10637.17
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "5148.046590995580075613",
+        "usd": 5145.66
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-09/OnyxDAO_exp.sol",
-    "eip155:1:0x761632eaf2576ced8663e074ecbb0ca4be2f464020a09d0f3f3a2af9e35e3dac",
     "https://www.halborn.com/blog/post/explained-the-onyx-protocol-hack-september-2024"
   ],
   "notes": [
-    "The proxy's sole pre-exploit NewImplementation event selected the vulnerable NFTLiquidation artifact. Custom implementation storage slot 2 retained the same address through the exploit.",
-    "The empty-market exchange-rate and integer-rounding logic is part of oETH's immutable direct runtime, deployed in this transaction and unchanged through the exploit.",
-    "The exact onchain components record the gross assets removed or left as unrepaid VUSD debt in the selected transaction. Contemporary reports value the combined basket at approximately $3.8 million. No recovery is reported.",
-    "The USD total is a rounded published valuation of the exact onchain asset basket rather than an independently reproduced per-token price calculation.",
-    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+    "The reset points NFTLiquidation at the relaunched Comptroller, where its shortfall check finds the attacker's position (rule 10 controller). The oVUSD listing 10 days earlier only sized the loss: any listed debt market could carry the 1-wei liquidation.",
+    "VUSD has no market price; it is valued at what the attacker realised for all of it (rule 15): the in-tx and later Uniswap and CoW sales and the 55.98 ETH and 15,000 USDC borrowed against the last 260,000 VUSD deposited in oVUSD.",
+    "Separate incident from the November 2023 Onyx oPEPE rounding exploit (eip155:1:0xf7c21600…): different vulnerability and comptroller. The oETH redeem rounding here only created the shortfall."
   ]
 }

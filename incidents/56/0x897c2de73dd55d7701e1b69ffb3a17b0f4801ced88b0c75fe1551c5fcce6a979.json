@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "PancakeBunny",
   "name": "PancakeBunny BUNNY minter spot LP valuation",
-  "summary": "PriceCalculatorBSCV1.valueOfAsset() prices any Cake-LP whose pair contains WBNB as amount * WBNB.balanceOf(pair) * 2 / pair.totalSupply(), a single spot read of the pair's WBNB reserve with no invariant, TWAP or bound. BunnyMinterV2.mintForV2() zaps the vault performance fee into BUNNY-BNB LP, values that LP through the same call, and mints BUNNY = valueInBNB * performanceFee / feeSum * bunnyPerProfitBNB / 1e18 with no cap or sanity check. Flash-loaning WBNB into the BUNNY-WBNB pair inside the same transaction inflated the reported LP value, so a VaultFlipToFlip.getReward() on a position worth a fraction of a BNB minted 8,018,324 BUNNY, 6,972,455 of it to the attacker.",
+  "summary": "PriceCalculatorBSC.valueOfAsset() priced WBNB-paired Cake-LP from the pair's spot WBNB balance, and BunnyMinterV2.mintForV2() minted BUNNY in proportion to that value with no cap. Flash-loaned WBNB pumped into the BUNNY-WBNB pair made a tiny VaultFlipToFlip getReward() mint 8M BUNNY, which the attacker sold into both BUNNY/WBNB pairs.",
   "targets": [
     {
       "address": "0x8cb88701790f650f273c8bb2cc4c5f439cd65219",
@@ -21,28 +21,23 @@
       }
     }
   ],
+  "campaign": [],
   "loss": {
-    "usd": 41747693.69380884,
+    "usd": 45788434.59,
     "assets": [
       {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "114631.542114869651730975",
-        "usd": 41747693.69380884
+        "symbol": "BNB",
+        "amount": "120621.109017608620946494",
+        "usd": 45788434.59
       }
     ]
   },
   "refs": [
     "https://cmichel.io/bsc-pancake-bunny-exploit-post-mortem/",
-    "eip155:56:0x88fcffc3256faac76cde4bbd0df6ea3603b1438a5a0409b2e2b91e7c2ba3371a",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2021-05/PancakeBunny_exp.sol",
-    "eip155:56:0xcc77c07d388a84ae49577bb1fed97e683e1a28ad6f85691059c3641722703e4a",
-    "eip155:56:0xf900b296e47ebec51c1acc0f8ec9d757fd2ef3ee7070775746980d718730bf76"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2021-05/PancakeBunny_exp.sol"
   ],
   "notes": [
-    "Third and last pre-exploit Upgraded event from the BunnyMinter proxy, selecting BunnyMinterV2 implementation 0x819eea71d3f93bb604816f1797d4828c90219b5d, which was created five transaction indices earlier in the same block. The EIP-1967 implementation slot still holds that address at block 7556390.",
-    "The only pre-exploit Upgraded event from the PriceCalculatorBSC V1 proxy, selecting implementation 0x81ef2bc1e02fee5414e46accc6ae14d833eebba0. The EIP-1967 implementation slot still holds that address at block 7556390.",
-    "Valued on realised proceeds, not on a spot mark of the minted token. The single exploit transaction mints 8018324.054007685473386005 BUNNY from the zero address, of which 6972455.699137117802944353 goes to the attacker's contract and 1045868.354870567670441652 to the protocol's BunnyPool. The attacker sells the BUNNY into the two BUNNY/WBNB PancakeSwap pairs, which give up 64350.677479753673535696 and 56270.431537854947410798 WBNB respectively, 120621.109017608620946494 WBNB gross; 5989.566902738969215519 WBNB of that is consumed by PancakeSwap flash-swap fees inside the same transaction, so exactly 114631.542114869651730975 WBNB is transferred out to attacker EOA 0xa0acc61547f6bd066f7c9663c17a312b6ad7e187 after every flash loan is repaid. That WBNB quantity is the measured loss. The 697245.569913711780294436 BUNNY the attacker still holds at the end of the transaction is deliberately excluded: the attacker's own selling had already collapsed the BUNNY/WBNB pairs, so no spot mark on that residue is realisable, and the frequently quoted 45M headline is a mark on the full 6.97M BUNNY that could never have been sold at that price. WBNB is valued with the last DefiLlama datapoint at or before the exploit (1621460291, 364.1902823916861 USD); BNB moved between roughly 364 and 390 USD within minutes of the exploit on that day, and the nearest later datapoint (1621463838, 379.71 USD) would give 43.53M USD, so the USD figure carries a few per cent of price noise that the exact WBNB quantity does not.",
-    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+    "Loss is the WBNB the two BUNNY/WBNB pairs gave up for the minted BUNNY. The flash-swap fees the attacker paid out of it are not subtracted (rule 14); the 697k BUNNY it kept is not valued.",
+    "No other mint above 5,000 BUNNY from the minter between its creation and block 7800000 is an exploit (admin mints of 10,000 and large CAKE harvests), so the anchor is the first and only exploit on BSC."
   ]
 }

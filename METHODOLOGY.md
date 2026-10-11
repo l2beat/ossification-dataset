@@ -80,8 +80,9 @@ transaction exploited.
     permanently locked, across the whole campaign, valued at market price
     when they moved. Fees, collateral the attacker left behind and later
     recoveries are not subtracted, and a victim's gain in one transaction
-    never offsets its loss in another. Flash loans repaid within the
-    transaction are not victim assets.
+    does not offset its loss in another. Flash loans repaid within the
+    transaction, and assets the attacker deposited and later took back, are
+    not victim assets.
 15. An asset the market could not absorb, one without a market price, one
     the attacker's own sale crashed or one too illiquid to sell, is valued at
     what the attacker realised.
