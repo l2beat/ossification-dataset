@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Amnext",
   "name": "Amnext prize strategy draws winners from a blockhash seed known to the completer",
-  "summary": "Amnext's PoolTogether-V3-fork MultipleWinners strategy lets anyone call completeAward(), which takes its seed from RNGBlockhash.randomNumber(); on first read that returns uint256(blockhash(block.number - 1)), a value every sender knows before its transaction executes. After no award had been completed since June 2022, about 436M AMC of staking yield sat in the AMCStakingPrizePool. The attacker deposited 46.06M AMC for 60.2% of tickets and called startAward, then sent completeAward in exactly the block after one of the only 3 of 367 eligible blockhashes that made all 10 draws land on its contract. It received 330.45M AMC of prize tickets, withdrew instantly and sold the AMC for 154.017 WBNB.",
+  "summary": "Amnext's PoolTogether V3 fork MultipleWinners lets anyone call completeAward(), whose seed comes from RNGBlockhash.randomNumber(), i.e. blockhash(block.number - 1), known before the caller's transaction runs. After depositing for a ticket share and starting the award, the attacker completed it in a block whose seed made every draw land on its contract, then withdrew the prize.",
   "targets": [
     {
       "address": "0x34c6ab54417f694bf2f982ca84942fc896ee35af",
@@ -21,24 +21,46 @@
     }
   ],
   "loss": {
-    "usd": 102855.58774806793,
+    "usd": 103249.57,
     "assets": [
       {
         "token": "0x852e3a65d0cd8561edc0927012412d60aaaa9a4c",
         "symbol": "AMC",
-        "amount": "330448338.92968331314898145",
-        "usd": 102855.58774806793
+        "amount": "330564361.99142285",
+        "usd": 102875.54
+      },
+      {
+        "token": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
+        "symbol": "vBNB",
+        "amount": "10.19200227",
+        "usd": 190.2
+      },
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "107.38126849199671723",
+        "usd": 107.2
+      },
+      {
+        "token": "0xfd5840cd36d94d7229439859c0112a4185bc0255",
+        "symbol": "vUSDT",
+        "amount": "2894.98940786",
+        "usd": 76.63
       }
     ]
   },
+  "campaign": [
+    "eip155:56:0xaaeb540196872be681cca008db659ce7f5c3e1b3df84d5f1ba1488d170eb85d5",
+    "eip155:56:0xec1fe53b67b2c318ef8676854f37ced9636240b9f86fcaba8fe1aceceb9eef76",
+    "eip155:56:0x54d1766d20afa9413eb06d03c6fe97bbb53be807dca195e51c8223f48f00f1f2"
+  ],
   "refs": [
     "eip155:56:0x99c9969ab97f97b56766a9d75ec4f82a463bb8e7f9603eecc77b6bb57485d3ba",
     "https://x.com/tenarmoralert/status/2097506987554808212"
   ],
   "notes": [
-    "EIP-1167 clone of MultipleWinners 0xb291594597a5a2a2b8fa8be56098b7e26279cac5, created and initialized with rng = RNGBlockhash 0xb1d89477d1b505c261bab6e73f08fa834544cd21 in the Amnext pool-builder transaction. The implementation address is fixed in the clone runtime and no RngServiceUpdated event was ever emitted, so this instance became exploitable, and first acquired the predictable RNG, at its creation.",
-    "Non-proxy RNGBlockhash created directly by an EOA; runtime hash unchanged from the deployment block to the block before the exploit.",
-    "Stolen asset: the 10 x 33044833.892968331314898145 AMC of prize tickets awarded to the attacker contract (Awarded events), which it redeemed and sold in the same transaction. The contract withdrew 376508794.385313827402796135 tickets (its 46060455.455630514253814685 deposit plus the prize), paid a 4605160.587738330854694255 AMC exit fee to the pool owner, and sold the remaining 371903633.797575496548101880 AMC into PancakeSwap pair 0x01738bfbb67875417543fad4fe408299d31ea757 for 154.016960821795457015 WBNB. That sale doubled the pair's AMC reserve (463.05M to 834.95M) and cut the realised price to 0.000311 USD against a 0.000562 USD pre-sale spot, so the AMC is valued at the attacker's average realised proceeds: 154.016960821795457015 WBNB x 751.59899299391 USD (DefiLlama, source-7) / 371903633.797575496548101880 AMC, applied pro rata to the prize part. The attacker's own deposit (AMC bought for 31.4 BNB in txs from nonces 0, 1 and 4) and its exit fee are attacker inputs and are excluded. So is the 10% manager fee (36716482.10329814590544238 tickets minted to owner 0xd3ae60193ece30926f3a69351749e04afa3001a2), which the fork's award() takes on every prize. No fair-share offset is applied: the attacker's whole award rested on the draw it chose. A fair draw over the same balances would have given its just-in-time 60.2% ticket share an expected ~61% of the prize, so the predictable seed alone accounts for at least ~39% of this loss. The full sale proceeds of 115758.99 USD, which SlowMist and TenArmor report as about 116.1k USD, include the attacker's returned principal.",
-    "Not the knot: this shared RNG predates the Amnext strategy clone (target-1), which became exploitable only when it was created with this RNG as its seed source on 2021-08-05."
+    "The MultipleWinners clone was created and initialized with rng = RNGBlockhash in the pool-builder tx and setRngService was never called, so the clone's creation sets the age; the shared RNGBlockhash is older.",
+    "AMC is valued at the attacker's realised price (its 371.9M AMC sale halved the PancakeSwap price): 154.017 WBNB pro rata, applied to the 330.45M AMC prize (attacker deposit excluded, exit fee not subtracted) and to the copycat's 116,023 AMC prize.",
+    "Copycats completed awards with chosen blockhash seeds on sibling Amnext pools (AMC, BUSD/vBNB and USDT pools, same builder and owner) within hours; found as RNGBlockhash.randomNumber callers after the anchor whose winner was the caller's contract."
   ]
 }

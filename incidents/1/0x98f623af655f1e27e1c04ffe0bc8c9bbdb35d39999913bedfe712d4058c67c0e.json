@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Alpha Homora",
   "name": "Alpha Homora v2 HomoraBank zero debt-share borrow",
-  "summary": "HomoraBank v2 tracks each bank's debt as totalDebt and totalShare. Two flaws in the implementation active at the time combine. First, the permissionless resolveReserve(address) borrows bank.pendingReserve from the Iron Bank cToken through doBorrow, which adds the borrowed amount to bank.totalDebt while minting no debt share at all, so anyone can raise the debt-per-share ratio without bound. Second, borrow(address,uint256) converts the borrowed amount into shares with truncating division, share = amount.mul(totalShare).div(totalDebt), and neither rounds up nor rejects a zero result, so any borrow smaller than totalDebt/totalShare transfers real tokens and records no debt whatsoever; getBorrowETHValue then values the position's debt at zero and execute()'s require(collateralValue >= borrowValue) passes trivially. Using the unadvertised sUSD bank the attacker borrowed 1,000 sUSD while totalShare was zero, repaid down to totalDebt = totalShare = 1 wei, then called resolveReserve(sUSD) directly on the proxy in this transaction, which borrowed 19,709,787,742,196 wei of accrued reserve and left totalDebt = 19,709,787,742,197 against totalShare = 1. Every subsequent borrow up to that ratio emitted Borrow(..., share 0), and because doBorrow also adds each borrowed amount to totalDebt, the free-borrow ceiling doubled with every iteration until 61,089,765.301487271822120729 sUSD had been drawn from the Iron Bank iSUSD market against one wei of debt share. The attacker redeposited that sUSD as iSUSD collateral and borrowed out the iWETH, iUSDC, iUSDT and iDAI markets. Alpha's own post-mortem names both the borrow rounding error and resolveReserve's share-less totalDebt increase, and the fix replaced div with ceilDiv in borrow and in every debt-valuation path. Only feeBps is configurable and no value of it makes truncating share division correct, so this is a code defect rather than a parameter defect.",
+  "summary": "HomoraBank v2's permissionless resolveReserve raised a bank's totalDebt without minting debt shares, and borrow() converted amounts to shares with truncating division, recording zero debt for borrows below totalDebt/totalShare. After shrinking the sUSD bank to one share, the attacker borrowed sUSD for free repeatedly via its own spell, used it as Iron Bank collateral and drained other markets.",
   "targets": [
     {
       "address": "0x5f5cd91070960d13ee549c9cc47e7a4cd00457bb",
@@ -14,51 +14,58 @@
     }
   ],
   "loss": {
-    "usd": 38393187.173067674,
+    "usd": 38638710.8,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "13244.630331762545750401",
-        "usd": 24450791.97352803
-      },
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "4032014.162771",
-        "usd": 4032014.162771
+        "usd": 24274451
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "5647242.107646",
-        "usd": 5647242.107646
+        "usd": 5649352.06
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
         "amount": "4263138.929122643119834654",
-        "usd": 4263138.929122643
+        "usd": 4267035.38
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "4032014.162771",
+        "usd": 4020859.63
+      },
+      {
+        "token": "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+        "symbol": "sUSD",
+        "amount": "420595.064351614446861843",
+        "usd": 427012.73
       }
     ]
   },
-  "refs": [
-    "eip155:1:0xcc57ac77dc3953de7832162ea4cd925970e064ead3f6861ee40076aca8e7e571",
-    "eip155:1:0xf31ee9d9e83db3592601b854fe4f8b872cecd0ea2a3247c475eea8062a20dd41",
+  "campaign": [
     "eip155:1:0x2e387620bb31c067efc878346742637d650843210596e770d4e2d601de5409e3",
     "eip155:1:0x64de824a7aa339ff41b1487194ca634a9ce35a32c65f4e78eb3893cc183532a4",
     "eip155:1:0x7eb2436eedd39c8865fcc1e51ae4a245e89765f4c64a13200c623f676b3912f9",
     "eip155:1:0xd7a91172c3fd09acb75a9447189e1178ae70517698f249b84062681f43f0e26e",
     "eip155:1:0xacec6ddb7db4baa66c0fb6289c25a833d93d2d9eb4fbe9a8d8495e5bfa24ba57",
-    "eip155:1:0x745ddedf268f60ea4a038991d46b33b7a1d4e5a9ff2767cdba2d3af69f43eb1b",
+    "eip155:1:0x745ddedf268f60ea4a038991d46b33b7a1d4e5a9ff2767cdba2d3af69f43eb1b"
+  ],
+  "refs": [
+    "eip155:1:0xcc57ac77dc3953de7832162ea4cd925970e064ead3f6861ee40076aca8e7e571",
+    "eip155:1:0xf31ee9d9e83db3592601b854fe4f8b872cecd0ea2a3247c475eea8062a20dd41",
     "https://blog.alphaventuredao.io/alpha-homora-v2-post-mortem/",
     "https://github.com/OriginProtocol/security/blob/master/incidents/2021-02-13-Alpha-Homora-v2.md",
     "https://github.com/AlphaFinanceLab/alpha-homora-v2-contract/blob/20c6ff583a90454e7acb08732baa319d7f66e76c/contracts/HomoraBank.sol"
   ],
   "notes": [
-    "ProxyAdmin 0x090ece252cec5998db765073d07fac77b8e60cb2 upgraded the HomoraBank v2 TransparentUpgradeableProxy to implementation 0x33bf0bb8e1405dc440eccb97ffd92fef438c8a27, deployed 316 blocks earlier; this was the last Upgraded event before the exploit.",
-    "Reconstructed from the Compound-style Borrow logs of the Iron Bank markets across the nine campaign transactions listed in source-5. The attacker drew 13,244.630331762545750401 WETH from iWETH 0x41c84c0e2ee0b740cf0d31f63f3b6f627dc6b393, 4,032,014.162771 USDC from iUSDC 0x76eb2fe28b36b3ee97f3adae0c69606eedb2a37c, 5,647,242.107646 USDT from iUSDT 0x48759f220ed983db51fa7a8c0d2aab8f3ce4166a and 4,263,138.929122643119834654 DAI from iDAI 0x8e595470ed749b85c6f7669de83eae304c2ec68f. The 61,089,765.301487271822120729 sUSD drawn from iSUSD is deliberately excluded from the total: it was immediately redeposited into the same market as iSUSD (Mint of 61,085,822.453466168029948973 sUSD), so it left no cash gap in that market; its effect is that HomoraBank now owes it with only one wei of debt share behind it, and it is the collateral the four drains above were taken against. Counting it as well would double count. Netting all ERC-20 Transfer logs over the campaign, the attacker's spell 0x560a8e3b79d23b0a525e15c6f3486c6a293ddad2 finished holding exactly 13,244.630331762545750401 WETH and the attacker EOA 13,532,845.885656673015123177 Curve a3CRV (virtual price 1.027693474457175574 at block 11846617, i.e. about 13.91 million USD), which independently reproduces the same figure. The attacker's own seed capital was 1.5 ETH sent in the setup transaction 0x4441eefe434fbef9d9b3acb169e35eb7b3958763b74c5617b39034decd4dd3ad and is not deducted from gross depletion. The total of 38,393,187.17 USD is within 0.6 percent of the 38,175,295.92 USD Alpha Finance published; press reports of 37.5 million USD use a slightly lower ETH mark.",
-    "The exploited bank is HomoraBank v2 at 0x5f5cd91070960d13ee549c9cc47e7a4cd00457bb. The address 0xba5ebaf3fc1fcca67147050bf80462393814e54b that is often quoted for Alpha Homora v2 is the replacement bank deployed on 2021-04-28, more than two months after this incident, and did not exist at exploit time.",
-    "The 61,089,765.301487271822120729 sUSD that HomoraBank borrowed from Iron Bank with one wei of debt share behind it is the protocol's residual insolvency. It is excluded from loss.usd because the attacker redeposited it into the same market and it is the collateral against which the four counted market drains were taken."
+    "The attacker's earlier executes (0xcc57ac77 borrow, 0xf31ee9d9 repay) were ordinary 1:1 share operations that set the sUSD bank to one share; resolveReserve here is the first share-less debt increase, so it anchors. Their 1,000 sUSD loan round-tripped.",
+    "HomoraBank v2 is 0x5f5cd910…; 0xba5ebaf3… is the replacement bank deployed in April 2021. The upgrade to 0x33bf0bb8 is the last route change before the exploit.",
+    "Loss is per-tx Iron Bank market outflow (loss.mjs, DefiLlama). The ~61M sUSD free-borrowed and redeposited as cySUSD nets out within each tx; the 420,595 sUSD taken in 0xd7a91172 and swapped to USDC did not, and the attacker's cySUSD collateral is not subtracted."
   ]
 }

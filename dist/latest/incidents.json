@@ -1637,7 +1637,7 @@
       "index": 81,
       "timestamp": 1688066807
     },
-    "claimsSha256": "56db680ea0ea00ba555a43442ccf40837e1305475745c7a6c1949fe80bdcf31a"
+    "claimsSha256": "7f41e3f4c54157c97cb312a5cd7a8c683d1f9ab3c483d017b6562c46d0bbd75f"
   },
   {
     "id": "eip155:56:0x191a34e6c0780c3d1ab5c9bc04948e231d742b7d88e0e4f85568d57fcdc03182",
@@ -2435,8 +2435,8 @@
     "tx": "0x98f623af655f1e27e1c04ffe0bc8c9bbdb35d39999913bedfe712d4058c67c0e",
     "protocol": "Alpha Homora",
     "name": "Alpha Homora v2 HomoraBank zero debt-share borrow",
-    "summary": "HomoraBank v2 tracks each bank's debt as totalDebt and totalShare. Two flaws in the implementation active at the time combine. First, the permissionless resolveReserve(address) borrows bank.pendingReserve from the Iron Bank cToken through doBorrow, which adds the borrowed amount to bank.totalDebt while minting no debt share at all, so anyone can raise the debt-per-share ratio without bound. Second, borrow(address,uint256) converts the borrowed amount into shares with truncating division, share = amount.mul(totalShare).div(totalDebt), and neither rounds up nor rejects a zero result, so any borrow smaller than totalDebt/totalShare transfers real tokens and records no debt whatsoever; getBorrowETHValue then values the position's debt at zero and execute()'s require(collateralValue >= borrowValue) passes trivially. Using the unadvertised sUSD bank the attacker borrowed 1,000 sUSD while totalShare was zero, repaid down to totalDebt = totalShare = 1 wei, then called resolveReserve(sUSD) directly on the proxy in this transaction, which borrowed 19,709,787,742,196 wei of accrued reserve and left totalDebt = 19,709,787,742,197 against totalShare = 1. Every subsequent borrow up to that ratio emitted Borrow(..., share 0), and because doBorrow also adds each borrowed amount to totalDebt, the free-borrow ceiling doubled with every iteration until 61,089,765.301487271822120729 sUSD had been drawn from the Iron Bank iSUSD market against one wei of debt share. The attacker redeposited that sUSD as iSUSD collateral and borrowed out the iWETH, iUSDC, iUSDT and iDAI markets. Alpha's own post-mortem names both the borrow rounding error and resolveReserve's share-less totalDebt increase, and the fix replaced div with ceilDiv in borrow and in every debt-valuation path. Only feeBps is configurable and no value of it makes truncating share division correct, so this is a code defect rather than a parameter defect.",
-    "lossUsd": 38393187.173067674,
+    "summary": "HomoraBank v2's permissionless resolveReserve raised a bank's totalDebt without minting debt shares, and borrow() converted amounts to shares with truncating division, recording zero debt for borrows below totalDebt/totalShare. After shrinking the sUSD bank to one share, the attacker borrowed sUSD for free repeatedly via its own spell, used it as Iron Bank collateral and drained other markets.",
+    "lossUsd": 38638710.8,
     "codeAgeSeconds": 129302,
     "exploit": {
       "block": 11846612,
@@ -2455,7 +2455,7 @@
       "index": 146,
       "timestamp": 1613067113
     },
-    "claimsSha256": "526e0ae0085d96a9c665832de50199acfd8072d5264f799d45294bf9e58d1dd7"
+    "claimsSha256": "506459cd1dbbdf57c1dff640f4b7d740d8c42296ff533900cc2f8ff334d22633"
   },
   {
     "id": "eip155:250:0xe374495036fac18aa5b1a497a17e70f256c4d3d416dd1408c026f3f5c70a3a9c",
@@ -9496,6 +9496,34 @@
     "claimsSha256": "a810481da7adc8a0b2f357c06b3612692a23bd59de548f2bf117db192a49ac18"
   },
   {
+    "id": "eip155:1:0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f",
+    "chainId": 1,
+    "tx": "0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f",
+    "protocol": "Audius",
+    "name": "Audius Governance proxy re-initialization",
+    "summary": "AudiusAdminUpgradeabilityProxy stores proxyAdmin in slot 0, where the logic contracts' Initializable keeps its initialized/initializing flags; with the admin address's low bytes nonzero, initializer guards always pass. The attacker re-initialized Governance, Staking and DelegateManagerV2, delegated fake stake to itself, and passed a proposal moving the treasury's AUDIO.",
+    "lossUsd": 1091400.861974381,
+    "codeAgeSeconds": 7714109,
+    "exploit": {
+      "block": 15201736,
+      "index": 61,
+      "timestamp": 1658616877
+    },
+    "target": {
+      "address": "0x4d7968ebfd390d5e7926cb3587c39eff2f9fb225",
+      "code": "0xf24aeab628493f82742db68596b532ab8a141057",
+      "codeHash": "0x0c703765d5840952041c1d7170b5535a0d6389f12b154d5b8184f884810064df"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0x96b8a444b7ec79b733ca44d035f8c78631ca3d0e6c57a1e2c33eb12deaada959",
+      "block": 14654750,
+      "index": 170,
+      "timestamp": 1650902768
+    },
+    "claimsSha256": "c3cff3bf96fee0703b99602b94554b25915f8042a7bd17341132e50942cf46ca"
+  },
+  {
     "id": "eip155:8453:0xf0f94d7fc627793ec770c46d117c4934be95fa0b0c8433b820e363d17d8b4dad",
     "chainId": 8453,
     "tx": "0xf0f94d7fc627793ec770c46d117c4934be95fa0b0c8433b820e363d17d8b4dad",
@@ -10189,8 +10217,8 @@
     "tx": "0x9f906fcd8fceaa6745e8d1c004861dcfa9b5e6a893fe1e8c5d0013a4e982e6a8",
     "protocol": "AllbridgeCCTP",
     "name": "Allbridge CCTP phantom deposit",
-    "summary": "CCTPTokenMessenger accepted a generic Circle attestation, decoded a token amount from its attacker-authored body, and credited a deposit without verifying that Circle minted USDC.",
-    "lossUsd": 190155.976393,
+    "summary": "CCTPTokenMessenger.receiveCctpMessage read amount, source sender and hook hash at fixed offsets of any Circle message it relayed, never checking that Circle's TokenMessenger sent it. A self-sent generic CCTP message with a crafted body recorded a phantom deposit that Router.receiveToken paid out in USDC.",
+    "lossUsd": 191207.24,
     "codeAgeSeconds": 9724246,
     "exploit": {
       "block": 50157345,
@@ -10208,7 +10236,7 @@
       "index": 91,
       "timestamp": 1777379791
     },
-    "claimsSha256": "94b520c6fd0334994c82c917a99132bc3ec77854cb6ee93b56a33741951a276e"
+    "claimsSha256": "9432170f8d4b87d996ec64ada8ca61fe625658067728c9bf49760c8f2749e0c6"
   },
   {
     "id": "eip155:137:0xf9b4a3a64861e9feb27e21f3fc9c85e6d2851b8a097c71910585e3d7f374d8d8",
@@ -13227,34 +13255,6 @@
     "claimsSha256": "a4767171cf48a74114925395eb44852c96aeb684e8a703c1ad7304e8ff17347b"
   },
   {
-    "id": "eip155:1:0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f",
-    "chainId": 1,
-    "tx": "0x3bbb15f9852c389e8d77399fe88b49b042d0f22aad4a33c979fbabc60a34b24f",
-    "protocol": "Audius",
-    "name": "Audius Governance proxy re-initialization",
-    "summary": "AudiusAdminUpgradeabilityProxy declares `address private proxyAdmin` in ordinary storage slot 0, while the delegated Governance logic inherits OpenZeppelin's Initializable, whose `bool private initialized` and `bool private initializing` are packed into byte 0 and byte 1 of the same slot 0. The Governance proxy's admin is its own address 0x4deca517d6817b6510798b7328f2314d3003abac, so byte 1 reads 0xab and `initializing` is permanently true. The `initializer` modifier's guard `require(initializing || isConstructor() || !initialized)` therefore always passes and, because `isTopLevelCall = !initializing` is false, never re-arms. Governance.initialize(address,uint256,uint256,uint256,uint16,address) stayed callable by anyone for the life of the deployed proxy; the attacker re-ran it to install himself as guardian, then submitted and evaluated his own proposal, which moved the community treasury's AUDIO balance out.",
-    "lossUsd": 1091400.861974381,
-    "codeAgeSeconds": 55283324,
-    "exploit": {
-      "block": 15201736,
-      "index": 61,
-      "timestamp": 1658616877
-    },
-    "target": {
-      "address": "0x4deca517d6817b6510798b7328f2314d3003abac",
-      "code": "0x35dd16dfa4ea1522c29ddd087e8f076cad0ae5e8",
-      "codeHash": "0x874e23b77179162e528aae1af8fa45eefde15b71495c13093b723a3367bac00c"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x1c865588300c717cb1e71dc699bb23b26b4ad929967394ab74816a4b1a83228a",
-      "block": 11103280,
-      "index": 54,
-      "timestamp": 1603333553
-    },
-    "claimsSha256": "f7a75b8bfcd30e6dd0086a762cf77056992dda30660e755f39bc2a6f364229e9"
-  },
-  {
     "id": "eip155:1:0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a",
     "chainId": 1,
     "tx": "0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a",
@@ -13584,34 +13584,6 @@
       "timestamp": 1574354474
     },
     "claimsSha256": "f8b940fcd6602ecfa3bb23f6cdb966b34df5972ac442d5ff0d70c0e5f674ed6a"
-  },
-  {
-    "id": "eip155:1:0xb2fc668c42623261074de6fc30d583efede2b0e20d7aded42b7b634f9322ff52",
-    "chainId": 1,
-    "tx": "0xb2fc668c42623261074de6fc30d583efede2b0e20d7aded42b7b634f9322ff52",
-    "protocol": "Ambient Finance",
-    "name": "Ambient CrocSwapDex surplus-collateral accounting",
-    "summary": "Flash-loaned WETH deposited as CrocSwapDex native surplus collateral, then a tick-by-tick walk of the ETH/USDC curve with a narrow mint-and-harvest let the attacker disburse more surplus than was deposited, exposing a surplus-collateral accounting flaw in the dex.",
-    "lossUsd": 110844.04423579527,
-    "codeAgeSeconds": 71856828,
-    "exploit": {
-      "block": 25266405,
-      "index": 1,
-      "timestamp": 1780845995
-    },
-    "target": {
-      "address": "0xaaaaaaaaa24eeeb8d57d431224f73832bc34f688",
-      "code": "0xa9dd587ad17aed82cac5596b16dcc9defec885cb",
-      "codeHash": "0x1e88df5c48f19904726c697da99a666832bce08a9d9f84121c250bcfe6d68c58"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0x8619bd3a1cce5c3a0a16288d0ebece5ad07cd1b7d6308a9ffe00dce77328f2b3",
-      "block": 19314934,
-      "index": 153,
-      "timestamp": 1708989167
-    },
-    "claimsSha256": "e1427e80cdee3f27de0f040c71601f9f08a3e3ea5813ab303db2c55a108e6d5d"
   },
   {
     "id": "eip155:1:0xe96eb780dedac4271b10112d7ad4f990e16e8929c38947902277f3c9f3c0626b",
@@ -14130,6 +14102,34 @@
       "timestamp": 1679493611
     },
     "claimsSha256": "91967c9dd3f5fc679798f2b857f8c43c388c89cf351435e6a082a548b55bf27b"
+  },
+  {
+    "id": "eip155:1:0xfc0ef93e32e497388c581dd9f9eaaf0161f87affd54cb12d2426434679c08a30",
+    "chainId": 1,
+    "tx": "0xfc0ef93e32e497388c581dd9f9eaaf0161f87affd54cb12d2426434679c08a30",
+    "protocol": "Ambient Finance",
+    "name": "Ambient WarmPath concentrated-position harvest on wrapped fee mileage",
+    "summary": "CrocSwapDex's WarmPath harvest pays concentrated LPs liquidity x (feeMileage - oldMileage) but compares the uint64 range odometer non-circularly, although tick odometers rely on wrapping arithmetic. Attackers pushed price with swaps, minted a dust-sized narrow range at freshly initialized ticks, crossed a tick, and harvested huge rewards from pool reserves.",
+    "lossUsd": 121171.55,
+    "codeAgeSeconds": 95518440,
+    "exploit": {
+      "block": 25266404,
+      "index": 0,
+      "timestamp": 1780845983
+    },
+    "target": {
+      "address": "0xaaaaaaaaa24eeeb8d57d431224f73832bc34f688",
+      "code": "0xd268767be4597151ce2bb4a70a9e368ff26cb195",
+      "codeHash": "0xbda8b0e2a43834c8b454d1592493256b91175af05f45ddf167881917713cd438"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0xb867563eaeed25539c1ffc7a95bed2d555ab3bc5460d80f1ca2d9e24ef4224a6",
+      "block": 17361700,
+      "index": 68,
+      "timestamp": 1685327543
+    },
+    "claimsSha256": "ec7fdccc08c674c81bc3a625b827bf6d66032fa384656977ba676107b18eafce"
   },
   {
     "id": "eip155:1:0x8a8793963c0ef443b9a396665c3c185ded132d5f99daf7c99e87125597016e64",
@@ -15042,8 +15042,8 @@
     "tx": "0x29eb97259b5c8d1bbfe791ad5d7bdc981f538ac37c857cc30d6296b31f08afc5",
     "protocol": "Amnext",
     "name": "Amnext prize strategy draws winners from a blockhash seed known to the completer",
-    "summary": "Amnext's PoolTogether-V3-fork MultipleWinners strategy lets anyone call completeAward(), which takes its seed from RNGBlockhash.randomNumber(); on first read that returns uint256(blockhash(block.number - 1)), a value every sender knows before its transaction executes. After no award had been completed since June 2022, about 436M AMC of staking yield sat in the AMCStakingPrizePool. The attacker deposited 46.06M AMC for 60.2% of tickets and called startAward, then sent completeAward in exactly the block after one of the only 3 of 367 eligible blockhashes that made all 10 draws land on its contract. It received 330.45M AMC of prize tickets, withdrew instantly and sold the AMC for 154.017 WBNB.",
-    "lossUsd": 102855.58774806793,
+    "summary": "Amnext's PoolTogether V3 fork MultipleWinners lets anyone call completeAward(), whose seed comes from RNGBlockhash.randomNumber(), i.e. blockhash(block.number - 1), known before the caller's transaction runs. After depositing for a ticket share and starting the award, the attacker completed it in a block whose seed made every draw land on its contract, then withdrew the prize.",
+    "lossUsd": 103249.57,
     "codeAgeSeconds": 160686480,
     "exploit": {
       "block": 120678535,
@@ -15062,7 +15062,7 @@
       "index": 146,
       "timestamp": 1628180524
     },
-    "claimsSha256": "76bebbab9e00e9071bdb5edeede4b60c4661cdf61783430b68c70e75f318dfd5"
+    "claimsSha256": "d623260c809a2d32698d81ddcb88c7dc4619faf9e7837f81e7a1bebc8835d01b"
   },
   {
     "id": "eip155:1:0x3a8bde0a17e04f6a119ae2f28e6b56ac736feb70761e2fa97cac25f816f751c2",

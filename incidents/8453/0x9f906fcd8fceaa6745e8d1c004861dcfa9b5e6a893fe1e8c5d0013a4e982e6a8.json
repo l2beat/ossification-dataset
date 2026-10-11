@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "AllbridgeCCTP",
   "name": "Allbridge CCTP phantom deposit",
-  "summary": "CCTPTokenMessenger accepted a generic Circle attestation, decoded a token amount from its attacker-authored body, and credited a deposit without verifying that Circle minted USDC.",
+  "summary": "CCTPTokenMessenger.receiveCctpMessage read amount, source sender and hook hash at fixed offsets of any Circle message it relayed, never checking that Circle's TokenMessenger sent it. A self-sent generic CCTP message with a crafted body recorded a phantom deposit that Router.receiveToken paid out in USDC.",
   "targets": [
     {
       "address": "0xf9b710e427bf4d93598e0f80a84de22c7ad9b577",
@@ -15,22 +15,54 @@
     }
   ],
   "loss": {
-    "usd": 190155.976393,
+    "usd": 191207.24,
     "assets": [
       {
         "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
         "symbol": "USDC",
-        "amount": "190155.976393",
-        "usd": 190155.976393
+        "amount": "191155.975393",
+        "usd": 191112.17
+      },
+      {
+        "chainId": 42161,
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "34.151127",
+        "usd": 34.14
+      },
+      {
+        "chainId": 1,
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "30.890412",
+        "usd": 30.88
+      },
+      {
+        "chainId": 137,
+        "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "symbol": "USDC",
+        "amount": "30.054934",
+        "usd": 30.05
       }
     ]
   },
+  "campaign": [
+    "eip155:8453:0xe041f8b1b9fe42ac607987eca8de166d0cab8073db06967068fe8ea512eceff9",
+    "eip155:8453:0x162d52761a02214de735a2e69e26d5c22eb20bde7af49fef2d5b2c4a164dee69",
+    "eip155:1:0x91cf7ed8a8f45701d3ff3e4344eb4b5c710c927be48f0d63b1c4cf5465ea3bf9",
+    "eip155:1:0x396ebe8a67c0fe3224cbdd7051b75d8c5e40d5a3f3d810d4f8294b27abacddde",
+    "eip155:42161:0xa21b59ea68c9b074df9a3d8484542e7f62a834d468b82b5900e6272747b7f487",
+    "eip155:42161:0x0ff72ce97cf2b0f9eadd748cdd36f45b2c749eb6c73b90fcd579f25b04d6eafa",
+    "eip155:137:0x9761eef9a622519a62389680c444231a1fe7a9ac5b4f802263675c66cc24907d",
+    "eip155:137:0x955d5a3f612414ba2a233d5e1173eeb1fefb02db042a91579e50790ca780914b"
+  ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/48c978bb245f8b624a28903267ce0ae887f15504/src/test/2026-08/AllbridgeCCTP_exp.sol",
     "eip155:8453:0x3015213003863b4429c2290c51cd6862776a477a0b99598fd17a012d7cd2f229"
   ],
   "notes": [
-    "setRemoteTokenMessenger(5, 0xdac2959b638247ab586f6c3ffcfc9c352d3aae5c) completed the Polygon receive-path configuration after domain 7 had been mapped to Allbridge chain ID 5. The receive function required this exact value as sourceSender, and the attacker copied it into the forged generic Circle message. The getter retained this value immediately before exploitation; later configuration calls addressed other chain IDs.",
-    "At block 50157344 the Router held 191,155.976393 USDC; 191,112.338841 USDC had been legitimately minted into it three blocks earlier and the remaining baseline was 43.637552 USDC. The attacker flash-borrowed and deposited 808,844.023607 USDC, then redeemed a phantom 1,000,000 USDC credit for a 999,000 USDC payout. The Router ended with its 1,000 USDC fee, so exact pre-existing victim depletion was 190,155.976393 USDC. The 404.422012 USDC flash-loan premium reduces attacker proceeds, not gross victim loss."
+    "The exploit's forged body copied remoteTokenMessengers(5), the Polygon sender set in the reset tx (domain 7 mapping and Router registration landed earlier in the same block); the check passes only with that value.",
+    "Campaign: every MessageReceived on the Allbridge CCTP messengers on Base, Ethereum, Polygon (0xdac2959b, old 0xf9b710e4) and Arbitrum (0x1ab89cb3, old 0xf9b710e4) whose relayed message was not sent to Circle's TokenMessengerV2, plus each forger's Router claim tx. Copycats 0xf33f35 (Base) and 0x3c4435 (Ethereum, Polygon, Arbitrum) drained small Router balances.",
+    "The anchor's Router outflow is net of the 808,844 USDC the attacker flash-borrowed into the Router within the same tx; the flash-loan premium is not a victim loss."
   ]
 }
