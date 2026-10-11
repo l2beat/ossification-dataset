@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Polygon PoS",
   "name": "Polygon PoS MRC20 unbacked native issuance",
-  "summary": "The genesis MRC20 runtime accepted an invalid zero-address authorization without enforcing the source balance, causing five unbacked native MATIC issuances before the emergency runtime replacement.",
+  "summary": "The genesis MRC20 contract holding Polygon's native MATIC let transferWithSig proceed when ecrecovery returned the zero address for a malformed signature, and paid native MATIC out of its own reserve without checking that sender's balance. The attacker sent malformed-signature transfers, directly and from constructors, to pay out MATIC.",
   "targets": [
     {
       "address": "0x0000000000000000000000000000000000001010",
@@ -11,56 +11,31 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:137:0xe1e3a93bd909a2298c0609ccbb7760d18cf27096940a58373282893b7fc7b36f",
+    "eip155:137:0xe955af346ad0e381300173bb293027430053b6dec76d89372e0d3d1ffcba549d",
+    "eip155:137:0x898b037aadb132ac659490381fcc23543fdc70da1c775d39b8b3c6fb1507a09f",
+    "eip155:137:0xc6158fa40417824d3fb16da6c602fc494b459188c26911afd61023f4af876283"
+  ],
   "loss": {
-    "usd": 1490410.415136825,
+    "usd": 1486503.98,
     "assets": [
       {
         "token": "0x0000000000000000000000000000000000001010",
         "symbol": "MATIC",
-        "amount": "10000",
-        "usd": 18323.442567984024
-      },
-      {
-        "token": "0x0000000000000000000000000000000000001010",
-        "symbol": "MATIC",
-        "amount": "50000",
-        "usd": 91617.21283992013
-      },
-      {
-        "token": "0x0000000000000000000000000000000000001010",
-        "symbol": "MATIC",
-        "amount": "540000",
-        "usd": 990539.9176435368
-      },
-      {
-        "token": "0x0000000000000000000000000000000000001010",
-        "symbol": "MATIC",
-        "amount": "100300.509906",
-        "usd": 196026.47285329105
-      },
-      {
-        "token": "0x0000000000000000000000000000000000001010",
-        "symbol": "MATIC",
-        "amount": "101301.009906",
-        "usd": 193903.3692320929
+        "amount": "801601.519812",
+        "usd": 1486503.98
       }
     ]
   },
   "refs": [
-    "eip155:137:0x00c26afeb29c1767545c46f6e4f22910af3cf70fc9cb97a07633ab8e8bc61261",
-    "eip155:137:0x0d16b81d6ac800d5022bdd21660f17388badfaced33e111df6e8a982f9edcece",
-    "eip155:137:0xcac2782c4b6b21d9c5f3f65af0af42c9f50ae3ad0bd0b2faf194833600fd38ea",
-    "eip155:137:0xe1e3a93bd909a2298c0609ccbb7760d18cf27096940a58373282893b7fc7b36f",
-    "eip155:137:0xe955af346ad0e381300173bb293027430053b6dec76d89372e0d3d1ffcba549d",
-    "eip155:137:0x898b037aadb132ac659490381fcc23543fdc70da1c775d39b8b3c6fb1507a09f",
-    "eip155:137:0xc6158fa40417824d3fb16da6c602fc494b459188c26911afd61023f4af876283",
     "https://immunefi.com/blog/bug-fix-reviews/polygon-lack-of-balance-check-bugfix-review-2-2m-bounty/",
     "https://github.com/0xPolygon/launch/blob/d434372e5fdacdca1521dfd4bc49c03c4c4763d4/mainnet-v1/without-sentry/bor/genesis.json",
     "https://github.com/0xPolygon/launch/blob/ea7ef12751291f7331b383506e5a714703f37362/mainnet-v1/without-sentry/bor/genesis.json"
   ],
   "notes": [
-    "MRC20 is block-zero system code with no deployment transaction. Its vulnerable genesis runtime remained byte-identical through the incident and was replaced only at the later emergency hardfork.",
-    "Gross loss is the five unbacked native-balance issuances recorded by MRC20 Transfer events from the zero address: 10,000 + 50,000 + 540,000 + 100,300.509906 + 101,301.009906 = 801,601.519812 MATIC. Each amount exactly equals the recipient's archive native-balance increase across its receipt block. These are protocol-created native units, not inventory outflows or later disposal proceeds. Component-specific prices are the closest preceding DefiLlama observations. The separately disclosed 500,000-MATIC Whitehat2 bounty and Polygon's later reimbursement are not part of the blackhat receipt boundary and are not netted.",
-    "MRC20 is genesis system code, so deployment is represented by chain state at block zero rather than a fabricated deployment transaction."
+    "MRC20 is block-zero system code; its runtime was unchanged from genesis until the emergency hardfork that fixed it.",
+    "Campaign: MRC20 emitted Transfer from the zero address only five times before the fix, all from these malformed-signature transferWithSig calls by one attacker cluster; legitimate transferWithSig calls recover a real signer.",
+    "Polygon's later reimbursement and the whitehat bounty are not netted."
   ]
 }

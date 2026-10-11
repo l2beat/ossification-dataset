@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Prisma Finance",
   "name": "Prisma MigrateTroveZap flash-loan callback injection",
-  "summary": "MigrateTroveZap: onFlashLoan did not validate initiator/params, letting anyone migrate (and re-open with attacker params) other users' troves.",
+  "summary": "MigrateTroveZap.onFlashLoan only checked that the debt token called it, not who initiated the flash loan or with what data. The attacker flash-borrowed mkUSD with the zap as receiver and data naming a victim trove whose owner had delegated to the zap, closing the trove and reopening it with less collateral, leaving the surplus in the zap to be taken.",
   "targets": [
     {
       "address": "0xcc7218100da61441905e0c327749972e3cbee9ee",
@@ -12,14 +12,40 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x0d4b5a415fa9a1452a09f8788c85a4acd2e0866519e73bdc37f5591e027b36ac",
+    "eip155:1:0xe15fa959627871845f2f5bbfbd7529e6d2aff20ab14ece743f11641700bd7188",
+    "eip155:1:0x5b00512a78bab3a6055d43207ea514f044b25b06c6e4e54b48befceff2c3ac93",
+    "eip155:1:0x4d3831d7dc2496fbcd644a4c4e38efc0bb8d0f09e6daf2118b94262c573ea708",
+    "eip155:1:0xe419162da24761275b7b7e9766f3136ddfd9bdb3c4bff13be685197eed11a3ba",
+    "eip155:1:0x2c36989b8108e263d7e50e659dbbfc47d8202e93557f7107f89d2396a9f03bcb",
+    "eip155:1:0xfddfb8cbcffb27f9f4564a3a5b0a8adb35bea104afc15d6af49fc004dd7441b0",
+    "eip155:1:0x395d17328d331d7cdf83097963c3fd8d424d82257d8d6f64618fcc6e1e0065a6",
+    "eip155:1:0x51ba177ae85e58133c5910e7c3a5d027d2edfa67d10e5e3874c323b88ecc377a",
+    "eip155:1:0xcd15358ed1cf3014bb4e88cb1229056cd9a0e81b7d29ede43a4e689e9a97b7a7",
+    "eip155:1:0xce3cdc7c29eb7dfc565f5d99034789e80c1cd3278adafa26af6f3d21c8412c59",
+    "eip155:1:0x12641ade277ba56215bffe6608fb078beb93bf3bb46a37fba91144790895d580",
+    "eip155:1:0x0c91723ebf69efc84d87ae393af51410491368fe9e9edc29cef38d5479aed140",
+    "eip155:1:0xbad3925d76bcde46021b67bf59599f9655d4529682fb21e0ee1a9d27a388e460",
+    "eip155:1:0x3b6c97c76446650e65959723c20489ac792fe9101d57e7349df2ebe9e05d63aa",
+    "eip155:1:0xc15c8ec126cb745a3d08622085be51670d56e9514ec479c0b4a29f38610ef3d1",
+    "eip155:1:0x0e38dd693ddbc2f62282932f36a4b8de75f8ea1da530532af26698b4eda9a110",
+    "eip155:1:0x64b8086827ae8df3220fcd51967e4457cbabd05f629b3b2405f8c3891a876b03",
+    "eip155:1:0x49fa12abeb4dbabd4650b7ac8ddd98a52a3a0d91208cc7e02f63f5fbe804522d",
+    "eip155:1:0xa4af50c8551d7c973e8d03e8a852d093207a7c0a8c92fd5cc008b4f7b60cfefc",
+    "eip155:1:0xdf000be562ee4134465b4f2fce9531225f9a9f946c89309c8957fc9d498f2aba",
+    "eip155:1:0xa62e2aab30eed9c8e5bf872412350d21d907b6595b5cd9211e9dd83fe047475f",
+    "eip155:1:0xdc5c56869862f7da6527ec68da9d8e1e04ccc3ca16a6b3ebe8f714432d505245",
+    "eip155:1:0xf51b7510d0b30784ccb218d08ffdf87ceb3fa3057a0e410fdde1d5665b526f95"
+  ],
   "loss": {
-    "usd": 12000000,
+    "usd": 12411638.86,
     "assets": [
       {
         "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
         "symbol": "wstETH",
-        "amount": "3479.24",
-        "usd": 12000000
+        "amount": "2995.303452093987179672",
+        "usd": 12411638.86
       }
     ]
   },
@@ -28,8 +54,8 @@
     "https://www.llamarisk.com/research/risk-prisma-finance-incident-march-28-2024-post-mortem"
   ],
   "notes": [
-    "Direct deployment of the vulnerable MigrateTroveZap runtime.",
-    "The incident post-mortem reports 3,479.24 wstETH lost across the primary and copycat exploit transactions, worth approximately $12 million.",
-    "The post-mortem reports approximate aggregate loss across the primary and copycat exploit transactions rather than exact per-transaction quantities."
+    "approvedCollaterals is set lazily by the zap's first migrateTrove for a collateral, not by an admin, so the zap's deployment is the reset.",
+    "Campaign: every post-anchor onFlashLoan call into the zap not initiated by the zap, from the attacker and two copycats whose proceeds were swapped or moved away; the Prisma deployer's later call that closed a trove to recover its rETH is an affiliated rescue and excluded.",
+    "Loss is the wstETH TroveManager's net collateral depletion per transaction (loss.mjs); the post-mortem's 3,479.24 wstETH is not borne out onchain."
   ]
 }

@@ -2,69 +2,74 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Ploutoz",
   "name": "Ploutoz live-reserve collateral pricing",
-  "summary": "The DOP collateral oracle valued DOP from live DOP/BUSD pool reserves, so a transient reserve imbalance produced unsupported borrowing power.",
+  "summary": "Ploutoz, a bZx-style lending fork, priced DOP collateral with a PancakeOracle that returned the spot reserve ratio of a DOP/BUSD pair. The attacker flash-swapped BUSD, bought DOP to inflate that ratio, borrowed from six iToken pools against a small DOP deposit and sold the DOP back; a copycat and the attacker repeated it later.",
   "targets": [
     {
       "address": "0xa41bf81be90fe9666cd566a80c85871f41529aed",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x7e12fd3ce545ade4fbabb7766de530492761791b0e7b8bc9a2fffccd86f05446"
+        "kind": "config",
+        "tx": "0x2906dfc0151edabd979b2bbd669e23bcc181be0e1a016aaae1d80a6cead49e82",
+        "address": "0x86043747dae9b6dd80c463a29e5b21e50bef5e7d",
+        "slot": "0x6b9102211fa986c0f039d829da112e4d7fc90d525ffb921966d04b0614275bd1"
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xa02495df5ce7860c617d87c8b5dbf21c4694a4f7ac7de10c50306ccab16dd279",
+    "eip155:56:0x42a7bfe1484705e9016fe6ae6c0cd6d711d0392e910506e6f419086add771367"
+  ],
   "loss": {
-    "usd": 363406.7512462427,
+    "usd": 398541.6,
     "assets": [
-      {
-        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
-        "symbol": "CAKE",
-        "amount": "85",
-        "usd": 1255.4187341458698
-      },
-      {
-        "token": "0xff54da7caf3bc3d34664891fc8f3c9b6dea6c7a5",
-        "symbol": "DOLLY",
-        "amount": "18000",
-        "usd": 18000
-      },
-      {
-        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
-        "symbol": "WETH",
-        "amount": "18",
-        "usd": 74704.88066760056
-      },
       {
         "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
         "symbol": "BTCB",
         "amount": "1.6",
-        "usd": 90446.45184449632
+        "usd": 90010.91
       },
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "89000",
-        "usd": 89000
+        "usd": 89296.87
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "18",
+        "usd": 74704.88
+      },
+      {
+        "symbol": "BNB",
+        "amount": "39",
+        "usd": 22734.03
+      },
+      {
+        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "symbol": "Cake",
+        "amount": "85",
+        "usd": 1255.42
+      },
+      {
+        "token": "0xff54da7caf3bc3d34664891fc8f3c9b6dea6c7a5",
+        "symbol": "DOLLY",
+        "amount": "18000",
+        "usd": 18039.56
       },
       {
         "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
         "symbol": "BUSD",
-        "amount": "90000",
-        "usd": 90000
+        "amount": "102000",
+        "usd": 102499.93
       }
     ]
   },
   "refs": [
-    "eip155:56:0x0d070378f2fd20197ba7fd253d3d78d27dc1f57e5599feec47a3247b0139cee6",
-    "eip155:56:0x178fdbc9bb509f54afac52a5f8786143e65732182ab548089bf0450d798c87c4",
-    "eip155:56:0x2d189fded91970e42cf568e3aaaeaaae9f098129cbfbee26a71fdf3d85663edd",
-    "eip155:56:0xf3af5b1859c38e9caecb772db6a22bc381d8eaf45a1a8e1405be53c5b43f235a",
-    "eip155:56:0x23a35b682aea966caa4d804032bb21d7ca27f1993c76e095719970d20f13c1d2",
-    "eip155:56:0x61c891b7811444adb15f2148dba79d67926fa2828197f5284fc850100fc9cc14",
-    "eip155:56:0x628a1732f0b99588c7dba8306643914337c22352d94509b36680c1a25ebaba68",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-11/Ploutoz_exp.sol"
   ],
   "notes": [
-    "PancakeOracle is a direct, non-proxy contract. Its runtime was absent in the preceding block and is byte-identical at deployment and immediately before the incident.",
-    "Gross depletion of the six pToken reserves, combined with the protocol controller as one victim union, is 85 CAKE, 18,000 DOLLY, 18 WETH, 1.6 BTCB, 89,000 USDT, and 90,000 BUSD. Receipt transfers and archive balances independently reconcile every component; fee transfers between each pToken and the controller cancel inside the union. The controller retains the 8,450 DOP collateral supplied in the receipt. Flash liquidity, helper withdrawals, and later swaps are financing or disposal of already-counted assets and are excluded. The imported approximately $365,000 estimate is replaced by exact asset depletion and independently preceding CAKE, ETH, and BTC prices. Exact decimal component arithmetic totals $363,406.751246242747830; the JSON number is its nearest IEEE-754 representation."
+    "The PancakeOracle was harmless until PriceFeeds mapped DOP to it (pricesFeeds[DOP], slot 4); that oracle wiring, a HIGH price-source config, is the latest change the exploit needed. Later protocol and iToken storage changes are loan accounting.",
+    "Campaign: every Borrow with DOP collateral (protocol event 0xfb6c38ae, topic2 = DOP) from the oracle wiring onwards; all eight are in the anchor or these two flash-swap txs (one by a copycat, one by the attacker).",
+    "Loss is depletion of the iToken pools and protocol together, so lending fees cancel. DefiLlama has no DOLLY price; it is valued at the BUSD the attacker realised selling it, and BUSD at the Binance USD market price."
   ]
 }

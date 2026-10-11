@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Popsicle Finance",
   "name": "Popsicle Finance Sorbetto reward-accounting exploit",
-  "summary": "SorbettoFragola transferred LP shares without synchronizing the recipient's per-share fee debt. The same shares could therefore be moved through fresh addresses, each credited with historical fees, and the duplicated rewards collected from vault liquidity.",
+  "summary": "SorbettoFragola vaults transferred LP shares without settling or moving the per-account fee accounting, so a recipient was credited with fees accrued before it held the shares. With flash-loaned deposits the attacker passed the same shares through helper contracts, each collecting the full historical fees, then withdrew, across eight vaults.",
   "targets": [
     {
       "address": "0xc4ff55a4329f84f9bf0f5619998ab570481ebb48",
@@ -62,37 +62,43 @@
     }
   ],
   "loss": {
-    "usd": 20700000,
+    "usd": 21064036.86,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "2560"
-      },
-      {
-        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-        "symbol": "WBTC",
-        "amount": "96.2"
-      },
-      {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "160000"
+        "amount": "2572.426090014232766731",
+        "usd": 6479675.42
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "5390000"
+        "amount": "5414085.448419",
+        "usd": 5428453.86
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
-        "amount": "4980000"
+        "amount": "5004178.993184",
+        "usd": 5017986.51
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "97.42200167",
+        "usd": 3745775.27
       },
       {
         "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
         "symbol": "UNI",
-        "amount": "10500"
+        "amount": "10665.060531001037336542",
+        "usd": 228948.66
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "162628.049788569637316002",
+        "usd": 163197.14
       }
     ]
   },
@@ -102,9 +108,8 @@
     "https://www.halborn.com/blog/post/explained-the-popsicle-finance-hack-august-2021"
   ],
   "notes": [
-    "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit.",
-    "Halborn reports approximately $20.7 million drained from the Sorbetto Fragola pools. BlockSec reports over $20 million and the rounded six-asset basket recorded here. The total is the gross campaign loss across all eight vaults executed in the selected transaction.",
-    "The $20.7 million loss and six asset quantities are reported estimates; individual incident-time token prices are not reconstructed here.",
-    "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
+    "Each vault is a direct deployment of the same template; the latest-deployed vault sets the age. Storage changes after deployment are supply, fee accumulators and rerange ticks.",
+    "No further exploit found: collectFees calls on the eight vaults before and after the anchor are holders collecting their own fees, with no third-party pulls or outsized payouts.",
+    "Loss is depletion of the eight vaults and their Uniswap V3 pools together, so the attacker's flash-loaned deposits net out; it includes the flash-loan premium paid from vault funds."
   ]
 }

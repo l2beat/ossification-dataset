@@ -143,8 +143,8 @@
     "tx": "0xa17dc37e1b65c65d20042212fb834974f7faaa961442e3fc05393778705f8474",
     "protocol": "Ploutos Money",
     "name": "Ploutos Money USDC priced from the BTC/USD feed",
-    "summary": "Ploutos Money is an Aave V3 fork. Its asset-listing admin called AaveOracle.setAssetSources and pointed USDC at the Chainlink BTC/USD proxy, so the oracle priced 1 USDC at about USD 68,554. In the next block the attacker flash-borrowed 8.879192 USDC from the Uniswap V2 USDC/WETH pair, supplied it as collateral worth about USD 608,700 at that price, borrowed 187.366746326704993556 WETH, and repaid the pair; a liquidation bot in the same block seized a USDT-collateralised USDC borrower's entire collateral. The admin replaced the source seven blocks later.",
-    "lossUsd": 390856.95,
+    "summary": "Ploutos Money, an Aave V3 fork, had its AaveOracle USDC source repointed by the asset-listing admin to Chainlink's BTC/USD proxy, pricing 1 USDC near BTC. In the next block a searcher flash-borrowed a few USDC, supplied them as collateral and borrowed the WETH reserve; a liquidation bot in the same block seized a USDC borrower's USDT collateral for cents.",
+    "lossUsd": 389441.46,
     "codeAgeSeconds": 12,
     "exploit": {
       "block": 24538897,
@@ -162,7 +162,7 @@
       "index": 135,
       "timestamp": 1772082467
     },
-    "claimsSha256": "28e4efa40268daee6aa9ff262d7360055e4201c34aa313ae7b5b5290f4ab711b"
+    "claimsSha256": "97cde6c0884bd55b131501bb04f3cac878178896b974e737c25d6cab5b2b5d99"
   },
   {
     "id": "eip155:1:0xa57ec56af91ec70517ca71ca50101958d9c2ec9fdb61edcf35a9081c375725c2",
@@ -694,8 +694,8 @@
     "tx": "0xf63913a784b0699fcd9a65072d81b5e639ff38b886bc7bfeb447f675172a622e",
     "protocol": "Pond0x",
     "name": "Pond0x PNDX public directTransfer",
-    "summary": "The Pond0x (PNDX) token 0x1d4214081985ad20aa3ca93a2206ae792635cbec kept solady's mock helpers directTransfer(from, to, amount) and directSpendAllowance as public functions with no access control. directTransfer calls _transfer(from, to, amount) for any from, so anyone could move anyone's PNDX. About four hours after launch, 1,431 accounts made 7,778 such transfers out of 2,248 other holders and sold the tokens into the Uniswap PNDX/WETH pools. Those accounts' transactions took a net 81.029522709579604392 WETH out of the pools.",
-    "lossUsd": 151844.4637863896,
+    "summary": "The Pond0x (PNDX) token kept solady's mock helpers directTransfer(from, to, amount) and directSpendAllowance as public functions without access control, so anyone could move anyone's PNDX. Hours after launch, takers moved PNDX out of holders and pools with directTransfer and sold it into the Uniswap PNDX/WETH pools.",
+    "lossUsd": 151860.66,
     "codeAgeSeconds": 13248,
     "exploit": {
       "block": 17792696,
@@ -713,7 +713,7 @@
       "index": 119,
       "timestamp": 1690547891
     },
-    "claimsSha256": "3dd7bb0e3510d56d9a568d9c529557702774228ad2bc9bbf8b0e3fc1fc743499"
+    "claimsSha256": "604a541691ab42a3da178321bfd9ac80f533e114bc413c8561310130d3ff8934"
   },
   {
     "id": "eip155:1:0x9064b507f16bd8b85fb5aea0185153b01fa23b3205f7153f986e5107ce988a9c",
@@ -4838,8 +4838,8 @@
     "tx": "0x00c503b595946bccaea3d58025b5f9b3726177bbdc9674e634244135282116c7",
     "protocol": "Prisma Finance",
     "name": "Prisma MigrateTroveZap flash-loan callback injection",
-    "summary": "MigrateTroveZap: onFlashLoan did not validate initiator/params, letting anyone migrate (and re-open with attacker params) other users' troves.",
-    "lossUsd": 12000000,
+    "summary": "MigrateTroveZap.onFlashLoan only checked that the debt token called it, not who initiated the flash loan or with what data. The attacker flash-borrowed mkUSD with the zap as receiver and data naming a victim trove whose owner had delegated to the zap, closing the trove and reopening it with less collateral, leaving the surplus in the zap to be taken.",
+    "lossUsd": 12411638.86,
     "codeAgeSeconds": 701676,
     "exploit": {
       "block": 19532297,
@@ -4857,7 +4857,7 @@
       "index": 480,
       "timestamp": 1710923435
     },
-    "claimsSha256": "8eb8b5c5afc9baaf4b705a0c062181c71b785a66b2ee68ed76344926ff6a3849"
+    "claimsSha256": "556b804a44521154ed33266e4870f1cc4193ef7cf1535baf520d76f25ee7425e"
   },
   {
     "id": "eip155:56:0x40eb22369da422a8275d5679054aa3a8c8906d93abc0bac3a3f2cad879389319",
@@ -5378,6 +5378,34 @@
       "timestamp": 1732870613
     },
     "claimsSha256": "89d8f64cfdf43b5f54922c0aff59559c66bcf2e1327bdd53fbeadbf893ba499a"
+  },
+  {
+    "id": "eip155:43114:0x1266a937c2ccd970e5d7929021eed3ec593a95c68a99b4920c2efa226679b430",
+    "chainId": 43114,
+    "tx": "0x1266a937c2ccd970e5d7929021eed3ec593a95c68a99b4920c2efa226679b430",
+    "protocol": "Platypus Finance",
+    "name": "Platypus MasterPlatypusV4 emergencyWithdraw solvency check",
+    "summary": "MasterPlatypusV4.emergencyWithdraw() asked PlatypusTreasure for solvency before removing the staked LP collateral, so the check passed while the collateral was still counted. The attacker staked flash-loaned LP-USDC, borrowed the maximum USP against it, emergency-withdrew the collateral and swapped the unbacked USP for the pool's stablecoins.",
+    "lossUsd": 9076991.91,
+    "codeAgeSeconds": 975834,
+    "exploit": {
+      "block": 26343614,
+      "index": 0,
+      "timestamp": 1676575014
+    },
+    "target": {
+      "address": "0xff6934aac9c94e1c39358d4fdcf70aeca77d0ab0",
+      "code": "0xc007f27b757a782c833c568f5851ae1dfe0e6ec7",
+      "codeHash": "0x02a2003eaa6e03405612381eb404f39e509703c0d474fad1c4624ae128c250b9"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x58feaf515abd3735849496a05d50c93f1bb0d450fe1e1ff9826ccdaadedcf952",
+      "block": 25864570,
+      "index": 0,
+      "timestamp": 1675599180
+    },
+    "claimsSha256": "ada78f8fefaed19b9dc6c5601d91f7d52a6e8a36f8320f4cf3c0d91d6269079b"
   },
   {
     "id": "eip155:1:0xc087fbd68b9349b71838982e789e204454bfd00eebf9c8e101574376eb990d92",
@@ -7581,8 +7609,8 @@
     "tx": "0xcd7dae143a4c0223349c16237ce4cd7696b1638d116a72755231ede872ab70fc",
     "protocol": "Popsicle Finance",
     "name": "Popsicle Finance Sorbetto reward-accounting exploit",
-    "summary": "SorbettoFragola transferred LP shares without synchronizing the recipient's per-share fee debt. The same shares could therefore be moved through fresh addresses, each credited with historical fees, and the duplicated rewards collected from vault liquidity.",
-    "lossUsd": 20700000,
+    "summary": "SorbettoFragola vaults transferred LP shares without settling or moving the per-account fee accounting, so a recipient was credited with fees accrued before it held the shares. With flash-loaned deposits the attacker passed the same shares through helper contracts, each collecting the full historical fees, then withdrew, across eight vaults.",
+    "lossUsd": 21064036.86,
     "codeAgeSeconds": 3120203,
     "exploit": {
       "block": 12955063,
@@ -9524,34 +9552,6 @@
     "claimsSha256": "fb9bf5b1fdafb329d6a48c94e957ad82bf540ce7e50373ed1ae5304bc6445bfe"
   },
   {
-    "id": "eip155:43114:0x1266a937c2ccd970e5d7929021eed3ec593a95c68a99b4920c2efa226679b430",
-    "chainId": 43114,
-    "tx": "0x1266a937c2ccd970e5d7929021eed3ec593a95c68a99b4920c2efa226679b430",
-    "protocol": "Platypus Finance",
-    "name": "Platypus MasterPlatypusV4 emergencyWithdraw solvency check",
-    "summary": "MasterPlatypusV4.emergencyWithdraw() checked solvency before zeroing the user's staked LP balance. The check therefore saw the collateral still present and passed, after which the function returned that collateral without requiring repayment of the USP debt it secured.",
-    "lossUsd": 9190000,
-    "codeAgeSeconds": 8056096,
-    "exploit": {
-      "block": 26343614,
-      "index": 0,
-      "timestamp": 1676575014
-    },
-    "target": {
-      "address": "0xff6934aac9c94e1c39358d4fdcf70aeca77d0ab0",
-      "code": "0xc007f27b757a782c833c568f5851ae1dfe0e6ec7",
-      "codeHash": "0x02a2003eaa6e03405612381eb404f39e509703c0d474fad1c4624ae128c250b9"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0x95787a8f852ba718fa839007692a3d6e6aa16460b88c2aeeda3aa4a94dad286c",
-      "block": 22409704,
-      "index": 4,
-      "timestamp": 1668518918
-    },
-    "claimsSha256": "faca80b216d1cf763ab55054b0984b5e87d4fd417025e6f663786a00e7d9de27"
-  },
-  {
     "id": "eip155:42161:0x864c8cfb8c54d3439613e6bd0d81a5ea2c5d0ad25c9af11afd190e5ea4dcfc1f",
     "chainId": 42161,
     "tx": "0x864c8cfb8c54d3439613e6bd0d81a5ea2c5d0ad25c9af11afd190e5ea4dcfc1f",
@@ -9752,9 +9752,9 @@
     "tx": "0x7fe46c2746855dd57e18f4d33522849ff192e4e26c74835799ba8dab89099457",
     "protocol": "Ploutoz",
     "name": "Ploutoz live-reserve collateral pricing",
-    "summary": "The DOP collateral oracle valued DOP from live DOP/BUSD pool reserves, so a transient reserve imbalance produced unsupported borrowing power.",
-    "lossUsd": 363406.7512462427,
-    "codeAgeSeconds": 8913629,
+    "summary": "Ploutoz, a bZx-style lending fork, priced DOP collateral with a PancakeOracle that returned the spot reserve ratio of a DOP/BUSD pair. The attacker flash-swapped BUSD, bought DOP to inflate that ratio, borrowed from six iToken pools against a small DOP deposit and sold the DOP back; a copycat and the attacker repeated it later.",
+    "lossUsd": 398541.6,
+    "codeAgeSeconds": 8911203,
     "exploit": {
       "block": 12886417,
       "index": 79,
@@ -9765,13 +9765,13 @@
       "codeHash": "0xd4553264fd845aabff57aa9de2657b272994497b1d647acccb81ec6e086199df"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x7e12fd3ce545ade4fbabb7766de530492761791b0e7b8bc9a2fffccd86f05446",
-      "block": 9956707,
-      "index": 0,
-      "timestamp": 1628745818
+      "kind": "config",
+      "tx": "0x2906dfc0151edabd979b2bbd669e23bcc181be0e1a016aaae1d80a6cead49e82",
+      "block": 9957490,
+      "index": 143,
+      "timestamp": 1628748244
     },
-    "claimsSha256": "7b577bbc1fab525b4348a8af1f8785403eb9041fe54e6fbeab78e27800c58713"
+    "claimsSha256": "e270231bc4bfd6db96669bfd49c83d2be9e68b2b59e2ebfd257f2af5ffb09bb6"
   },
   {
     "id": "eip155:1:0xfd89cdd0be468a564dd525b222b728386d7c6780cf7b2f90d2b54493be09f64d",
@@ -12322,9 +12322,9 @@
     "tx": "0xb1f70464bd95b774c6ce60fc706eb5f9e35cb5f06e6cfe7c17dcda46ffd59581",
     "protocol": "Poly Network",
     "name": "Poly Network",
-    "summary": "EthCrossChainManager accepted an attacker-selected destination and method string from an authenticated cross-chain message. The string f1121318093 produced the selector of EthCrossChainData.putCurEpochConPubKeyBytes(bytes), allowing the attacker to replace the keeper public key and authorize later withdrawals.",
-    "lossUsd": 611000000,
-    "codeAgeSeconds": 31287449,
+    "summary": "EthCrossChainManager called any target contract with a selector derived from an attacker-chosen method name in a cross-chain message. The name f1121318093 hashed to EthCrossChainData.putCurEpochConPubKeyBytes, which the manager owned, so one message replaced the keeper public key; attacker-signed messages then unlocked LockProxy funds on Ethereum, BSC and Polygon.",
+    "lossUsd": 611844711.12,
+    "codeAgeSeconds": 31286653,
     "exploit": {
       "block": 12996659,
       "index": 327,
@@ -12335,13 +12335,13 @@
       "codeHash": "0x453bdc92fb3b5a86df479506ccd67704b05254ee11e6330fc5e97c6b2070328d"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x0a51dcb1acfd4f44b5198d344f88acd1887fc694c4ff67c8e2bb8be6e9f1ae77",
-      "block": 10650091,
-      "index": 92,
-      "timestamp": 1597301471
+      "kind": "config",
+      "tx": "0x69841100ab5477449dae07c99a4745df014aec11daf01027d870fc1258d1aa3f",
+      "block": 10650155,
+      "index": 104,
+      "timestamp": 1597302267
     },
-    "claimsSha256": "5d63c3d23b620313bc0f174b85eaec12908f4f900b1168f7ebd73726fb2d5fff"
+    "claimsSha256": "7f6fa2b0b99264a2b04f0e9f704a00805cb95c7f6aece0c6e5c382f754b44975"
   },
   {
     "id": "eip155:999:0xff990876d863a61732779c341991215856c89420b84daaf31eece7ecd5ff4243",
@@ -12871,8 +12871,8 @@
     "tx": "0x3e8bedbd96bb309dc5a150dc24db21dc96311a06c8ac5b7b34584042ddc6a9a9",
     "protocol": "Polygon PoS",
     "name": "Polygon PoS MRC20 unbacked native issuance",
-    "summary": "The genesis MRC20 runtime accepted an invalid zero-address authorization without enforcing the source balance, causing five unbacked native MATIC issuances before the emergency runtime replacement.",
-    "lossUsd": 1490410.415136825,
+    "summary": "The genesis MRC20 contract holding Polygon's native MATIC let transferWithSig proceed when ecrecovery returned the zero address for a malformed signature, and paid native MATIC out of its own reserve without checking that sender's balance. The attacker sent malformed-signature transfers, directly and from constructors, to pay out MATIC.",
+    "lossUsd": 1486503.98,
     "codeAgeSeconds": 47800730,
     "exploit": {
       "block": 22127201,
@@ -12889,7 +12889,7 @@
       "index": -1,
       "timestamp": 1590824836
     },
-    "claimsSha256": "50cca11d08a8f1daf61484e7327927c23fda0b840bcd85273d6514e16491e197"
+    "claimsSha256": "d0f9b875bf00b6f595438dc7d0e46bc824d7d4133a558959acc1d2761c61b0c2"
   },
   {
     "id": "eip155:1:0x1274b32d4dfacd2703ad032e8bd669a83f012dde9d27ed92e4e7da0387adafe4",

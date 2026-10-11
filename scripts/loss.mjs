@@ -56,7 +56,7 @@ const CHAINS = {
 // a token with one of these symbols is priced as the asset when both current prices agree within 2%.
 const MAJORS = {
   ETH: 'ethereum', WETH: 'ethereum', 'WETH.E': 'ethereum', USDT: 'tether', USDT0: 'tether', 'USDT.E': 'tether',
-  USDC: 'usd-coin', 'USDC.E': 'usd-coin', USDBC: 'usd-coin', DAI: 'dai', 'DAI.E': 'dai',
+  USDC: 'usd-coin', 'USDC.E': 'usd-coin', USDBC: 'usd-coin', DAI: 'dai', 'DAI.E': 'dai', BUSD: 'binance-usd', 'BUSD.E': 'binance-usd',
   WBTC: 'wrapped-bitcoin', 'WBTC.E': 'wrapped-bitcoin', BTCB: 'bitcoin', 'BTC.B': 'bitcoin',
 }
 

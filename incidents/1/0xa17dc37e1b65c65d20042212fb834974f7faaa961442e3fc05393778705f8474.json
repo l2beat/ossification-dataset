@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Ploutos Money",
   "name": "Ploutos Money USDC priced from the BTC/USD feed",
-  "summary": "Ploutos Money is an Aave V3 fork. Its asset-listing admin called AaveOracle.setAssetSources and pointed USDC at the Chainlink BTC/USD proxy, so the oracle priced 1 USDC at about USD 68,554. In the next block the attacker flash-borrowed 8.879192 USDC from the Uniswap V2 USDC/WETH pair, supplied it as collateral worth about USD 608,700 at that price, borrowed 187.366746326704993556 WETH, and repaid the pair; a liquidation bot in the same block seized a USDT-collateralised USDC borrower's entire collateral. The admin replaced the source seven blocks later.",
+  "summary": "Ploutos Money, an Aave V3 fork, had its AaveOracle USDC source repointed by the asset-listing admin to Chainlink's BTC/USD proxy, pricing 1 USDC near BTC. In the next block a searcher flash-borrowed a few USDC, supplied them as collateral and borrowed the WETH reserve; a liquidation bot in the same block seized a USDC borrower's USDT collateral for cents.",
   "targets": [
     {
       "address": "0x9dce7a180c34203fee8ce8ca62f244feeb67bd30",
@@ -14,29 +14,29 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x028174a31fcbe19967627de170efd978ad65913d81c589e9d97e217972697f7b"
+  ],
   "loss": {
-    "usd": 390856.95,
+    "usd": 389441.46,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "187.366746326704993556",
-        "usd": 389810.89
+        "usd": 388395.38
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "1046.050765",
-        "usd": 1046.05
+        "usd": 1046.08
       }
     ]
   },
-  "refs": [
-    "eip155:1:0x028174a31fcbe19967627de170efd978ad65913d81c589e9d97e217972697f7b"
-  ],
   "notes": [
-    "Asset-listing admin 0xfb33205d32ca482a4d428c23181a9665d4ec02cc called setAssetSources([USDC], [0xf4030086522a5beea4988f8ca5b36dbc97bee88c]); AssetSourceUpdated (log 326) replaced the Chainlink USDC/USD proxy 0x8fffffd4afb6115b954bd326cbe7b4ba576818f6 with the BTC/USD proxy, and getAssetPrice(USDC) moved from 99993076 to 6855405329514 across this block. The anchor is the first transaction after it; the source was replaced again at block 24538903.",
-    "WETH: aWETH 0xd060ebd4f56be8866376a3616b6e5aef87f945d2 transferred 187.366746326704993556 WETH to the attack contract (anchor log 12; Borrow event log 13), valued at the Chainlink ETH/USD answer 208047000000 (8 decimals) that the anchor itself read from 0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419 and that latestAnswer returns at block 24538896. The 8.879192 USDC collateral was flash-borrowed by the attacker and stays in the protocol against the debt; it is attacker-supplied and not netted. USDT: liquidation 0x028174a3... (same block, tx index 2, liquidator contract 0x36331e299247e5d0d3261e1d9852f6e0cffee95c) repaid 0.012458 USDC of borrower 0xcf93088ccd85a6ce1602a34d3189924489ca867e's 686.559782 USDC debt and received 1046.050765 USDT (log 43) out of the borrower's 1067.398740 aUSDT, which went to 0 (21.347975 aUSDT went to the protocol treasury as fee); the repaid 0.012458 USDC is not netted. The attacker EOA kept 181.7495471833102 ETH after a 5.6129099269201745 ETH builder payment. SlowMist reports about USD 390,000.",
-    "Top-of-next-block execution, funding of both the attacker and the admin from the same high-volume hot wallet 0x5babe600b9fcd5fb7b66c0611bf4896d967b23a1, and the project's later disappearance (SlowMist) are consistent with insider coordination, which onchain transfers do not establish; if such a link were shown, the incident would be an INSIDER_RUG exclusion rather than a configuration-change row."
+    "Admitted under the privileged-action clause: an admin setAssetSources call created the mispricing and unrelated searchers exploited it. Shared funding via a high-volume hot wallet and the project's later disappearance hint at insider coordination, which onchain transfers do not establish; if shown, exclude.",
+    "The same-block liquidation by an unrelated bot used the BTC-priced USDC debt to seize the borrower's USDT collateral, so it is campaign. The later liquidation of the attacker's own position, after the source was replaced, is not an exploit.",
+    "Loss is aWETH and aUSDT depletion from loss.mjs. The flash-borrowed USDC collateral the attacker left and the liquidator's USDC repayment are not netted."
   ]
 }
