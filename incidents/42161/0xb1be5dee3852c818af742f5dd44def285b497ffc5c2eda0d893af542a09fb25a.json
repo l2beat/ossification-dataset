@@ -2,44 +2,42 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Rodeo Finance",
   "name": "Rodeo Finance OracleTWAP samples an AMM spot price on a predictable schedule",
-  "summary": "OracleTWAP is Rodeo's price feed for unshETH, but it does not compute a time-weighted average. latestAnswer() returns the unweighted mean of four stored slots, and update() fills one slot per call with a single instantaneous sample of OracleUniswapV2Eth.latestAnswer(), which is the spot reserve ratio of the thin Camelot unshETH/WETH pair 0x29fc01f04032c76ca40f353c7df685f4444c15ed times the Chainlink ETH/USD answer. No price accumulator, deviation bound, outlier rejection or same-block guard exists anywhere in the contract, and update() is rate-limited to one call per 30 minutes, so the sample instants are public and predictable. Rodeo's keeper 0x3b1f14068fa2af4b08b578e80834bc031a52363d called update() on a fixed clock, and the attacker sandwiched three consecutive samples with a swap into and out of the pair, lifting slots 1 to 3 from 2,639.236641922531347490 to 4,973.350465837606916071, 4,994.765044571862817590 and 4,269.731359394042641877 USD. At the anchor block latestAnswer() therefore returned 4,219.270877931510930757 USD while the contract's own currentPrice() read 2,642.426353532527916618. Every guard that should have stopped the leveraged open reads that same number: StrategyHelper.swap derives its slippage floor as convert(ast0, ast1, amt) * (10000 - slp) / 10000, so an inflated unshETH price lowers the minimum unshETH the swap must return, and InvestorActor's health check values the resulting position with the same feed. The violated invariant is that a collateral price used to authorise borrowing must not be settable by the borrower's own trades; no value of any parameter this deployed contract exposes restores it, because the only settable state is the exec keeper set and the sampling source is fixed in the constructor with no setter.",
+  "summary": "OracleTWAP priced unshETH as the plain mean of four spot samples of a thin Camelot pair, one taken per keeper update every 30 minutes. The attacker sandwiched three updates to inflate the samples, then opened leveraged unshETH positions whose oracle-based slippage and health checks let borrowed USDC buy the attacker's unshETH at the inflated price.",
   "targets": [
     {
       "address": "0xf3721d8a2c051643e06bf2646762522fa66100da",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x33522eba43e86e4b2a66a8913fedfda51432a3d1465a6afa78e59886d3bee6df"
+        "kind": "config",
+        "tx": "0x7a6d10452471eacabcfabd0a9fa7d0de7bf9a37b6d358972beeab744775dd7b9",
+        "address": "0x72f7101371201cefd43af026eef1403652f115ee",
+        "slot": "0x98852ce5207e4436b7d4af61f8c097e721e65bfee2bb9e7e74bce2610e6165ec"
       }
     }
   ],
+  "campaign": [
+    "eip155:42161:0x98f1e234faac8b7f7ceaffe4e8e0581038678d95710b646db45ec3de47e6c3af",
+    "eip155:42161:0xdbcb308232f15ab572305aba4e4821579c3a46ee71f3096acf1ed99afe089ef1",
+    "eip155:42161:0x3942760f2a8f6cf9f0289e2b8061d944f6e252d43cf733ec7987125b97c3de0b"
+  ],
   "loss": {
-    "usd": 885272.5980726916,
+    "usd": 1740097.4,
     "assets": [
       {
-        "symbol": "ETH",
-        "amount": "470.416760848238480749",
-        "usd": 885272.5980726916
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC",
+        "amount": "1740000",
+        "usd": 1740097.4
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/RodeoFinance_exp.sol",
     "https://medium.com/@Rodeo_Finance/rodeo-post-mortem-overview-f35635c14101",
-    "eip155:42161:0x98f1e234faac8b7f7ceaffe4e8e0581038678d95710b646db45ec3de47e6c3af",
-    "eip155:42161:0xdbcb308232f15ab572305aba4e4821579c3a46ee71f3096acf1ed99afe089ef1",
-    "eip155:42161:0x3942760f2a8f6cf9f0289e2b8061d944f6e252d43cf733ec7987125b97c3de0b",
-    "eip155:42161:0x11230dea0b883e0e57f8090928d5f984e8d43c4f53ef33139f632bed44cd9300",
-    "eip155:42161:0x03844aee14c15aeed0b9653fbaa21178d9bd57aabe70805d0b9e179e2cc61722",
-    "eip155:42161:0x0ba649bc75a28f786288fc9c618269e9a4c9e1572770a9de73b9e47a4f405723",
     "https://immunebytes.com/blog/rodeo-finance-hack-analysis-report-july-11-2023/"
   ],
   "notes": [
-    "OracleTWAP is a plain non-proxy contract; its 2,044-byte runtime contains no DELEGATECALL, CREATE, CREATE2 or SELFDESTRUCT and hashes identically at the creation block, at the block before the exploit and at head, so the executed pricing code dates from deployment 7.76 days earlier.",
-    "Gross cash depletion of the Rodeo USDC Pool 0x0032f5e1520a66c6e572e96a11fbf54aea26f9be is exact: its USDC balance falls 1,741,376.033697 -> 1,341,376.033697 -> 861,376.033697 -> 421,376.033697 -> 1,376.033697 across the four exploit transactions, 1,740,000 USDC in total, and Pool.getTotalBorrow() rises from 2,258,548.055219 to 3,998,555.547057 over the same blocks. That gross figure overstates victim loss because the borrowed USDC was spent buying unshETH that stayed inside Rodeo: StrategyLong 0x9e058177a854336d962d5ae576e9a46cfd8374d7 holds 0.005545436473013793 unshETH at block 110043452 and 430.845556549435845898 unshETH at block 110048300, and unshETH has no third-party historical price, so the offset cannot be valued to a defensible number. The reported loss is therefore the attacker's exactly reconstructed net realised proceeds: the attacker EOA 0x2f3788f2396127061c46fc07bd0fcb91faace328 was funded with 1 + 49.1 = 50.1 ETH from 0x404888f2396127061c46fc07bd0fcb91faacf439 and, at the end of the campaign, bridged 520.516760848238480749 ETH out through the Across Arbitrum_SpokePool 0xe35e9842fceaca96570b734083f4a58e8f7c5f2a in transaction 0x11230dea0b883e0e57f8090928d5f984e8d43c4f53ef33139f632bed44cd9300, leaving 0.0000219395 ETH behind. Every other native movement is an internal round trip: 55 ETH wrapped to WETH and returned, 192.470830773420532027 ETH spent minting unshETH through SgSender 0x5ba96b2be2b4e88fa51506198ccfaae57fb6f246, and 290 ETH bridged out and returned as 285 unshETH. Net 520.516760848238480749 - 50.1 = 470.416760848238480749 ETH, 885,272.60 USD at the DefiLlama ETH price of 1,881.89 at the anchor timestamp, which matches Rodeo's own post-mortem figure of about 472 ETH / 888,000 USD; press reports quoting 1.5 million USD used the gross size of the borrow rather than the realised take. Because third parties (Camelot liquidity providers and swap fees) also absorbed part of the 1,740,000 USDC, this net figure is a lower bound on Rodeo's own loss and the upper bound is 1,740,000 USDC less the value of the retained unshETH. Attacker-supplied capital, the 50.1 ETH of seed funding, is excluded.",
-    "The loss is reported as the attacker's net realised ETH rather than gross victim depletion. Gross cash depletion of the Rodeo USDC Pool is exactly 1,740,000 USDC, but Rodeo's StrategyLong simultaneously received 430.845556549435845898 unshETH bought with that USDC, and unshETH has no third-party historical price, so the offsetting inflow cannot be valued. Rodeo's true loss lies between the 885,272.60 USD reported here and 1,740,000 USDC less the value of that unshETH.",
-    "The research ledger's two 2023-07-11 Rodeo rows (1,500,000 USD scope-only and 888,000 USD) are the same campaign; both are claimed by this single record.",
-    "StrategyHelper 0x72f7101371201cefd43af026eef1403652f115ee derives the swap slippage floor from the same oracle it is meant to protect against, and InvestorActor 0x6ff76f4794e4a6122734a11d680dbb351533ae95 values the position with it as well. Both are described in the classification rather than carried as extra targets, so the incident's single loss is not attributed twice.",
-    "The three pump-and-dump pairs that poisoned the oracle samples (blocks 110014595/110014925, 110025246/110025556 and 110032565/110032863) execute only Camelot code and are campaign context, not defect execution.",
-    "The seed inventory carries two rows for this incident, one without an exploit transaction and one already anchored here; both are claimed through discovery."
+    "The age runs from StrategyHelper's oracle assignment of OracleTWAP to unshETH (a price-source change, rule 10), 42 minutes after OracleTWAP's deployment; the later InvestorActor migration is not counted because the previous actor reached the same oracle.",
+    "Loss is the USDC the Rodeo USDC Pool lent into the four positions (rule 14). The unshETH those positions bought (about 431) stayed in StrategyLong as position collateral and is not subtracted; the attacker's net realised take was about 470 ETH ($885k).",
+    "The three pump-and-dump pairs around keeper updates only execute Camelot code and are preparation, not campaign transactions."
   ]
 }

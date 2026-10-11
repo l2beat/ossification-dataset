@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Radiant Capital",
   "name": "Radiant Capital rUSDCn index-rounding drain",
-  "summary": "The Aave-v2-derived rUSDCn implementation rounded scaled balances during burns. By repeatedly manipulating the fresh reserve's liquidity index with flash loans, deposits, donations, and withdrawals, the attacker withdrew more USDC than the shares burned and used the inflated position to borrow WETH.",
+  "summary": "Radiant (an Aave v2 fork) listed a native USDC market 15 seconds before the exploit. As its only supplier, the attacker inflated the empty reserve's liquidity index with repeated flash loans whose premiums accrued to its tiny supply, then used rounding in rUSDCn burns to withdraw more than it held while borrowing WETH.",
   "targets": [
     {
       "address": "0x3a2d44e354f2d88ef6da7a5a4646fd70182a7f55",
@@ -11,21 +11,39 @@
         "kind": "deployment",
         "tx": "0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247"
       }
+    },
+    {
+      "address": "0xf4b1486dd74d07706052a33d31d7c0aafd0659e1",
+      "code": "0xd1b589c00c940c4c3f7b25e53c8d921c44ef9140",
+      "reset": {
+        "kind": "config",
+        "tx": "0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247",
+        "address": "0xf4b1486dd74d07706052a33d31d7c0aafd0659e1",
+        "slot": "0xd57ffa7c36bb17e12f7ba93097c3a711d0fc3d18cabd5d323a6361d224273009"
+      }
     }
   ],
-  "loss": {
-    "usd": 4500000,
-    "assets": []
-  },
-  "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-01/RadiantCapital_exp.sol",
-    "https://neptunemutual.com/blog/how-was-radiant-capital-exploited/",
+  "campaign": [
     "eip155:42161:0x2af556386c023f7ebe7c662fd5d1c6cc5ed7fba4723cbd75e00faaa98cd14243",
     "eip155:42161:0xc5c4bbddec70edb58efba60c1f27bce6515a45ffcab4236026a5eeb3e877fc6d"
   ],
+  "loss": {
+    "usd": 4506495.93,
+    "assets": [
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "1904.504602564646984979",
+        "usd": 4506495.93
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-01/RadiantCapital_exp.sol",
+    "https://neptunemutual.com/blog/how-was-radiant-capital-exploited/"
+  ],
   "notes": [
-    "The rUSDCn proxy was created and initialized with the defect-bearing implementation in this transaction. Its implementation slot did not change before the exploit.",
-    "Approximately $4.5 million of gross assets was reported lost across three consecutive transactions from the same attacker that invoked the same exploit contract and defect. The individual campaign assets are not repriced here.",
-    "The $4.5 million gross loss is a rounded reported total for the three-transaction campaign; individual asset quantities are not structured in this record."
+    "The LendingPool's flash-loan index accrual is half of the defect; its reset is the same multisig batch that listed native USDC (rUSDCn aToken address written into reserves[USDC]), so both targets age from that listing.",
+    "Loss is the WETH the rWETH reserve paid out against debt the attacker's throwaway contracts never repaid. The October 2024 Radiant multisig key compromise is a separate, out-of-cohort event."
   ]
 }

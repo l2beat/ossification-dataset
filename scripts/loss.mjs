@@ -20,6 +20,8 @@ import path from 'node:path'
 import { callTrace, hexInt, rpc, traceFrames } from './rpc.mjs'
 
 const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+// ERC404 tokens report fungible moves as ERC20Transfer and NFT moves as 4-topic Transfer.
+const ERC20_TRANSFER = '0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487'
 const DEPOSIT = '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'
 const WITHDRAWAL = '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65'
 const ZERO = `0x${'0'.repeat(40)}`
@@ -115,7 +117,7 @@ async function flows(id) {
   for (const { address, topics, data } of receipt.status === '0x0' ? [] : receipt.logs) {
     const token = address.toLowerCase()
     const amount = data.length > 2 ? BigInt(data.slice(0, 66)) : 0n
-    if (topics[0] === TRANSFER && topics.length === 3) move(word(topics[1]), word(topics[2]), token, amount)
+    if ((topics[0] === TRANSFER || topics[0] === ERC20_TRANSFER) && topics.length === 3) move(word(topics[1]), word(topics[2]), token, amount)
     if (wrapEvents && token === wrapped && topics.length === 2) {
       if (topics[0] === DEPOSIT) move(ZERO, word(topics[1]), token, amount)
       if (topics[0] === WITHDRAWAL) move(word(topics[1]), ZERO, token, amount)

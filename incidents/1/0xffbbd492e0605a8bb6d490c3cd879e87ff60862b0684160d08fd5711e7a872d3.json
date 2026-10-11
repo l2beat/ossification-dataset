@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ResupplyFi",
   "name": "ResupplyFi zero exchange-rate solvency bypass",
-  "summary": "ResupplyPair inverted the collateral oracle price with integer division but accepted a zero result. After the attacker inflated an empty CurveLend vault's share price above 1e36, the calculated exchange rate rounded to zero and the pair's LTV calculation treated a 10 million reUSD loan against one wei of collateral as solvent.",
+  "summary": "ResupplyPair inverted the collateral oracle price with integer division and accepted a zero result. The attacker inflated the nearly empty CurveLend vault's share price by donation so the exchange rate rounded to zero, then borrowed 10 million reUSD against one wei of collateral and swapped it out of the reUSD/scrvUSD Curve pool.",
   "targets": [
     {
       "address": "0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6",
@@ -13,8 +13,15 @@
     }
   ],
   "loss": {
-    "usd": 10000000,
-    "assets": []
+    "usd": 9815832.83,
+    "assets": [
+      {
+        "token": "0x0655977feb2f289a4ab78af67bab0d17aab84367",
+        "symbol": "scrvUSD",
+        "amount": "9339517.43877404485908748",
+        "usd": 9815832.83
+      }
+    ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/ResupplyFi_exp.sol",
@@ -22,8 +29,7 @@
     "https://github.com/resupplyfi/resupply/blob/69ce192a28deb453ce17a7594503fe48212885a9/src/protocol/pair/ResupplyPairCore.sol"
   ],
   "notes": [
-    "The vulnerable exchange-rate inversion and solvency logic are part of the pair's immutable direct runtime, activated when the new crvUSD-wstUSR market was deployed.",
-    "Resupply's post-mortem reports $10 million of reUSD bad debt, matching the exact 10,000,000 reUSD borrow executed in the anchored transaction.",
-    "The USD amount uses the protocol's reported face value of the reUSD bad debt."
+    "The exchange-rate inversion and solvency logic are in the pair's own immutable runtime; the pair was deployed and registered (registry mint rights) in the same transaction.",
+    "Loss is what the reUSD/scrvUSD Curve pool paid out for the unbacked reUSD; the minted reUSD it received is not netted (rule 14). Resupply's post-mortem reports $10M of reUSD bad debt."
   ]
 }
