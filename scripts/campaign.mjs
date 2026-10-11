@@ -5,6 +5,7 @@
  * selectors, so the target's outflow is printed for the researcher to judge.
  *
  *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..] [--also 0x..,0x..] [--traces]
+ *     [--ranges 56:from-to,10:from-to] [--force: scan other chains even when the code differs]
  *
  * The range runs from the earliest target reset (or creation, on other chains)
  * to the latest block; log scanning stops early past --max candidates (2000).
@@ -258,13 +259,20 @@ for (const chain of (option('chains') ?? '').split(',').filter(Boolean).map(Numb
     const there = await getCode(chain, target.code ?? target.address)
     let differing = 0
     for (let i = 2; i < here.length; i += 2) if (here.slice(i, i + 2) !== there.slice(i, i + 2)) differing++
-    if (here === '0x' || here.length !== there.length || differing > here.length / 40 || (await getCode(chain, target.address)) === '0x') continue
+    if (!args.includes('--force') && (here === '0x' || here.length !== there.length || differing > here.length / 40 || (await getCode(chain, target.address)) === '0x')) continue
     targets.push(target)
     console.log(`\neip155:${chain} ${target.address}: ${differing ? `same length, ${differing} bytes differ` : 'identical code'}`)
   }
   if (!targets.length) console.log(`\neip155:${chain}: no target with the anchor's code${rpcUrl(chain) ? '' : ' (no RPC)'}`)
   if (!targets.length) continue
   const head = await latest(chain)
+  // --ranges 56:from-to,...: block windows on other chains, whose block numbers differ.
+  const range = (option('ranges') ?? '').split(',').map((r) => r.split(':')).find(([c]) => Number(c) === chain)
+  if (range) {
+    const [lo, hi] = range[1].split('-').map(Number)
+    found.push(...(await scan(chain, targets, selectors, lo, hi, anchor)))
+    continue
+  }
   const created = await Promise.all(targets.map((target) => creation(chain, target.address, head)))
   found.push(...(await scan(chain, targets, selectors, Math.min(...created), head, anchor)))
 }
