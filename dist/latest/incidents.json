@@ -1510,9 +1510,9 @@
     "tx": "0x31262f15a5b82999bf8d9d0f7e58dcb1656108e6031a2797b612216a95e1670e",
     "protocol": "Wault Finance",
     "name": "Wault Finance WUSDMaster unbounded spot WEX swap and pro-rata redeem",
-    "summary": "WUSDMaster.stake() spends wexPermille/1000 of every deposit on WEX through wswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens with the minimum-output argument hard-coded to 0 and the swap path fixed to the WaultSwap USDT/WEX pair, so the contract buys WEX at whatever the instantaneous pool reserves say and mints WUSD 1:1 regardless of what it received. redeem() then pays the redeemer wex.balanceOf(address(this)) * amount / wusd.totalSupply(), a pro-rata slice of the contract's entire live WEX balance. The attacker flash-borrowed WUSD, redeemed 16,839,004.009795997 WUSD to strip 106,502,606.0093368 WEX out of the contract, pushed 23,000,000 USDT into the WEX pair, and then called stake(250000e18) 68 times: the contract paid 1,700,000 USDT for only 12,334,530.242676107 WEX, about nine times over the 0.0149971 USDT per WEX implied by the pair's pre-attack reserves of 11,740,520.220497909455619647 USDT and 782,853,295.192672429820266117 WEX. Boundary test: the zero minimum output is a literal in the deployed code, maxStakeAmount only caps a single call and was defeated by looping 68 times at its exact 250,000 limit, and wexPermille, treasuryPermille, feePermille and swapPath scale or redirect the swap without bounding its execution price, so no parameter value makes the deployed code correct.",
-    "lossUsd": 931525.9082680431,
-    "codeAgeSeconds": 57882,
+    "summary": "WUSDMaster.stake() swapped a share of each USDT deposit into WEX at the pair's spot price with zero minimum output and minted WUSD 1:1, while redeem() paid a pro-rata slice of the contract's WEX. The attacker redeemed flash-borrowed WUSD for WEX, pumped the pair, staked 68 times so the contract bought WEX at inflated prices, then sold the WEX back.",
+    "lossUsd": 972089.38,
+    "codeAgeSeconds": 56445,
     "exploit": {
       "block": 9728756,
       "index": 6,
@@ -1523,13 +1523,13 @@
       "codeHash": "0xad6a391f7800d21a11ecc5557e205b5d7fa6a6151e2ad50f8eee60a8ccec2e7a"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xc6af3503f42a2d2744045c949b3afb0a4f570284479459a8a9b1331be5a7a4cd",
-      "block": 9710147,
+      "kind": "config",
+      "tx": "0x5c8ebb7cee4aa5def6612dadb42d9d564e8b35b9b9bc66d0cb1b6d49a409505e",
+      "block": 9710612,
       "index": 0,
-      "timestamp": 1627983863
+      "timestamp": 1627985300
     },
-    "claimsSha256": "d87a046c82be35ad61ed5be1f9564265617430001ccc20261830051168889ed3"
+    "claimsSha256": "e6db29e35678613b412a8ba2afc2fe52a683013c868778dcc5184f0e0155a67b"
   },
   {
     "id": "eip155:56:0x6759db55a4edec4f6bedb5691fc42cf024be3a1a534ddcc7edd471ef205d4047",
@@ -2127,7 +2127,7 @@
       "index": 23,
       "timestamp": 1719397731
     },
-    "claimsSha256": "077b062c1c1c1f34d66d9ea6fbbe7077cb9777ccdf982f89a47a165084df1de4"
+    "claimsSha256": "82959147a8565cbf455f8c8099d088ecb88c6a074d4ff2e778c2ce8aa0ecb612"
   },
   {
     "id": "eip155:56:0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
@@ -6266,7 +6266,7 @@
     "protocol": "XSURGE",
     "name": "XSURGE SurgeBNB sell() reentrancy",
     "summary": "SurgeToken.sell() sent BNB to the seller before updating the token supply and reserve, so the attacker's receive() hook re-entered purchase()/sell() repeatedly and drained the contract's BNB backing at a stale price.",
-    "lossUsd": 5570000,
+    "lossUsd": 5607783.03,
     "codeAgeSeconds": 1511548,
     "exploit": {
       "block": 10087724,
@@ -6284,7 +6284,7 @@
       "index": 139,
       "timestamp": 1627631263
     },
-    "claimsSha256": "791836bdd468922690fbf48e27569df7182d9c6960227c7ed887e849c7ff3dd4"
+    "claimsSha256": "038c37c01875e7013181863a220f5d8e95032e318228580402f57667f6d5dddd"
   },
   {
     "id": "eip155:1:0x636be30e58acce0629b2bf975b5c3133840cd7d41ffc3b903720c528f01c65d9",
@@ -6733,8 +6733,8 @@
     "protocol": "WGPT",
     "name": "WGPT sell hook burns treasury LP before crediting the deposit",
     "summary": "AiWGPTToken.transferFrom executes its treasury-funded LP removal and exact-output WGPT purchase before crediting the caller’s deposit to the pair. The hook updates pool reserves, then credits an unconsumed deposit that the caller can reclaim with skim. Repeated calls consume treasury LP and raise the WGPT price, allowing the caller to sell the retained tokens for USDT.",
-    "lossUsd": 82576.1964767735,
-    "codeAgeSeconds": 1986040,
+    "lossUsd": 82561,
+    "codeAgeSeconds": 1985293,
     "exploit": {
       "block": 29891710,
       "index": 7,
@@ -6745,13 +6745,13 @@
       "codeHash": "0x830c169d7a39ba3a55e519a1b4bd1de4ca3417d968bb951cbb01a435c20cac60"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x7b61e862bfe4e27c73b232811c3a41108277ccadab2f5e14b4e079b5cba64ba6",
-      "block": 29231744,
-      "index": 104,
-      "timestamp": 1687159648
+      "kind": "config",
+      "tx": "0x145f26f0653fd5f55534de532cfa5d676f907a139a598b4d56b12cd0f4ac9614",
+      "block": 29231993,
+      "index": 126,
+      "timestamp": 1687160395
     },
-    "claimsSha256": "c7fa52681e6557eb5cb4df2d4df15d8a86818fb7da685c83b07e05a61b6f286e"
+    "claimsSha256": "d3d6b2f7dc37951aa262962755bea05e89830da9270f72b6a8ff7d7d8da24d9b"
   },
   {
     "id": "eip155:137:0xf95fd54b4b1ed0bc109a04df16d1d75106a4d007b186543467c975df94cd3276",
@@ -7279,8 +7279,8 @@
     "tx": "0x35a0172fb6bd450ceb29aa67dc85221826dfd0b7528375400b4ccf15c1eed0d8",
     "protocol": "Venus (zkSync Era)",
     "name": "Venus zkSync uncapped wUSDM ERC-4626 oracle",
-    "summary": "Venus selected an ERC4626Oracle that priced wUSDM by calling convertToAssets without bounding donation-driven appreciation. The attacker redeemed wUSDM, donated the resulting USDM directly to the vault to raise that conversion from 1.069434091624779268 to 1.763927342727284953, and used the inflated Venus valuation to liquidate one attacker-controlled account against another and extract WETH and wUSDM.",
-    "lossUsd": 261538.21857036703,
+    "summary": "Venus priced wUSDM with an ERC4626Oracle that read convertToAssets without bounding donation-driven appreciation. The attacker borrowed wUSDM against flash-loaned WETH, redeemed and donated the USDM to the wUSDM vault to raise its rate, then liquidated its own wUSDM debt from a second account, seizing the WETH collateral at the inflated valuation.",
+    "lossUsd": 702965.57,
     "codeAgeSeconds": 2640080,
     "exploit": {
       "block": 56669987,
@@ -10109,8 +10109,8 @@
     "protocol": "Visor Finance",
     "name": "Visor Finance RewardsHypervisor unvalidated depositor",
     "summary": "RewardsHypervisor.deposit() trusted a caller-supplied `from` contract both to report its owner and to transfer VISR, without validating the contract or confirming receipt. The attacker hook no-opped the transfer and reentered deposit once, causing two vVISR share mints backed by zero VISR.",
-    "lossUsd": 8200000,
-    "codeAgeSeconds": 9479160,
+    "lossUsd": 577411.07,
+    "codeAgeSeconds": 9416382,
     "exploit": {
       "block": 13849007,
       "index": 235,
@@ -10121,13 +10121,13 @@
       "codeHash": "0x8c37455c33d4dc5f9d0ac233d48e9334887e64405f67bcd4afc05e74717fdaf7"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x9f311879c27111f826685a05223feb5f0be6c4c35e24b47360d200b4c610a3a2",
-      "block": 13148651,
-      "index": 13,
-      "timestamp": 1630617135
+      "kind": "config",
+      "tx": "0xd43f6114f8497468a0087800e71574d406ca469269eb04dd4bca1fc6fc9f0e2e",
+      "block": 13153336,
+      "index": 399,
+      "timestamp": 1630679913
     },
-    "claimsSha256": "e5fdc40f4cbeef897992b47412e3b7817169bf49aa4cdc9100f15edba9162918"
+    "claimsSha256": "0b2ddeed2143d308dfeeb12e55064cc9c96393e33d739794f471a08b126cec38"
   },
   {
     "id": "eip155:250:0x19315e5b150d0a83e797203bb9c957ec1fa8a6f404f4f761d970cb29a74a5dd6",
@@ -11173,8 +11173,8 @@
     "tx": "0xed11d5b013bf3296b1507da38b7bcb97845dd037d33d3d1b0c5e763889cdbed1",
     "protocol": "Velocore",
     "name": "Velocore ConstantProductPool fee underflow",
-    "summary": "ConstantProductPool.velocore__execute() lacked the vault-only authorization required for its state-changing accounting. The attacker called it directly three times with extreme signed amounts to corrupt feeMultiplier; subsequent Vault.execute() calls reached unchecked effective-fee arithmetic that underflowed and returned invalid pool deltas, draining seven pools in the selected transaction.",
-    "lossUsd": 6800000,
+    "summary": "ConstantProductPool.velocore__execute lacked a vault-only check. The attacker called it directly with extreme amounts to inflate feeMultiplier, then withdrew through Vault.execute, where the unchecked effective-fee arithmetic underflowed and a dust LP burn paid out most of each pool's reserves. Repeated on Velocore's zkSync Era pools.",
+    "lossUsd": 7209284.34,
     "codeAgeSeconds": 15435562,
     "exploit": {
       "block": 5079177,
@@ -11192,7 +11192,7 @@
       "index": 4,
       "timestamp": 1701845887
     },
-    "claimsSha256": "922bae3d18ff6d601d44d27e2f6ece1c3e433549606a7698f0a95cb7fc28f7d8"
+    "claimsSha256": "9ed3866a6b28b54a78a92a9206cb38a8550aba7d30a0f291fea4ba3c766c1fdd"
   },
   {
     "id": "eip155:1:0x1ea0a2e88efceccb2dd93e6e5cb89e5421666caeefb1e6fc41b68168373da342",
@@ -11823,6 +11823,33 @@
       "timestamp": 1766126061
     },
     "claimsSha256": "c75506df9cb17196de8747eaf64b925630373af4b825800300778c6f3ce232b9"
+  },
+  {
+    "id": "eip155:42161:0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd",
+    "chainId": 42161,
+    "tx": "0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd",
+    "protocol": "WOOFi",
+    "name": "WOOFi WooPPV2 sPMM self-posted price collapse",
+    "summary": "WooPPV2's sPMM sell-base quote posted a new WOO price to WooracleV2 with no floor or relative-move bound, and the oracle's Chainlink bound check failed open because WOO had no reference feed. Flash-loaned WOO sold into the pool collapsed the price to near zero, letting the attacker buy back the pool's WOO for almost nothing, three times.",
+    "lossUsd": 8462826.793854104,
+    "codeAgeSeconds": 23116257,
+    "exploit": {
+      "block": 187381785,
+      "index": 3,
+      "timestamp": 1709653326
+    },
+    "target": {
+      "address": "0x73504eacb100c7576146618dc306c97454cb3620",
+      "codeHash": "0x32c19778853ee488e268acface718302df33f0ab0551c8313028f8a99d9688ce"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0x44dd746057adcc8cdeca9a2fb294f7d760f5a8d0ca2a2dee0d47338bdd06d297",
+      "block": 100255307,
+      "index": 1,
+      "timestamp": 1686537069
+    },
+    "claimsSha256": "7f25c0f2c8490840311d77e4c443af7e7adc681781fe80812e92a20aea16a82d"
   },
   {
     "id": "eip155:8453:0xa88317a105155b464118431ce1073d272d8b43e87aba528a24b62075e48d929d",
@@ -12732,33 +12759,6 @@
       "timestamp": 1738595980
     },
     "claimsSha256": "0f439a62ac75ffd0161ca38cc1cf1eb37fd423a03d8b73c09f710d61e8a9fb0b"
-  },
-  {
-    "id": "eip155:42161:0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd",
-    "chainId": 42161,
-    "tx": "0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd",
-    "protocol": "WOOFi",
-    "name": "WOOFi WooPPV2 sPMM self-posted price collapse",
-    "summary": "WooPPV2 both quotes swaps and rewrites the oracle price it will quote against next. _calcQuoteAmountSellBase() computes newPrice = (1e18 - 2*coeff*price*baseAmount/priceDec/baseDec) * price / 1e18 and _sellBase() writes it back through Wooracle.postPrice() with no floor, cap or relative-move bound, while the same call's payout coefficient only subtracts coeff*price*baseAmount, i.e. half as much. A single permissionless swap() sized so that 2*coeff*price*baseAmount just under-runs 1e18 therefore still pays out about half of notional and leaves the posted WOO price at 9 (1e-8 USD units) instead of 56,608,180. _calcBaseAmountSellQuote() then divides the next quote amount by that collapsed price with no sanity check and paid 10,232,908.094389174718777777 WOO out of the pool for 0.926342 USDC.e.",
-    "lossUsd": 8462826.793854104,
-    "codeAgeSeconds": 41749665,
-    "exploit": {
-      "block": 187381785,
-      "index": 3,
-      "timestamp": 1709653326
-    },
-    "target": {
-      "address": "0xeff23b4be1091b53205e35f3afcd9c7182bf3062",
-      "codeHash": "0x99b27c98f51583a17011cce4994d129d5e1ce89cb201ed928e317525d90c861e"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x07eb8aa33a81ba53521af1c0988d0f633f9e2c1799d0efbb1c060a79b7550830",
-      "block": 36279764,
-      "index": 3,
-      "timestamp": 1667903661
-    },
-    "claimsSha256": "074c6204c24ac573a5cb3df8be92505df27e4a2e3f0dee7385ae37692f69e03b"
   },
   {
     "id": "eip155:56:0x3ee23c1585474eaa4f976313cafbc09461abb781d263547c8397788c68a00160",

@@ -2,13 +2,20 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "WOOFi",
   "name": "WOOFi WooPPV2 sPMM self-posted price collapse",
-  "summary": "WooPPV2 both quotes swaps and rewrites the oracle price it will quote against next. _calcQuoteAmountSellBase() computes newPrice = (1e18 - 2*coeff*price*baseAmount/priceDec/baseDec) * price / 1e18 and _sellBase() writes it back through Wooracle.postPrice() with no floor, cap or relative-move bound, while the same call's payout coefficient only subtracts coeff*price*baseAmount, i.e. half as much. A single permissionless swap() sized so that 2*coeff*price*baseAmount just under-runs 1e18 therefore still pays out about half of notional and leaves the posted WOO price at 9 (1e-8 USD units) instead of 56,608,180. _calcBaseAmountSellQuote() then divides the next quote amount by that collapsed price with no sanity check and paid 10,232,908.094389174718777777 WOO out of the pool for 0.926342 USDC.e.",
+  "summary": "WooPPV2's sPMM sell-base quote posted a new WOO price to WooracleV2 with no floor or relative-move bound, and the oracle's Chainlink bound check failed open because WOO had no reference feed. Flash-loaned WOO sold into the pool collapsed the price to near zero, letting the attacker buy back the pool's WOO for almost nothing, three times.",
   "targets": [
     {
       "address": "0xeff23b4be1091b53205e35f3afcd9c7182bf3062",
       "reset": {
         "kind": "deployment",
         "tx": "0x07eb8aa33a81ba53521af1c0988d0f633f9e2c1799d0efbb1c060a79b7550830"
+      }
+    },
+    {
+      "address": "0x73504eacb100c7576146618dc306c97454cb3620",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x44dd746057adcc8cdeca9a2fb294f7d760f5a8d0ca2a2dee0d47338bdd06d297"
       }
     }
   ],
@@ -36,22 +43,18 @@
     ]
   },
   "refs": [
-    "eip155:42161:0x40e1b8c78083fc666cb7598efcecd0ae0af313fc41441386e4db716c2808ce07",
-    "eip155:42161:0xe80a16678b5008d5be1484ec6e9e77dc6307632030553405863ffb38c1f94266",
-    "eip155:42161:0xe0f798c3c42201a134014a21e8118433fc23bd457ee9cc40cdbf01e7497b32ea",
-    "eip155:42161:0xc382487fd8149dc8e2d40fb4cf7bb8a219c30d86a5479f7ea3fa7ef64c72bc77",
-    "eip155:42161:0xdffbd1139150b2f524438a276e75d47a191f0c3fc9b24fab9c079ef962126d09",
-    "eip155:42161:0x2031e31d612b23c2b9b531cd1ae8c22e47942e361785eece9f3b5078cd4e3f67",
-    "eip155:42161:0xd2d9bd167565c15512fff5cc5235bd36eeef9f1893cd61bb1af707426c647235",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-03/Woofi_exp.sol",
     "https://woox.io/blog/en/woofi-spmm-exploit-post-mortem",
     "https://beosin.com/resources/another-price-manipulation---analysis-of-the-attack-on-the-wooppv2-contract-on-the-arbitrum",
     "https://www.cyfrin.io/blog/hack-analysis-into-woofi-exploit"
   ],
   "notes": [
-    "WooPPV2 is a plain non-proxy contract with no DELEGATECALL in its runtime. Its 24,428-byte runtime is byte-identical at the creation block, at the block before the exploit, and today, so the executed code dates from deployment.",
-    "The three components are WooPPV2 0xeff23b4be1091b53205e35f3afcd9c7182bf3062's exact net token depletion across the three exploit transactions, summed from their Transfer logs: -1369.87930679761355693 WETH, -4173698.205095947120305521 WOO and -1207805.530262 USDC.e. Attacker-supplied inputs are already netted out inside each transaction: every flash loan (10.5M USDC.e from Uniswap V3 pool 0xc31e54c7a869b9fcbecc14363cf510d1c41fa443, 2.7M WOO from LB pair 0xb87495219c432fc85161e4283dff131692a528bd) and the 5.09M WOO borrowed from Silo 0x5c2b80214c1961db06f69dd4128bcffc6423d44f is repaid in the same transaction, and the WOO the attacker sold into the pool is counted as an inflow. WETH is valued at the DefiLlama ETH price at the anchor timestamp. WOO is valued at realised proceeds rather than spot because the attacker's own selling moved the price: the 4173657.742464672345895972 WOO taken out was fully sold in five Trader Joe LBRouter transactions between 1709653444 and 1709654519 for 542.451683823751274736 ETH, sliding from 0.00013219905 to 0.00011924248 ETH per WOO, which at the same ETH price is 0.4930814467971356 USD per WOO against a DefiLlama spot of 0.565311. Spot-marking the WOO instead would give 8764293 USD, close to WOO Network's reported 8.75M. USDC.e is valued at par. Financing fees and the builder payment are not deducted.",
-    "WooracleV2_1 0x73504eacb100c7576146618dc306c97454cb3620 gates the posted price with woPriceInBound = cloPrice_ == 0 || within +/-1% of Chainlink, and cloAddress(WOO) was the zero address at block 187381784, so the bound check was vacuously satisfied. A registered WOO reference feed would have made the post-collapse swap infeasible. That fail-open validation is recorded as context rather than as a second target: the code-age anchor is WooPPV2's own unbounded price update and unfloored division, for which no coefficient or spread value is safe.",
-    "The WOO component uses the attacker's realised disposal price of 0.4930814467971356 USD per WOO rather than the 0.565311 DefiLlama spot, because the attacker's own selling moved the market by about 10% across the five disposals. Marking WOO at spot would raise the incident loss to about 8.76 million USD."
+    "WooracleV2_1 is a target: its postPrice bound check passes whenever cloAddress is zero, as it was for WOO. Its reset is WooPPV2.setWooracle pointing the pool at it; no later change to either contract's WOO configuration precedes the exploit.",
+    "Loss is WooPPV2's net depletion over the three attacker transactions, flash loans and the Silo WOO borrow netting out. WOO is valued at the 542.45 ETH the attacker realised selling 4.17M WOO on Trader Joe, about 0.493 USD per WOO against a 0.565 spot that its own sales moved; WETH at the anchor ETH price, USDC.e at par.",
+    "Large WooPPV2 outflows to other addresses in the following blocks are routine arbitrage through aggregators and MEV routers, not repeats of the collapse. WOO Network reported only the Arbitrum pool drained; the other chains' pools were paused the same day."
+  ],
+  "campaign": [
+    "eip155:42161:0x40e1b8c78083fc666cb7598efcecd0ae0af313fc41441386e4db716c2808ce07",
+    "eip155:42161:0xe80a16678b5008d5be1484ec6e9e77dc6307632030553405863ffb38c1f94266"
   ]
 }

@@ -14,13 +14,24 @@ import { EMPTY_CODE_HASH, blockTag, callTrace, hexInt, keccak256, rpc, traceFram
 
 const word = (value) => `0x${value.replace(/^0x/, '').padStart(64, '0')}`
 
+// Some providers briefly answer null for data they hold, so a null is retried before it counts.
+async function present(chainId, method, params) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const result = await rpc(chainId, method, params)
+    if (result) return result
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  return null
+}
+
 async function anchor(chainId, hash) {
   const [tx, receipt] = await Promise.all([
-    rpc(chainId, 'eth_getTransactionByHash', [hash]),
-    rpc(chainId, 'eth_getTransactionReceipt', [hash]),
+    present(chainId, 'eth_getTransactionByHash', [hash]),
+    present(chainId, 'eth_getTransactionReceipt', [hash]),
   ])
   if (!tx || !receipt) throw new Error(`${hash} not found`)
-  const block = await rpc(chainId, 'eth_getBlockByNumber', [tx.blockNumber, false])
+  const block = await present(chainId, 'eth_getBlockByNumber', [tx.blockNumber, false])
+  if (!block) throw new Error(`block of ${hash} not found`)
   return {
     tx,
     receipt,

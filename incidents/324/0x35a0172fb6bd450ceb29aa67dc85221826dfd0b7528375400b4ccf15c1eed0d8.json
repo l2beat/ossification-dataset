@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Venus (zkSync Era)",
   "name": "Venus zkSync uncapped wUSDM ERC-4626 oracle",
-  "summary": "Venus selected an ERC4626Oracle that priced wUSDM by calling convertToAssets without bounding donation-driven appreciation. The attacker redeemed wUSDM, donated the resulting USDM directly to the vault to raise that conversion from 1.069434091624779268 to 1.763927342727284953, and used the inflated Venus valuation to liquidate one attacker-controlled account against another and extract WETH and wUSDM.",
+  "summary": "Venus priced wUSDM with an ERC4626Oracle that read convertToAssets without bounding donation-driven appreciation. The attacker borrowed wUSDM against flash-loaned WETH, redeemed and donated the USDM to the wUSDM vault to raise its rate, then liquidated its own wUSDM debt from a second account, seizing the WETH collateral at the inflated valuation.",
   "targets": [
     {
       "address": "0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f",
@@ -15,19 +15,19 @@
     }
   ],
   "loss": {
-    "usd": 261538.21857036703,
+    "usd": 702965.57,
     "assets": [
-      {
-        "token": "0x5aea5775959fbc2557cc8789bc1bf90a239d9a91",
-        "symbol": "WETH",
-        "amount": "86.721142851973722607",
-        "usd": 202719.34353077377
-      },
       {
         "token": "0xa900cbe7739c96d2b153a273953620a701d5442b",
         "symbol": "wUSDM",
-        "amount": "55000.000000215426061874",
-        "usd": 58818.87503959324
+        "amount": "466021.574784542863912267",
+        "usd": 498177.06
+      },
+      {
+        "token": "0x5aea5775959fbc2557cc8789bc1bf90a239d9a91",
+        "symbol": "WETH",
+        "amount": "87.771142851973722607",
+        "usd": 204788.51
       }
     ]
   },
@@ -37,7 +37,8 @@
     "https://github.com/VenusProtocol/oracle/blob/a50a7703eaa6297bb8b1288ec1f3f52d90551ef9/contracts/oracles/ERC4626Oracle.sol"
   ],
   "notes": [
-    "The governance execution configured the vulnerable ERC4626Oracle as wUSDM's enabled main oracle. ResilientOracle.getOracle(wUSDM, MAIN) changes from (address(0), false) to (0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f, true) at the block boundary, and no later TokenConfigAdded, OracleSet, or OracleEnabled event for wUSDM occurs before exploitation.",
-    "Measured as the exact net assets retained by the attacker-controlled recipients in the focal transaction. The EOA's WETH balance rises from zero by 86.721142851973722607 WETH and the helper's wUSDM balance rises from zero by 55,000.000000215426061874 wUSDM; the receiver retains neither asset. WETH uses the nearest DefiLlama ETH price at or before the incident. wUSDM uses its pre-exploit onchain redemption value of 1.069434091624779268 USDM per share with USDM at stablecoin par. The official later accounting of $902,159 outstanding bad debt and $716,789 net loss includes later users, liquidation fees, virtual debt, and recovery, so it is not added to this transaction-scoped amount."
+    "The governance execution configured the vulnerable ERC4626Oracle as wUSDM's enabled main oracle. The vwUSDM listing, collateral factor and caps were set in the same transaction; no later wUSDM oracle or market change precedes the exploit.",
+    "Loss is the vWETH and vwUSDM markets' net outflow in the exploit, with the 71.34 WETH liquidation share paid to Venus's ProtocolShareReserve netted back. It matches Venus's reported net loss of about $717k; the attacker kept only 86.72 WETH and 55,000 wUSDM, the rest of the wUSDM went into the donation.",
+    "Seventeen bot liquidations of other wUSDM borrowers in the following ~500 blocks used the still-inflated price but did not exercise the defect themselves, and are not listed as campaign."
   ]
 }

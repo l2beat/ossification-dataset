@@ -116,6 +116,8 @@ async function flows(id) {
   }
   for (const { address, topics, data } of receipt.status === '0x0' ? [] : receipt.logs) {
     const token = address.toLowerCase()
+    // zkSync Era's base-token contract logs every native move, which the call tree already counts.
+    if (chain === 324 && token === '0x000000000000000000000000000000000000800a') continue
     const amount = data.length > 2 ? BigInt(data.slice(0, 66)) : 0n
     if ((topics[0] === TRANSFER || topics[0] === ERC20_TRANSFER) && topics.length === 3) move(word(topics[1]), word(topics[2]), token, amount)
     if (wrapEvents && token === wrapped && topics.length === 2) {
