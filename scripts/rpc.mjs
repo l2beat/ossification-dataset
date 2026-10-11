@@ -71,10 +71,16 @@ export async function rpc(chainId, method, params) {
 const SHIFTED_LOG_HASHES = new Set([56])
 const blockHashes = new Map()
 async function resolveLogHashes(chainId, logs) {
-  for (const log of logs) {
+  const hashesOf = (log) => {
     const key = `${chainId}:${log.blockNumber}`
     if (!blockHashes.has(key)) blockHashes.set(key, rpc(chainId, 'eth_getBlockByNumber', [log.blockNumber, false]).then((block) => block.transactions))
-    log.transactionHash = (await blockHashes.get(key))[Number.parseInt(log.transactionIndex, 16)]
+    return blockHashes.get(key)
+  }
+  // Older blocks are unaffected: when the newest log in the response is right, all of it is.
+  const last = logs.at(-1)
+  if (!last || (await hashesOf(last))[Number.parseInt(last.transactionIndex, 16)] === last.transactionHash) return logs
+  for (const log of logs) {
+    log.transactionHash = (await hashesOf(log))[Number.parseInt(log.transactionIndex, 16)]
   }
   return logs
 }
