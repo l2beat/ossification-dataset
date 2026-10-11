@@ -7,7 +7,7 @@
  * outflow, never offset by gains in other assets or transactions, while a liability (negative
  * price, e.g. debt tokens) nets both ways. DefiLlama prices at block time.
  *
- *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb] [--tx eip155:<chain>:<hash>,...] [--json]
+ *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb|@file] [--tx eip155:<chain>:<hash>,...|@file] [--json]
  *
  * Transactions: the anchor, the campaign's listed txs (not bundles) and --tx. Without --victims, lists net flows to pick victims.
  */
@@ -59,7 +59,12 @@ const MAJORS = {
 }
 
 const args = process.argv.slice(2)
-const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1].toLowerCase().split(',').filter(Boolean) : [])
+// A value of @file reads a comma- or newline-separated list from the file.
+const option = (name) => {
+  if (!args.includes(name)) return []
+  const value = args[args.indexOf(name) + 1]
+  return (value.startsWith('@') ? readFileSync(value.slice(1), 'utf8') : value).toLowerCase().split(/[\s,]+/).filter(Boolean)
+}
 const file = args.find((arg, i) => arg.endsWith('.json') && !['--tx', '--victims'].includes(args[i - 1]))
 const [, chainId, anchor] = file?.match(/(\d+)\/(0x[0-9a-f]{64})\.json$/) ?? []
 if (!chainId) throw new Error('usage: node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb] [--tx eip155:<chain>:<hash>,...] [--json]')
