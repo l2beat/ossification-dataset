@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Spectra Finance",
   "name": "Spectra Router arbitrary call",
-  "summary": "The Router's command executor did not validate the target/parameters of the commands it dispatched, so the attacker crafted a transferFrom-style call and pulled 188,013 asdCRV out of wallets that had approved the router.",
+  "summary": "The Router's KYBER_SWAP command forwarded caller-supplied calldata to a caller-chosen target with the Router as msg.sender and no check on target or selector. The attacker pointed it at tokens with transferFrom(victim, attacker, balance), pulling balances users had approved to the Router.",
   "targets": [
     {
       "address": "0x3d20601ac0ba9cae4564ddf7870825c505b69f1a",
@@ -13,14 +13,44 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x569f9b8ce438aee2d57da6b292d92b4549563aa7ccdbdbaa1948ff22ddbf535b",
+    "eip155:1:0x03f50316d98e2e6064adb344f877c7dc2d8aa042b1b1f9817925cd271df99b6f",
+    "eip155:1:0x86b382d3d48e45bad67d549429cd22dc63a9e6c4dd97a0f9887bac6ae51670f2",
+    "eip155:1:0x9655282a352d62559024512370e746c3739411b8728e817455a614a128e21bc1"
+  ],
   "loss": {
-    "usd": 73325,
+    "usd": 700431.76,
     "assets": [
+      {
+        "token": "0x1bc03e4a69bcb5ff949b15d293f49df61727dde5",
+        "symbol": "SPT-PT/IBT-f",
+        "amount": "1098529.109120690439490494",
+        "usd": 621438.16
+      },
       {
         "token": "0x43e54c2e7b3e294de3a155785f52ab49d87b9922",
         "symbol": "asdCRV",
         "amount": "188013.365080870249823427",
-        "usd": 73325
+        "usd": 73380.29
+      },
+      {
+        "token": "0x4d78afe5b63ab9d44a4acc3ebcbe30f1d81a2531",
+        "symbol": "SPT-PT/IBT-f",
+        "amount": "635.470320980317294212",
+        "usd": 3564.36
+      },
+      {
+        "token": "0x65d72aa8da931f047169112fcf34f52dbaae7d18",
+        "symbol": "rUSD",
+        "amount": "2048.743543457875322747",
+        "usd": 2048.95
+      },
+      {
+        "token": "0xb4fe541f3ffb0f35da15e5919682e270f5a35a4d",
+        "symbol": "YT-arUSD-1734480037",
+        "amount": "1285.292003987419107157",
+        "usd": 0
       }
     ]
   },
@@ -29,8 +59,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/Spectra_finance_exp.sol"
   ],
   "notes": [
-    "The proxy's sole pre-exploit Upgraded event selected the defect-bearing implementation during proxy deployment.",
-    "Gross loss in this exploit transaction. The asdCRV amount is the exact Transfer emitted by the token; the USD value is the contemporaneous amount reported by Verichains.",
-    "The USD value is a contemporaneous reported valuation; no independent incident-time price series was reconstructed."
+    "All five assets lack DefiLlama prices, so each is valued at what the attacker realised (rule 15): asdCRV and the large SPT LP via withdrawals to sdCRV and swaps to CRV, rUSD via weETH, the small SPT LP via afCVX unlocked to 1268.46 CVX. The YT-arUSD was never sold and is carried at zero.",
+    "campaign.mjs --traces over blocks 20360000-20420000 finds only attacker contract 0xba8ce861's calls; two of them (0xd641bfea, 0xb1a66f93) pulled zero and are left out. The Router address on Arbitrum, Base, Sonic and HyperEVM runs other code."
   ]
 }
