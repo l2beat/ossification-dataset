@@ -2,40 +2,41 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MU / MUG",
   "name": "MuBank bonds MU and MUG at the live pair quote",
-  "summary": "MuBank.mu_bond and mu_gold_bond sell the bank's MU and MUG for an approved stablecoin at a quote computed from the live reserves of the Trader Joe USDC.e/MU and MU/MUG pairs. Inside a flash swap of nearly all MU in the MU/MUG pair, the attacker dumped that MU into the USDC.e/MU pair, then bonded 3,300 and 6,990 USDC.e. The bank paid 99,102.20 MU and 9,640.24 MUG, about seven hours after deployment.",
+  "summary": "MuBank.mu_bond and mu_gold_bond pay out the bank's MU and MUG at quotes computed from live reserves of the Trader Joe USDC.e/MU and MU/MUG pairs. Inside a flash swap of MU from the MU/MUG pair, the attacker dumped MU into USDC.e/MU to skew the quote, bonded 10,290 USDC.e for excess MU and MUG, and sold them back.",
   "targets": [
     {
       "address": "0x4aa679402c6afce1e0f7eb99ca4f09a30ce228ab",
       "reset": {
         "kind": "config",
-        "tx": "0x28c63d4c05681bc319d98f973bcf5b302486e7487cd264a65e25210f8730bf6f",
-        "address": "0x4aa679402c6afce1e0f7eb99ca4f09a30ce228ab",
-        "slot": "0x0000000000000000000000000000000000000000000000000000000000000008"
+        "tx": "0x82d29140e1414189ef0c4689a689e9b210d12a9de7929c543134429066508ac1",
+        "address": "0x1713bcaf63fd615f4fde8d025326ce0948ebccdb",
+        "slot": "0xa"
       }
     }
   ],
   "loss": {
-    "usd": 51951.02578780192,
+    "usd": 62241.03,
     "assets": [
-      {
-        "token": "0xd036414fa2bcbb802691491e323bff1348c5f4ba",
-        "symbol": "MU",
-        "amount": "99102.201128573810201054",
-        "usd": 22023.35000260064
-      },
       {
         "token": "0xf7ed17f0fb2b7c9d3ddbc9f0679b2e1098993e81",
         "symbol": "MUG",
         "amount": "9640.237839603403398058",
-        "usd": 40217.67578520128
+        "usd": 40217.68
+      },
+      {
+        "token": "0xd036414fa2bcbb802691491e323bff1348c5f4ba",
+        "symbol": "MU",
+        "amount": "99102.201128573810201054",
+        "usd": 22023.35
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/MUMUG_exp.sol"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/MUMUG_exp.sol",
+    "eip155:43114:0x28c63d4c05681bc319d98f973bcf5b302486e7487cd264a65e25210f8730bf6f"
   ],
   "notes": [
-    "Owner setMuMoneyAddress(0x1713bcaf63fd615f4fde8d025326ce0948ebccdb). Both bond functions end with MuMoneyMinter(_MuMoney).mint(address(this), amount). The constructor default 0x5ea63080e67925501c5c61b9c0581dbd87860019 reverts that mint for the bank with \"Only the Mu Bank can mint new Mu Money\", so the bond path worked only after this write.",
-    "MuBank's MU and MUG paid out in the exploit transaction. The attacker's disposal moved both prices, so both are valued at realised proceeds. The final sale of 259,460.063432951156943008 MU returned 57,659.463903 USDC.e, which is 0.222229 USD per MU with USDC.e at par (DefiLlama 0.99949). MUG is valued through its sale for 180,974.292926286893962912 MU, which is 18.7728 MU per MUG. That gives 62,241.03 USD gross. The 10,290 USDC.e the attacker paid into the bank for the two bonds is netted. The attacker's MU round trip through the USDC.e/MU pair is a cost borne by pair LPs and is not counted. DefiLlama's pre-exploit MU spot of 0.645 USD is not used because the disposal moved the price. The seed row and DeFiHackLabs give ~57k USD, the attacker's USDC.e profit."
+    "Each bond mints MuMoney, which only the address in MuMoney's muBank slot may do. That needed MuBank.setMuMoneyAddress and then MuMoney.setMuBankAddress(MuBank), a mint grant 161 blocks later, which sets the age.",
+    "MU and MUG are valued at realised proceeds (rule 15) because the attacker's own sale crashed MU: 0.222229 USD per MU from the final 259,460 MU sale, and 18.7728 MU per MUG from the MUG sale. The 10,290 USDC.e the attacker paid into the bank is not subtracted (rule 14)."
   ]
 }

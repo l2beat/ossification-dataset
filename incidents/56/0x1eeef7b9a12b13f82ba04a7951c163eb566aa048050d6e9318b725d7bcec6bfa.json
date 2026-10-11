@@ -2,39 +2,35 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Layer3 USD",
   "name": "Layer3 USD live spot collateral valuation",
-  "summary": "Loan.supply valued deposited BTCB with PancakeSwap Router V2's current two-token quote and minted LUSD from that quote. The successful receipt temporarily displaced the referenced BTCB/USDT reserves, so the LUSD minted against 0.001515366635982742 BTCB exceeded the independently valued collateral retained by the Loan contract.",
+  "summary": "Loan.supply valued deposited collateral with PancakeSwap Router getAmountsOut, a live spot quote, and minted LUSD from it. The attacker flash-borrowed USDT, pumped BTCB in the BTCB/USDT pair, supplied a little BTCB for inflated LUSD, and redeemed that LUSD for USDT at LUSDPool.withdraw.",
   "targets": [
     {
       "address": "0xdec12a1dcbc1f741ccd02dfd862ab226f6383003",
       "reset": {
         "kind": "config",
-        "tx": "0x09177694f57a57368e22238b85fa509ab903e289e75445654b689008a35eb830",
-        "address": "0xdec12a1dcbc1f741ccd02dfd862ab226f6383003",
-        "slot": "0x020d60ee64c79b1375e5b7d880a4827df313abb64d06701957dd261da203f45e"
+        "tx": "0x79dc0dd9a837c74e9c42a15a9d5ba9e9ae07fd12de95c55099b1b2b39cf758ce",
+        "address": "0x3cd632c25a4db4c1a636cfb23b9285be1097a60d",
+        "call": "0x91d14854241ecf16d79d0f8dbfb92cbc07fe17840425976cf0667f022fe9877caa831b08000000000000000000000000dec12a1dcbc1f741ccd02dfd862ab226f6383003"
       }
     }
   ],
   "loss": {
-    "usd": 9654.503250353257,
+    "usd": 9698.61,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "9700.398846824019666633",
-        "usd": 9700.39884682402
+        "usd": 9698.61
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/LUSD_exp.sol",
-    "eip155:56:0x44e2ae2562aa7c9cdb9774d0f2a72c2f8d04fefa4e129a2a9ff1c4b3e9e2af4f",
-    "eip155:56:0xe5dfbf3d1f27f00efee13b465d877ac7d5bef7c978016659aeb9b3ac8e9c0050",
-    "eip155:56:0x93ad7c89f2b23f6a18c77e61342515fbc98b562a640bc544e7d589ed47f3d5f2",
-    "eip155:56:0x014ecf0256c2bccaa979519091b0cb8c5f740b88567c12975ef55c30db9ff624",
-    "eip155:56:0x55a44d29511e7990dd79530f0a5df589ecc37f258ebd2004b3afc17bcac79d7c"
+    "eip155:56:0x09177694f57a57368e22238b85fa509ab903e289e75445654b689008a35eb830"
   ],
   "notes": [
-    "setInfo configured BTCB to pay LUSD, with redeemFee 500, supplyRatio 5000 and dailyRate 3 in the four consecutive mapping slots. This was the first and only pre-incident BTCB configuration and made the live BTCB/USDT quote path operational; later setInfo calls addressed other tokens.",
-    "The LUSD pool's archive USDT balance falls by 9,800.402958646947704433 in the incident block. The receipt decomposes that change exactly: 100.004111822928037800 USDT is paired with endogenous L3 and capitalized into 16.110436463978777246 Cake-LP minted to and retained by the pool, while 9,700.398846824019666633 USDT leaves the victim entity for the attacker helper. The Loan contract simultaneously retains the attacker's exact 0.001515366635982742-BTCB deposit. Immediately before the loss, Pancake pair 0x3f803ec2b816ea7f06ec76aa2b6f2532f9892d62 held 39,642.343651114056995536 USDT and 1.308898664806062396 BTCB, with reserve timestamp 1688739223. The reserve-implied price is the exact ratio 39,642.343651114056995536 / 1.308898664806062396, approximately $30,286.793559368329840326123063709099959686246757061248349441343945552583311207193 per BTCB; DefiLlama independently corroborates it with a preceding $30,277 observation at 1688739768. The exact collateral-credit rational is (0.001515366635982742 × 39,642.343651114056995536) / 1.308898664806062396 dollars, approximately $45.895596470763762791825835613590524256663991716609547910720118830076326619601439. Subtracting that rational from the external USDT outflow gives net loss approximately $9,654.5032503532559038411741643864094757433360082833904520892798811699236733803986. No BTCB was returned to the attacker: the collateral stayed in Loan until protocol manager transaction 0xe5dfbf3d1f27f00efee13b465d877ac7d5bef7c978016659aeb9b3ac8e9c0050 later swept the aggregate 0.001533265791594517-BTCB balance to 0x81f319f3cba6abb3ba555b6e6cf4debb1fd93568. That later protocol disposition does not change the incident-time credit. Five nested flash lenders received their USDT principal back; the six preceding calls reverted; and the next successful EOA transaction forwarded the already measured 9,464.716730420359231245-USDT proceeds without returning assets to the victim."
+    "The exploit needed Loan's BTCB listing (setInfo, block 29033499) and LUSD's MANAGER_ROLE grant to Loan, which lets Loan mint; the grant came 48 blocks later and is the latest of the two, so it sets the age.",
+    "The 100 USDT LUSDPool.withdraw paired with L3 into the L3/USDT pair stayed in the pool's own LP position, so the pool and that pair are netted as victims. The BTCB collateral the attacker left in Loan is not subtracted (rule 14)."
   ]
 }
