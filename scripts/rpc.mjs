@@ -73,14 +73,17 @@ const blockHashes = new Map()
 async function resolveLogHashes(chainId, logs) {
   const hashesOf = (log) => {
     const key = `${chainId}:${log.blockNumber}`
-    if (!blockHashes.has(key)) blockHashes.set(key, rpc(chainId, 'eth_getBlockByNumber', [log.blockNumber, false]).then((block) => block.transactions))
+    if (!blockHashes.has(key))
+      blockHashes.set(key, rpc(chainId, 'eth_getBlockByNumber', [log.blockNumber, false]).then((block) => block?.transactions).catch(() => undefined))
     return blockHashes.get(key)
   }
   // Older blocks are unaffected: when the newest log in the response is right, all of it is.
   const last = logs.at(-1)
-  if (!last || (await hashesOf(last))[Number.parseInt(last.transactionIndex, 16)] === last.transactionHash) return logs
+  const sample = last && (await hashesOf(last))
+  if (!sample || sample[Number.parseInt(last.transactionIndex, 16)] === last.transactionHash) return logs
   for (const log of logs) {
-    log.transactionHash = (await hashesOf(log))[Number.parseInt(log.transactionIndex, 16)]
+    const hashes = await hashesOf(log)
+    if (hashes) log.transactionHash = hashes[Number.parseInt(log.transactionIndex, 16)]
   }
   return logs
 }

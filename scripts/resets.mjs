@@ -181,7 +181,8 @@ function follow(root, hops) {
 
 function describeUpgrade(log, code) {
   const signature = names.get(log.topics[0]).split('(')[0]
-  const target = signature === 'NewImplementation' ? `0x${log.data.slice(-40)}` : signature === 'DiamondCut' ? null : `0x${log.topics[1].slice(-40)}`
+  // Some proxies emit Upgraded with the address unindexed, in data.
+  const target = signature === 'NewImplementation' ? `0x${log.data.slice(-40)}` : signature === 'DiamondCut' ? null : `0x${(log.topics[1] ?? log.data).slice(-40)}`
   const mentions = code && (target ? target === code : log.data.includes(code.slice(2))) ? ' (the code)' : ''
   return `${signature}${target ? ` -> ${target}` : ''}${mentions}`
 }

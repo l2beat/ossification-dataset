@@ -2,44 +2,46 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SteamSwap",
   "name": "MineSTM live-reserve LP redemption",
-  "summary": "MineSTM converted incoming STM into a fraction of the bound STM/USDT pair's current LP supply using the pair's mutable live STM reserve, then removed that LP inventory for the caller. One bounded receipt changed the reserve before four redemptions; this review measures the exact MineSTM-plus-pair entity depletion and values STM from the sole pre-incident market state.",
+  "summary": "MineSTM.sell converted the STM a caller sent into a share of its own STM/USDT LP using the pair's live STM reserve, then removed that LP to the caller. The attacker flash-borrowed USDT, bought STM to shrink the reserve, and sold STM back through MineSTM repeatedly, burning nearly all its LP for the pair's USDT.",
   "targets": [
     {
       "address": "0xb7d0a1adafa3e9e8d8e244c20b6277bee17a09b6",
       "reset": {
-        "kind": "config",
-        "tx": "0x8066d301eda23ed9379375f19c575dfe8c570d49a8af8ee93d37f9769f68b70f",
-        "address": "0xbd0df7d2383b1ac64afeafdd298e640efd9864e0",
-        "call": "0x70a082310000000000000000000000002e45aef311706e12d48552d0daa8d9b8fb764b1c"
+        "kind": "deployment",
+        "tx": "0x9ad9786e147035b96018d97a2121d580383b001bc9e4d6351bd7ee3067b26471"
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x64476ca633331f8c6a5d17781fb70c56e3cc44edd212494b1cb3c2583ef6cddd",
+    "eip155:56:0x165042f80e74135a03f16a0e8a46e6bf6abf94d77f9eb16b7ecfaa02d1758144",
+    "eip155:56:0x7f02eed8ff1d04e3bd6de4abd2a6db7fc276091278402ed4d034aae06a5a4701",
+    "eip155:56:0xa99c9d9c18189a11461f90cd7ec38dbbe9f57be8da11c9daf853e51abd455e17",
+    "eip155:56:0x849ed7f687cc2ebd1f7c4bed0849893e829a74f512b7f4a18aea39a3ef4d83b1"
+  ],
   "loss": {
-    "usd": 154980.44639274344,
+    "usd": 112183.17,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "91738.825514135991169650",
-        "usd": 91738.825514136
+        "amount": "111815.585184483930519677",
+        "usd": 112183.17
       },
       {
         "token": "0xbd0df7d2383b1ac64afeafdd298e640efd9864e0",
         "symbol": "STM",
-        "amount": "1888533.492920270643450573",
-        "usd": 63241.62087860745
+        "amount": "1889831.914802386896533392",
+        "usd": 0
       }
     ]
   },
   "refs": [
-    "eip155:56:0xb410d5b965e02412490d30c6cab11d1478b8ba4dbf2651634b6e1f2be2f44cb0",
-    "eip155:56:0x992a28c309ab8f814080d63ed665baf49e3cbc66c108f33476fe936ccdcff5ec",
-    "eip155:56:0xeb3a7f73bd3df1ffff5a1b6e1e8df8c43bc6da1909aae126adb3d44aea840614",
-    "eip155:56:0x0873231fd53a97e7bba94a1e7c3696ff387dd5f0d6f0f0c342f81d6c9917aaa7",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-06/MineSTM_exp.sol"
   ],
   "notes": [
-    "The direct MineSTM runtime and immutable STM, USDT, factory and router bindings existed at deployment, and STM authorized MineSTM before funding. This initLiquidity call is the last honest causal activation: it creates the bound pair and supplies 3,500,000 STM plus 350 USDT, thereby establishing the reserves and MineSTM-owned LP inventory that make sell functional. The mechanism verifies the pair's STM balance changing from zero to 3,500,000 STM. Later node-user mints add routine inventory but do not rebind or change the sell path, and no later token, pair, router, owner or causal configuration setter executes before the incident.",
-    "The victim entity is MineSTM 0xb7d0a1adafa3e9e8d8e244c20b6277bee17a09b6 plus its bound STM/USDT pair 0x2e45aef311706e12d48552d0daa8d9b8fb764b1c. Immediately before the receipt the pair holds 91,756.641426462709287653 USDT and MineSTM holds zero; afterward the pair holds 17.815912326718118003 and MineSTM remains zero, for exact entity depletion of 91,738.825514135991169650 USDT. The pair sends 591,738.825514135991169650 USDT while receiving 500,000 from the helper. It sends 2,314,287.608214378446697049 STM in the initial swap and 425,754.115294107803246467 through four LP burns, while MineSTM receives 851,508.230588215606492943 STM as redemption consideration. The resulting STM entity depletion is exactly 1,888,533.492920270643450573. Archive balances agree: combined STM falls from exactly 9,500,000 to 7,611,466.507079729356549427, and no unrelated same-block transaction touches either entity's STM or USDT. MineSTM holds 499,338.331500868972566582 of 499,338.331500868972567582 LP immediately before the receipt; the only other supply is the permanently locked 1,000 wei. Four burns consume 499,323.298010219937390466 LP and leave MineSTM 15.033490649035176116 LP, so no external LP inventory is charged. A complete pre-incident factory-log scan finds this as STM's only V2 pair and no V3 pool; standard BSC factories return no STM market. At block 39,381,373 the sole market has 91,756.641426462709287653 USDT / 2,740,054.541998103233948508 STM depth, implying exactly 0.033487158748143717276970686791644159494883811816510845881153 USDT per STM. The STM depletion is therefore $63,241.620878607452035423885641777403102812372209428855614566888502, and exact total loss is $154,980.446392743443205073885641777403102812372209428855614566888502. Binance-Peg 0x55d398326f99059ff775485246999027b3197955 reports name Tether USD, symbol USDT and 18 decimals and is valued at par. Pancake V3 pool 0x92b7807bf19b7dddf89b706143896d05228f3121 lends the helper exactly 500,000 USDT and receives 500,050, an exact 50-USDT financing fee external to the victim entity. The helper ends with zero USDT, sends 91,688.825514135991169650 USDT proceeds to the funds holder, and retains exactly the STM entity depletion. The funds-holder's later approval and disposal activity and the EOA's later native transfer are downstream exclusions; the bounded and later transfer scan finds no STM or USDT return or recovery to MineSTM or the pair."
+    "The pair is a constant in MineSTM, so the owner's initLiquidity only funded the LP MineSTM later lost: a balance, which does not reset the age (rule 10).",
+    "MineSTM held all but 1,000 wei of the LP, so the pair's USDT depletion is MineSTM's. The STM the attackers kept was never sold and the drained pair could not absorb it; it is valued at what they realised, nothing (rule 15).",
+    "Campaign: copycats 0xd070490b (4 txs) and 0x40a82dfd (1 tx) repeated the sell drain on liquidity MineSTM re-added after the anchor; found with campaign.mjs through block 39,600,000, by which the pair held 1 wei USDT."
   ]
 }

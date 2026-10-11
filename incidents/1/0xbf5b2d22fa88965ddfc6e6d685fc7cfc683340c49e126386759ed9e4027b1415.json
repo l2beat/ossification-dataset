@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "StakeStone",
-  "name": "StoneVault permissionless round settlement",
-  "summary": "StoneVault's round-advance entry point (selector 0x5069fb57) had no access control, so the attacker could deposit, settle the round themselves at a share price they had just moved, and withdraw at a profit in the same transaction.",
+  "name": "StoneVault instant withdrawal pays uncapped strategy proceeds",
+  "summary": "StoneVault.instantWithdraw paid the withdrawer whatever StrategyController.forceWithdraw returned, not the burned shares' value, and the Balancer/Aura rETH strategy exited more WETH than asked. The attacker flash-borrowed 8,600 ETH, deposited, called the permissionless rollToNextRound to push it into the strategies, and instant-withdrew more than it put in.",
   "targets": [
     {
       "address": "0xa62f9c5af106feee069f38de51098d9d81b90572",
@@ -10,15 +10,28 @@
         "kind": "deployment",
         "tx": "0x26e9a20751d32c256272516621605f35058aff7687042bc037b652877ef694b3"
       }
+    },
+    {
+      "address": "0x856edf1b835ea02bf11b16f041df5a13ef1ec3d1",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x1242cc24eb91d45a93f29045482936869466363dba2d8990403ab1ed68494662"
+      }
     }
   ],
   "loss": {
-    "usd": 32087.62112475341,
+    "usd": 64738.62,
     "assets": [
       {
+        "token": "0xdd1fe5ad401d4777ce89959b7fa587e569bf125d",
+        "symbol": "auraB-rETH-STABLE-vault",
+        "amount": "33.376333386585318063",
+        "usd": 64729.19
+      },
+      {
         "symbol": "ETH",
-        "amount": "17.073005336909691789",
-        "usd": 32087.62112475341
+        "amount": "0.005",
+        "usd": 9.43
       }
     ]
   },
@@ -27,7 +40,7 @@
     "https://x.com/AnciliaInc/status/1722121056083943909"
   ],
   "notes": [
-    "The direct StoneVault runtime was created by this transaction and remained unchanged through the exploit.",
-    "The trace records 8,600 ETH deposited into StoneVault and 8,617.073005336909691789 ETH withdrawn after the attacker advanced the round, for an exact vault net loss of 17.073005336909691789 ETH."
+    "The Balancer/Aura strategy is a target because its exit returned 4,763.09 ETH where the vault asked it for 55% of 8,579.78 ETH; the other strategies returned slightly less than asked. No strategy or ratio change happened between deployment and the exploit.",
+    "Loss is the StakeStone strategies' net depletion in the transaction: Aura vault shares (1:1 B-rETH-STABLE BPT, priced as the BPT) and idle ETH. The sfrxETH and stETH the attacker's deposit left in other strategies are not subtracted (rule 14); the attacker itself kept 17.07 ETH gross."
   ]
 }
