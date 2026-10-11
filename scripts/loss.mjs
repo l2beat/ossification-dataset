@@ -5,7 +5,9 @@
  * native value in the call tree without reverted frames. Victims net together per asset within a
  * transaction, so flash loans repaid in it cancel; depletion sums each transaction's positive net
  * outflow, never offset by gains in other assets or transactions, while a liability (negative
- * price, e.g. debt tokens) nets both ways. DefiLlama prices at block time.
+ * price, e.g. debt tokens) nets both ways. Assets the attacker deposited in one transaction and
+ * took back in another are not offset here; subtract such round trips by hand (rule 14).
+ * DefiLlama prices at block time.
  *
  *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb|@file] [--tx eip155:<chain>:<hash>,...|@file] [--json]
  *
