@@ -139,10 +139,11 @@ async function token(chain, asset, blockNumber) {
     const symbol = wrapped ? (await token(chain, wrapped, blockNumber)).symbol.replace(/^w/i, '') : 'native'
     return metadata.set(key, { decimals: 18, symbol }).get(key)
   }
-  const call = (data) =>
-    rpc(chain, 'eth_call', [{ to: asset, data }, `0x${blockNumber.toString(16)}`])
-      .catch(() => rpc(chain, 'eth_call', [{ to: asset, data }, 'latest']))
-      .catch(() => '0x')
+  // At the block, else at the latest block (the contract may not have existed yet).
+  const call = async (data) => {
+    const at = await rpc(chain, 'eth_call', [{ to: asset, data }, `0x${blockNumber.toString(16)}`]).catch(() => '0x')
+    return at !== '0x' ? at : rpc(chain, 'eth_call', [{ to: asset, data }, 'latest']).catch(() => '0x')
+  }
   const [decimalsHex, symbolHex] = await Promise.all([call('0x313ce567'), call('0x95d89b41')])
   let symbol
   if (symbolHex.length >= 194) symbol = Buffer.from(symbolHex.slice(130, 130 + 2 * hexInt(symbolHex.slice(66, 130))), 'hex').toString('utf8')
@@ -171,15 +172,15 @@ async function llama(query) {
   }
 }
 
-async function historical(timestamp, coins) {
+async function historical(timestamp, coins, width = '6h') {
   const list = [...new Set(coins.filter(Boolean))]
   const out = {}
   for (let i = 0; i < list.length; i += 40) {
     const part = list.slice(i, i + 40)
     // batchHistorical often still answers when the historical endpoint rate-limits.
-    const quotes = await llama(`prices/historical/${timestamp}/${part.join(',')}?searchWidth=6h`).catch(async () => {
+    const quotes = await llama(`prices/historical/${timestamp}/${part.join(',')}?searchWidth=${width}`).catch(async () => {
       const coins = encodeURIComponent(JSON.stringify(Object.fromEntries(part.map((coin) => [coin, [timestamp]]))))
-      const batch = await llama(`batchHistorical?coins=${coins}&searchWidth=6h`)
+      const batch = await llama(`batchHistorical?coins=${coins}&searchWidth=${width}`)
       return Object.fromEntries(Object.entries(batch).filter(([, v]) => v.prices?.length).map(([k, v]) => [k, { symbol: v.symbol, ...v.prices[0] }]))
     })
     Object.assign(out, quotes)
@@ -193,16 +194,19 @@ async function valued(t, assets) {
   const id = (asset) => (slug && (asset !== NATIVE || wrapped) ? `${slug}:${asset === NATIVE ? wrapped : asset}` : undefined)
   const quotes = await historical(t.timestamp, assets.map(id))
   const metas = await Promise.all(assets.map((asset) => token(t.chain, asset, t.block)))
-  const result = new Map(assets.map((asset, i) => [asset, { ...metas[i], quote: quotes[id(asset)] && { ...quotes[id(asset)], source: id(asset) } }]))
+  // A zero price (e.g. WETH before it existed) counts as no price.
+  const usable = (quote) => quote && quote.price !== 0
+  const result = new Map(assets.map((asset, i) => [asset, { ...metas[i], quote: usable(quotes[id(asset)]) && { ...quotes[id(asset)], source: id(asset) } }]))
   const missing = [...result].filter(([, entry]) => !entry.quote)
   const twin = new Map(missing.map(([asset, { symbol }]) => [asset, asset === NATIVE || asset === wrapped ? native : MAJORS[symbol.toUpperCase()]]))
   const candidates = [...twin].filter(([, gecko]) => gecko)
   if (candidates.length) {
     const now = await llama(`prices/current/${candidates.flatMap(([asset, gecko]) => [id(asset), `coingecko:${gecko}`]).filter(Boolean).join(',')}`)
-    const then = await historical(t.timestamp, candidates.map(([, gecko]) => `coingecko:${gecko}`))
+    // CoinGecko history is daily in early years.
+    const then = await historical(t.timestamp, candidates.map(([, gecko]) => `coingecko:${gecko}`), '12h')
     for (const [asset, gecko] of candidates) {
       const [own, reference, quote] = [now[id(asset)]?.price, now[`coingecko:${gecko}`]?.price, then[`coingecko:${gecko}`]]
-      if (quote && (asset === NATIVE || asset === wrapped || Math.abs(own / reference - 1) < 0.02))
+      if (usable(quote) && (asset === NATIVE || asset === wrapped || Math.abs(own / reference - 1) < 0.02))
         result.get(asset).quote = { ...quote, source: `coingecko:${gecko}` }
     }
   }
