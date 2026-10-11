@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown BSC swap-bot contract 0x16d7c6f4",
   "name": "Unknown BSC swap-bot contract lets anyone swap approved wallets without slippage limits",
-  "summary": "Unverified contract 0x16d7c6f4, used by an operator's many EOAs to trade for managed wallets, exposes f8c03cc4(tokenIn, tokenOut, fee, amountIn, buyBack, 0, wallet). It pulls amountIn from any wallet that approved it and sells it on PancakeSwap V3 with no minimum output. It then buys the same amount back with the caller's tokens and sends it to the caller. There is no caller authorization. After draining the pool's other side, the attacker called it for 152 approved wallets in three transactions, receiving their TA, WBNB and USD1 for dust.",
+  "summary": "Unverified contract 0x16d7c6f4, used by an operator's EOAs to trade for managed wallets, let any caller name a wallet in f8c03cc4: it pulled that wallet's approved tokens, sold them on PancakeSwap V3 with no minimum output and bought the same amount back for the caller. After moving the pools, the attacker ran it for 152 approved wallets.",
   "targets": [
     {
       "address": "0x16d7c6f43df19778e382b7a84bcb8c763971a551",
@@ -12,36 +12,36 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xc3745e4f08bcccaf3efe584a9408d77d675cb996151735c8deaff34997c3a10e",
+    "eip155:56:0xb92d3594b818470cc3f6c03eff4a9c5704d87df9749557336545c39c7b2bfed9"
+  ],
   "loss": {
-    "usd": 615469.3942244167,
+    "usd": 615469.4,
     "assets": [
       {
         "token": "0x539ae81a166e5e80aed211731563e549c411b140",
         "symbol": "TA",
         "amount": "3576100",
-        "usd": 282180.02868257626
+        "usd": 282180.03
       },
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
         "amount": "408.844108058469234202",
-        "usd": 324532.2760946517
+        "usd": 324532.28
       },
       {
         "token": "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
         "symbol": "USD1",
         "amount": "8748.341106082606324013",
-        "usd": 8757.089447188688
+        "usd": 8757.09
       }
     ]
   },
-  "refs": [
-    "eip155:56:0xc3745e4f08bcccaf3efe584a9408d77d675cb996151735c8deaff34997c3a10e",
-    "eip155:56:0xb92d3594b818470cc3f6c03eff4a9c5704d87df9749557336545c39c7b2bfed9"
-  ],
   "notes": [
-    "Direct, immutable runtime (constructor immutables: owner 0x6d8bace1, router 0x13f4ea83). The unauthenticated, zero-minimum swap entry point exists from deployment. Wallet approvals only set exposure, and the owner's later calls only withdraw balances.",
-    "Gross debits of the 152 approved wallets named as the wallet argument in the three campaign transactions. The wallets received only dust back (24935602 wei USDT and 0.0083 TA in total), which is not netted. TA is illiquid, and the attacker's same-transaction sale moved its price, so TA is valued at realised proceeds: 282180.028682576245452554 USDT net to attacker contract 0x5b0d9b3c in source-1 (DefiLlama quoted 0.102143 before the sale). WBNB and USD1 are valued at DefiLlama quotes. Flash liquidity and the attacker's buy-back inputs are excluded.",
-    "The contract has no verified source. The missing caller check and zero minimum output are established from traces and calldata: attacker contracts created at blocks 55013996/55014240/55015921 were served, and the router calls carry amountOutMinimum 0. They are not established from source text."
+    "Direct, immutable runtime (immutables: owner 0x6d8bace1, router 0x13f4ea83); the unauthenticated, zero-minimum entry exists from deployment, approvals only set exposure and the owner's later calls only withdraw.",
+    "Gross debits of the 152 wallets named in the three attacker txs (dust returned not netted). TA is valued at the attacker's realised 282,180.03 USDT (its own sale moved TA's price; DefiLlama 0.102143), WBNB and USD1 at DefiLlama.",
+    "Normal use is operator EOAs calling f8c03cc4 for third-party wallets, so exploits are the calls from contracts: a scan of every bot-touching tx from deployment to block 55250000 finds only the attacker's three. The defect is established from traces; there is no verified source."
   ]
 }

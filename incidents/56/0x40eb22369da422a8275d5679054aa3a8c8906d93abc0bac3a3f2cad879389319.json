@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unattributed BSC swap router 0xa331fde0",
   "name": "BSC swap router unauthenticated uniswapV3SwapCallback pays any approver",
-  "summary": "The unverified UUPS swap router 0xa331fde0 (implementation 0x241f743e) has a public swap entry, selector 0x33411b5e, that calls swap() on any caller-named V3 route pool. Its uniswapV3SwapCallback (0xfa461e33) accepts a call from any msg.sender and runs transferFrom(payer, msg.sender, amount), with the payer decoded from the callback data. It neither checks that the caller is a factory-deployed pool nor binds the payer to the swap initiator. An attacker-deployed fake pool re-entered the callback with victims as payer, pulling 29 approvers' tokens through their standing router allowances. Four later actors repeated the path before the router was paused.",
+  "summary": "The router's uniswapV3SwapCallback (0xfa461e33) accepted calls from any msg.sender and ran transferFrom(payer, msg.sender, amount) with the payer taken from callback data, never checking for a factory pool or binding the payer to the swap initiator. A fake pool reached through the public swap entry 0x33411b5e pulled approvers' tokens.",
   "targets": [
     {
       "address": "0xa331fde028e6f17425ab9333c39ae43722340d24",
@@ -12,6 +12,19 @@
         "tx": "0x4f96584630d753bdf4ba6db036f63c6a8163cac5433fcf60b4828f6d2b81a7e1"
       }
     }
+  ],
+  "campaign": [
+    "eip155:56:0x5a8cc4d25927bda8b12275eb6a39bc8ded444dd4fda4f358e7e43ed42b7d7a27",
+    "eip155:56:0xb87f97da428fe8ddc8dea2bf93b894c9dc0eb0b9443090b9b838860594d8770e",
+    "eip155:56:0x41bdc92d808365a6aa1e56cfbddf45517a3a0b957aca455e635a036a62f25ef5",
+    "eip155:56:0xe8158ab567b7c838d037c7a205a8502bd6069024b3e1b73f512f8d6fce991004",
+    "eip155:56:0xc8b49263520f8f326221305bf1aa775060063d4fd64e7e7ed7dde80af56204aa",
+    "eip155:56:0xea1976ffbb704f67baf3c9fba1c26bab487a0f001c63648fd768f9093756c7b6",
+    "eip155:56:0x3fa0fbbe0ea46fcf53d133d4b3468042cedc599ce61504339e217310e90e7362",
+    "eip155:56:0xbf7261d91fafad3a4cf68010a01974cfb71e646fea40f763fe28564d81d24f3f",
+    "eip155:56:0x02b4a00c548afcb4559630e8893cf7c32327c16cae618e208cffdff9c01ec1ea",
+    "eip155:56:0x31f362a840c7c69daa53945aa9f66396b66017fe29f32aad729a0d16f3cb3484",
+    "eip155:56:0x78d976b0e3bce3b63df4ba33f96866a1bbc8bfdacdf0be8524faccd91c813004"
   ],
   "loss": {
     "usd": 55217.51980486469,
@@ -103,22 +116,11 @@
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/RouterDrain_exp.sol",
-    "eip155:56:0x5a8cc4d25927bda8b12275eb6a39bc8ded444dd4fda4f358e7e43ed42b7d7a27",
-    "eip155:56:0xb87f97da428fe8ddc8dea2bf93b894c9dc0eb0b9443090b9b838860594d8770e",
-    "eip155:56:0x41bdc92d808365a6aa1e56cfbddf45517a3a0b957aca455e635a036a62f25ef5",
-    "eip155:56:0xe8158ab567b7c838d037c7a205a8502bd6069024b3e1b73f512f8d6fce991004",
-    "eip155:56:0xc8b49263520f8f326221305bf1aa775060063d4fd64e7e7ed7dde80af56204aa",
-    "eip155:56:0xea1976ffbb704f67baf3c9fba1c26bab487a0f001c63648fd768f9093756c7b6",
-    "eip155:56:0x3fa0fbbe0ea46fcf53d133d4b3468042cedc599ce61504339e217310e90e7362",
-    "eip155:56:0xbf7261d91fafad3a4cf68010a01974cfb71e646fea40f763fe28564d81d24f3f",
-    "eip155:56:0x02b4a00c548afcb4559630e8893cf7c32327c16cae618e208cffdff9c01ec1ea",
-    "eip155:56:0x31f362a840c7c69daa53945aa9f66396b66017fe29f32aad729a0d16f3cb3484",
-    "eip155:56:0x78d976b0e3bce3b63df4ba33f96866a1bbc8bfdacdf0be8524faccd91c813004"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/RouterDrain_exp.sol"
   ],
   "notes": [
-    "The 16th Upgraded event after construction installs implementation 0x241f743e, created one transaction earlier in the same block (index 50) by the router owner. The next upgrade, to 0x50c08665 at block 120550401, comes after every merged campaign.",
-    "Components are victims' tokens pulled by router transferFrom calls in which the payer is outside the attacker's addresses. Each is valued at the attacker's same-transaction disposal of that token: WBNB (plus USDT at par) received from the token's sale counterparties, minus the WBNB the attacker spent on that token's seed purchase. Seed round trips and the 1 WBNB flash-swap fee are attacker inputs. The main campaign, source-1, has 59 callbacks across 29 victims, 32 victim-token pairs and 8 tokens. Its components sum to 46.643086 WBNB plus 11550.468529943177031310 USDT, plus 6.924275 USDC at par. The attacker EOA received 62.284129499372716328 BNB. Copycat campaigns (source-7): 0x8d5b56cc (pDOG, FLORK, plus the \"1\" token, whose loot was returned to its pair unsold and is valued at DefiLlama), 0x1cac5af9 (b-money, Priceless, 淘公仔, Q币) and 0x8cc42905. De minimis copycat loot not added: 0x8cc42905's two transactions netted 0.009574 and 0.002442 WBNB, and the PONKE, SPCXB and CDL residues are under 1 USD. Loot kept unsold and unpriced is not valued, so the total is a lower bound for those transactions: 0x8d5b56cc's 0x3fa0fbbe (BEE, 黑马, GALIA) and 0xfa20e2bd's four transactions (13 low-cap tokens held in 0x9a9eb282). Unit values from realised disposals are below DefiLlama spot where available (Max 0.01346 vs 0.01490, OCEAN 9.59e-10 vs 1.37e-9 USD).",
-    "Proxy and implementation are unverified. The callback defect is established from callTracer frames and calldata, not from source code."
+    "Implementation 0x241f743e was installed by the 16th Upgraded event; earlier implementations since 0x9a7861a0 also carried the callback, but campaign.mjs from block 113937320 finds no third-party pulls before the anchor. The next upgrade (0x50c08665, block 120550401) follows every campaign tx.",
+    "Each pulled token is valued at the attacker's same-transaction disposal (rule 15: memecoins dumped by the attacker's own sales; Max and OCEAN realised ~10-30% under DefiLlama spot). Loot kept unsold and unpriced (0x3fa0fbbe and the four 0xfa20e2bd txs) is not valued, so the total is a lower bound.",
+    "Proxy and implementation are unverified; the callback defect is established from callTracer frames and calldata."
   ]
 }

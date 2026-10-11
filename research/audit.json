@@ -154,6 +154,17 @@
     },
     "reason": "Separate incident from 0x726459…84d0 (rule 4: different defect). Nothing was double-counted: Compound paid the clone 0x7b7246 its accrued 268.53 COMP once (log 0x7d) and the clone's five collectUBIInterest calls sold it in 0.3%-of-spot-reserve chunks with amountOutMin 0 into the COMP/WETH pair the attacker had loaded with 20,096 COMP, receiving 95.7 DAI in total. The defect is in GoodCompoundStakingV2 (an EIP-1167 clone created in 0x186dadd6, block 14338454), not in the GoodFundManager upgrade 0xe710b21c. A single call was already profitable, so the duplicate entries only scaled the loss. Loss is the gross COMP depletion, $14,796.13, not the attacker's net 250.63 COMP. No earlier non-keeper call to the clone; no campaign. Orchestrator: reset moved to the maxLiquidityPercentageSwap 0->300 change (rule 10 threshold)."
   },
+  "eip155:1:0x1382e898ae7582d184903b504aa43191a5d240851d5477a7464a29e262fad993": {
+    "decision": "keep",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Blind derivation matches: pool 0x39ed372f (CREATE2 by factory 0x6ed3c23f, no later code or config change; the two post-deploy slot changes are LP deposits), loss 2.0517 WETH + 7,167.42 USDC = $11,438.54. campaign.mjs with --also over the factory's two sibling pools (0xfc895140, 0x9ce214f1) finds no other exploit; earlier 0xbe16634e calls are the LP's own adds with no outflow."
+  },
   "eip155:1:0x138daa4cbeaa3db42eefcec26e234fc2c89a4aa17d6b1870fc460b2856fd11a6": {
     "decision": "update",
     "anchor": "eip155:1:0xb3cfbd40752c149761d105890f40d860a4366a819add6f5414db9bc474cc6481",
@@ -279,6 +290,18 @@
       "loss": "within-10"
     },
     "reason": "Separate incident from pETH (different codebase: standalone vyper 0.3.0 CRV/ETH crypto pool vs factory plain-pool clone). Only reentrant add+remove tx on the pool in blocks 17790000-17830000 is the anchor; c0ffeebabe's later 2,879 ETH extraction was returned to Curve (affiliated). Pool gross depletion 7,680.49 ETH + 7,193,401.78 CRV = $19,469,483.30 vs record $19,466,180.69."
+  },
+  "eip155:1:0x33479bcfbc792aa0f8103ab0d7a3784788b5b0e1467c81ffbed1b7682660b4fa": {
+    "decision": "update",
+    "anchor": "eip155:56:0x267a5d2acfc4264ea1f96769297d3c447f60cdab2cf2cf23c1036dab679161f3",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -47694,
+      "loss": "off-10-50"
+    },
+    "reason": "The attacker's own BSC txs predate Ethereum, and campaign.mjs on BSC StakingRewards 0xfaf0f1cf (same code, deployed 16056047) finds zero-stake withdrawals from block 16201197 (0x267a5d2a/0xbffcd5a2 front-running staker 0x4d113df4; then 0x9aaf9d77 drained 6,733.5 LP), ~13.5 h before 0x33479bcf. Anchor moves to BSC; 12 campaign txs (incl. ETH copycat 0x366ca58e); loss $539,795 -> $684,977."
   },
   "eip155:1:0x37acd17a80a5f95728459bfea85cb2e1f64b4c75cf4a4c8dcb61964e26860882": {
     "decision": "update",
@@ -450,6 +473,18 @@
       "loss": "off-10-50"
     },
     "reason": "Anchor, target and upgrade reset 0x166b56c5 confirmed (campaign.mjs: 46 earlier batchHarvestMarketRewards calls are keeper harvests without outflow; register-helper grant at 19988338 precedes the reset). Merged the Arbitrum leg 0x67c5400d (same attacker EOA 0x7a2f4d62) and listed campaign 0x42b2ec27, 0x663b55a1. Loss re-measured as PendleStaking LP depletion valued from market reserves: $29,570,156.52 vs record $27.31M (attacker-realised underlying, YT unpriced) and loss.mjs $31.50M (DefiLlama misprices stETH/sUSDe/gUSDC LP by using the yield-token price)."
+  },
+  "eip155:1:0x57709a498f27c7219b634ae20e7d2cbf9ab8dd6aca7b3845fabf93b57760b576": {
+    "decision": "update",
+    "anchor": "eip155:1:0x0cd4af6337a0b1c2edf8b043a8616144592f18d1d5a91a619b80ff1d294a9e72",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "same",
+      "ageDeltaSeconds": -84366492,
+      "loss": "within-10"
+    },
+    "reason": "campaign.mjs finds an earlier forwarder exercise: 0x0cd4af63 (block 17990583, 2023-08-25) from c0ffeebabe.eth (0xc0ffeebabe5d...) relayed as 0x67e79574 and took its 25.17 USDC via a152, so it is the earliest unaffiliated exploit; anchor moves and age falls from ~2.68 y to ~1 d. Campaign adds 0x57709a49 and six copycats (blk 24976159-24976912); loss $229,031 -> $229,126."
   },
   "eip155:1:0x5a63da39b5b83fccdd825fed0226f330f802e995b8e49e19fbdd246876c67e1f": {
     "decision": "update",
@@ -1544,6 +1579,28 @@
     },
     "reason": "Anchor (a dust BUSD borrow onBehalfOf 0xbb1a3273, the first non-helper on-behalf borrow) and MainPool target confirmed. The anchor's validation read the price oracle that setPriceOracle 0xddfdd87a (blk 9875422) first bound, later than the BUSD reserve init the record used: age 283,891 -> 277,598 s. The 195 further borrow txs move from refs into campaign; loss repriced with loss.mjs (USDT/USDC/BTCB at DefiLlama, BUSD at CoinGecko): $4,166,470.83 -> $4,167,933.35."
   },
+  "eip155:56:0x380cd298a607d4422edc640b7f5a907ec0792841ee5fc963d265b1189397c905": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": 69,
+      "loss": "within-10"
+    },
+    "reason": "Anchor and target confirmed; the record's AHT-allowance config reset (69 s after deployment) is kept. campaign.mjs finds a second exploit 0x1ddfd1d2 (block 80622022, sender 0xf9572fa0) pulling another 40,436 AFX + 1.07 AHT from the funding wallet for 790.82 USDT; added to campaign and loss ($10,699.62 -> $11,490.44), and assets now name the victim's AFX/AHT at realised value."
+  },
+  "eip155:56:0x40eb22369da422a8275d5679054aa3a8c8906d93abc0bac3a3f2cad879389319": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Anchor, target and reset confirmed (campaign.mjs from 113937320 finds no earlier third-party pull; none after 120760000). The 11 follow-up exploit txs sat in refs; moved to campaign. Loss kept at the record's realised disposal values ($55,218; my DefiLlama-spot blind was $63,211) since the attacker's own dumps set the price (rule 15); summary and notes shortened."
+  },
   "eip155:56:0x437b26887ba03c08b7541a86e8eeda5e92a9059244fcf814c721dc13f2c1b303": {
     "decision": "update",
     "anchor": "eip155:56:0xb107f19af1a8ff90d19cbb40d935f8be5d79f5fb9b497824e4ed28b9e7555fe9",
@@ -1588,6 +1645,17 @@
       "loss": "within-10"
     },
     "reason": "The age now runs from setMainPaths 0x367af9c9 (block 5324962, 51 blocks after deployment), which wrote the paths[BUSD][ALPACA] route the swap needs; without it the swap reverts. emergencyWithraw 0xc10c0c6a (block 34072504) only parked BUSD in the strategy, so it is not a reset. The loss is now loss.mjs gross 768,358.95 BUSD = $768,023.18; the old usd did not equal its asset sum. No earlier exploit: the strategy's only non-routine BUSD outflow before 2024 is the anchor's."
+  },
+  "eip155:56:0x5a504fe72ef7fc76dfeb4d979e533af4e23fe37e90b5516186d5787893c37991": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -1771,
+      "loss": "within-10"
+    },
+    "reason": "Anchor confirmed (K-drop scan of all 25 factory pairs finds no earlier exploit). The anchor swapped against five pairs, not one; the latest created, 0x04536fb6 (0xb79d074c, blk 6609443), sets the age (1,024,110 -> 1,022,339 s). Added 76 campaign txs and a reconstructed asset breakdown via loss.mjs: $54.16M vs the record's DOJ round $53.3M."
   },
   "eip155:56:0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7": {
     "decision": "update",
@@ -1654,6 +1722,17 @@
       "loss": "off-10-50"
     },
     "reason": "Anchor/target/reset confirmed: 189k router Approval events from deployment to block 20M show no multi-owner pull and the 476 from 20M to the anchor were all sent by the owners. The record measured 7,308 exploit txs but listed none; campaign now lists the 7,310 non-owner pull txs through block 126.6M (record stopped at 63.99M) and the loss re-measured per token at pull-time DefiLlama prices: $2,013,442.47 vs $1,779,347.56."
+  },
+  "eip155:56:0x960f3fbbe53b80bc306a64ad33d16dd73bfc164c787114d57cfe0080b5c10b08": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Blind derivation matches anchor, target, reset and loss ($615,469.40, same per-asset figures). The attacker's two follow-up drains 0xc3745e4f (WBNB) and 0xb92d3594 (USD1) sat in refs; moved to campaign. Contract-caller scan over all bot txs from deployment to block 55250000 finds no other exploiter."
   },
   "eip155:56:0x97381c260e50a54b80db68391f1838f73e10988d0b41165aa29fe708cb165ace": {
     "decision": "update",
@@ -1864,6 +1943,17 @@
       "loss": "off-50"
     },
     "reason": "Same attacker 0x705f7361 and attack contract 0xea8f89f4 drained this pair in tx 0x5005ac22 at block 2031948, after its first drain 0xbb837d41 (block 2031747) of the same LeetSwapV2Pair code; rule 4 merges the campaign, this tx is in its campaign and this pair's depletion in its loss. Blind: only spot-B's campaign-level derivation exists for this sibling (anchor 0xbb837d41); no per-record blind reset/loss."
+  },
+  "eip155:8453:0x6ab5b7b51f780e8c6c5ddaf65e9badb868811a95c1fd64e86435283074d3149e": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -17194,
+      "loss": "off-10-50"
+    },
+    "reason": "Rule 10: cSUI's feed (0x8976b5cb, blk 21237697) and 95% collateral factor (0xc2402f29, blk 21237701) were set after the adapter's deployment and the exploit needed both, so age 565,918 -> 548,724 s; comptroller added as target (__setWhitelist__ is callable by anyone, eth_call from 0xdead succeeds at 21512062). campaign.mjs adds 6 copycat drains (blk 21520620-21521594, $665k), loss $989,452 -> $1,654,860.74."
   },
   "eip155:8453:0x8d19071832c3027e67826249676380263a6c9821e01c2512ad46a810f2d29b03": {
     "decision": "merge-into:eip155:8453:0xbb837d417b76dd237b4418e1695a50941a69259a1c4dee561ea57d982b9f10ec",

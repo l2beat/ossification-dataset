@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown AFX liquidity intermediary",
-  "name": "AFX liquidity intermediary sweeps the whole AFX balance of its swap helper and matches it from a funding wallet",
-  "summary": "Function 0xb1a87f2c of unverified contract 0x560d3973ee82a318d381c49fcbf3ce9d6cf1250b swaps half of the user's USDT for AFX into helper 0x671ce4, then withdraws the helper's entire AFX balance instead of the swap output. It pulls an equal amount of AFX, plus matching AHT, from funding wallet 0x146933f2 through standing allowances and adds it to the AFX/AHT pair. The attacker flash-borrowed AFX, donated 511,965 AFX to the helper and front-ran with an AFX->AHT buy. It then called the function with 100 wei of USDT, recovered the donation through the refund, and back-ran, forcing the wallet to supply 511,965 AFX and leaving the attacker 10,699.62 USDT.",
+  "name": "AFX liquidity intermediary sweeps its swap helper's whole AFX balance and matches it from a funding wallet",
+  "summary": "Function 0xb1a87f2c of intermediary 0x560d3973 swapped the caller's USDT to AFX into helper 0x671ce4, then took the helper's entire AFX balance instead of the swap output, refunded it to the caller and matched it with AFX and AHT pulled from funding wallet 0x146933f2 into the AFX/AHT pair. Donating AFX to the helper around a pool manipulation drained the wallet.",
   "targets": [
     {
       "address": "0x560d3973ee82a318d381c49fcbf3ce9d6cf1250b",
@@ -14,14 +14,23 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x1ddfd1d2b4e228966d613dd0d92a2a510034eeb658611a65767ccf52b926c76c"
+  ],
   "loss": {
-    "usd": 10699.62,
+    "usd": 11490.44,
     "assets": [
       {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "10699.618671790673809279",
-        "usd": 10699.62
+        "token": "0xb6761b4d7b913ef048c92e3bb1305883422e819a",
+        "symbol": "AFX",
+        "amount": "552401.871869262906283785",
+        "usd": 11490.44
+      },
+      {
+        "token": "0xcd1ec887b081cfba30c8003e8ad1b67f92236c7b",
+        "symbol": "AHT",
+        "amount": "13.673589493513022584",
+        "usd": 0
       }
     ]
   },
@@ -29,8 +38,8 @@
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
   ],
   "notes": [
-    "Funding wallet 0x146933f2 approved the intermediary for AHT, the last of the three standing allowances (AFX at 71049553 and 71049565) that the function draws on; both allowances are necessary for the forced contribution and remained about 2.43e36 at 80395410.",
-    "The attacker's net USDT gain, which is the value extracted from the victim side. The forced 511,965.516 AFX and 12.604 AHT from funding wallet 0x146933f2692f5ff3b62441ab3c2a65ddcaca753c became liquidity at a manipulated AFX/AHT ratio, with LP minted to project addresses 0x9549204b and 0x0ed943ce, and the attacker sold the extracted AFX into the USDT/AFX pair 0x9d2d5cc00c8cf233aefd8a177b904f8d3abb5d46. The wallet's gross token outflow is not a separable stolen amount, so the realised extraction is used.",
-    "The intermediary is unverified; the balance-sweep logic is established from the exploit trace and BlockSec's analysis, not from source."
+    "Funding wallet 0x146933f2 approved the intermediary for AHT last of the three standing allowances (AFX at 71049553 and 71049565) the function draws on; the exploit needs them, so the AHT grant is the reset, 69 s after deployment.",
+    "AFX and AHT have no market price; together they are valued at the attackers' USDT proceeds at par (10,699.62 + 790.82, rule 15). The forced tokens became AFX/AHT liquidity at a manipulated ratio and were extracted through the AFX/USDT pair.",
+    "The intermediary is unverified; the balance-sweep logic is established from the exploit trace and BlockSec's analysis. 0x1ddfd1d2 (sender 0xf9572fa0) repeated it two days later."
   ]
 }

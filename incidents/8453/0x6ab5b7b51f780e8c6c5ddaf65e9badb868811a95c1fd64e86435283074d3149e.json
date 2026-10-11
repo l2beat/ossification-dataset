@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unnamed Compound fork (Base)",
-  "name": "Unnamed Base Compound fork uSUI slot0 spot price feed",
-  "summary": "The price feed the fork's oracle 0x93d619623abc60a22ee71a15db62eede3ef4dd5a serves for market cSUI is the immutable adapter 0xc112e41c1094ff7fbf9e5dc0d1026103542e7e0c. Its latestAnswer() reads the instantaneous slot0().sqrtPriceX96 of Uniswap-V3-style pool 0x5c45b0f48c326f79b56709d8f63ce2bee7697106 and returns chainlinkEthUsd * 2**192 / sqrtPriceX96**2, reproduced to the unit in the anchor trace: 253253757616 * 2**192 / 2858318274747956646160580417568**2 = 194578070. The runtime contains the slot0 selector and no observe/observations selector, so there is no time-weighted observation, no minimum-liquidity floor, no deviation cap against the previous answer and no staleness bound; the only bound in the code clamps the ratio at 1e16, sixteen orders of magnitude above any plausible uSUI price. One 500 WETH exactInputSingle into the pool inside the same transaction drove sqrtPriceX96 from 2858318274747956646160580417568 to the 1e21 limit, lifting getUnderlyingPrice(cSUI) from 1.9457807e18 to 2.5325375761e37, after which 50 uSUI of collateral supported borrowing every market of the fork to zero. No parameter value makes this code correct: the priced token, the Chainlink ETH/USD wrapper and the pool address are storage configuration, but an unaveraged slot0 read is manipulable under every configuration of them.",
+  "name": "Unnamed Base Compound fork slot0 spot price feeds and open whitelist",
+  "summary": "The fork priced cSUI (and cMIGGLES) through adapters that read a thin Uniswap-V3-style pool's instantaneous slot0 with no TWAP or bounds, and its comptroller's __setWhitelist__ had no access control. The attacker whitelisted its contracts, pushed the uSUI pool price to the clamp with one swap, posted 50 uSUI as collateral and borrowed every market.",
   "targets": [
     {
       "address": "0xc112e41c1094ff7fbf9e5dc0d1026103542e7e0c",
@@ -10,94 +10,112 @@
         "kind": "deployment",
         "tx": "0xd720d036539fc82524e28fa8446f875217bbacab7aea631914588a2179b308cc"
       }
+    },
+    {
+      "address": "0xf91d26405fb5e489b7c4bbc11b9a5402ae9243d3",
+      "code": "0x94a9a7cffcbdbc6898002fa2dfa92c09ee99e943",
+      "reset": {
+        "kind": "config",
+        "tx": "0xc2402f29ef0b939547708a47f05c3dddfeb68e826c84e460fecbceef51ef6ac1",
+        "address": "0xf91d26405fb5e489b7c4bbc11b9a5402ae9243d3",
+        "call": "0x8e8f294b000000000000000000000000a2092f9a2a5dd84d6df7d175673ec8a7357c551b"
+      }
     }
   ],
+  "campaign": [
+    "eip155:8453:0x78a462e4e5ee2f835be433447c30c4ec375adfb4e54df439ed1ba2e3ee1f50bf",
+    "eip155:8453:0x3c7d54d7490300c727e988ab920977b1d83cc2906f936d69f720c851b333b5f0",
+    "eip155:8453:0xbff3cb942da6063240b9ef14584af8728eb071f76ae57ffe732b29ba668b9f89",
+    "eip155:8453:0xa14c62963cbf783708412af8752f33d49f449f416a3ee7e625253ea7b48c5885",
+    "eip155:8453:0xdaee44ec86eb7d9f05dad042f80034b2849f5cc8ed5a25bedae568ebcac8286a",
+    "eip155:8453:0xddb1727b47dcdfec0e94b1f9d0738103af56c948426e276d9a66e38419b442c0"
+  ],
   "loss": {
-    "usd": 989451.6850528131,
+    "usd": 1654860.74,
     "assets": [
       {
         "token": "0x4200000000000000000000000000000000000006",
         "symbol": "WETH",
-        "amount": "247.435971398571237348",
-        "usd": 626876.5591785662
+        "amount": "333.468088743371291708",
+        "usd": 841674.24
       },
       {
         "token": "0xb79dd08ea68a908a97220c76d19a6aa9cbde4376",
         "symbol": "USD+",
-        "amount": "89511.194194",
-        "usd": 89511.194194
+        "amount": "213372.232128",
+        "usd": 213372.23
+      },
+      {
+        "token": "0x532f27101965dd16442e59d40670faf5ebb142e4",
+        "symbol": "BRETT",
+        "amount": "1523164.040453531095937298",
+        "usd": 149216.55
+      },
+      {
+        "token": "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
+        "symbol": "USDT",
+        "amount": "88378.203268",
+        "usd": 88378.2
       },
       {
         "token": "0x2da56acb9ea78330f947bd57c54119debda7af71",
         "symbol": "Mog",
-        "amount": "40573948868.634870971110344139",
-        "usd": 78713.46080515166
+        "amount": "40573948868.63487097135070849",
+        "usd": 78713.46
       },
       {
         "token": "0x4ed4e862860bed51a9570b96d89af5e1b0efefed",
         "symbol": "DEGEN",
         "amount": "8098042.912568830424227988",
-        "usd": 63387.6738394199
+        "usd": 63387.67
       },
       {
         "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
         "symbol": "cbBTC",
-        "amount": "0.68269296",
-        "usd": 46454.38725603048
-      },
-      {
-        "token": "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452",
-        "symbol": "wstETH",
-        "amount": "7.674494588504909905",
-        "usd": 22959.401735700714
-      },
-      {
-        "token": "0xb0505e5a99abd03d94a1169e638b78edfed26ea4",
-        "symbol": "uSUI",
-        "amount": "13932.866550395379924780",
-        "usd": 21835.253961286566
-      },
-      {
-        "token": "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
-        "symbol": "USDT",
-        "amount": "18908.270171",
-        "usd": 18908.270171
-      },
-      {
-        "token": "0xb1a03eda10342529bbf8eb700a06c60441fef25d",
-        "symbol": "MIGGLES",
-        "amount": "540140.357829674244175888",
-        "usd": 8841.741165035599
-      },
-      {
-        "token": "0x532f27101965dd16442e59d40670faf5ebb142e4",
-        "symbol": "BRETT",
-        "amount": "74764.342547142290604590",
-        "usd": 7615.196874481725
-      },
-      {
-        "token": "0x9b8df6e244526ab5f6e6400d331db28c8fdddb55",
-        "symbol": "uSOL",
-        "amount": "24.633466675014019644",
-        "usd": 4348.545872140225
+        "amount": "0.79827581",
+        "usd": 54281.94
       },
       {
         "token": "0x04d5ddf5f3a8939889f11e97f8c4bb48317f1938",
         "symbol": "USDz",
-        "amount": "0.000000000068993811",
-        "usd": 6.88144270914e-11
+        "amount": "36809.62720373648099793",
+        "usd": 36706.12
+      },
+      {
+        "token": "0x9b8df6e244526ab5f6e6400d331db28c8fdddb55",
+        "symbol": "uSOL",
+        "amount": "205.753500999712225638",
+        "usd": 35838.08
+      },
+      {
+        "token": "0xb4fde59a779991bfb6a52253b51947828b982be3",
+        "symbol": "PEPE",
+        "amount": "3427309286.67410663067318237",
+        "usd": 33244.9
+      },
+      {
+        "token": "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452",
+        "symbol": "wstETH",
+        "amount": "9.8321293305030052",
+        "usd": 29370.36
+      },
+      {
+        "token": "0xb0505e5a99abd03d94a1169e638b78edfed26ea4",
+        "symbol": "uSUI",
+        "amount": "13932.86655039537992478",
+        "usd": 21835.25
+      },
+      {
+        "token": "0xb1a03eda10342529bbf8eb700a06c60441fef25d",
+        "symbol": "MIGGLES",
+        "amount": "540140.357829674325767427",
+        "usd": 8841.74
       },
       {
         "token": "0x1fba65de0a9cbd2d1df82d141897042d36bb6c86",
         "symbol": "WIF",
         "amount": "0.000000000000053197",
-        "usd": 1.3565235e-13
-      },
-      {
-        "token": "0xb4fde59a779991bfb6a52253b51947828b982be3",
-        "symbol": "PEPE",
-        "amount": "0.000000000000000028",
-        "usd": 2.7888e-22
+        "usd": 0
       }
     ]
   },
@@ -116,8 +134,8 @@
     "eip155:8453:0xb2067d10785108b6a0a41a36907cdfa610f3c90fd94d135b7644d6c0fa50ab9c"
   ],
   "notes": [
-    "The adapter is immutable: its EIP-1967 implementation slot is empty at block 21512062, it is never reached by DELEGATECALL in the anchor trace, and its 2478-byte runtime hashes to 0x0d35e1351328d99d18279e0998de7f6bc043ad3f7eb09188ac8b75e9c1848ed9 identically at the deployment block 21229104 and at the pre-exploit block 21512062. The oracle's FeedSet that pointed cSUI at this adapter, transaction 0x8976b5cbd4a4b1d368de904fc554e6409ea372c65f7f971599e758bfec8a4b0a at block 21237697 (1729264741), is configuration context and is not used as the age basis.",
-    "Every component is the exact pre-exploit underlying balance of one cToken market of the fork, taken from eth_call at block 21512062 and confirmed zero at block 21512063; all fourteen markets were emptied inside the anchor transaction. The 15 WETH the attacker minted into cWETH from its 800 WETH Morpho flash loan is an attacker-supplied campaign input and is excluded, so the WETH component is the 247.435971398571237348 WETH the market held before the mint rather than the 262.435971398571237348 WETH borrowed. The 50 uSUI deposited as the inflated collateral is likewise excluded, so the uSUI component is 13982.866550395379924780 minus 50. uSUI is valued at realised proceeds because the attacker's own swaps moved its price: the two Uniswap V3 swaps in the anchor transaction net exactly 13932.866550395379924780 uSUI into the pool and 8.618646200019168827 WETH out of it (357.947060332568731027 out minus 349.328414132549562200 in), which at 2533.49 USD/WETH is 21835.25 USD, or 1.5672 USD per uSUI against a 1.95 pre-manipulation mark. Every other component uses a DefiLlama price at the anchor timestamp, or par for USD+ and USDT. The marks are corroborated by the attacker's own disposals: the nine Universal Router sales in source-7 sent out precisely the drained quantities of USD+, Mog, DEGEN, cbBTC, wstETH, uSOL, MIGGLES, USDT and BRETT and returned 134.113530821806791107 ETH, which with the 256.054617598590495000 ETH unwrapped from the WETH proceeds totals 390.168148420397286107 ETH or 988487.10 USD - 0.10 percent below the 989451.69 USD marked here. USDz, WIF and PEPE were dust markets holding 6.9e-11, 5.3e-14 and 2.8e-17 tokens and contribute nothing. No recovery was identified. The seed row's 1,000,000 USD figure is a round report; this reconstruction supersedes it.",
-    "The adapter, the oracle and the cToken markets are unverified on Basescan, so the root cause is established from the runtime bytecode, its selector set and the reproduced arithmetic of the anchor trace rather than from source."
+    "The cSUI listing (21237692), its feed pointing at the slot0 adapter (0x8976b5cb, 21237697) and its 95% collateral factor (0xc2402f29, 21237701) are config the exploit needed (rule 10); the collateral factor, latest, sets the age. The comptroller runs the unguarded __setWhitelist__ both attack contracts called.",
+    "Anchor components are each market's pre-exploit balance: the 15 WETH and 50 uSUI the attacker supplied and borrowed back are round trips, and uSUI is valued at the attacker's own swap proceeds. USD+ is at par. Remaining DefiLlama marks agree within 0.1% with the attacker's disposals.",
+    "Campaign: six later txs (senders 0xcd5e7b69, 0x9dd3850f, 0x012fc637) whitelisted themselves and drained refilled markets, four using cMIGGLES priced by sibling adapter 0x9e331ca8 (same code). Adapter, oracle and markets are unverified; the defects come from bytecode and traces."
   ]
 }
