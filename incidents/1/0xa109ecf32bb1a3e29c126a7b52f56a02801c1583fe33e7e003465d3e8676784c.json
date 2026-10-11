@@ -2,13 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BT.Finance",
   "name": "BT.Finance Curve aave-pool strategies unbounded slippage",
-  "summary": "BT.Finance's StrategyUSDTCurve and StrategyUSDCCurve value their Curve aave-pool LP at get_virtual_price() but enter and exit the pool with add_liquidity(..., 0, true) and remove_liquidity_one_coin(..., 0, true), with no slippage bound, and the strategy deposit() and vault earn() that push vault funds into the pool are callable by anyone. With flash-loaned DAI the attacker unbalanced the pool, pushed its own and the vault's idle USDT/USDC into it at the distorted rate, restored the pool and redeemed its vault shares through freshly created helper contracts, so the slippage fell on existing depositors. Five transactions cut the USDT vault's balance() from 1,415,603.715775 to 525,985.069294 and the USDC vault's from 2,625,707.869159 to 882,227.990952 while share supplies stayed unchanged.",
+  "summary": "BT.Finance's USDC and USDT Curve strategies entered and left the Curve aave pool with no slippage bound, and anyone could trigger vault deposit and earn. With flash-loaned funds the attacker unbalanced the pool, deposited so vault funds entered at the distorted rate, restored the pool and redeemed its shares, leaving the slippage on depositors.",
   "targets": [
     {
       "address": "0x7865ee2a9fc0e94fbcae1dff3f75604300802945",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x3bc07727a4450d523f139fca5aeebe95729841d809e69ace104673103eba7bcd"
+        "kind": "config",
+        "tx": "0x4e4e3b0dd8619ecd59f05c41f531dd37fbdeb7f2e091bb3f6b9f86afb3352979",
+        "address": "0x03d2079c54967f463fd6e89e76012f74ebc62615",
+        "call": "0xa622ee7c000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7"
       }
     },
     {
@@ -19,35 +21,35 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x7b88a6983f224d3d42fab1f2d28831ea0ad119b32133d1ea29eab99a5a404a87",
+    "eip155:1:0x0a51749d5394d60a67e7c31c345b675781226139e38ed936b41e00e5a9777362",
+    "eip155:1:0x82f95242963ac274d63e78234cb71c156f3135c32037e7e5b4424a6043da2a9a",
+    "eip155:1:0xb4666cc01478d137a94a59891404b1ca818066cedcef64a7b5aa1927f42c2c7e"
+  ],
   "loss": {
-    "usd": 2633098.524688,
+    "usd": 2655246.51,
     "assets": [
+      {
+        "token": "0xd662908ada2ea1916b3318327a97eb18ad588b5d",
+        "symbol": "a3CRV-gauge",
+        "amount": "2400734.487160054487510459",
+        "usd": 2438354.96
+      },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
-        "amount": "889618.646481",
-        "usd": 889618.646481
-      },
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "1743479.878207",
-        "usd": 1743479.878207
+        "amount": "216642.377958",
+        "usd": 216891.55
       }
     ]
   },
   "refs": [
-    "eip155:1:0x7b88a6983f224d3d42fab1f2d28831ea0ad119b32133d1ea29eab99a5a404a87",
-    "eip155:1:0x0a51749d5394d60a67e7c31c345b675781226139e38ed936b41e00e5a9777362",
-    "eip155:1:0x82f95242963ac274d63e78234cb71c156f3135c32037e7e5b4424a6043da2a9a",
-    "eip155:1:0xb4666cc01478d137a94a59891404b1ca818066cedcef64a7b5aa1927f42c2c7e",
     "https://etherscan.io/address/0x7865ee2a9fc0e94fbcae1dff3f75604300802945#code",
     "https://etherscan.io/address/0x8934c0d78c4aab5563acaf99e5a4e64fdba8a9fe#code"
   ],
   "notes": [
-    "The BT team Safe 0x5dc224fa0aef9bada1201e05bf978671f9c0be6b executed setStrategy(USDT, 0x7865ee2a...) on Controller 0x03d2079c54967f463fd6e89e76012f74ebc62615, writing strategies[USDT] (mapping slot 4) from zero. Only from this write did the USDT vault's earn and withdraw route through this strategy; the pointer is unchanged through block 11817856.",
-    "The same Safe's setStrategy(USDC, 0x8934c0d7...) replaced StrategyUSDCPickle 0x15ba709f87da04b6140892b3baec8f710cdf67d8 with this Curve strategy in Controller strategies[USDC]; unchanged through block 11817856.",
-    "Depositor loss measured by each vault's own balance() (idle token plus strategy want plus gauge-staked a3CRV at get_virtual_price) between block 11817851 and block 11817869 with totalSupply unchanged: bUSDT vault 0x3ec4a6cfe803ee84009ce6e1ecf419c9cb1e8af0 1,415,603.715775 -> 525,985.069294 USDT (getPricePerFullShare 1.004921 -> 0.373391), USDC vault 0x8d702f8c5304c9d233a8a23fd3a22155e15bb357 2,625,707.869159 -> 882,227.990952 USDC (1.033299 -> 0.347185). The strategies' a3CRV-gauge balances fall by 667,796.22 (USDT) and 1,732,938.27 (USDC) over the five legs. The attacker's net proceeds are 1,381,896.996183609 DAI (0x66c7a0c6 sweep to the EOA); the remainder of the depositor loss stayed in the Curve aave pool as imbalance value (get_virtual_price 1.015670 -> 1.025644). DefiLlama dates the event 2021-02-12 at 1.5M USD, which is the attacker's proceeds; the onchain campaign is 2021-02-08.",
-    "Sibling of target-1 (same defect, USDC constants, distinct runtime); its activation at block 11747921 precedes target-1's at 11747930, so target-1 carries the knot."
+    "The controller's setStrategy writes route vault funds into each strategy (upgrade resets). For the USDT leg the controller's vaults(USDT) was set to the bUSDT vault nine blocks after its setStrategy; controller.withdraw and strategy.withdraw both need it, so that write is the USDT target's latest reset.",
+    "Victims are the two vaults, the controller and both strategies. Their net gauge-staked a3CRV outflow per transaction is valued at the pool's pre-exploit get_virtual_price (1.01567), since DefiLlama has no price; part of that value stayed in the pool as imbalance fees rather than reaching the attacker."
   ]
 }

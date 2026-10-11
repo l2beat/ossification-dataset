@@ -1049,9 +1049,9 @@
     "tx": "0xd6e5d399b4a9df00bc890aa1462a8de01e8e28027d8a5d5607516ec54ce251a6",
     "protocol": "BUBU2",
     "name": "BUBU2 accumulated burn rounds drain the BUBU2/WBNB pair after the owner cut the trigger interval to 120 seconds",
-    "summary": "BUBU2._triggerDailyBurnAndMint, run on any non-exempt transfer while burnAndMintSwitch is on, moves pairBalance * 0.5% * rounds out of the BUBU2/WBNB pair and syncs, where rounds = elapsed time / TRIGGER_INTERVAL with no cap. The owner set TRIGGER_INTERVAL to 120 seconds and then enabled the switch; after about 6.7 hours without a trigger, an MEV searcher flash-borrowed 18.4 WBNB, bought 18.7M BUBU2, triggered 199 accumulated rounds with a 1000-wei self-transfer that removed 1.29B BUBU2 (99.5%) from the pair, and sold back for 50.58 WBNB.",
-    "lossUsd": 19830.66,
-    "codeAgeSeconds": 26831,
+    "summary": "BUBU2's transfer hook burned 0.5% of the pair's BUBU2 per elapsed TRIGGER_INTERVAL, uncapped, then synced the pair. After the owner cut the interval to 120 s, 6.7 hours without a trigger accrued 199 rounds; the attacker flash-borrowed WBNB, bought BUBU2, fired the burn with a self-transfer that removed 99.5% of the pair's BUBU2, and sold back.",
+    "lossUsd": 26188.62,
+    "codeAgeSeconds": 26855,
     "exploit": {
       "block": 83955808,
       "index": 1,
@@ -1063,12 +1063,12 @@
     },
     "reset": {
       "kind": "config",
-      "tx": "0x191c2c0710827267f09f5fe6fb24faec9f7fad3f4ce7d5c10aec9c998b4c1ee4",
-      "block": 83896199,
-      "index": 67,
-      "timestamp": 1772299322
+      "tx": "0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c",
+      "block": 83896145,
+      "index": 62,
+      "timestamp": 1772299298
     },
-    "claimsSha256": "3d298e60d31745e5d212c4eaed8f63c61df8f1feac2bafe93b93e8a7d682b92e"
+    "claimsSha256": "caf652a75849bde81897fc934c6fa8999db2e1bf08361bcea8d5e12faa63d24c"
   },
   {
     "id": "eip155:1:0xb5cfa3f86ce9506e2364475dc43c44de444b079d4752edbffcdad7d1654b1f67",
@@ -1537,8 +1537,8 @@
     "tx": "0x6759db55a4edec4f6bedb5691fc42cf024be3a1a534ddcc7edd471ef205d4047",
     "protocol": "BRA Token",
     "name": "BRA pair self-transfer tax inflation",
-    "summary": "BRA's _transfer() applied both buy and sell branches when the BRA/USDT pair transferred BRA to itself. With both 3% tax destinations configured to that pair, the function subtracted one tax but credited two, increasing the pair's BRA balance by 3% per skim(pair) call. Repeated skims created an unreserved BRA balance that the attacker swapped for the pair's USDT.",
-    "lossUsd": 228296.595370773,
+    "summary": "BRA's _transfer applied both the buy and the sell tax branch when the BRA/USDT pair sent BRA to itself, deducting one tax but crediting two. With both tax destinations set to the pair, every skim(pair) grew the pair's BRA balance by 3%. Attackers looped skims, skimmed the unreserved BRA out and swapped it for the pair's USDT.",
+    "lossUsd": 274859.69,
     "codeAgeSeconds": 59456,
     "exploit": {
       "block": 24655772,
@@ -1556,7 +1556,7 @@
       "index": 124,
       "timestamp": 1673266184
     },
-    "claimsSha256": "f13820bab0ae0c04b0dbd474002a27669b75bbb933e93f78e9adeefe39a12cb4"
+    "claimsSha256": "ad8c9053e807cfe19eba9670ff18a25d5e904bfe6d39969b18557b1f212f9af0"
   },
   {
     "id": "eip155:56:0x49ca5e188c538b4f2efb45552f13309cc0dd1f3592eee54decfc9da54620c2ec",
@@ -1864,8 +1864,8 @@
     "tx": "0xe31c681eee764fb94b1b6bda3bbb0e4f25acb129c19040b9f58ad30541980979",
     "protocol": "BYToken",
     "name": "BYToken permissionless auto-burn of the pair reserve",
-    "summary": "BYToken._autoBurn, callable by anyone through triggerAutoBurn(), burns DAILY_BURN_RATE of totalSupply (1% per elapsed interval) from the pool address whenever the token contract holds too little BY, then calls pair.sync(). The amount is independent of the pair's own reserve, so a caller who first shrinks the pair's BY reserve can have the burn remove all but 1 wei of it. With a flash-borrowed 422,497 WBNB the attacker bought 6.31M BY to the router (the from == pool && to == router liquidity-removal branch skips the trading gate), donated WBNB and synced to reach the 40,000 WBNB auto-enable threshold, bought exactly 62,868 BY so 67,800 BY + 1 wei remained, called triggerAutoBurn() the second the first interval elapsed, then sold dust BY for the pair's entire 146.6 WBNB.",
-    "lossUsd": 88566.56515931265,
+    "summary": "BYToken's public triggerAutoBurn() burned 1% of total supply per elapsed interval from the BY/WBNB pair, regardless of the pair's own reserve, then synced it. With flash-borrowed WBNB the attacker opened trading, bought the pair's BY down to just above the burn amount, triggered the burn so 1 wei of BY remained, and sold dust BY for all the pair's WBNB.",
+    "lossUsd": 88566.57,
     "codeAgeSeconds": 86322,
     "exploit": {
       "block": 102329719,
@@ -3993,8 +3993,8 @@
     "tx": "0x554c9e4067e3bc0201ba06fc2cfeeacd178d7dd9c69f9b211bc661bb11296fde",
     "protocol": "BTC24H",
     "name": "BTC24H Lock claim() without beneficiary check",
-    "summary": "The BTC24H token Lock 0x968e1c98 holds the owner's 110,000 BTC24H until releaseDate 1734220800, but claim() is guarded only by onlyOnOrAfter(releaseDate) and the claimed flag: it has no onlyOwner or beneficiary check and pays claims.amount to msg.sender. About 41.5 hours after release, before the owner claimed, the attacker contract called claim(), received all 110,000 BTC24H and sold them through the Uniswap universal router for 4,953.29 USDT and 0.76433089 WBTC.",
-    "lossUsd": 86385.86488448999,
+    "summary": "The BTC24H Lock held the owner's 110,000 BTC24H until a release date, but claim() checked only the date and a claimed flag and paid the whole amount to msg.sender. After the release date, before the owner claimed, the attacker called claim() and sold the tokens through Uniswap V3 pools in the same transaction.",
+    "lossUsd": 86390.02,
     "codeAgeSeconds": 435730,
     "exploit": {
       "block": 65560669,
@@ -4237,8 +4237,8 @@
     "tx": "0xc11e4020c0830bcf84bfa197696d7bfad9ff503166337cb92ea3fade04007662",
     "protocol": "BH",
     "name": "BH farm redeems LP from the pair's spot token balances",
-    "summary": "The BH farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a holds the protocol's whole BUSDT/BH PancakeSwap LP position and lets anyone redeem it by burning BH. Its withdraw function 0x4e290832(uint256 bhAmount) burns the caller's BH and then computes the LP it removes as bhAmount * sqrt(BUSDT.balanceOf(pair) * BH.balanceOf(pair)) / BH.balanceOf(pair), i.e. it derives the redemption share from the pair's live token balances instead of from its own share ledger. Both balances are freely movable by the caller inside the same transaction. The attacker pushed 22,000,000 flash-loaned BUSDT through the pair, cutting BH.balanceOf(pair) from 251,272,454 to 42,011,431 and raising BUSDT.balanceOf(pair) from 4,405,698 to 26,405,698, and then called the withdraw function ten times, each time redeeming ~55% of the whole LP position for BH that was worth a fraction of it, until the pair held 47,126 BUSDT.",
-    "lossUsd": 1346340.8223597505,
+    "summary": "The unverified BH farm held the protocol's BUSDT/BH LP and let anyone redeem it by burning BH, sizing the LP removed from the pair's live BUSDT and BH balances. The attacker flash-borrowed BUSDT, pushed it through the pair to cut its BH balance and raise its BUSDT balance, then redeemed ten times, each pulling about half the remaining LP.",
+    "lossUsd": 1345511.48,
     "codeAgeSeconds": 516325,
     "exploit": {
       "block": 32512074,
@@ -4457,8 +4457,8 @@
     "tx": "0xa13c8c7a0c97093dba3096c88044273c29cebeee109e23622cd412dcca8f50f4",
     "protocol": "BXH",
     "name": "BXH TokenStakingPoolDelegate pays USDT bonus at the live BXH/USDT spot quote",
-    "summary": "TokenStakingPoolDelegate converts a staker's pending BXH reward into the pool's USDT bonus token with getITokenBonusAmount, which applies the constant-product formula to the BXH/USDT pair's live getReserves and pays the result from the contract's USDT balance. The attacker flash-borrowed 3.18M USDT, bought BXH to inflate the pair's USDT per BXH, then harvested about 15 BXH of pending reward from a prior vUSDT stake as 40,085.62 USDT, draining the bonus balance.",
-    "lossUsd": 39885.62357708502,
+    "summary": "BXH's TokenStakingPoolDelegate paid pending BXH rewards in USDT, converted at the BXH/USDT pair's live reserves and paid from its own USDT balance. The attacker flash-borrowed USDT, bought BXH to inflate its USDT price, then harvested the small pending reward of an earlier vUSDT stake as about 40k USDT, draining the bonus balance.",
+    "lossUsd": 39875.05,
     "codeAgeSeconds": 556298,
     "exploit": {
       "block": 21727290,
@@ -5358,9 +5358,9 @@
     "tx": "0xa109ecf32bb1a3e29c126a7b52f56a02801c1583fe33e7e003465d3e8676784c",
     "protocol": "BT.Finance",
     "name": "BT.Finance Curve aave-pool strategies unbounded slippage",
-    "summary": "BT.Finance's StrategyUSDTCurve and StrategyUSDCCurve value their Curve aave-pool LP at get_virtual_price() but enter and exit the pool with add_liquidity(..., 0, true) and remove_liquidity_one_coin(..., 0, true), with no slippage bound, and the strategy deposit() and vault earn() that push vault funds into the pool are callable by anyone. With flash-loaned DAI the attacker unbalanced the pool, pushed its own and the vault's idle USDT/USDC into it at the distorted rate, restored the pool and redeemed its vault shares through freshly created helper contracts, so the slippage fell on existing depositors. Five transactions cut the USDT vault's balance() from 1,415,603.715775 to 525,985.069294 and the USDC vault's from 2,625,707.869159 to 882,227.990952 while share supplies stayed unchanged.",
-    "lossUsd": 2633098.524688,
-    "codeAgeSeconds": 930153,
+    "summary": "BT.Finance's USDC and USDT Curve strategies entered and left the Curve aave pool with no slippage bound, and anyone could trigger vault deposit and earn. With flash-loaned funds the attacker unbalanced the pool, deposited so vault funds entered at the distorted rate, restored the pool and redeemed its shares, leaving the slippage on depositors.",
+    "lossUsd": 2655246.51,
+    "codeAgeSeconds": 930064,
     "exploit": {
       "block": 11817857,
       "index": 10,
@@ -5371,13 +5371,13 @@
       "codeHash": "0x786f3323889e8d4579ff8d4da51f95545f158876fbb326dbbb5decac94157d4c"
     },
     "reset": {
-      "kind": "upgrade",
-      "tx": "0x3bc07727a4450d523f139fca5aeebe95729841d809e69ace104673103eba7bcd",
-      "block": 11747930,
-      "index": 173,
-      "timestamp": 1611884970
+      "kind": "config",
+      "tx": "0x4e4e3b0dd8619ecd59f05c41f531dd37fbdeb7f2e091bb3f6b9f86afb3352979",
+      "block": 11747939,
+      "index": 99,
+      "timestamp": 1611885059
     },
-    "claimsSha256": "d5df9c94f03aa6b0767646bba44e27f642c17abc7d23189cfa79aafc95b1ba61"
+    "claimsSha256": "58c876aded238acc653fb9ceec5a21bf6e640a7d79f3e4b13d376d5d0ac81b29"
   },
   {
     "id": "eip155:8453:0x8fcdfcded45100437ff94801090355f2f689941dca75de9a702e01670f361c04",
@@ -8400,8 +8400,8 @@
     "tx": "0x33fed54de490797b99b2fc7a159e43af57e9e6bdefc2c2d052dc814cfe0096b9",
     "protocol": "BNO",
     "name": "BNO pool stale NFT reward accounting",
-    "summary": "The pool's emergency withdrawal cleared ERC-20 stake and reward-debt accounting but left the NFT reward addition active, so a later NFT withdrawal could pay rewards that were no longer backed by stake.",
-    "lossUsd": 504557.8558008534,
+    "summary": "The BNO staking pool's emergencyWithdraw returned the stake and zeroed reward debt but left the user's NFT reward addition and the pool totals intact. The attacker looped stakeNft, pledge, emergencyWithdraw and unstakeNft with flash-swapped BNO, collecting unbacked rewards each round until the pool was empty, then sold the BNO.",
+    "lossUsd": 504557.86,
     "codeAgeSeconds": 4614185,
     "exploit": {
       "block": 30056630,
@@ -8419,7 +8419,7 @@
       "index": 114,
       "timestamp": 1685027552
     },
-    "claimsSha256": "f2a71965698bd086bb7333fb1e2c3efc8d505087ad2c6c815c61aac9551f3cb6"
+    "claimsSha256": "5c5e5a2d440b0081e4d4ed5b3bd3ed8d86cea86f1ad59e650d2d2d254f3f55b0"
   },
   {
     "id": "eip155:30:0xf5ea6266a56f4e0135b73f63050afca7146bc940ac73da8b5fade9d8031582e2",

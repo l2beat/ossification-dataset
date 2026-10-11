@@ -2,35 +2,34 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BUBU2",
   "name": "BUBU2 accumulated burn rounds drain the BUBU2/WBNB pair after the owner cut the trigger interval to 120 seconds",
-  "summary": "BUBU2._triggerDailyBurnAndMint, run on any non-exempt transfer while burnAndMintSwitch is on, moves pairBalance * 0.5% * rounds out of the BUBU2/WBNB pair and syncs, where rounds = elapsed time / TRIGGER_INTERVAL with no cap. The owner set TRIGGER_INTERVAL to 120 seconds and then enabled the switch; after about 6.7 hours without a trigger, an MEV searcher flash-borrowed 18.4 WBNB, bought 18.7M BUBU2, triggered 199 accumulated rounds with a 1000-wei self-transfer that removed 1.29B BUBU2 (99.5%) from the pair, and sold back for 50.58 WBNB.",
+  "summary": "BUBU2's transfer hook burned 0.5% of the pair's BUBU2 per elapsed TRIGGER_INTERVAL, uncapped, then synced the pair. After the owner cut the interval to 120 s, 6.7 hours without a trigger accrued 199 rounds; the attacker flash-borrowed WBNB, bought BUBU2, fired the burn with a self-transfer that removed 99.5% of the pair's BUBU2, and sold back.",
   "targets": [
     {
       "address": "0x3ff3f18b5c113fac5e81b43f80bf438b99edee52",
       "reset": {
         "kind": "config",
-        "tx": "0x191c2c0710827267f09f5fe6fb24faec9f7fad3f4ce7d5c10aec9c998b4c1ee4",
+        "tx": "0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c",
         "address": "0x3ff3f18b5c113fac5e81b43f80bf438b99edee52",
-        "call": "0xe8769525"
+        "call": "0x129376a7"
       }
     }
   ],
   "loss": {
-    "usd": 19830.66,
+    "usd": 26188.62,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "32.176361483602658753",
-        "usd": 19830.66
+        "amount": "42.492514217217574189",
+        "usd": 26188.62
       }
     ]
   },
   "refs": [
-    "eip155:56:0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c",
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-2-mar-8-2026"
   ],
   "notes": [
-    "Owner setBurnAndMintSwitch(true) enabled the pair-burn engine for the first time, 54 blocks after setTriggerInterval(120) (0x1bc0a65cb33a839d44425016b11ed51e325997afe61c5bb6cc4bbe93a330141c, TRIGGER_INTERVAL 21600 -> 120). Both values are necessary: with the switch off nothing burns, and at the default 21600 s interval the 26,831 s from this change to the exploit yield one 0.5% round instead of 199. The switch is the later of the two causal writes.",
-    "WBNB extracted from the BUBU2/WBNB pair 0x774547ea9d2a0cc79db3288f61e989f1b06bcd2f net of the attacker's own 18.4 WBNB buy input, equal to the WBNB the attacker EOA received after repaying the fee-free flash loan. The pair's total WBNB depletion in the transaction is 42.492514217217574189; the other 10.316152733614915436 WBNB paid for the token contract's own fee swap of 935,792.8 BUBU2 to its sellFeeBNBAddress 0x3758df1f78fe7a0c7f1f4d97b9e4f7678fd9e617 at the manipulated price and is not counted as stolen. The attacker's 0.1 BNB builder payment is not netted."
+    "setTriggerInterval(120) is the reset: at the default 6 h the elapsed time yields one 0.5% round, not 199. The owner's setBurnAndMintSwitch(true) 54 blocks later only switched the burn engine on, a gate rather than a HIGH field (rule 10); the lastTriggerTime it wrote is a live value later triggers overwrite.",
+    "Loss is the pair's whole WBNB depletion: besides the attacker's take it includes 10.32 WBNB the token's own fee swap drew from the pair at the manipulated price, which left the LPs even though it went to the project's fee wallet."
   ]
 }

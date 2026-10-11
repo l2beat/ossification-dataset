@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BYToken",
   "name": "BYToken permissionless auto-burn of the pair reserve",
-  "summary": "BYToken._autoBurn, callable by anyone through triggerAutoBurn(), burns DAILY_BURN_RATE of totalSupply (1% per elapsed interval) from the pool address whenever the token contract holds too little BY, then calls pair.sync(). The amount is independent of the pair's own reserve, so a caller who first shrinks the pair's BY reserve can have the burn remove all but 1 wei of it. With a flash-borrowed 422,497 WBNB the attacker bought 6.31M BY to the router (the from == pool && to == router liquidity-removal branch skips the trading gate), donated WBNB and synced to reach the 40,000 WBNB auto-enable threshold, bought exactly 62,868 BY so 67,800 BY + 1 wei remained, called triggerAutoBurn() the second the first interval elapsed, then sold dust BY for the pair's entire 146.6 WBNB.",
+  "summary": "BYToken's public triggerAutoBurn() burned 1% of total supply per elapsed interval from the BY/WBNB pair, regardless of the pair's own reserve, then synced it. With flash-borrowed WBNB the attacker opened trading, bought the pair's BY down to just above the burn amount, triggered the burn so 1 wei of BY remained, and sold dust BY for all the pair's WBNB.",
   "targets": [
     {
       "address": "0x6f50cffecd4e00ecf7e442774c08c089450b62ca",
@@ -15,13 +15,13 @@
     }
   ],
   "loss": {
-    "usd": 88566.56515931265,
+    "usd": 88566.57,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
         "amount": "146.602850775618057369",
-        "usd": 88566.56515931265
+        "usd": 88566.57
       }
     ]
   },
@@ -30,7 +30,6 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/BYToken_exp.sol"
   ],
   "notes": [
-    "setPool(0x1f358e18e0db68ff33c2319c8dad328edf9b7059) by the admin replaced the constructor placeholder pool (the deployer EOA) with the BY/WBNB pair. The pool pointer is what _autoBurn burns from and syncs, and what the from == pool && to == router gate bypass keys on, so the exploitable burn-the-pair-reserve condition came into existence with this write; pool() changes from the deployer to the pair across block 102138152.",
-    "Exact WBNB depletion of BY/WBNB PancakeSwap pair 0x1f358e18e0db68ff33c2319c8dad328edf9b7059, whose liquidity the deployer seeded before trading opened: WBNB balanceOf(pair) 146602850775618057371 at block 102329718 and 2 at block 102329719, equal to the attacker contract's net WBNB gain (withdrawn in receipt log 60). The 422,497 WBNB flash loan and every WBNB swap and donation leg are attacker inputs returned within the transaction and are netted out. The pair's BY loss (6,441,732.97 to 62,868 BY, 67,800 BY burned) is not added: it is the same liquidity already realised as WBNB. The 7 BNB builder payment is not deducted. Later pair activity is dust trading; no second AutoBurn exists."
+    "setPool replaced the constructor's placeholder pool (the deployer EOA) with the BY/WBNB pair, the address _autoBurn burns from and syncs; the vulnerable burn of the pair's reserve existed only from this write. The trading auto-enable the attacker reached is a gate, not a reset."
   ]
 }

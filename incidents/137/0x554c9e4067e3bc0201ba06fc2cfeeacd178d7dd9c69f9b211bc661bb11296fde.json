@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BTC24H",
   "name": "BTC24H Lock claim() without beneficiary check",
-  "summary": "The BTC24H token Lock 0x968e1c98 holds the owner's 110,000 BTC24H until releaseDate 1734220800, but claim() is guarded only by onlyOnOrAfter(releaseDate) and the claimed flag: it has no onlyOwner or beneficiary check and pays claims.amount to msg.sender. About 41.5 hours after release, before the owner claimed, the attacker contract called claim(), received all 110,000 BTC24H and sold them through the Uniswap universal router for 4,953.29 USDT and 0.76433089 WBTC.",
+  "summary": "The BTC24H Lock held the owner's 110,000 BTC24H until a release date, but claim() checked only the date and a claimed flag and paid the whole amount to msg.sender. After the release date, before the owner claimed, the attacker called claim() and sold the tokens through Uniswap V3 pools in the same transaction.",
   "targets": [
     {
       "address": "0x968e1c984a431f3d0299563f15d48c395f70f719",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 86385.86488448999,
+    "usd": 86390.02,
     "assets": [
       {
         "token": "0xea4b5c48a664501691b2ecb407938ee92d389a6f",
         "symbol": "BTC24H",
         "amount": "110000",
-        "usd": 86385.86488448999
+        "usd": 86390.02
       }
     ]
   },
@@ -27,7 +27,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-12/BTC24H_exp.sol"
   ],
   "notes": [
-    "Direct immutable Lock runtime contains the unrestricted claim(); the owner's later deposit() only funded the lock with hard-coded amount and release date, which sets exposure and timing, not the missing authorization.",
-    "Exact victim depletion: the Lock's entire 110000 BTC24H balance (its only inflow was the owner's deposit) moved to the attack contract in receipt log 0. The attacker sold all of it in the same transaction into two thin Uniswap V3 pools, so BTC24H has no reliable spot quote (none on DefiLlama) and is valued at realised proceeds: 10000 BTC24H for 4953.287533 USDT (log 2), valued at par, and 100000 BTC24H for 0.76433089 WBTC (log 6), valued at the DefiLlama WBTC quote 106541 (source-6). Both proceeds went straight to the attacker EOA. No attacker input exists."
+    "The owner's deposit() after deployment only funded the lock with a hard-coded amount and date; it sets exposure, not the missing authorization.",
+    "BTC24H has no market price; it is valued at the USDT and WBTC the attacker realised by selling all of it into two thin Uniswap V3 pools in the same transaction (rule 15)."
   ]
 }

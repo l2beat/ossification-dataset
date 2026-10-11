@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BH",
   "name": "BH farm redeems LP from the pair's spot token balances",
-  "summary": "The BH farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a holds the protocol's whole BUSDT/BH PancakeSwap LP position and lets anyone redeem it by burning BH. Its withdraw function 0x4e290832(uint256 bhAmount) burns the caller's BH and then computes the LP it removes as bhAmount * sqrt(BUSDT.balanceOf(pair) * BH.balanceOf(pair)) / BH.balanceOf(pair), i.e. it derives the redemption share from the pair's live token balances instead of from its own share ledger. Both balances are freely movable by the caller inside the same transaction. The attacker pushed 22,000,000 flash-loaned BUSDT through the pair, cutting BH.balanceOf(pair) from 251,272,454 to 42,011,431 and raising BUSDT.balanceOf(pair) from 4,405,698 to 26,405,698, and then called the withdraw function ten times, each time redeeming ~55% of the whole LP position for BH that was worth a fraction of it, until the pair held 47,126 BUSDT.",
+  "summary": "The unverified BH farm held the protocol's BUSDT/BH LP and let anyone redeem it by burning BH, sizing the LP removed from the pair's live BUSDT and BH balances. The attacker flash-borrowed BUSDT, pushed it through the pair to cut its BH balance and raise its BUSDT balance, then redeemed ten times, each pulling about half the remaining LP.",
   "targets": [
     {
       "address": "0x8ca7835aa30b025b38a59309dd1479d2f452623a",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 1346340.8223597505,
+    "usd": 1345511.48,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "BUSDT",
-        "amount": "1346340.822359750672220700",
-        "usd": 1346340.8223597505
+        "amount": "1346340.8223597506722207",
+        "usd": 1345511.48
       }
     ]
   },
@@ -27,8 +27,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-10/BH_exp.sol"
   ],
   "notes": [
-    "Non-upgradeable contract created directly by an EOA. Its runtime code hash is 0xfe857864a02bd86364010f1c788ca2fe8bce86c8140f0ca5478d99fcb2b33065 both at the creation block 32340670 and at block 32512073, the address has no code at block 32340669, and its EIP-1967 implementation and beacon slots and its EIP-1822 proxiable slot all read zero at block 32512073, so no code change occurred between deployment and the exploit.",
-    "The BUSDT/BH PancakeSwap pair 0x2371e4ad771020ce3d8252f1db3e5559fba8eeb5 holds 1393467.010169397021655925 BUSDT at block 32512073 and 47126.187809646349435225 BUSDT at block 32512074; the 1346340.822359750672220700 BUSDT difference is the loss, and the farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a held 13628344.132032127262454971 of the pair's 13630848.563049281529836047 LP tokens (99.98%) before the exploit. The outflow reconciles exactly: 1275981.822359750672220700 BUSDT to the attacker EOA 0xfdbfceea1de360364084a6f37c9cdb7aaea63464, 60000 BUSDT of PancakeSwap V2 flash-swap fee to 0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae, 9000 BUSDT of PancakeSwap V3 flash fee to 0x4f31fa980a675570939b737ebdde0471a4be40eb, and 1359 BUSDT to the project's own fee contract 0xc9fc938bcf691affa79c9fec3d1719f6297fa20e. The widely reported ~$1.27M is the attacker EOA's net take alone. All of it is in the single exploit transaction; the DODO flash loans that funded it were repaid interest-free in the same transaction. BUSDT (BSC-USD) is valued at par; DefiLlama has no bsc:0x55d398326f99059ff775485246999027b3197955 observation at this timestamp and prices Tether at 0.999384 at the nearest observation 1697033700. The residual BH left in the pair is not counted. Nothing was recovered.",
-    "The farm 0x8ca7835aa30b025b38a59309dd1479d2f452623a is not source-verified on BscScan; the defect was established from the execution trace and reproduced arithmetically against every withdrawal in the exploit transaction."
+    "The farm held 99.98% of the pair's LP, so the pair's net BUSDT outflow is the loss; it includes the flash-swap fees and the project fee paid out of the drained BUSDT. The BH left in the pair is not counted.",
+    "Later registrations and redemptions on the farm only changed user ledgers; post-exploit redemptions are holders selling their own BH, not repeats."
   ]
 }

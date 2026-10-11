@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BNO",
   "name": "BNO pool stale NFT reward accounting",
-  "summary": "The pool's emergency withdrawal cleared ERC-20 stake and reward-debt accounting but left the NFT reward addition active, so a later NFT withdrawal could pay rewards that were no longer backed by stake.",
+  "summary": "The BNO staking pool's emergencyWithdraw returned the stake and zeroed reward debt but left the user's NFT reward addition and the pool totals intact. The attacker looped stakeNft, pledge, emergencyWithdraw and unstakeNft with flash-swapped BNO, collecting unbacked rewards each round until the pool was empty, then sold the BNO.",
   "targets": [
     {
       "address": "0xdca503449899d5649d32175a255a8835a03e4006",
@@ -12,25 +12,25 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x16d75e421ebf7a21737b6c5d7cea1c5274d315b95a1d5db5841fd7194876cc31"
+  ],
   "loss": {
-    "usd": 504557.8558008534,
+    "usd": 504557.86,
     "assets": [
       {
         "token": "0xa4dbc813f7e1bf5827859e278594b1e0ec1f710f",
         "symbol": "BNO",
-        "amount": "1563370.168598147731548146",
-        "usd": 504557.8558008534
+        "amount": "1563195.310858476829788146",
+        "usd": 504557.86
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/BNO_exp.sol",
-    "https://medium.com/@sharkteam/sharkteam-analysis-of-bno-attack-incident-principles-31b3b7249201",
-    "eip155:56:0x16d75e421ebf7a21737b6c5d7cea1c5274d315b95a1d5db5841fd7194876cc31"
+    "https://medium.com/@sharkteam/sharkteam-analysis-of-bno-attack-incident-principles-31b3b7249201"
   ],
   "notes": [
-    "Direct contract deployment. Its 13,327-byte runtime hashes to 0x541c5518ef3d2925449174422b64c0b7f93b043f76a507606b6dc845292666be both at deployment block 28522657 and immediately before the campaign; the EIP-1967 implementation slot is zero, and the runtime contains neither DELEGATECALL nor SELFDESTRUCT.",
-    "Exact pre-recovery victim depletion is the BNO balance change of pool 0xdca503449899d5649d32175a255a8835a03e4006 across the two successful campaign transactions: 1,563,370.168598147731548146 BNO immediately before the anchor and zero after the second transaction. The second receipt records 504,557.855800853399893084 USDT paid to campaign funds-holder 0xdc109426972ae14d5b3d7e91b47d42ff1fd3c8cc after the depleted BNO was sold; that exact stablecoin realization at par is used instead of the seed row's rounded USD 505,000 headline or a thin-market spot mark. The attacker's flash liquidity and amounts returned to the pool are not counted separately. No recovery is netted.",
-    "The USD value conservatively uses exact campaign-realized USDT proceeds at par rather than an external pre-exploit BNO mark."
+    "BNO has no market price; the pool's BNO depletion over both transactions is valued at the USDT the attacker realised by dumping it into the BNO/USDT pair in the second transaction (rule 15)."
   ]
 }
