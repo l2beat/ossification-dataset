@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ARA",
   "name": "ARA swap arbitrary approved-source authorization failure",
-  "summary": "The public ARA swap entry point accepted an arbitrary token source address, checked that address's standing allowance, and transferFrom'd its balance without requiring the caller to be that source or otherwise authorized by it. The attacker forced an allowance-granting EOA through two adverse ARA/USDT trades around its own Pancake V3 price movement; across that EOA and the external LP inventory, ARA merely moved internally while USDT left the victim set.",
+  "summary": "The ARA swap helper let any caller name the source account whose allowance it spent with transferFrom. With flash-loaned USDT the attacker forced an approving EOA to sell ARA, pumped ARA on Pancake V3, forced the same EOA to buy ARA back at the inflated price, and dumped its ARA for USDT.",
   "targets": [
     {
       "address": "0x7ba5dd9bb357afa2231446198c75bac17cefcda9",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 124915.75835420915,
+    "usd": 131639.43,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "124915.758354209141283962",
-        "usd": 124915.75835420915
+        "amount": "131639.433274839927692066",
+        "usd": 131639.43
       }
     ]
   },
@@ -29,7 +29,11 @@
     "https://www.quillaudits.com/blog/hack-analysis/ara-protocol-flash-loan-hack"
   ],
   "notes": [
-    "The constructor fixed the Pancake V3 router and ARA/USDT pool. The direct runtime has no pool, token, allowance-source or authorization setter, and ownership cannot change the public arbitrary-source behavior.",
-    "The victim set is the code-empty allowance-granting EOA 0xb817ef68d764f150b8d73a2ad7ce9269674538e0 plus the external-liquidity inventory in the canonical Pancake V3 ARA/USDT fee-100 pool 0x92974438c330d5c6790b4260e358e84513109872; the swap contract itself is a zero-balance conduit. Archive balances at blocks 29,214,010 and 29,214,011 show the EOA moving from 8,876.933460457984207061 USDT and 163,497.870920445229714611 ARA to zero USDT and 12,179.863325262845197568 ARA, while the pool moves from 499,211.781917017878419913 USDT and 498,700.441845375704016457 ARA to 383,172.957023266721343012 USDT and 650,018.449440558088533500 ARA. Thus combined ARA is exactly 662,198.312765820933731068 before and after, while combined USDT falls from 508,088.715377475862626974 to 383,172.957023266721343012: exact scarce-asset depletion of 124,915.758354209141283962 USDT. Pancake V3 has no fungible LP shares; the NonfungiblePositionManager balances of the attacker EOA, helper, allowance-granting EOA and swap deployer are all zero at block minus one, so the pool-side inventory is not attacker- or deployer-owned. The Binance-Peg USDT contract reports symbol USDT and 18 decimals and is valued at the repository's stablecoin-par convention."
+    "The constructor fixed the Pancake V3 router and ARA/USDT pool; the runtime has no setter that changes the arbitrary-source behaviour.",
+    "Victim set: allowance-granting EOA 0xb817ef68 plus the Pancake V3 ARA/USDT pool, whose combined ARA is unchanged while USDT leaves; USDT at par. Two copycat flash-loan contracts forced the same EOA through the swap 16 minutes later, taking 6,498.34 and 225.33 USDT."
+  ],
+  "campaign": [
+    "eip155:56:0x09299c92154ebe39082b28cf4359e78c2c083eab6993bd2576162a541ab0ca96",
+    "eip155:56:0x0d74999ab5a0205c3587d5225f177f5204a208291d1348f06ce75dd58b667fdf"
   ]
 }

@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "ACPRoute (Agent Commerce Protocol)",
+  "name": "ACP PaymentManager releasePayment double release",
+  "summary": "PaymentManager.releasePayment had its escrow check commented out and recorded the claim only on an in-memory copy of the job, so each call paid the full budget again from pooled escrow. The attacker created a 97,000 USDC job with its own provider, completed it and called claimBudget to release it twice; copycats re-claimed other completed jobs.",
+  "targets": [
+    {
+      "address": "0xef4364fe4487353df46eb7c811d4fac78b856c7f",
+      "code": "0x56c3af6c5995147f293dc756216920fd24d50684",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x49fba989f3e365dd0e114f95dc89c8b0ac03c2b17e8021dc72ff4c452f05485b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 99594.05,
+    "assets": [
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "97000",
+        "usd": 96990.61
+      },
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "2603.7",
+        "usd": 2603.44
+      }
+    ]
+  },
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-2-mar-8-2026"
+  ],
+  "notes": [
+    "Anchored on the first unaffiliated exploit. EOA 0x7346dc42102b5cdba321d587564612d1f3878ad2 is the protocol's claim keeper (about 690k claimBudget calls on both ACP versions since July 2025, no proceeds of its own); its 1,869 re-releases from block 37590595 paid job providers, evaluators and the treasury, so they are affiliated (rule 5) and not in campaign or loss (about $2.9k).",
+    "PaymentManager is the only target: the fix (0x536823c8, block 42834676) restored its escrow check, while ACPRouter's claim path is unchanged across its upgrades, including those earlier on 2026-03-02, and holds no claim state. Its 2026-01 treasury and fee change only redirects fees.",
+    "Gross USDC that PaymentManager paid out in second releases (provider, evaluator and platform fees), at loss.mjs prices; the attacker's own 97,000 USDC budget funded the first release in the same transaction and nets out."
+  ],
+  "campaign": [
+    "eip155:8453:0xad31528ffdeae624c2578ad46f6af5c6beab4d56375662e0ef1f26fc6572ff53",
+    "eip155:8453:0x3aad5763859773d9b94ae3e23a36ce8b0d79bbcd6676e218113ba549ad0592b3",
+    "eip155:8453:0x4f02018d101232e49d746dae5f49d479e80bfb6495c838c264a8c57ffa3c3e06"
+  ]
+}

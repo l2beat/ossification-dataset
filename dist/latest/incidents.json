@@ -1348,8 +1348,8 @@
     "tx": "0xd87cdecd5320301bf9a985cc17f6944e7e7c1fbb471c80076ef2d031cc3023b2",
     "protocol": "ARA",
     "name": "ARA swap arbitrary approved-source authorization failure",
-    "summary": "The public ARA swap entry point accepted an arbitrary token source address, checked that address's standing allowance, and transferFrom'd its balance without requiring the caller to be that source or otherwise authorized by it. The attacker forced an allowance-granting EOA through two adverse ARA/USDT trades around its own Pancake V3 price movement; across that EOA and the external LP inventory, ARA merely moved internally while USDT left the victim set.",
-    "lossUsd": 124915.75835420915,
+    "summary": "The ARA swap helper let any caller name the source account whose allowance it spent with transferFrom. With flash-loaned USDT the attacker forced an approving EOA to sell ARA, pumped ARA on Pancake V3, forced the same EOA to buy ARA back at the inflated price, and dumped its ARA for USDT.",
+    "lossUsd": 131639.43,
     "codeAgeSeconds": 45428,
     "exploit": {
       "block": 29214011,
@@ -1367,7 +1367,7 @@
       "index": 142,
       "timestamp": 1687060800
     },
-    "claimsSha256": "760110d20190a499fffd7b8aa2f9912aa7b3018cc802de541ca6c42cc5f87742"
+    "claimsSha256": "1e610d5f7e3e5a8881bb161bdc863fa1990a2e6ecb62e8917be0dd131f69de9e"
   },
   {
     "id": "eip155:56:0xfbe65ad3eed6b28d59bf6043debf1166d3420d214020ef54f12d2e0583a66f13",
@@ -1891,8 +1891,8 @@
     "tx": "0x66960f7febf399fa8bd94904398f535c500f4f575dbf025de7b9ab450342645e",
     "protocol": "AIDC",
     "name": "AIDC pair-side accumulated burn",
-    "summary": "AIDC's transfer accounting could burn an accumulated sell-side amount from its own AIDC/WBNB pair, breaking reserve accounting and depleting the pair's WBNB reserve.",
-    "lossUsd": 121779.98773283923,
+    "summary": "AIDCToken adds 30% of every sell to accumulatedBurnAmount and, on the next ordinary transfer, burns that amount from the AIDC/WBNB pair and syncs it. The attacker bought AIDC through the whitelisted router, sold repeatedly via fresh helpers to pile up the pending burn, triggered burns that drained the pair's AIDC and sold into it for WBNB.",
+    "lossUsd": 122089.53,
     "codeAgeSeconds": 87888,
     "exploit": {
       "block": 106926104,
@@ -1910,7 +1910,7 @@
       "index": 43,
       "timestamp": 1782587465
     },
-    "claimsSha256": "28b043bbb826e686869ebeea91864d874ecafdd58a188dc169325c38d90ff09d"
+    "claimsSha256": "68306aeed49ba497700d65dcb3730c5804f8926dfaa027dfc342ea6db757fff2"
   },
   {
     "id": "eip155:56:0x85ac5d15f16d49ae08f90ab0e554ebfcb145712342c5b7704e305d602146d452",
@@ -3828,9 +3828,9 @@
     "tx": "0xe89fe640ec5241edfca7d8dcae77a0a4270dee15e4bbd043fc60e393aabf41e1",
     "protocol": "AROS",
     "name": "AROS claim flow zeroed its own AMM pair reserve",
-    "summary": "The AROS token's claim flow pays users out of the project's own PancakeSwap V2 AROS/USDT pair and then force-syncs it: claimPrincipal calls _pullFromLP and claimYield calls _drainFromLPTo three times, each moving AROS out of lpPair, and both end with IUniswapV2Pair.sync(). Nothing floors the remaining reserve. Holding an ordinary claim signature for 910,060.523010163297636200 AROS, the attacker first bought the pair down to exactly that balance with 206,410,902.218 flash-loaned USDT (routing the purchased AROS to the whitelisted feeRecipient so the tradingRestricted (R1) hook let the outflow through), then executed the two claims. The trailing sync() wrote the pair's AROS reserve to zero, so PancakeV2 swap()'s invariant check balance0Adjusted*balance1Adjusted >= reserve0*reserve1*1e6 degenerated to >= 0 and 729,507.137147434919290830 AROS bought the pair's entire 206,712,181.771544840545053791 USDT balance.",
+    "summary": "AROS's signed claims pay out of its own AROS/USDT pair and then sync it, with no floor on the remaining reserve. The attacker bought the pair down to its claimable amount, routing the AROS to the whitelisted feeRecipient to pass the buy block, claimed that amount so sync set the AROS reserve to zero, and bought all the pair's USDT for a little AROS.",
     "lossUsd": 301279.5528158876,
-    "codeAgeSeconds": 363401,
+    "codeAgeSeconds": 362804,
     "exploit": {
       "block": 101353585,
       "index": 12,
@@ -3842,13 +3842,13 @@
       "codeHash": "0x02876252788895e2f4ff3a5b36e381e3a9ec133cd8bb154f73324ff268afd05b"
     },
     "reset": {
-      "kind": "upgrade",
-      "tx": "0x875b55c6c3c70facb270ac3e3b8f781bd50ab8f8e44f31c1c8bec16008632fba",
-      "block": 100547423,
-      "index": 68,
-      "timestamp": 1779802046
+      "kind": "config",
+      "tx": "0xaf80d0e29c66f53223b544f5d025e9b160589e1941da425c28b70b9a4d7d786e",
+      "block": 100548747,
+      "index": 30,
+      "timestamp": 1779802643
     },
-    "claimsSha256": "eb4e321a09352a5c4f65fc99f072da5ffdb3087266d78f3b97c458139c3ec409"
+    "claimsSha256": "030d9aa3059f0e160d5c4d16421fe5af53f32d74ace0cf5eb273513322df20e3"
   },
   {
     "id": "eip155:1:0xe2320086b2815d21b0927839bd0e306466c29a68d38d5361e99dd21ec5472612",
@@ -4484,7 +4484,7 @@
     "tx": "0xbcaecea2044101c80f186ce5327bec796cd9e054f0c240ddce93e2aead337370",
     "protocol": "APC",
     "name": "APC TransSwap swaps inventory at the live APC/USDT spot quote",
-    "summary": "The TransSwap proxy's swap(tokenA, tokenB, amount) prices APC against MUSD from the APC/USDT PancakeSwap pair's live reserves (getReserves then router getAmountOut of 1 APC) and pays the output from its own inventory. A flash-loan buy pumped APC, the attacker swapped APC into MUSD at the inflated quote, dumped APC, swapped the MUSD back into more APC at the depressed quote and sold it, draining TransSwap's APC inventory in two transactions.",
+    "summary": "The TransSwap proxy priced APC against MUSD from the APC/USDT PancakeSwap pair's live reserves and paid from its own inventory. With flash-loaned USDT the attacker pumped APC, swapped APC for MUSD at the inflated quote, dumped APC, swapped the MUSD back for more APC at the depressed quote and sold it.",
     "lossUsd": 51704.12915325078,
     "codeAgeSeconds": 562785,
     "exploit": {
@@ -4504,7 +4504,7 @@
       "index": 115,
       "timestamp": 1669323051
     },
-    "claimsSha256": "659e26b5fd4cc29ac9d9a8cbc17b93c129783a92fa7b335f9aef6eabe6e962c2"
+    "claimsSha256": "dc9287b6ffc4c3735c6a26ec72a13ed2de8e1c37dc67954a2c52b06953b155b5"
   },
   {
     "id": "eip155:1:0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
@@ -4832,34 +4832,6 @@
       "timestamp": 1688393406
     },
     "claimsSha256": "9084b8fade4b2e24f569cbc2864670c631e9a56bfc9a2c85226ec6f9dc64acc5"
-  },
-  {
-    "id": "eip155:8453:0xdaee3553334c865f79169f7b5243a23db8da9cffb85b45f7f1189f4de58ef085",
-    "chainId": 8453,
-    "tx": "0xdaee3553334c865f79169f7b5243a23db8da9cffb85b45f7f1189f4de58ef085",
-    "protocol": "ACPRoute (Agent Commerce Protocol)",
-    "name": "ACP PaymentManager releasePayment double release (claim tracked in memory)",
-    "summary": "PaymentManager.releasePayment loads the job into memory, increments amountClaimed on that copy only and has its escrow-sufficiency check commented out, so every call pays the full job budget again out of the pooled escrow. ACPRouter releases payment automatically when a job reaches COMPLETED and also lets anyone call claimBudget on a completed job. From block 37590595 one EOA's claimBudget calls re-paid 1,408 already-settled jobs; on 2026-03-02 an attacker created a 97,000 USDC job with its own provider, completed it and claimed it a second time, and copycats followed until the implementation was replaced.",
-    "lossUsd": 102497.55,
-    "codeAgeSeconds": 677462,
-    "exploit": {
-      "block": 37590595,
-      "index": 217,
-      "timestamp": 1761970537
-    },
-    "target": {
-      "address": "0xef4364fe4487353df46eb7c811d4fac78b856c7f",
-      "code": "0x56c3af6c5995147f293dc756216920fd24d50684",
-      "codeHash": "0x96eb314359995fd6377c06a7af7dc05cf1648f48d2465182e6a815227842c740"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0x49fba989f3e365dd0e114f95dc89c8b0ac03c2b17e8021dc72ff4c452f05485b",
-      "block": 37251864,
-      "index": 296,
-      "timestamp": 1761293075
-    },
-    "claimsSha256": "18e218422c5ccad9eb07b0fcd239ea44d5f834ac50d05b012d0a1da53ce1a082"
   },
   {
     "id": "eip155:1:0x597d11c05563611cb4ad4ed4c57ca53bbe3b7d3fefc37d1ef0724ad58904742b",
@@ -10485,6 +10457,34 @@
     "claimsSha256": "7aecfd5061d56ea86e8ff69f329344f76d19d8f917016ec09fbd985cd2be8200"
   },
   {
+    "id": "eip155:8453:0xe94a5ed54d0a9aa317c997607d7d1ea9828ad47626d7794b0e4020ff49cdf9a0",
+    "chainId": 8453,
+    "tx": "0xe94a5ed54d0a9aa317c997607d7d1ea9828ad47626d7794b0e4020ff49cdf9a0",
+    "protocol": "ACPRoute (Agent Commerce Protocol)",
+    "name": "ACP PaymentManager releasePayment double release",
+    "summary": "PaymentManager.releasePayment had its escrow check commented out and recorded the claim only on an in-memory copy of the job, so each call paid the full budget again from pooled escrow. The attacker created a 97,000 USDC job with its own provider, completed it and called claimBudget to release it twice; copycats re-claimed other completed jobs.",
+    "lossUsd": 99594.05,
+    "codeAgeSeconds": 11160806,
+    "exploit": {
+      "block": 42832267,
+      "index": 16,
+      "timestamp": 1772453881
+    },
+    "target": {
+      "address": "0xef4364fe4487353df46eb7c811d4fac78b856c7f",
+      "code": "0x56c3af6c5995147f293dc756216920fd24d50684",
+      "codeHash": "0x96eb314359995fd6377c06a7af7dc05cf1648f48d2465182e6a815227842c740"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0x49fba989f3e365dd0e114f95dc89c8b0ac03c2b17e8021dc72ff4c452f05485b",
+      "block": 37251864,
+      "index": 296,
+      "timestamp": 1761293075
+    },
+    "claimsSha256": "a2d37118866ad2d22c491166b01de5aee045d81d28462a7d6086a72321b590c7"
+  },
+  {
     "id": "eip155:56:0x7ff1364c3b3b296b411965339ed956da5d17058f3164425ce800d64f1aef8210",
     "chainId": 56,
     "tx": "0x7ff1364c3b3b296b411965339ed956da5d17058f3164425ce800d64f1aef8210",
@@ -14357,7 +14357,7 @@
     "protocol": "ADC (MainPool)",
     "name": "MainPool public calcStepIncome()",
     "summary": "MainPool.calcStepIncome(id, amount, step) was callable by anyone with arbitrary arguments and credited the caller's withdrawable income directly, so the attacker joined the game and then wrote itself an income entry it withdrew as ETH.",
-    "lossUsd": 48475.47906236103,
+    "lossUsd": 51116.02,
     "codeAgeSeconds": 117259032,
     "exploit": {
       "block": 19138641,
@@ -14375,7 +14375,7 @@
       "index": 5,
       "timestamp": 1589592695
     },
-    "claimsSha256": "6ea112e7c994637a7209a5f726e71d8cb801e59846f7188b86fd4d3421bb35bd"
+    "claimsSha256": "a09fd054e3e1ae4239ea490ccce901c5b0cbe10b57de835a73a158ae3bc20d3c"
   },
   {
     "id": "eip155:1:0xe4b893f8b1b1738d88e02e2808aff7cfe6443ed15c98d7a01e2907f9bef17618",

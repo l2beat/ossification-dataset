@@ -2,14 +2,16 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "AROS",
   "name": "AROS claim flow zeroed its own AMM pair reserve",
-  "summary": "The AROS token's claim flow pays users out of the project's own PancakeSwap V2 AROS/USDT pair and then force-syncs it: claimPrincipal calls _pullFromLP and claimYield calls _drainFromLPTo three times, each moving AROS out of lpPair, and both end with IUniswapV2Pair.sync(). Nothing floors the remaining reserve. Holding an ordinary claim signature for 910,060.523010163297636200 AROS, the attacker first bought the pair down to exactly that balance with 206,410,902.218 flash-loaned USDT (routing the purchased AROS to the whitelisted feeRecipient so the tradingRestricted (R1) hook let the outflow through), then executed the two claims. The trailing sync() wrote the pair's AROS reserve to zero, so PancakeV2 swap()'s invariant check balance0Adjusted*balance1Adjusted >= reserve0*reserve1*1e6 degenerated to >= 0 and 729,507.137147434919290830 AROS bought the pair's entire 206,712,181.771544840545053791 USDT balance.",
+  "summary": "AROS's signed claims pay out of its own AROS/USDT pair and then sync it, with no floor on the remaining reserve. The attacker bought the pair down to its claimable amount, routing the AROS to the whitelisted feeRecipient to pass the buy block, claimed that amount so sync set the AROS reserve to zero, and bought all the pair's USDT for a little AROS.",
   "targets": [
     {
       "address": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
       "code": "0xd948279f89bd3198d9e81f4bf3a44ea558225c68",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x875b55c6c3c70facb270ac3e3b8f781bd50ab8f8e44f31c1c8bec16008632fba"
+        "kind": "config",
+        "tx": "0xaf80d0e29c66f53223b544f5d025e9b160589e1941da425c28b70b9a4d7d786e",
+        "address": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
+        "slot": "0x1f8"
       }
     }
   ],
@@ -33,8 +35,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/AROS_exp.sol"
   ],
   "notes": [
-    "The ERC1967 proxy emitted its only Upgraded event in its own creation transaction, selecting implementation 0xd948279f89bd3198d9e81f4bf3a44ea558225c68. A full eth_getLogs scan of the Upgraded topic on the proxy from genesis to the exploit block returns exactly this one log, and the pre-exploit implementation slot still holds that address.",
-    "Victim depletion is measured on the AROS/USDT PancakeSwap V2 pair 0x3104d26ae74b49eec61675a873b38414329c5edd. Its USDT balance fell from 301279.552818728952544597 to 0.000002841360035403 across the single exploit transaction, so 301279.552815887592509194 USDT left the pair; USDT on BSC is valued at par. The attacker's own 206410902.218537 USDT purchase leg and the flash-loan principals from Moolah, Venus, Aave and Balancer are attacker-supplied inputs and are netted out, and the flash-loan fees that reduced his realised take to 295314.043814755023404189 USDT do not reduce gross depletion. The pair also lost 622117209.361571546199176230 AROS (622846716.498718981118467060 to 729507.137147434919290830), almost all of it forwarded to the AROS feeRecipient 0xecbf62c834a09559ffd044a75f4e46e53df62eed; that leg is left unvalued because this pair was AROS's only market and the same transaction destroyed it, so no pre-attack spot price was realisable for that quantity.",
-    "The 622117209.361571546199176230 AROS also drained from the pair is recorded without a USD value because the exploit destroyed the token's only market in the same transaction."
+    "Reset is setLPPair (slot 0x1f8), the latest change the exploit needed: the claims drain and sync lpPair. It follows the proxy's creation with implementation 0xd948279f and the whitelisting of feeRecipient, which let the buy pass the R1 hook. The per-tx and daily claim caps raised later only bound claim size, and tradingRestricted is a gate.",
+    "Victim depletion is the AROS/USDT pair's USDT, at par; the attacker's purchase leg and flash-loan principals net out and fees are not deducted. The 622,117,209 AROS also drained, mostly to feeRecipient, is left unvalued because the transaction destroyed the token's only market.",
+    "The 38 earlier pair-to-feeRecipient buys were sent by the feeRecipient Safe itself; no other transaction exercised the drain before the exploit."
   ]
 }

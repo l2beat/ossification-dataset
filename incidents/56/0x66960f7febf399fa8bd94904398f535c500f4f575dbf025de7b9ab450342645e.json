@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "AIDC",
   "name": "AIDC pair-side accumulated burn",
-  "summary": "AIDC's transfer accounting could burn an accumulated sell-side amount from its own AIDC/WBNB pair, breaking reserve accounting and depleting the pair's WBNB reserve.",
+  "summary": "AIDCToken adds 30% of every sell to accumulatedBurnAmount and, on the next ordinary transfer, burns that amount from the AIDC/WBNB pair and syncs it. The attacker bought AIDC through the whitelisted router, sold repeatedly via fresh helpers to pile up the pending burn, triggered burns that drained the pair's AIDC and sold into it for WBNB.",
   "targets": [
     {
       "address": "0x5021d71859f81b4c905b573591db8f9cc4a0c6fe",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 121779.98773283923,
+    "usd": 122089.53,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "221.225803359710837497",
-        "usd": 121779.98773283923
+        "amount": "221.775038485755365750",
+        "usd": 122089.53
       }
     ]
   },
@@ -28,8 +28,10 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/AIDC_exp.sol"
   ],
   "notes": [
-    "AIDC is directly deployed. Its 11,521-byte runtime is absent one block before creation and has code hash 0xb7b142085403fc1f337b31b82e9d0a7146c3c08b68aa01aa55974f2a6f451773 at deployment and immediately before the incident; both EIP-1967 code-selection slots are zero. The pair-side accumulated burn is in the deployed transfer path and does not depend on a later configuration change.",
-    "Gross loss is the exact net WBNB depletion of AIDC/WBNB pair 0x2725033282b3bd4be8873b7f0f622c18e3b7cbd8 in the single successful incident receipt. The pair receives 100.000034165547162792 WBNB and sends 321.225837525258000289 WBNB, for 221.225803359710837497 WBNB net depletion. Archive balances fall from 221.225824586427689773 WBNB immediately before the incident block to 0.000021226716852276 WBNB after it, reproducing the same difference. The sender's three bounded pre-incident transactions 0x36d7b9d2...7228, 0x75f6e0ba...ab96, and 0x555b8f07...7423 have no AIDC or WBNB transfer to or from the pair and are excluded. The incident credits 220.125803359710837497 WBNB to the attacker; financing fees and downstream routing effects do not reduce gross pair depletion. The closest preceding DefiLlama BNB observation is $550.4782257918903 at 1782675299, 54 seconds before the incident.",
-    "Replaces the seed's rounded loss with exact gross WBNB pair depletion valued at the closest preceding BNB price."
+    "Deployment reset: the burn-from-pair path and the router whitelist used for buying are set in the constructor; later owner calls (business contract, executeEnabled, scaleFactor, cooldown) do not affect the accumulated burn.",
+    "Net WBNB depletion of the AIDC/WBNB pair in the anchor (221.2258) and in the same attacker's follow-up burn-and-sell 0xfad7b540 (0.5492), at loss.mjs prices. Earlier AccumulatedBurnExecuted events were 30 and 6 AIDC from ordinary sells."
+  ],
+  "campaign": [
+    "eip155:56:0xfad7b54087195e772c6f5d3b1e58a44d88e195cca11dc0f9ed5b4666563a33ae"
   ]
 }
