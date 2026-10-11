@@ -32,8 +32,8 @@
     "tx": "0xc1e807bba4a3bb5739d06a7f9c615f93665349a635a2353fec1070d1b613df17",
     "protocol": "Moonwell",
     "name": "Moonwell cbETH OEV feed denomination mismatch",
-    "summary": "Moonwell's ChainlinkOracle expects each configured feed to return a USD-denominated value. MIP-X43 instead assigned cbETH a CBETH/ETH wrapper that returned the roughly 1.12 exchange ratio, so getUnderlyingPrice valued one cbETH at about $1.12 rather than $2,206.68. This made healthy cbETH-backed accounts liquidatable for negligible debt repayment and made cbETH cheap to over-borrow.",
-    "lossUsd": 2705352.52,
+    "summary": "Moonwell's ChainlinkOracle treats every configured feed as USD-denominated. MIP-X43 mapped cbETH to a CBETH/ETH wrapper returning the ~1.12 exchange ratio, so cbETH was priced at about $1.12 instead of ~$2,200. Liquidators seized cbETH-backed accounts that had been healthy for negligible repayments, and borrowers drained cbETH against dust collateral.",
+    "lossUsd": 3736005.41,
     "codeAgeSeconds": 0,
     "exploit": {
       "block": 42194663,
@@ -51,7 +51,7 @@
       "index": 107,
       "timestamp": 1771178673
     },
-    "claimsSha256": "a391cd2cd0afdfbeab7e31c2cb81d4885c8b3e32cdefca41fcf1d4b348fc11f3"
+    "claimsSha256": "3f65a6080cbff0df242943c59a7243f0c07ef3fc9889d1ff1f7f35a0fb2f3856"
   },
   {
     "id": "eip155:42161:0xd17330df683adeec26a67ff6972a74ab60a1e5577c73d0e074d8e890fab5279c",
@@ -3056,6 +3056,34 @@
     "claimsSha256": "979e52352dd300830c5535e202425d90d98afbf204d54a4a7afce5a563081796"
   },
   {
+    "id": "eip155:137:0x5a03b9c03eedcb9ec6e70c6841eaa4976a732d050a6218969e39483bb3004d5d",
+    "chainId": 137,
+    "tx": "0x5a03b9c03eedcb9ec6e70c6841eaa4976a732d050a6218969e39483bb3004d5d",
+    "protocol": "MonoX Finance",
+    "name": "MonoX Monoswap self-swap price inflation",
+    "summary": "Monoswap never rejected tokenIn == tokenOut and wrote the tokenIn price before the tokenOut price, so repeated MONO-for-MONO swaps ratcheted MONO's internal price; removeLiquidity also let anyone pull other LPs' liquidity. The attacker emptied the MONO pool, pumped MONO and sold it for the other pools' assets on Polygon, then Ethereum.",
+    "lossUsd": 33224763.88,
+    "codeAgeSeconds": 223009,
+    "exploit": {
+      "block": 21974875,
+      "index": 10,
+      "timestamp": 1638277811
+    },
+    "target": {
+      "address": "0xbd5ca837c759b429398dc55b643f1dd8d0d72cbd",
+      "code": "0x70381e29559890a5559defb5a4b4690ce1eacb57",
+      "codeHash": "0x2cfc324cd04784c5314b4cc9a52b4055da441ca0271b825a50d821a720afd467"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0x3a35180b7603127763fcac148909664ce0a837437cfbf54c1585479201b5e518",
+      "block": 21877741,
+      "index": 34,
+      "timestamp": 1638054802
+    },
+    "claimsSha256": "83206952a6de8f4267a6e6ea961f7483963dc6c209681be60859fa310035214e"
+  },
+  {
     "id": "eip155:1:0x0016745693d68d734faa408b94cdf2d6c95f511b50f47b03909dc599c1dd9ff6",
     "chainId": 1,
     "tx": "0x0016745693d68d734faa408b94cdf2d6c95f511b50f47b03909dc599c1dd9ff6",
@@ -3252,9 +3280,9 @@
     "tx": "0x32a8d8a4d8652d691da9674b0d3ceebe918c1fc61d4311f1a62ab831eb0de913",
     "protocol": "Neko Network (Maze Protocol)",
     "name": "Neko Network MainPool borrow on behalf of any account",
-    "summary": "Neko Network's Aave-style MainPool 0x4071ee5eb20ba7352dcf08cabc7da4fa1daa370c implements borrow(asset, amount, onBehalfOf) by minting the variable-debt token to onBehalfOf and paying the borrowed underlying to msg.sender, with no borrow-allowance or delegation check. The debt token's mint(address,uint256) takes no caller argument. Any account could therefore borrow against another depositor's collateral and keep the funds. Six attacker accounts and two attacker contracts made 196 such borrows against 16 depositors, taking 3,620,179 USDT, 499,424.04 BUSD, 2,792.84 USDC and 1 BTCB.",
-    "lossUsd": 4166470.8342571286,
-    "codeAgeSeconds": 283891,
+    "summary": "Neko's Aave-style MainPool borrow(asset, amount, onBehalfOf) minted the variable debt to onBehalfOf but paid the underlying to msg.sender, with no borrow-allowance or credit-delegation check. Anyone could borrow against another depositor's collateral and keep the funds; the attacker and copycats borrowed USDT, BUSD, USDC and BTCB against 16 depositors.",
+    "lossUsd": 4167933.35,
+    "codeAgeSeconds": 277598,
     "exploit": {
       "block": 9965527,
       "index": 96,
@@ -3266,12 +3294,12 @@
     },
     "reset": {
       "kind": "config",
-      "tx": "0xef77b118962c80bf10235ab64d9c1d2645c138f84406ba3f95664759433e8d06",
-      "block": 9873395,
-      "index": 134,
-      "timestamp": 1628488920
+      "tx": "0xddfdd87aa396ce2d29a01d8b8c6ca05aa5b724ddc6ef32e1e2a6c7977a8deecd",
+      "block": 9875422,
+      "index": 213,
+      "timestamp": 1628495213
     },
-    "claimsSha256": "8d476bddb7e0a0cba93cdc1bc0adfee3e1b793a96f882197df1206a1c9e6d61a"
+    "claimsSha256": "08b34a31c040f5da32f97be62530f8e71496807a7fff1fc1ba19f101f2ee3719"
   },
   {
     "id": "eip155:56:0x26081ccd74296e45ccfb6031cea37a162748e0b81a110f9e657b155ee23f79da",
@@ -3905,34 +3933,6 @@
     "claimsSha256": "efa29b9987be12d4381b1b3a3a92267d48aa1c1a426ecdafde504043a0c4f40e"
   },
   {
-    "id": "eip155:1:0x9f14d093a2349de08f02fc0fb018dadb449351d0cdb7d0738ff69cc6fef5f299",
-    "chainId": 1,
-    "tx": "0x9f14d093a2349de08f02fc0fb018dadb449351d0cdb7d0738ff69cc6fef5f299",
-    "protocol": "MonoX Finance",
-    "name": "MonoX Monoswap self-swap price inflation",
-    "summary": "Monoswap's swap path never rejected tokenIn == tokenOut and updated the tokenIn price before the tokenOut price, so repeatedly swapping MONO for MONO ratcheted MONO's recorded price up until the attacker could buy out the pools' other assets.",
-    "lossUsd": 31000000,
-    "codeAgeSeconds": 438388,
-    "exploit": {
-      "block": 13715026,
-      "index": 12,
-      "timestamp": 1638278871
-    },
-    "target": {
-      "address": "0xc36a7887786389405ea8da0b87602ae3902b88a1",
-      "code": "0x66e7d7839333f502df355f5bd87aea24bac2ee63",
-      "codeHash": "0xb242e55adf15eb48caa08bce8668c866bfef4426d207c3334a452852219dd096"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0xbaca642e1f5a609898b09cbe651b84cc1b4f6507e096c6ed961b827bda92d61c",
-      "block": 13683245,
-      "index": 60,
-      "timestamp": 1637840483
-    },
-    "claimsSha256": "a760b81b2f91756e58de4ff3931a441957250cb2e87104c2d6bd389d7b2a25f3"
-  },
-  {
     "id": "eip155:56:0x0c850f54c1b497c077109b3d2ef13c042bb70f7f697201bcf2a4d0cb95e74271",
     "chainId": 56,
     "tx": "0x0c850f54c1b497c077109b3d2ef13c042bb70f7f697201bcf2a4d0cb95e74271",
@@ -4506,33 +4506,6 @@
     "claimsSha256": "b2f4633e3c464947380564072eeb60211020114a4a4da2698486608bda75da30"
   },
   {
-    "id": "eip155:56:0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
-    "chainId": 56,
-    "tx": "0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
-    "protocol": "OSN",
-    "name": "OSN LP dividend weights not reduced on LP transfer",
-    "summary": "OSN's _transfer hook sets an account's LP-dividend weight only on router liquidity adds (lpAmount += estimated liquidity) and on liquidity removals, where it overwrites lpAmount with the recipient's full current pair-token balance and pushes it to the dividend tracker. Plain LP-token transfers never reduce the sender's weight. LP moved to another address that then makes a tiny add and remove is therefore counted twice, and one LP position can register full weight in any number of accounts. The first such duplication is a probe: 0xf003ffa9 sends 1 LP to 0x71940b72, which adds and then removes dust liquidity. The May 2024 campaign by 0x835b45 cycled flash-loaned LP through 100 helper contracts, withdrew the LP, generated taxed swaps and collected the dividends.",
-    "lossUsd": 109672.365414208,
-    "codeAgeSeconds": 577240,
-    "exploit": {
-      "block": 38134376,
-      "index": 122,
-      "timestamp": 1713944782
-    },
-    "target": {
-      "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
-      "codeHash": "0xddce666d829127978e102b141ddfdaa508d5657f4a44aaaa5248f9b54bfcee95"
-    },
-    "reset": {
-      "kind": "config",
-      "tx": "0x1956a7679ca6187611dab8440f6d7a6595b6bebfe3727d5651ac18c3910221bf",
-      "block": 37942319,
-      "index": 56,
-      "timestamp": 1713367542
-    },
-    "claimsSha256": "aedb70c62ad3a89aaf7524c9562922e7f1b04b378c54a58134cf8629caf84f99"
-  },
-  {
     "id": "eip155:56:0x7a3cadc2f33e000b0091307df62db2f5cc79ab8e0b022fd84de9e1c2c0745bd2",
     "chainId": 56,
     "tx": "0x7a3cadc2f33e000b0091307df62db2f5cc79ab8e0b022fd84de9e1c2c0745bd2",
@@ -5023,6 +4996,33 @@
       "timestamp": 1683091216
     },
     "claimsSha256": "b8b3e3c64e224be922680a21b12e71601baffeb56178bf8a1531e892f02bfb32"
+  },
+  {
+    "id": "eip155:56:0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
+    "chainId": 56,
+    "tx": "0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
+    "protocol": "OSN",
+    "name": "OSN LP dividend weights not reduced on LP transfer",
+    "summary": "OSN's _transfer set LP-dividend weight only on router adds and on removals, where it took the recipient's full pair-token balance, while plain LP transfers never cut the sender's weight. LP passed through addresses that each made a dust add and remove was counted many times, and the attacker collected the tax-funded USDT dividends.",
+    "lossUsd": 109672.37,
+    "codeAgeSeconds": 781356,
+    "exploit": {
+      "block": 38134376,
+      "index": 122,
+      "timestamp": 1713944782
+    },
+    "target": {
+      "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
+      "codeHash": "0xddce666d829127978e102b141ddfdaa508d5657f4a44aaaa5248f9b54bfcee95"
+    },
+    "reset": {
+      "kind": "deployment",
+      "tx": "0x8fe82398d2070b9a983e33c9b91b7a8eef5ba5b9a1699ee7a01e6e38813f97c9",
+      "block": 37874409,
+      "index": 147,
+      "timestamp": 1713163426
+    },
+    "claimsSha256": "33886d46c640f2998b47249a34e63f10a7e7c81315519946d58bcefa4c0d1cf8"
   },
   {
     "id": "eip155:56:0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a",
@@ -7826,9 +7826,9 @@
     "chainId": 1,
     "tx": "0xa5fe9d044e4f3e5aa5bc4c0709333cd2190cba0f4e7f16bcf73f49f83e4a5460",
     "protocol": "Nomad Bridge",
-    "name": "Nomad Bridge",
-    "summary": "Replica proxy: a beacon upgrade + re-initialization on 2022-06-21T18:39:29Z set committedRoot to 0x00, making every unproven message 'proven'. Nomad's UpgradeBeaconProxy emits no EIP-1967 Upgraded event; the change is the Upgrade(address) event on the hard-coded UpgradeBeacon.",
-    "lossUsd": 190000000,
+    "name": "Nomad Bridge Replica zero-root message acceptance",
+    "summary": "The June 2022 Replica upgrade made unproven messages map to the zero root, which initialisation had marked confirmed, so process() accepted any message without a proof. The first exploiter withdrew from the BridgeRouter with an unproven message; hundreds of copycats then replayed the same transaction with their own recipients across the Replicas.",
+    "lossUsd": 179635452.84,
     "codeAgeSeconds": 3552782,
     "exploit": {
       "block": 15259101,
@@ -7847,7 +7847,7 @@
       "index": 37,
       "timestamp": 1655836769
     },
-    "claimsSha256": "273ea89f339f342fac11a50a312278ff9772c33960e13ddfef12305ef6d3fe88"
+    "claimsSha256": "e0ee1ecc3ca8310123815c2f295b9c1d81ae58eb1853d328ce17e88bd1fa797c"
   },
   {
     "id": "eip155:56:0x55856d9fda4c5be5193561c7d775e823c3d6e499da44aab9da963daf61c50b0c",
@@ -9448,7 +9448,7 @@
     "protocol": "NewMarketTrading",
     "name": "NewMarketTrading SquidRouterModule unbound delegate",
     "summary": "SquidRouterModule accepted Axelar express execution while treating caller-supplied sourceAddress and delegate values as authority and never binding the delegate to msg.sender. Forged payloads therefore drove victim Safes to approve and swap valuable assets into attacker pools.",
-    "lossUsd": 3980000,
+    "lossUsd": 4592535.28,
     "codeAgeSeconds": 7810142,
     "exploit": {
       "block": 46450075,
@@ -9466,7 +9466,7 @@
       "index": 101,
       "timestamp": 1771879355
     },
-    "claimsSha256": "14d62e4dac9e16a8dd87c53aa46fc8de17507f5611273dbc7b9805e3d18d43f9"
+    "claimsSha256": "181f1d75c594f3b9f20bc3c723f00aebdeda3b4b9f13014ea02481f1e9adf097"
   },
   {
     "id": "eip155:43114:0x4425f757715e23d392cda666bc0492d9e5d5848ff89851a1821eab5ed12bb867",
@@ -9605,6 +9605,34 @@
       "timestamp": 1682911859
     },
     "claimsSha256": "cca0d778d788eea76ae9182f9b90abd7e16987194e805440efacd504c7e97276"
+  },
+  {
+    "id": "eip155:8453:0x056597f42302ab7f9f5e91c7f84856d3ba73827da7f956645d1f26bdde109ce9",
+    "chainId": 8453,
+    "tx": "0x056597f42302ab7f9f5e91c7f84856d3ba73827da7f956645d1f26bdde109ce9",
+    "protocol": "Moonwell",
+    "name": "Moonwell mMAMO donated-underlying exchange-rate inflation",
+    "summary": "mMAMO's exchange rate counts the market's raw MAMO balance, so MAMO transferred straight to the market revalues every share without minting, and the Comptroller's supply cap, checked only on mint, cannot stop it. After pumping MAMO, the attacker donated MAMO twice, lifting the rate 3.68x past the cap, and borrowed cbBTC, WETH, USDC and wstETH against it.",
+    "lossUsd": 10397027.67,
+    "codeAgeSeconds": 8336978,
+    "exploit": {
+      "block": 50516526,
+      "index": 198,
+      "timestamp": 1787822399
+    },
+    "target": {
+      "address": "0x2f90bb22eb3979f5ffad31ea6c3f0792ca66da32",
+      "code": "0x1fadff493529c3fcc7ee04f1f15d19816dda45b7",
+      "codeHash": "0x67ef071c0cc14b498905c6928e1c4a5a03ed96697e7d7c85c244d12f7ba1f14c"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x23c3c635ac7b10f3c5cecb02084a53a9401df6c2e8bac3c261a4a4c2e5210a96",
+      "block": 46348037,
+      "index": 60,
+      "timestamp": 1779485421
+    },
+    "claimsSha256": "2c78bc95c6f0d0d5841593443146d59afb8b5bef07970466b1535d9e4c4a13ed"
   },
   {
     "id": "eip155:10:0x6e9ebcdebbabda04fa9f2e3bc21ea8b2e4fb4bf4f4670cb8483e2f0b2604f451",
@@ -11983,34 +12011,6 @@
       "timestamp": 1707279791
     },
     "claimsSha256": "64f5967dedf1062263c3e8992cdf889a886a60c6ee3506d3e37be27106612ee2"
-  },
-  {
-    "id": "eip155:8453:0x056597f42302ab7f9f5e91c7f84856d3ba73827da7f956645d1f26bdde109ce9",
-    "chainId": 8453,
-    "tx": "0x056597f42302ab7f9f5e91c7f84856d3ba73827da7f956645d1f26bdde109ce9",
-    "protocol": "Moonwell",
-    "name": "Moonwell mMAMO donated-underlying exchange-rate inflation",
-    "summary": "mMAMO derives its exchange rate from the market's own MAMO balance, so underlying transferred straight to the market is credited to every existing share while minting none, which the Comptroller's 20,000,000 mint-path supply cap cannot restrain. The attacker accrued interest, read the rate, and transferred 34,910,396.684792645 MAMO into the market in one transaction, then 18,482,893.625840746 more, lifting the stored rate from 205132568127692808921476270 to 754603632406632280153424515 - 3.68 times - against unchanged share supply, and borrowed cbBTC, WETH, USDC, and wstETH against the revalued collateral without repaying.",
-    "lossUsd": 9131342,
-    "codeAgeSeconds": 27255022,
-    "exploit": {
-      "block": 50516526,
-      "index": 198,
-      "timestamp": 1787822399
-    },
-    "target": {
-      "address": "0x2f90bb22eb3979f5ffad31ea6c3f0792ca66da32",
-      "code": "0x1fadff493529c3fcc7ee04f1f15d19816dda45b7",
-      "codeHash": "0x67ef071c0cc14b498905c6928e1c4a5a03ed96697e7d7c85c244d12f7ba1f14c"
-    },
-    "reset": {
-      "kind": "config",
-      "tx": "0x46cb157d979d28cbfe76f077aad18c3ee5834b2aec91927ea5582007fca5fd05",
-      "block": 36889015,
-      "index": 19,
-      "timestamp": 1760567377
-    },
-    "claimsSha256": "767b15505a3dcd63dbed553280d2bd1a581475f35289180daac857b64d5814ce"
   },
   {
     "id": "eip155:1:0xfe34c4beee447de536bbd3d613aa0e3aa7eeb63832e9453e4ef3999924ab466a",
@@ -14535,6 +14535,34 @@
     "claimsSha256": "ce64c3f6e29fdd20955cfbc09c06ed1cf6ce11c670546e93c5a367ba05263f74"
   },
   {
+    "id": "eip155:137:0x6dc8a7fba1303faef3ec7afa770b90b17ec5ecd73b51229277a9b0492e285796",
+    "chainId": 137,
+    "tx": "0x6dc8a7fba1303faef3ec7afa770b90b17ec5ecd73b51229277a9b0492e285796",
+    "protocol": "Ocean Protocol",
+    "name": "Ocean BPool single-sided join-exit math drain",
+    "summary": "Ocean BPool's joinswapExternAmountIn minted shares for a base-token-only deposit while SideStaking mirrored it with datatokens, and exitswapPoolAmountIn redeemed via calcSingleOutGivenPoolIn, so the same shares bought back more base token than the join paid. The attacker flash-swapped mOCEAN and cycled joins and exits over eight clones.",
+    "lossUsd": 11832.77,
+    "codeAgeSeconds": 125611000,
+    "exploit": {
+      "block": 89107757,
+      "index": 23,
+      "timestamp": 1782366631
+    },
+    "target": {
+      "address": "0x193f1ce9108644cd4d09c769d8dcd100f2b901d6",
+      "code": "0xbb3051df2d3e408dae6e6daa2296bc6215f0dcfd",
+      "codeHash": "0x45dfa71a5a30127c3de2ec9af1a71ca0edc31be081fcfdb81247858f704ed6ca"
+    },
+    "reset": {
+      "kind": "deployment",
+      "tx": "0xcdf5e08dae13bf907467e38ed181f6a5ee1186b3f2ccdc76cd66309fae9fe928",
+      "block": 30247440,
+      "index": 46,
+      "timestamp": 1656755631
+    },
+    "claimsSha256": "54233d45b33f8f8607ea3466ed9a0595a3928b46a00cdae656f98481cbb7f7a9"
+  },
+  {
     "id": "eip155:56:0x74634e4ccc7e8922798c7043f839219b1a1a4d6087f57cdbf3bd1544198b02e8",
     "chainId": 56,
     "tx": "0x74634e4ccc7e8922798c7043f839219b1a1a4d6087f57cdbf3bd1544198b02e8",
@@ -14560,34 +14588,6 @@
       "timestamp": 1661954703
     },
     "claimsSha256": "437672f5f0754c1da916b1ddbafd78402a55f736baa3747f20ab70b077fd6305"
-  },
-  {
-    "id": "eip155:137:0x6dc8a7fba1303faef3ec7afa770b90b17ec5ecd73b51229277a9b0492e285796",
-    "chainId": 137,
-    "tx": "0x6dc8a7fba1303faef3ec7afa770b90b17ec5ecd73b51229277a9b0492e285796",
-    "protocol": "Ocean Protocol",
-    "name": "Ocean BPool single-sided join-exit math drain",
-    "summary": "Ocean BPool joinswapExternAmountIn prices pool-share minting from a base-token-only deposit while SideStaking mirrors the leg with datatokens and matching shares, and exitswapPoolAmountIn redeems through calcSingleOutGivenPoolIn so the same shares buy back more base token than the join paid for. The attacker flash-swapped mOCEAN and cycled single-sided joins and exits across eight SideStaking-managed clones, extracting a net 127,861.01 mOCEAN after repaying the flash swap.",
-    "lossUsd": 11900,
-    "codeAgeSeconds": 127601981,
-    "exploit": {
-      "block": 89107757,
-      "index": 23,
-      "timestamp": 1782366631
-    },
-    "target": {
-      "address": "0x95f57249e6dd394318025068a8bfc841ac6ec0dd",
-      "code": "0xbb3051df2d3e408dae6e6daa2296bc6215f0dcfd",
-      "codeHash": "0x45dfa71a5a30127c3de2ec9af1a71ca0edc31be081fcfdb81247858f704ed6ca"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xb8da02cf5202c746c9682fc6df75c92985a1fae3a70de290c6b0971637e3d1c4",
-      "block": 29349611,
-      "index": 75,
-      "timestamp": 1654764650
-    },
-    "claimsSha256": "897b8b375cce1bd93f8b4c3bd3f53dff38e72361b966998b8fec92428569f305"
   },
   {
     "id": "eip155:42161:0xe1e6aa5332deaf0fa0a3584113c17bedc906148730cbbc73efae16306121687b",

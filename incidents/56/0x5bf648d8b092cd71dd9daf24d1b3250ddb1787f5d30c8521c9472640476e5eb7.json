@@ -2,37 +2,52 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "OSN",
   "name": "OSN LP dividend weights not reduced on LP transfer",
-  "summary": "OSN's _transfer hook sets an account's LP-dividend weight only on router liquidity adds (lpAmount += estimated liquidity) and on liquidity removals, where it overwrites lpAmount with the recipient's full current pair-token balance and pushes it to the dividend tracker. Plain LP-token transfers never reduce the sender's weight. LP moved to another address that then makes a tiny add and remove is therefore counted twice, and one LP position can register full weight in any number of accounts. The first such duplication is a probe: 0xf003ffa9 sends 1 LP to 0x71940b72, which adds and then removes dust liquidity. The May 2024 campaign by 0x835b45 cycled flash-loaned LP through 100 helper contracts, withdrew the LP, generated taxed swaps and collected the dividends.",
+  "summary": "OSN's _transfer set LP-dividend weight only on router adds and on removals, where it took the recipient's full pair-token balance, while plain LP transfers never cut the sender's weight. LP passed through addresses that each made a dust add and remove was counted many times, and the attacker collected the tax-funded USDT dividends.",
   "targets": [
     {
       "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
       "reset": {
-        "kind": "config",
-        "tx": "0x1956a7679ca6187611dab8440f6d7a6595b6bebfe3727d5651ac18c3910221bf",
-        "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
-        "call": "0x070a6e76"
+        "kind": "deployment",
+        "tx": "0x8fe82398d2070b9a983e33c9b91b7a8eef5ba5b9a1699ee7a01e6e38813f97c9"
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xbf22eabb5db8785642ba17930bddef48d0d1bb94ebd1e03e7faa6f2a3d1a5540",
+    "eip155:56:0xc7927a68464ebab1c0b1af58a5466da88f09ba9b30e6c255b46b1bc2e7d1bf09",
+    "eip155:56:0x75159a764d5aeab202958bb603a64f90f054b54204a9efc4690b703bd5936bcc",
+    "eip155:56:0x0eaad1b145cf5a130dc9026766c4f16f77979418ac627ff71b8b369e3461f9ff",
+    "eip155:56:0xf8b7fe905ff1f96329d2d99c869be1c62078e31daf429fdbb9fb40c220b15baa",
+    "eip155:56:0x8d5f28296d12ec67202d8a87945b2e951ea26a6f323047a76f4bbbecd33ddde1",
+    "eip155:56:0x8d01c0779c2789daa238803c4edbb1482a1284d6204b36644cf2fbe8da9f8e15",
+    "eip155:56:0x46ffca3ce8173786fd65de220439afbe46bcaba7dd2cacd7650695a3cc09383d",
+    "eip155:56:0x800cd9721909aa7e1083aaa62a8f5793ee04117544ee0fa0c1fe20659c3a9bc2",
+    "eip155:56:0x58a79fd701ed812b0b9574fe9c434f6768f8e476e84fe9ddc92f6c8c49edeeee",
+    "eip155:56:0x418dcbefe0d37959886d687476571d0478d732462e56bab341f39fc7e83432ca",
+    "eip155:56:0x628c07569fdcaabafaa012781ece51f1fc3aa207cc5aae8be3b10e29ea4a0567",
+    "eip155:56:0x5491473e8c5325ff8bdb22f4743d23690f2f272060a0ddd6e19048324b96269e",
+    "eip155:56:0xad5e4b9d9ee041bf217d6b574fe98871380da6900998cec2416baa76b4fb67bb",
+    "eip155:56:0x5a968ab1045f3a76b834493a25a472694667ad94224211e34c13b9defb0fbe2e",
+    "eip155:56:0x03db905062fe4afbae22a8abd5c1e76c709d03cda6d7a9baefc7dd7aa1ee6681"
+  ],
   "loss": {
-    "usd": 109672.365414208,
+    "usd": 109672.37,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "109672.365414208009944720",
-        "usd": 109672.365414208
+        "usd": 109672.37
       }
     ]
   },
   "refs": [
     "https://twitter.com/SlowMist_Team/status/1787330586857861564",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/OSN_exp.sol",
-    "eip155:56:0xb8acd0ea3cd3118c309854074c797ec28f5f5a12c5ec8b5fbe54f3279607e22f",
-    "eip155:56:0xc7927a68464ebab1c0b1af58a5466da88f09ba9b30e6c255b46b1bc2e7d1bf09"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/OSN_exp.sol"
   ],
   "notes": [
-    "setStartTime replaces the constructor sentinel startSwapTime = 1e20 with 1713424380. Until then, every transfer between non-fee-excluded addresses (including the liquidity adds and removals that register dividend weight) reverts with 'not start', so the duplication path is unreachable for ordinary accounts. Later owner actions (fee exclusions, setSellFees, renounceOwnership) change only fees or exposure.",
-    "The attacker's realised net USDT: attack contract 0x4a5acac3 paid its EOA 109,682.365414208009944720 USDT across 16 campaign transactions, less the EOA's 10-USDT funding. All flash loans are repaid within each receipt, and the contract ends with zero USDT, OSN and LP. Every unit of that gain was extracted from third parties: pair LPs, drained by the tax sales that fund the tracker, and holders whose tracker dividends were diverted. Victim depletion is therefore at least this amount. The same receipts also pay the marketing wallet 0xea1f5740 and PancakeV3 flash fees, which are not added because gross third-party depletion cannot be separated from the attacker's own swap taxes. Excluded as unrealised or immaterial: 14.030326252660469 USDT of tracker dividends paid to the helper contracts after the campaign (to block 45000000), and at most 0.47 USDT of dividends to the probe addresses."
+    "Reset is the token deployment: the only later change on the path, setStartTime, lifts the 'not start' trading gate (pause state, rule 10) and shifts the tax schedule (loss size only).",
+    "The anchor is a dust probe by 0x71940b72 that registered duplicate weight; the May campaign by 0x835b45 through 0x4a5acac3 realised the loss.",
+    "Loss is the attacker's realised USDT (attack contract to EOA, minus its 10-USDT funding). The pair and tracker lost $188,931 USDT net over these transactions, but the pair took unpriced OSN in exchange, so realised proceeds are used (rule 15)."
   ]
 }

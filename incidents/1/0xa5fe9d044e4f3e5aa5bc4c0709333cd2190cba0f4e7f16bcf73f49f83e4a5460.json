@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Nomad Bridge",
-  "name": "Nomad Bridge",
-  "summary": "Replica proxy: a beacon upgrade + re-initialization on 2022-06-21T18:39:29Z set committedRoot to 0x00, making every unproven message 'proven'. Nomad's UpgradeBeaconProxy emits no EIP-1967 Upgraded event; the change is the Upgrade(address) event on the hard-coded UpgradeBeacon.",
+  "name": "Nomad Bridge Replica zero-root message acceptance",
+  "summary": "The June 2022 Replica upgrade made unproven messages map to the zero root, which initialisation had marked confirmed, so process() accepted any message without a proof. The first exploiter withdrew from the BridgeRouter with an unproven message; hundreds of copycats then replayed the same transaction with their own recipients across the Replicas.",
   "targets": [
     {
       "address": "0x5d94309e5a0090b165fa4181519701637b6daeba",
@@ -13,14 +13,104 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb0447743d0d29c57565658ab5d1a2fe809d16f82816cc704ae67485a41f9888c",
+    "eip155:1:0xe0112511747dd3b0c300925878a05f4c6b77065be79bb214a822f11505256e0a",
+    "eip155:1:0xf76e2dbdf258727b07d74eb329fa2cb001e4b3b4313df030c6191cffe811a749",
+    {
+      "chainId": 1,
+      "count": 916,
+      "from": 15259102,
+      "to": 15259772,
+      "selection": "successful txs, other than the first exploiter's (0xa8c83b1b), emitting Process on Replica 0x5d94309e5a0090b165fa4181519701637b6daeba from the anchor on, whose top-level call is not proveAndProcess (0x6188af0e)"
+    },
+    {
+      "chainId": 1,
+      "count": 39,
+      "from": 15259463,
+      "to": 15259729,
+      "selection": "successful txs from the anchor block on emitting Process on the sibling Replicas 0x049b51e5, 0x07b5b57b, 0x27658c55, 0x5bae47bf, 0xef989866 (same UpgradeBeacon) whose top-level call is not proveAndProcess (0x6188af0e)"
+    }
+  ],
   "loss": {
-    "usd": 190000000,
+    "usd": 179635452.84,
     "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "87247033.140665",
+        "usd": 87346349.55
+      },
+      {
+        "symbol": "ETH",
+        "amount": "22868.1000004297967297",
+        "usd": 36877995.51
+      },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
-        "amount": "100",
-        "usd": 2302049.476491687
+        "amount": "728.29072399",
+        "usd": 16763356.09
+      },
+      {
+        "token": "0xd417144312dbf50465b1c641d016962017ef6240",
+        "symbol": "CQT",
+        "amount": "113553931.4868848726",
+        "usd": 13260515.71
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "8626248.974867",
+        "usd": 8627189.06
+      },
+      {
+        "token": "0x853d955acef822db058eb8505911ed77f175b99e",
+        "symbol": "FRAX",
+        "amount": "6683353.726936365174269341",
+        "usd": 6675151.82
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "4533681.025522997592670848",
+        "usd": 4538067.17
+      },
+      {
+        "token": "0x40eb746dee876ac1e78697b7ca85142d178a1fc8",
+        "symbol": "IAG",
+        "amount": "516961197.668226708992948217",
+        "usd": 4053861.37
+      },
+      {
+        "token": "0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0",
+        "symbol": "FXS",
+        "amount": "106585.12225478795",
+        "usd": 791673.23
+      },
+      {
+        "token": "0x3431f91b3a388115f00c5ba9fdb899851d005fb5",
+        "symbol": "GERO",
+        "amount": "58533691.029038133590597632",
+        "usd": 360454.38
+      },
+      {
+        "token": "0x3d6f0dea3ac3c607b3998e6ce14b6350721752d9",
+        "symbol": "CARDS",
+        "amount": "739160.451727497671065924",
+        "usd": 265187.53
+      },
+      {
+        "token": "0xe5097d9baeafb89f9bcb78c9290d545db5f9e9cb",
+        "symbol": "HBOT",
+        "amount": "11803219.973557999991661392",
+        "usd": 67722.92
+      },
+      {
+        "token": "0xf1dc500fde233a4055e25e5bbf516372bc4f6871",
+        "symbol": "SDL",
+        "amount": "322459.025738",
+        "usd": 7928.5
       }
     ]
   },
@@ -31,7 +121,7 @@
     "https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack"
   ],
   "notes": [
-    "The last pre-exploit Upgrade(address) event on the Replica's immutable UpgradeBeacon selected implementation 0xb92336759618f55bd0f8313bd843604592e27bd8.",
-    "The approximately $190 million gross loss covers the permissionless withdrawal campaign caused by the same Replica authentication defect. Nomad's public hack dataset preserves the campaign transactions and events; Mandiant reports more than $190 million removed. The structured 100 WBTC component is the exact loss in the code-age anchor transaction. Subsequent recoveries are separate from exploit-time gross loss."
+    "The Replica runs through Nomad's UpgradeBeacon, which emits Upgrade(address) rather than EIP-1967 Upgraded; the last pre-exploit beacon upgrade selected implementation 0xb9233675, and the zero-root confirmation already held in proxy storage.",
+    "Campaign and loss cover process() calls without an in-transaction proof after the anchor, on the anchor's Replica and its sibling Replicas; legitimate relays used proveAndProcess. Loss is loss.mjs over the BridgeRouter escrow. C3 has no DefiLlama price and is omitted; later recoveries are not deducted."
   ]
 }
