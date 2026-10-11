@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "TrustedVolumes",
-  "name": "TrustedVolumes",
-  "summary": "RFQ proxy had permissionless registerAllowedOrderSigner and checked authorization against order.taker (attacker) instead of order.maker, draining the maker's approved balances.",
+  "name": "TrustedVolumes RFQ permissionless signer registration and taker-funded fills",
+  "summary": "TrustedVolumes' RFQ module let anyone call registerAllowedOrderSigner, and its fill path pulled the sell-side tokens from the order's taker field without that party's consent. The attacker registered its own EOA as signer, signed orders naming the inventory wallet 0x9ba0cf15 as taker, and filled them for 1 wei of USDC each, spending the wallet's approvals.",
   "targets": [
     {
       "address": "0xeeeeee53033f7227d488ae83a27bc9a9d5051756",
@@ -13,40 +13,55 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x3a059bbf9a7ef65700830659efc04efee3984754dc25ecc4f8750cf4bde566a7",
+    "eip155:1:0x5b96288da41771f437301cc7b1e1bb972e3916caf9a1827f9c8d57aef7d29d94",
+    "eip155:1:0xba7205dd3b46c73e773416aea2d5cb1203cbde03b90bbd0457b225e22f6baadd",
+    "eip155:1:0x9670ebc542c1e51f3ae46bd7d29a902056ca0de2d0bc17eb96a620820fa88f1b",
+    "eip155:1:0xb4112b498a245f5688f12701a3ce06b4320d53c88d072cb74104b3a11c86382a",
+    "eip155:1:0x42804bf74e205c17d1d3dc41ccf484a5964c58883ee3d734c7686e69d517a891"
+  ],
   "loss": {
-    "usd": 5890058.972715741,
+    "usd": 5866454.75,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "1291.16110521587917927",
-        "usd": 3035537.509782689
-      },
-      {
-        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "symbol": "USDT",
-        "amount": "206282.446876",
-        "usd": 206282.446876
+        "amount": "1291.303860546836504945",
+        "usd": 3021032.24
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
         "amount": "16.93910519",
-        "usd": 1379467.527182052
+        "usd": 1369300.84
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "1268771.488875",
-        "usd": 1268771.488875
+        "amount": "1269285.644283",
+        "usd": 1268988.65
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "207158.005568",
+        "usd": 207129.71
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "3.313531149965173119",
+        "usd": 3.31
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/TrustedVolumes_exp.sol"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/TrustedVolumes_exp.sol",
+    "https://blog.verichains.io/p/trustedvolumes-exploit-analysis"
   ],
   "notes": [
-    "The later of the two module-selection events repointed exploited selector 0xea7faa61 to 0x88eb28009351fb414a5746f5d8ca91cdc02760d8; selector 0x4112e1c2 was repointed two blocks earlier.",
-    "The receipt records the resolver's exact WETH, USDT, WBTC, and USDC outflows. The USDC component is net of four raw USDC units paid back by the attacker-signed orders."
+    "The module router last repointed the exploited selectors 0x4112e1c2 and 0xea7faa61 to this module in consecutive txs; the later one is the reset. Later module-selection events changed other selectors only.",
+    "A separate defect from the 1inch Fusion v1 Settlement incident (eip155:1:0x62734ce8…, 2025), whose campaign drained TrustedVolumes through Settlement and contains none of these txs. Campaign: three copycat signers (five txs) and one MEV bot draining residual approvals within six hours."
   ]
 }

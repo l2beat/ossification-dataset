@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "TimeBridge",
   "name": "TimeBridge cross-contract signature-domain collision",
-  "summary": "TimeToken's mint authorization hash omitted the target contract, so validator-approved payloads from the CGU bridge were also valid mint authorizations on the BNB Chain TIME contract.",
+  "summary": "TimeToken.mint verified validator signatures over (sender, fromChainId, chainid, lockId, amount) without the contract address. The CGU bridge on BNB Chain signed the same message with the same validators, so the attacker replayed CGU unlock signatures on TimeToken to mint 519,000 unbacked TIME and sold it into the TIME/WBNB pair.",
   "targets": [
     {
       "address": "0x3b198e26e473b8fab2085b37978e36c9de5d7f68",
@@ -12,36 +12,29 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x472d8f565626d2c3f6fd23fb592989e2580e957fd0eb00f62d15bec9969761ed"
+  ],
   "loss": {
-    "usd": 61970.942130694224,
+    "usd": 61976.06,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "49.148868512713910253",
-        "usd": 31625.345186237235
-      },
-      {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "47.055759351281121339",
-        "usd": 30345.596944456993
+        "amount": "96.204627863995031592",
+        "usd": 61976.06
       }
     ]
   },
   "refs": [
-    "eip155:56:0xb567b498eb7b3c3ecb5c6e47ef6d37e50985e91a71872972c0df3ef10fb9f7f4",
     "eip155:56:0xb7d615abd3fd7b59485bad0483a43b8443d0375046d2df12871397782697f0d1",
-    "eip155:56:0x9cbb4bccde12311c8fc875a3533ee0b06e5dfc9b3dc4c3bd3fe92184bd174ac7",
-    "eip155:56:0x0bc238c935dc08abd60bcba0661dc97f86ecea04a82865dfa2583e129f90ca82",
     "eip155:56:0x9dd4e0a1dfd2b0d017888b6862ec116563bc153205ab7ee785153a63d7e006a3",
-    "eip155:56:0x472d8f565626d2c3f6fd23fb592989e2580e957fd0eb00f62d15bec9969761ed",
+    "eip155:56:0x9cbb4bccde12311c8fc875a3533ee0b06e5dfc9b3dc4c3bd3fe92184bd174ac7",
     "eip155:56:0xf4b462252f9044dcf18c43b6b51da8c163a7067e769d51ee5ffb84ce71ec425e",
     "https://www.merklescience.com/blog/hack-track-how-attackers-exploited-timebridge-for-872k"
   ],
   "notes": [
-    "TimeToken is a direct, non-proxy contract. Its runtime was absent in the preceding block and is byte-identical at deployment and immediately before both incident mints.",
-    "Gross victim depletion is the TIME/WBNB pair's two receipt-level WBNB outflows: 49.148868512713910253 + 47.055759351281121339 = 96.204627863995031592 WBNB, with no WBNB input to the pair in either selected sale receipt. The corresponding 50,000 and 469,000 TIME pair inputs equal the preceding mints in full. Those tokens were created from the zero address rather than removed from bridge inventory, so the 519,000 TIME inflation is causal evidence but not an additional loss component. Archive balances reconcile after excluding third-party transactions in the same blocks: 59.066548624489445285 + 0.089715987592328670 - 49.148868512713910253 = 10.007396099367863702 WBNB, and 48.324075110012389377 + 0.147530569832458028 - 47.055759351281121339 = 1.415846328563726066 WBNB. The imported approximately $872,000 figure valued the nominal mint before slippage; it is replaced by exact LP depletion using a separate preceding BNB price for each sale. Later recoveries are not netted.",
-    "The record is scoped to BNB Chain. The CGU bridge activity proves campaign linkage but contributes no measured victim depletion."
+    "The validator set and its size of two were final three days after deployment (2021) and the CGU bridge has existed since November 2021, so the deployment is the reset; the CGU bridge is the signature source, not a contract the anchor executed.",
+    "The minted TIME had no backing and its sale crashed the only pool, so loss is the attacker's realised proceeds (rule 15): the WBNB the TIME/WBNB pair paid out in the two sales (refs), not the ~$872K nominal mint value."
   ]
 }

@@ -1,66 +1,63 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Themis",
-  "name": "Themis live LP-collateral valuation",
-  "summary": "The lending pool valued Balancer gauge collateral from live pool state, allowing unsupported borrowing against a transient LP valuation.",
+  "name": "Themis Balancer LP oracle spot-balance manipulation",
+  "summary": "Themis priced its B-wstETH-WETH-Stable vault collateral with an oracle that valued the BPT from the Balancer pool's live token balances over total supply. The attacker flash-borrowed WETH, deposited the vault token as collateral, skewed the pool with a large swap to inflate the oracle price, and borrowed far more WETH than the collateral was worth.",
   "targets": [
     {
-      "address": "0x75f805e2fb248462e7817f0230b36e9fae0280fc",
-      "code": "0x848f29fe9e3f0ba67095c26ebe48648ccfd8148d",
+      "address": "0x17df2b52f5d756420846c78c69f4fe4ff10e57a4",
       "reset": {
         "kind": "upgrade",
-        "tx": "0x102199525e06cb6d8f420150a308fbd974c21d8987dcbf02bd14a13e8f98069b"
+        "tx": "0xecdd177cbe54eea84c13e69e03f4c7adb9d0fbfa9407f3726078869dbc4d5022"
       }
     }
   ],
   "loss": {
-    "usd": 512004.357868884,
+    "usd": 511913.03,
     "assets": [
       {
-        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-        "symbol": "DAI",
-        "amount": "44758.273451813505008435",
-        "usd": 44758.273451813504
-      },
-      {
-        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-        "symbol": "USDC",
-        "amount": "85753.783607",
-        "usd": 85753.783607
-      },
-      {
-        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-        "symbol": "USDT",
-        "amount": "58824.32932",
-        "usd": 58824.32932
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "97.620373410593518825",
+        "usd": 185373.28
       },
       {
         "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
         "symbol": "ARB",
         "amount": "85149.641487792003679412",
-        "usd": 103882.56261510625
+        "usd": 103882.56
+      },
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC",
+        "amount": "85753.783607",
+        "usd": 85753.78
+      },
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "58824.32932",
+        "usd": 58824.33
+      },
+      {
+        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+        "symbol": "DAI",
+        "amount": "44758.273451813505008435",
+        "usd": 44745.38
       },
       {
         "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
         "symbol": "WBTC",
         "amount": "1.08947859",
-        "usd": 33412.12939812
-      },
-      {
-        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-        "symbol": "WETH",
-        "amount": "97.620373410593518825",
-        "usd": 185373.27947684424
+        "usd": 33333.7
       }
     ]
   },
   "refs": [
-    "eip155:42161:0x7e32b9be8439ff1e295186621dab5289d909ff10c9a50bc5acaedd190245b21b",
-    "eip155:42161:0xca1c3c4b0769ba36b470681993ca4aa9cde90ea5493026fb3ce7ab7c0894844d",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/Themis_exp.sol"
   ],
   "notes": [
-    "The factory's proxy-creation event binds the new pool proxy to implementation 0x848f29fe9e3f0ba67095c26ebe48648ccfd8148d. The EIP-1967 implementation slot contains that address at creation and immediately before the incident.",
-    "The sole loss receipt empties six Themis market reserves. Gross depletion is 44,758.273451813505008435 DAI, 85,753.783607 USDC, 58,824.329320 USDT, 85,149.641487792003679412 ARB, 1.08947859 WBTC, and 97.620373410593518825 WETH. The WETH market transfers 317.620373410593518825 WETH out after receiving 220 WETH of same-receipt borrower collateral, so only the exact net reserve depletion is counted. Each reserve's archive balance falls by the declared net amount and ends at zero. LP and gauge tokens are borrower-supplied collateral, not additional victim depletion; flash liquidity and later conversions dispose of or finance already-counted assets and are excluded. The seed's approximately $370,000 proceeds estimate is replaced by exact reserve depletion. Exact decimal component arithmetic totals $512,004.35786888399426448664; the JSON number is its nearest IEEE-754 representation."
+    "The defect is the BPT price source (getPoolTokens balances times asset prices over totalSupply), not the unmodified Aave-v3-style pool. Its age runs from the setAssetSources call that pointed the pool oracle at it for the vault token, later than its deployment and the reserve listing.",
+    "WETH is the market's net in-transaction depletion: 317.62 WETH borrowed against the inflated collateral less 220 WETH the attacker supplied in the same transaction and used to borrow the other five assets."
   ]
 }
