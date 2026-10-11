@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SafeMoon",
   "name": "SafeMoon public burn() after upgrade",
-  "summary": "An upgrade pushed hours before the incident made burn(address,uint256) callable by anyone, so the attacker burned nearly all SFM held by the SafeMoon/WBNB PancakeSwap pair, sync()'d the pool to the inflated SFM price and sold its own SFM back into the drained reserve.",
+  "summary": "Upgrades hours before the incident made burn(address,uint256) callable by anyone, moving any holder's SFM to the bridge burn address. The attacker burned nearly all SFM held by the SFM/WBNB PancakeSwap pair, sync()'d it to an inflated SFM price and sold its own SFM into the WBNB reserve; copycats repeated this on smaller SFM pairs.",
   "targets": [
     {
       "address": "0x42981d0bfbaf196529376ee702f2a9eb9092fcb5",
@@ -14,12 +14,19 @@
     }
   ],
   "loss": {
-    "usd": 8900000,
+    "usd": 8595776,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "27457.783053089548067627"
+        "amount": "27441.041871454469053166",
+        "usd": 8595640.22
+      },
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "135.796287705408745705",
+        "usd": 135.78
       }
     ]
   },
@@ -30,9 +37,14 @@
     "eip155:56:0x1cf1d586a9438b3fa328cb51c8e84fcd008ffa91c3881ac1589a98e85cc4b591"
   ],
   "notes": [
-    "The last of 23 pre-incident Upgraded events selected the implementation that exposed the unrestricted burn(address,uint256) function.",
-    "The $8.9 million value is the widely reported gross loss. The structured asset is the exact decrease in the victim pair's WBNB reserve from the block immediately before the exploit through the exploit block. The exploiter later agreed to return 80%; recovery is separate from exploit-time gross loss.",
-    "The $8.9 million value is a rounded reported incident-time valuation; the exact onchain WBNB reserve decrease is structured separately.",
-    "Later recovery is intentionally separate from the exploit-time gross loss."
+    "burn(address,uint256) became public in implementation 0x8e7877fe (upgrade 0x3307500e); the later upgrade to 0xeb11a0a0, which the exploit ran, is the reset (rule 9). Earlier public burns were all holders burning their own SFM.",
+    "SFM taken by burn went to SafeMoon's bridgeBurnAddress 0x678ee231, not to attackers, so it is not counted; loss is the WBNB/BUSD drained from the pairs. Later burn() calls that only moved holders' SFM with no attacker proceeds are griefing, not campaign.",
+    "Campaign: every non-self burn() after the anchor through block 26900000 traced for attacker proceeds; only the four 0x586094fc pair drains profited. The exploiter's later 80% return is a recovery and not subtracted."
+  ],
+  "campaign": [
+    "eip155:56:0x31aa495657c6fec407c423d159dc255026b29931504791c93bda842caa1d7848",
+    "eip155:56:0x2e0c7b4953a16c90d8d907ea64587c7b8132c3bcc4e218c3d9eda6e138c03f19",
+    "eip155:56:0xffcaa9fb765d77eeb157f9bc65f17cd4a4c7c6bf10f3d9f2ea8e1fb605f723ed",
+    "eip155:56:0x614238fa0339f6390b66e6448490c834164f61b39a79557dc0f44185426259df"
   ]
 }

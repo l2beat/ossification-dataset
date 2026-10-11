@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SWAPP",
   "name": "SWAPP Staking unchecked cToken transferFrom deposit credit",
-  "summary": "SWAPP's Staking.deposit calls transferFrom on the deposited token without checking its boolean result and credits the caller's staking balance regardless, while emergencyWithdraw pays that balance out for any non-stablecoin token. Compound cTokens signal a failed transferFrom by returning false instead of reverting, so the attacker deposited the Staking contract's entire cUSDC balance without owning any cUSDC, had it credited, and immediately emergency-withdrew the contract's real cUSDC, which backed users' USDC stablecoin deposits.",
+  "summary": "Staking.deposit ignores transferFrom's return value and credits the caller anyway; emergencyWithdraw pays that balance out for any non-stablecoin token. cUSDC returns false on a failed transferFrom, so the attacker 'deposited' the contract's whole cUSDC balance without owning any and emergency-withdrew the real cUSDC backing users' USDC.",
   "targets": [
     {
       "address": "0x245a551ee0f55005e510b239c917fa34b41b3461",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 32200.952256861634,
+    "usd": 32200.95,
     "assets": [
       {
         "token": "0x39aa39c021dfbae8fac545936693ac917d5e7563",
         "symbol": "cUSDC",
         "amount": "1286577.59164064",
-        "usd": 32200.952256861634
+        "usd": 32200.95
       }
     ]
   },
@@ -27,8 +27,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-07/SWAPPStaking_exp.sol"
   ],
   "notes": [
-    "Staking is an immutable non-proxy contract; its runtime is byte-identical at its creation block and immediately before the exploit, and the unchecked transferFrom is in that runtime.",
-    "Exact gross depletion of the Staking contract's cUSDC in the single anchor transaction: receipt log 0x13c transfers 128657759164064 base units (1286577.59164064 cUSDC) from Staking to the attack contract, taking Staking's cUSDC balance from exactly that amount at block 22957532 to zero; no attacker input is involved because the matching deposit transferred nothing. The unit price is cUSDC.exchangeRateStored() at block 22957532 (250283795288235, i.e. 0.0250283795288235 USDC per cUSDC) with USDC at par; the stored rate omits 333 blocks of unaccrued interest, so the value is a marginal floor. A later deposit on 2025-12-22 credited another 57250164371717 cUSDC without a transfer but found no cUSDC left to withdraw, so it adds no loss.",
-    "DeFiHackLabs' PoC header links 'Vulnerable Contract Code' to 0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6 (ResupplyFi), which is why the coverage matcher associated this lead with the ResupplyFi record; the exploited contract is SWAPP Staking 0x245a551ee0f55005e510b239c917fa34b41b3461 and the episode is unrelated to ResupplyFi."
+    "Staking is an immutable non-proxy contract; the unchecked transferFrom is in its creation runtime, so the deployment is the reset.",
+    "cUSDC is valued at exchangeRateStored() before the exploit with USDC at par (a marginal floor; loss.mjs's DefiLlama price agrees within 0.1%). Later emergencyWithdraw calls (Dec 2025) found no cUSDC left and moved no Staking funds."
   ]
 }

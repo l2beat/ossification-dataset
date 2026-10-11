@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SEAToken",
   "name": "MetaSea atomic open/redeem distributor depletion",
-  "summary": "MetaSea Round implementation 0x13dde273 (activated 4.4 h before the attack) added openV6/redeemPosition. redeemPosition has no elapsed-time gate: a position opened with 3,000 USDT and redeemed in the same transaction takes a SEA fee quoted at 200 USDT, then pays back 2,000 USDT plus SEA quoted at the full 3,000 USDT deposit, both funded from the SEA distributor, so each atomic open/redeem cycle extracts value. Five senders completed 182 redemptions in 16 transactions and sold the SEA into the SEA/USDT pair.",
+  "summary": "Round implementation 0x13dde273 added openV6/redeemPosition with no elapsed-time gate: a 3,000 USDT position opened and redeemed in one transaction returns 2,000 USDT plus SEA quoted at the full deposit, paid from the SEA distributor. Attackers looped open/redeem under flash loans and sold the SEA into the SEA/USDT pair.",
   "targets": [
     {
       "address": "0xa70f31c06f921019237fc00b1417217dae5c37c5",
@@ -14,39 +14,24 @@
     }
   ],
   "loss": {
-    "usd": 213948.026971,
+    "usd": 213948.03,
     "assets": [
       {
         "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
         "symbol": "USDT",
         "amount": "213944.898898",
-        "usd": 213944.898898
+        "usd": 213944.9
       },
       {
         "token": "0xe548cf28fbb95cedc2b5c25a24f9aa8d06dcc0a6",
         "symbol": "SEA",
         "amount": "383317.208218",
-        "usd": 3.128073
+        "usd": 3.13
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/SEAToken_exp.sol",
-    "eip155:42161:0x78c552f5959bcd8102a4a0dd7f6f427c4c6bb32176fca1cac44ace5cc1d277b3",
-    "eip155:42161:0x4a69165593d673cf6c5c818da01c9956ab6c2121ee4c320cc200e025561fae9b",
-    "eip155:42161:0x0d9f734edda858fe5a5e51d48d6209d882c865fe9992289434e9c1f20bb16dcf",
-    "eip155:42161:0xec9aaec9b22c185142a9577caf9edda44746b2ca16267b8f5f8141b168b9d01d",
-    "eip155:42161:0x9772f47af06120167868c103c62a907796adacb2ac392e069a5ae7881c409b66",
-    "eip155:42161:0xb20b7764073dcb50edbe7178dbdfa082f20cb7e2375de57ce98f00332aac0280",
-    "eip155:42161:0x021c67043f1b3eae63b66a28b6af752457a9d2f67edbb597fcb16f01d2ef75ca",
-    "eip155:42161:0x2ee5135d68394d6b1313cfbdc540cc7654b9e9ea255e845485eb14c2d443935a",
-    "eip155:42161:0x642fe9db7a34bc689de9eec1e170274da9dc241c5372e50f00891ad51af52792",
-    "eip155:42161:0x7819b513378314d3b0cb59a635a785400ba2c48672a9fe2586b417d89b6d4439",
-    "eip155:42161:0x001cb16e17c4c5a5c4d02423c9e9b2f2b11ab6b2a1baf2ba53b8fcaf06167716",
-    "eip155:42161:0x73e04d650f58064836d4f92247931b9fa13ca96a4c727ad01db3c6d73ea24917",
-    "eip155:42161:0x55a0db88987990fd7875bc7c5aa57151ce55f43d271ad74be45066860908e4f6",
-    "eip155:42161:0x98b929217d1532ef2be65af5dd40ef4e06e2905bfd129c5282c1d327dd53a472",
-    "eip155:42161:0x6287b348d85af35e940a64d501f770f0920614508a8dcd990971ae58fcde33fc",
     "eip155:42161:0x6297dbadd23790c3c0ff61c779b9c73964d90ab61d6211b45b8cb29f32336700",
     "eip155:42161:0x2d8ecfbca0cf28c226b0c25c976361e1e8d48012d49d679b9328562dee768d3b",
     "eip155:42161:0x2e17b95599d850d6972c49158617889126e359fbd03975857f1f97e2f9b82683",
@@ -89,9 +74,24 @@
     "https://anomly.rs/metasea-redeemposition-distributor-drain-arb-2026-05-17"
   ],
   "notes": [
-    "upgradeToAndCall selected implementation 0x13dde273, which introduced openV6/redeemPosition; the only later admin change (setPair, slot 5) is not read by the exploit.",
-    "USDT net-drained from the SEA/USDT pair by the sale of distributor-paid SEA across 16 redemption and 37 disposal transactions, plus the unsold SEA residual valued at post-campaign pair spot. Flash-loan premiums are not deducted; SEA flows inside the campaign are not valued a second time.",
-    "Implementation and distributor sources are unverified; root cause rests on trace evidence.",
-    "Implementation source is unverified; the defect is attributed from the call trace, router quotes and bytecode selectors."
+    "upgradeToAndCall selected implementation 0x13dde273, which introduced openV6/redeemPosition (absent from the previous implementation's bytecode); the only later admin change (setPair, slot 5) is not read by the exploit. Implementation and distributor sources are unverified; the defect is attributed from traces.",
+    "Distributor SEA has no market price, so it is valued at what the attackers realised (rule 15): USDT net-drained from the SEA/USDT pair in the 16 redemption txs and the 36 later disposal txs by 0xee1f058c in refs, plus the unsold SEA residual at post-campaign pair spot. Flash-loan premiums are not deducted."
+  ],
+  "campaign": [
+    "eip155:42161:0x78c552f5959bcd8102a4a0dd7f6f427c4c6bb32176fca1cac44ace5cc1d277b3",
+    "eip155:42161:0x4a69165593d673cf6c5c818da01c9956ab6c2121ee4c320cc200e025561fae9b",
+    "eip155:42161:0x0d9f734edda858fe5a5e51d48d6209d882c865fe9992289434e9c1f20bb16dcf",
+    "eip155:42161:0xec9aaec9b22c185142a9577caf9edda44746b2ca16267b8f5f8141b168b9d01d",
+    "eip155:42161:0x9772f47af06120167868c103c62a907796adacb2ac392e069a5ae7881c409b66",
+    "eip155:42161:0xb20b7764073dcb50edbe7178dbdfa082f20cb7e2375de57ce98f00332aac0280",
+    "eip155:42161:0x021c67043f1b3eae63b66a28b6af752457a9d2f67edbb597fcb16f01d2ef75ca",
+    "eip155:42161:0x2ee5135d68394d6b1313cfbdc540cc7654b9e9ea255e845485eb14c2d443935a",
+    "eip155:42161:0x642fe9db7a34bc689de9eec1e170274da9dc241c5372e50f00891ad51af52792",
+    "eip155:42161:0x7819b513378314d3b0cb59a635a785400ba2c48672a9fe2586b417d89b6d4439",
+    "eip155:42161:0x001cb16e17c4c5a5c4d02423c9e9b2f2b11ab6b2a1baf2ba53b8fcaf06167716",
+    "eip155:42161:0x73e04d650f58064836d4f92247931b9fa13ca96a4c727ad01db3c6d73ea24917",
+    "eip155:42161:0x55a0db88987990fd7875bc7c5aa57151ce55f43d271ad74be45066860908e4f6",
+    "eip155:42161:0x98b929217d1532ef2be65af5dd40ef4e06e2905bfd129c5282c1d327dd53a472",
+    "eip155:42161:0x6287b348d85af35e940a64d501f770f0920614508a8dcd990971ae58fcde33fc"
   ]
 }
