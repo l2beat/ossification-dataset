@@ -7,6 +7,7 @@
  *
  *   node scripts/build.mjs          # derive what changed, write dist/latest
  *   node scripts/build.mjs --all    # re-derive every record
+ *   node scripts/build.mjs --only incidents/1/<tx>.json ...   # re-derive these records
  */
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
@@ -71,7 +72,7 @@ const factsOf = (previous, record) => ({
   unverified: previous.unverified,
 })
 
-export async function build({ root = ROOT, all = false, offline = false, log = () => {} } = {}) {
+export async function build({ root = ROOT, all = false, only = null, offline = false, log = () => {} } = {}) {
   const previous = new Map()
   const distFile = path.join(root, 'dist', 'latest', 'incidents.json')
   if (!all && existsSync(distFile)) for (const old of JSON.parse(readFileSync(distFile, 'utf8'))) previous.set(old.id, old)
@@ -82,7 +83,7 @@ export async function build({ root = ROOT, all = false, offline = false, log = (
   for (const incident of readIncidents(root)) {
     const key = claimsKey(incident.record)
     const old = previous.get(incident.id)
-    if (old?.claimsSha256 === key) rows.push(row(incident, factsOf(old, incident.record), key))
+    if (old?.claimsSha256 === key && !only?.has(incident.path)) rows.push(row(incident, factsOf(old, incident.record), key))
     else if (offline) errors.push(`${incident.path}: onchain claims changed; run npm run build with an RPC`)
     else pending.push({ incident, key, old })
   }
@@ -117,7 +118,8 @@ export async function build({ root = ROOT, all = false, offline = false, log = (
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  const { errors, files } = await build({ all: process.argv.includes('--all'), log: (line) => console.error(line) })
+  const only = process.argv.includes('--only') ? new Set(process.argv.slice(process.argv.indexOf('--only') + 1)) : null
+  const { errors, files } = await build({ all: process.argv.includes('--all'), only, log: (line) => console.error(line) })
   if (errors.length) {
     for (const error of errors) console.error(`ERROR: ${error}`)
     process.exit(1)

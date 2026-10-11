@@ -1,0 +1,48 @@
+name: Derive
+
+# Re-derives the onchain facts of the records a pull request changes and
+# fails if they differ from the committed dist/latest. Needs archive RPC
+# URLs as repository secrets; chains without one use public endpoints.
+
+on:
+  pull_request:
+    paths: [incidents/**, scripts/**]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  derive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      ETHEREUM_RPC_URL: ${{ secrets.ETHEREUM_RPC_URL }}
+      OPTIMISM_RPC_URL: ${{ secrets.OPTIMISM_RPC_URL }}
+      BSC_RPC_URL: ${{ secrets.BSC_RPC_URL }}
+      GNOSIS_RPC_URL: ${{ secrets.GNOSIS_RPC_URL }}
+      UNICHAIN_RPC_URL: ${{ secrets.UNICHAIN_RPC_URL }}
+      POLYGONPOS_RPC_URL: ${{ secrets.POLYGONPOS_RPC_URL }}
+      SONIC_RPC_URL: ${{ secrets.SONIC_RPC_URL }}
+      BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+      ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
+      AVALANCHE_RPC_URL: ${{ secrets.AVALANCHE_RPC_URL }}
+      LINEA_RPC_URL: ${{ secrets.LINEA_RPC_URL }}
+      BLAST_RPC_URL: ${{ secrets.BLAST_RPC_URL }}
+      SCROLL_RPC_URL: ${{ secrets.SCROLL_RPC_URL }}
+      MANTLE_RPC_URL: ${{ secrets.MANTLE_RPC_URL }}
+      ZKSYNC2_RPC_URL: ${{ secrets.ZKSYNC2_RPC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Re-derive changed records
+        run: |
+          base=${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          changed=$(git diff --name-only --diff-filter=AM "$base" HEAD -- 'incidents/**.json')
+          if [ -z "$changed" ]; then echo "no changed records"; exit 0; fi
+          node scripts/build.mjs --only $changed
+          git diff --exit-code dist/latest
