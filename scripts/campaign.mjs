@@ -4,7 +4,7 @@
  * come from logs, each is confirmed by its trace. Normal use calls the same
  * selectors, so the target's outflow is printed for the researcher to judge.
  *
- *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..] [--also 0x..,0x..]
+ *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..] [--also 0x..,0x..] [--traces]
  *
  * The range runs from the earliest target reset (or creation, on other chains)
  * to the latest block; log scanning stops early past --max candidates (2000).
@@ -174,6 +174,13 @@ async function scan(chain, targets, selectors, from, to, anchor) {
       end = result.end
       for (const log of result.output)
         candidates.set(log.transactionHash, { hash: log.transactionHash, block: hexInt(log.blockNumber), index: hexInt(log.transactionIndex) })
+    }
+  // --traces: calls into a target that leave no log on it (arbitrary calls, approval drains), where the
+  // provider serves trace_filter over 10k-block ranges (Ethereum).
+  if (args.includes('--traces'))
+    for (let start = from; start <= end && candidates.size <= max; start += 10000) {
+      const calls = await rpc(chain, 'trace_filter', [{ fromBlock: blockTag(start), toBlock: blockTag(Math.min(end, start + 9999)), toAddress: targets.map((t) => t.address) }])
+      for (const call of calls ?? []) if (!call.error) candidates.set(call.transactionHash, { hash: call.transactionHash, block: call.blockNumber, index: call.transactionPosition })
     }
   if (end < to) console.log(`CAPPED: over --max ${max} candidates; logs scanned through block ${end} only`)
   const ordered = [...candidates.values()].filter((c) => c.block <= end || c === anchor).sort((a, b) => (before(a, b) ? -1 : 1))
