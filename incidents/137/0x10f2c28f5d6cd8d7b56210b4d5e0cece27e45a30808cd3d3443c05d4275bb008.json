@@ -2,71 +2,73 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "0VIX Protocol",
   "name": "0VIX VGHSTOracle donatable vault share price",
-  "summary": "VGHSTOracle.latestRoundData() returns price = convertVGHST(1 ether) * ghstFeed.latestRoundData().answer / 10**vGHSTDecimals, multiplying the Chainlink GHST/USD answer by the vGHST vault's live GHST-per-share rate with no bound, time average or sanity check, and reusing the GHST feed's startedAt and updatedAt for a multiplier that has no update time at all. convertVGHST() divides the GHST the vault controls by its share supply, so a bare GHST transfer into the vault raises it in the same transaction. Inside the anchor the attacker sent 1,656,000 GHST to the vGHST vault 0x51195e21bdae8722b29919db56d95ef51faeca6c and the rate went from 1.038332409239877123 to 1.786527556471688230 GHST per share, so the 0VIX oracle 0x1c312b14c129eabc4796b0165a2c470b659e5f01 reported a 72 percent higher ovGHST collateral value and the Comptroller authorised borrows and liquidations against collateral that did not exist. Boundary test: VGHSTOracle holds no storage at all - both vGHST and ghstFeed are compile-time constants and the contract has no owner, initializer or setter - so there is no parameter value at which the deployed code is correct. This is the same defect shape already admitted for Cream Finance's PriceOracleProxy yVault branch and for Lodestar's plvGLP share price, and unlike a genuine market move the manipulated quantity is a contract-internal accounting ratio the attacker wrote to directly.",
+  "summary": "VGHSTOracle priced vGHST as the GHST feed times vGHST's convertVGHST rate, the vault's GHST over its supply, which a bare GHST transfer raises; 0VIX listed ovGHST as borrowable with it. The attacker borrowed vGHST and other assets against flash-loaned stablecoins, donated GHST to inflate its vGHST debt, and liquidated itself to seize the collateral.",
   "targets": [
     {
       "address": "0x738fe8a918d5e43b705fc5127450e2300f7b08ab",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x92bc5f3d8f0f6f7e2e155eb486cdb7bd26e91eb7d1c1d41725517f423897a675"
+        "kind": "config",
+        "tx": "0x1a513b62db3f303a895547cf0a517e6c6c3a9562cf42012ddbafed9074fc7e95",
+        "address": "0x1c312b14c129eabc4796b0165a2c470b659e5f01",
+        "slot": "0x378a6244a82748004055a8536399a7f2d31e9c856308402765213da7795f7a69"
       }
     }
   ],
   "loss": {
-    "usd": 4379114.5479949275,
+    "usd": 4379114.54,
     "assets": [
       {
         "token": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
         "symbol": "WETH",
         "amount": "471.975053683700650723",
-        "usd": 903138.4244753717
+        "usd": 903138.42
       },
       {
         "token": "0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd",
         "symbol": "wstETH",
         "amount": "283.060059939820039164",
-        "usd": 606037.2495323535
+        "usd": 606037.25
       },
       {
         "token": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
         "symbol": "WBTC",
         "amount": "18.09937483",
-        "usd": 530492.6762673
+        "usd": 530492.68
       },
       {
         "token": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
         "symbol": "MaticX",
         "amount": "452850.498013984938642514",
-        "usd": 480021.52789482404
+        "usd": 480021.53
       },
       {
         "symbol": "MATIC",
         "amount": "470511.575760773148213875",
-        "usd": 472393.62206381623
+        "usd": 472393.62
       },
       {
         "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         "symbol": "USDC",
         "amount": "456427.663078",
-        "usd": 456427.663078
+        "usd": 456427.66
       },
       {
         "token": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
         "symbol": "USDT",
         "amount": "429215.203193",
-        "usd": 429215.203193
+        "usd": 429215.2
       },
       {
         "token": "0x51195e21bdae8722b29919db56d95ef51faeca6c",
         "symbol": "vGHST",
         "amount": "183870.634805052795710012",
-        "usd": 213829.0999326676
+        "usd": 213829.1
       },
       {
         "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
         "symbol": "DAI",
         "amount": "159399.081557594580444488",
-        "usd": 159399.0815575946
+        "usd": 159399.08
       },
       {
         "token": "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
@@ -81,9 +83,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/0vix_exp.sol"
   ],
   "notes": [
-    "VGHSTOracle is a plain non-delegating deployment with an empty constructor, no storage and no upgrade path; its two dependencies are Solidity constants. The account is empty at block 40442388 and its runtime hashes to 0x55f11e197231a224a8106031c0be11124b7daa31bffc9410ed39dc5ff1902e8b at the creation block, at blocks 41000000 and 42000000, at block 42054768 immediately before the exploit, and in the anchor transaction's prestate, so the deployment is the last executable-code change.",
-    "Exact victim depletion: for each of the ten 0VIX markets the net movement of that market's own underlying across the single campaign transaction, taken from the receipt's Transfer logs and, for oMATIC, from the non-reverted native value transfers in the callTracer trace. Every market is net negative and the attacker's own flash-loaned USDT and USDC collateral deposits are netted inside the same measurement, so no attacker-supplied input is counted. The ovGHST market's entire 183,870.634805052795710012 vGHST collateral left it and is valued at the unmanipulated pre-attack rate convertVGHST(1e18) = 1.038332409239877123 GHST per share times the DefiLlama GHST price 1.12, not at the 1.786527556471688230 rate the attacker's donation produced. This total exceeds the roughly 2 million USD commonly reported because that figure is the attacker's own realised proceeds - the exploit sender 0x702ef63881b5241ffb412199547bcd0c6910a970 ends the transaction up exactly 1,453,546.066478 USDC, 584,444.536038 USDT and 9,565.867204501279 GHST, about 2,048,704 USD at the same quotes. The gap is the attacker's cost of the manipulation: 1,656,000 GHST bought at heavy slippage and pushed into the vGHST vault, of which the vault retains 824,430.2286398828 GHST that accrued to remaining vGHST holders, plus Aave and Balancer flash-loan fees and swap costs. Financing fees do not reduce gross victim depletion. USDC, USDT and DAI are valued at par; WETH and WBTC use the DefiLlama coingecko series because the Polygon token addresses have no series; every quote is the nearest DefiLlama sample at or before the anchor.",
-    "The vGHST component of the loss has no market price series and is marked at the vault's own pre-donation GHST-per-share rate times the DefiLlama GHST price, a protocol-internal basis; it is 213,829 USD of the 4,379,115 USD total.",
-    "The seed inventory called this row a market working as designed and aged the ovGHST market proxy 0xe053a4014b50666ed388ab8cbb18d5834de0ab12. Review rejects that reading: the attacker did not move a market price, they wrote to the vGHST vault's own share-accounting ratio with a bare token transfer, and the contract that turned that ratio into a collateral price is VGHSTOracle 0x738fe8a918d5e43b705fc5127450e2300f7b08ab, which has no configurable state at all. The two contracts were deployed 640 seconds apart, so the age barely differs, but the artifact identity does."
+    "The reset is the oracle's heartbeat for VGHSTOracle, raised from 1h to 24h: the GHST feed was 6,547s old at the exploit, past the old 5,400s limit, so the exploit needed it. The FeedSet that listed ovGHST and routed it to the oracle came two days earlier.",
+    "Loss is each 0VIX market's net underlying outflow; the attacker's flash-financed USDC and USDT deposits net inside the transaction. vGHST has no market series and is valued at the pre-donation vault rate times GHST. The ~$2M often reported is the attacker's profit after the donation and fees."
   ]
 }
