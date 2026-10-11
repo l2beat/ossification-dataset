@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Flamincome",
   "name": "Flamincome USDT Strategy donatable Convex NAV",
-  "summary": "Flamincome's USDT Strategy prices VaultYUSDT shares from balanceOfY(), whose delegatecalled implementation deposited() adds Convex BaseRewardPool.balanceOf(Strategy) times the USDP/3CRV metapool get_virtual_price() to its Aave and idle USDT. Convex stakeFor lets anyone credit that balance, and virtual price values each LP at par although USDP was deeply depegged. The attacker deposited 17.94M flash-loaned USDT into VaultYUSDT, minted cheap USDP/3CRV LP, staked 691,647.8 LP for the Strategy to inflate its NAV, and withdrew all shares for 503,115 USDT more than it deposited, paid from real Aave USDT backing.",
+  "summary": "The USDT Strategy's balanceOfY(), which prices VaultYUSDT shares, adds Convex BaseRewardPool.balanceOf(Strategy) times the USDP/3CRV get_virtual_price() to its Aave USDT. Anyone can stakeFor the Strategy, and virtual price ignored USDP's depeg. The attacker deposited flash-loaned USDT, staked cheap USDP/3CRV LP for the Strategy to inflate NAV, and withdrew more USDT.",
   "targets": [
     {
       "address": "0xb8d6471ca573c92c7096ab8600347f6a9fe268a5",
@@ -14,27 +14,25 @@
     }
   ],
   "loss": {
-    "usd": 345902.67,
+    "usd": 502807.26,
     "assets": [
       {
-        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "symbol": "USDT",
-        "amount": "345902.669987",
-        "usd": 345902.67
+        "token": "0x3ed3b47dd13ec9a98b44e6204a523e766b225811",
+        "symbol": "aUSDT",
+        "amount": "503129.143187",
+        "usd": 502807.26
       }
     ]
   },
   "refs": [
     "eip155:1:0xbb44d1661cfdbe7aa4db4302e426525867902f1d7d0aa9b1b35951e7e7a8765e",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/Flamincome_exp.sol",
-    "https://etherscan.io/address/0xb8d6471ca573c92c7096ab8600347f6a9fe268a5#code",
     "eip155:1:0x3c824dde24b6b55e4508ed7ba9eea34982c24bec21f8b18b9b2f8b442058aaa9",
     "eip155:1:0x1e4f2f05a8eca83ce6851e96c35849c89cb13d953cc4149e49f3dc8e89439036"
   ],
   "notes": [
-    "Aragon Voting 0x24d840dbaa0c0c72589c8f8860063024d1c064db executeVote(21) called Agent 0x4b827d771456abd5afc1d05837f915577729a751 execute -> Strategy.setImpl(0xff20de3f3f4c7e9518035a968b4a3cee500a2afb), changing the Strategy's delegatecall implementation (storage slot 5, `impl`) from 0x752e13777137321c7311a787555cd6ee3375bc65 to the Convex/Aave implementation whose deposited() the exploit executed.",
-    "Net loss is the attacker's realized USDT extraction, net of every attacker input. The Strategy's real backing (aUSDT + USDT) fell 595,787.542728 USDT across the transaction: it paid 18,439,013.669987 USDT to the exploit contract and 92,658.360150 USDT withdrawal fee to the Flamincome Aragon Agent (governance) and received the attacker's 17,935,898.4858 USDT vault deposit; the remaining 14 USDT was an honest pre-inflation VaultX redemption of market-bought xUSDT. The attacker's excess receipt over its deposit was 503,115.185187 USDT, of which 157,212.5152 USDT was spent acquiring the 691,647.799229 usdp3CRV LP that stakeFor credited to the Strategy. That LP is an attacker-supplied input retained by the victim; the team unwound it within three hours into 721,614.516498 USDP, a token whose onchain prices in and before the exploit ranged from 0.011 3CRV (metapool spot at block 25990442) to about 0.21 USDT (small Uniswap V4 fill), so its USD value cannot be fixed and gross victim depletion cannot be separated from it. The 345,902.669987 USDT attacker profit is therefore reported as net loss; it is a lower bound on depositor loss whenever the retained LP was worth less than 249,870.88 USD (the LP cost plus the fee kept by governance). A later depositor, 0x3d920c35a92f9a224d2918568647c8f9789bee2a, redeemed 1,433,072.621231 USDT at the still-inflated NAV in transaction 0x1533ae36ed8cefcea13dea730a73d2c24f5780d4c719f4714f4c095b75d67383; that redistribution among depositors is not added.",
-    "Loss is net attacker extraction because the attacker-supplied usdp3CRV input retained by the victim (unwound into 721,614.516498 depegged USDP) has no fixable USD value; Strategy gross real-backing depletion was 595,787.542728 USDT before that offset.",
-    "The implementation is unverified; its deposited() formula is established from the exploit call trace (BaseRewardPool.balanceOf, metapool get_virtual_price, aUSDT.balanceOf staticcalls) and bytecode constants, not from source."
+    "The reset is Aragon vote 21's Agent call Strategy.setImpl(0xff20de3f), which routed the Strategy to the Convex/Aave implementation whose balanceOfY() the exploit inflated. The implementation is unverified; the formula comes from the exploit trace.",
+    "Loss is gross depletion of the Strategy's Aave/USDT backing (595,787.54 USDT) net of the 92,658.36 USDT withdrawal fee that went to Flamincome's own Agent. The 691,647.8 depegged usdp3CRV the attacker staked for the Strategy is a gain in another asset and is not subtracted (rule 14); the attacker's net profit was 345,902.67 USDT.",
+    "Depositor 0x3d920c35 later redeemed at the still-inflated NAV in 0x1533ae36. That was an ordinary withdrawAll by an existing depositor, so it is not campaign; the only stakeFor to the Strategy not made by Flamincome is the anchor."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "EquilibriaEPendle",
   "name": "Equilibria transferable-share reward replay",
-  "summary": "VaultEPendle did not update reward debt on share transfers and public getReward(account) let fresh receivers re-claim the same native rewards repeatedly.",
+  "summary": "VaultEPendle updated reward debt only in deposit, withdraw and getReward, not on share transfers, and getReward(account) was public. The attacker deposited, moved the shares to fresh helper contracts and claimed for each, so every receiver was paid the full accumulated reward per share again, then pulled the shares back and repeated.",
   "targets": [
     {
       "address": "0xd30d6fd662c0d92b49f3c3e478e125ba1d968059",
@@ -13,25 +13,41 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xc16984edf1ac3e50f1a10842310c7ab3983ab0d1f9f5eb6fb859a59e416048f8",
+    "eip155:1:0x45047ffa6d8f380b9914053b3fbcc6333422b4ccd7bb6ac829a6c39637aa090f",
+    "eip155:1:0x0a60d7fb1d459ebee1ddcd62d1a8fcb8faa9aa1ebbb3203f90bea7dd888af8aa"
+  ],
   "loss": {
-    "usd": 64238.842466590555,
+    "usd": 67256.45,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "13.599119865909616611",
-        "usd": 64238.842466590555
+        "usd": 64258.45
+      },
+      {
+        "token": "0xfe80d611c6403f70e5b1b9b722d2b3510b740b2b",
+        "symbol": "EQB",
+        "amount": "5367.974273650173392172",
+        "usd": 2998
+      },
+      {
+        "token": "0xd6ecfd0d5f1dfd3ad30f267a3a29b3e1bc4fd54f",
+        "symbol": "xEQB",
+        "amount": "16103.922820950558328966",
+        "usd": 0
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-08/EquilibriaEPendle_exp.sol",
-    "eip155:1:0xc16984edf1ac3e50f1a10842310c7ab3983ab0d1f9f5eb6fb859a59e416048f8",
     "eip155:1:0xa4dcf1482d0430b17a68d25138a16e9dd6a7d0c9cc11be559d0e7e63ead40137",
-    "eip155:1:0x45047ffa6d8f380b9914053b3fbcc6333422b4ccd7bb6ac829a6c39637aa090f",
-    "eip155:1:0x17e0c48827879a648e0a3778a2e447a3614e81c7b228d7098f079c22aff47247",
-    "eip155:1:0x0a60d7fb1d459ebee1ddcd62d1a8fcb8faa9aa1ebbb3203f90bea7dd888af8aa"
+    "eip155:1:0x17e0c48827879a648e0a3778a2e447a3614e81c7b228d7098f079c22aff47247"
   ],
   "notes": [
-    "Five successful reward-replay transactions plus one funding-only attempt form one episode. CALL-value outflows minus all campaign inflows, including recycled payouts and the standalone 0.664440216358314284 ETH topup, equal 13.599119865909616611 ETH. This matches vault balance depletion from 13.603353927190515249 to 0.004234061280898638 ETH over blocks 23203451–23204165. Net loss is used because pooled attacker inputs cannot be assigned individually to the residual balance. Gas, builder payments and later recoveries are not deductions. All ETH is valued at the first-exploit historical price; the campaign lasts under three hours."
+    "Copycat contract creations 0xa4dcf148 and 0x17e0c488 only sent ETH into the vault. The next replays took that ETH out again, so the ETH loss is the vault's drop over the campaign (13.603 to 0.004 ETH) rather than the sum of per-transaction outflows (rule 14: attacker deposits are not victim assets).",
+    "In 0x45047ffa the vault also paid EQB and xEQB rewards. The xEQB stayed in the 14 helper contracts because xEQB cannot be transferred, so the attacker realised nothing from it and it is valued at zero (rule 15).",
+    "The anchor and the three replays are the only transactions since the vault's deployment in which an account received vault shares by transfer and was paid rewards in the same transaction."
   ]
 }

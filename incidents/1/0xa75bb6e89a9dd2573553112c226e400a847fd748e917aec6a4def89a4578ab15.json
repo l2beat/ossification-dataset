@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Float Protocol",
   "name": "Float Hypervisors mint and redeem shares at the pool's instantaneous tick",
-  "summary": "Float Protocol's two Visor-style Hypervisors on the FLOAT/WETH Uniswap V3 pool price deposits and total holdings with the pool's current tick. Their only guard is a DepositProxy ratio check against those same manipulable holdings. Swapping the pool, depositing through the whitelisted DepositProxy, swapping back and withdrawing returns more value than was deposited. 0x492d2552 did this against Hypervisor B on 2026-07-30. 0xaea29218 repeated it against both Hypervisors on 2026-09-01.",
+  "summary": "Float Protocol's Visor-style Hypervisors on the FLOAT/WETH Uniswap V3 pool price deposits and holdings at the pool's current tick. Their only guard, the DepositProxy ratio check, compares against the same manipulable holdings. Swapping the pool, depositing through the DepositProxy, swapping back and withdrawing returns more than was deposited.",
   "targets": [
     {
       "address": "0xc86b1e7fa86834cac1468937cdd53ba3ccbc1153",
@@ -12,19 +12,41 @@
         "address": "0xc86b1e7fa86834cac1468937cdd53ba3ccbc1153",
         "call": "0xbb032a660000000000000000000000007cf8431e086e1bcdc9524fd305f7d5d8622cd75f"
       }
+    },
+    {
+      "address": "0x7cf8431e086e1bcdc9524fd305f7d5d8622cd75f",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8038cf7af2af3539766267bc534fdd6343e0c367fd51e06b991fed1c15ebb364"
+      }
     }
   ],
+  "campaign": [
+    "eip155:1:0x3d7549db65344da2a41067e17791b17fac16ec6b8e5132e82e243f6541de5cff"
+  ],
   "loss": {
-    "usd": 36773.76802598512,
-    "assets": []
+    "usd": 50434.31,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "11.169911447772009191",
+        "usd": 23100.37
+      },
+      {
+        "token": "0xb05097849bca421a3f51b249ba6cca4af4b97cb9",
+        "symbol": "FLOAT",
+        "amount": "42025.090647226051221142",
+        "usd": 27333.94
+      }
+    ]
   },
   "refs": [
-    "eip155:1:0x3d7549db65344da2a41067e17791b17fac16ec6b8e5132e82e243f6541de5cff",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-08/FloatProtocol_exp.sol"
   ],
   "notes": [
-    "Owner appendList([DepositProxy 0x7cf8431e086e1bcdc9524fd305f7d5d8622cd75f]) made list(proxy) true. With the whitelist switched on two blocks later, that proxy is the only way into Hypervisor B. Later changes only restricted it: DepositProxy depositDelta 20 -> 11, and whitelist edits that left the proxy listed.",
-    "Attackers' gross realised extraction, a lower bound on the Hypervisor holders' loss. In source-1, 0x492d2552 received 5.502794615000686908 WETH net (unwrapped to ETH; 5.499404026050304823 ETH then went to builder 0x6c42a0b5, which does not reduce the loss) at ETH 1921.1729153052704. In source-2, 0xaea29218 received 10.706591043820923462 ETH net at ETH 2447.2727076168653. The Hypervisors' measured depletion is larger: source-1 took 7.975817164335609226 WETH from Hypervisor B while leaving 2,568.549500696945334661 more FLOAT, and source-2 took 5,003.835636638384594363 FLOAT and 1.637791718201924993 WETH from Hypervisor A and 37,021.255010587666626779 FLOAT and 1.556302565234474972 WETH from Hypervisor B. At the pre-exploit DefiLlama FLOAT quote (0.4937, then 0.6501) that is about 41.9k USD, but the attackers' disposal moved the FLOAT price, so realised proceeds are used. The PoC reports ~$28K for source-2 only.",
-    "Loss is the attackers' realised extraction, a lower bound on the Hypervisor holders' depletion, because FLOAT's price moved in the disposal."
+    "Hypervisor B ages from the owner's appendList adding DepositProxy 0x7cf8431e. With the whitelist switched on two blocks later, that proxy is the only way in. Later changes only tightened it (depositDelta 20 to 11).",
+    "Loss is the per-transaction drop in each Hypervisor's getTotalAmounts(), since its liquidity sits in the pool where transfer logs cannot see it: B lost WETH in the anchor, and A (0x85cbed52, through proxy 0x38037294) and B lost FLOAT and WETH in the copycat. The anchor's FLOAT gain in B is not subtracted. FLOAT is valued at DefiLlama's price; the attackers realised about $36.8k.",
+    "The anchor and 0x3d7549db are the only transactions in either Hypervisor's history that deposit and withdraw in the same transaction."
   ]
 }

@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Euler Finance",
-  "name": "Euler Finance",
-  "summary": "Euler's EToken donateToReserves path skipped the liquidity check, enabling discounted self-liquidation. The implicated EToken module was activated in Euler's module router on 2022-08-18. Later installs of unrelated modules do not reset the age of this defect-bearing artifact.",
+  "name": "Euler Finance donateToReserves self-liquidation",
+  "summary": "EToken.donateToReserves() burned the caller's eTokens without checking account liquidity. The attacker built a leveraged eToken/dToken position with a flash loan, donated collateral to the reserves to push the account deep underwater, then self-liquidated it from a second account at the maximum discount and withdrew the surplus collateral.",
   "targets": [
     {
       "address": "0x27182842e098f60e3d576794a5bffb0777e025d3",
@@ -13,16 +13,60 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x47ac3527d02e6b9631c77fad1cdee7bfa77a8a7bfd4880dccbda5146ace4088f",
+    "eip155:1:0x71a908be0bef6174bccc3d493becdfd28395d78898e355d451cb52f7bac38617",
+    "eip155:1:0x62bd3d31a7b75c098ccf28bc4d4af8c4a191b4b9e451fab4232258079e8b18c4",
+    "eip155:1:0x465a6780145f1efe3ab52f94c006065575712d2003d83d85481f3d110ed131d9",
+    "eip155:1:0x3097830e9921e4063d334acb82f6a79374f76f0b1a8f857e89b89bc58df1f311"
+  ],
   "loss": {
-    "usd": 197000000,
-    "assets": []
+    "usd": 197931539.57,
+    "assets": [
+      {
+        "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+        "symbol": "wstETH",
+        "amount": "66271.498175683316786271",
+        "usd": 116998794.53
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "34413863.41846",
+        "usd": 34068474.34
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "849.13597139",
+        "usd": 18951865.75
+      },
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "8099.303891868396965958",
+        "usd": 12909561.47
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "8904507.348306697267428294",
+        "usd": 8806824.9
+      },
+      {
+        "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "symbol": "stETH",
+        "amount": "3897.504357548022052969",
+        "usd": 6196018.58
+      }
+    ]
   },
   "refs": [
     "https://www.euler.finance/blog/war-peace-behind-the-scenes-of-eulers-240m-exploit-recovery"
   ],
   "notes": [
-    "InstallerInstallModule activated moduleId 500000 at the EToken implementation containing donateToReserves.",
-    "Approximate gross multi-asset value reported by Euler; subsequent recovery is not netted from exploit-time loss.",
-    "Euler reports the gross loss as approximately $197 million across several assets."
+    "The same installer transaction routed EToken (moduleId 500000) to 0xbb0d4bb6 and also installed the liquidation, risk-manager and DToken modules the exploit ran, so any of them gives the same age.",
+    "The only earlier donateToReserves calls (Euler-team transactions right after the install, and a lone donation in 0x15339fce) ran no liquidation and paid out nothing.",
+    "Later recoveries are not netted."
   ]
 }

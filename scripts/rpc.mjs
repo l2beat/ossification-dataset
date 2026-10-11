@@ -62,7 +62,21 @@ export async function rpc(chainId, method, params) {
     }
   }
   if (body.error) throw new Error(`${method}: ${body.error.message ?? JSON.stringify(body.error)}`)
+  if (method === 'eth_getLogs' && SHIFTED_LOG_HASHES.has(chainId)) return resolveLogHashes(chainId, body.result)
   return body.result
+}
+
+// Some BSC providers return the wrong transactionHash on logs of recent blocks; block number and
+// transaction index are right, so the hash is taken from the block.
+const SHIFTED_LOG_HASHES = new Set([56])
+const blockHashes = new Map()
+async function resolveLogHashes(chainId, logs) {
+  for (const log of logs) {
+    const key = `${chainId}:${log.blockNumber}`
+    if (!blockHashes.has(key)) blockHashes.set(key, rpc(chainId, 'eth_getBlockByNumber', [log.blockNumber, false]).then((block) => block.transactions))
+    log.transactionHash = (await blockHashes.get(key))[Number.parseInt(log.transactionIndex, 16)]
+  }
+  return logs
 }
 
 export const hexInt = (value) => (value === null || value === undefined ? null : Number.parseInt(value, 16))
