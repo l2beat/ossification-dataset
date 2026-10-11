@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ZED RUN",
   "name": "ZED RUN GaslessReservoirEnabler whitelisted-token module allowance drain",
-  "summary": "GaslessReservoirEnabler.erc20WithTransfersAndExecute is callable by anyone and runs module.call(data) for every ExecutionInfo whose module is on moduleWhitelist, with the calldata entirely caller-controlled. The same contract pulls users' ERC-20s with safeTransferFrom(_msgSender(), ...), so users hold standing allowances to it. Once the admin whitelisted the WETH token itself as a module, any caller could make the enabler call WETH.transferFrom(victim, attacker, amount) and spend every user's allowance, breaking the invariant that the enabler moves a user's tokens only on that user's own call or signed meta-transaction.",
+  "summary": "GaslessReservoirEnabler.erc20WithTransfersAndExecute lets anyone run caller-chosen calldata against any whitelisted module, while users hold standing token allowances to the enabler. After the admin whitelisted the WETH token itself as a module, anyone could make the enabler call WETH.transferFrom(victim, attacker) and spend every approver's allowance.",
   "targets": [
     {
       "address": "0x9b58fdadc16e30fba313e044bf9e88689c3f163e",
@@ -14,30 +14,34 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:137:0xa1b1af7fc4608b18805e2fce5f2c2558a9e44a928ffd1527a4193c81062ddbf9",
+    "eip155:137:0x0475257d41ef8fc9609a10a0a1fdbfbdfd359393cf7160fe3cb16544ac23f886",
+    "eip155:137:0x8556b86225956671e193816e5cfd85a73936ef3a763e306e00d2d331b00d8d9b",
+    "eip155:137:0xfdc8c5cc82693599aeff5f76cf4e98d9aca3e90d4ebf28395b9cffa66cdb35c1"
+  ],
   "loss": {
-    "usd": 24236.829344622933,
+    "usd": 24248,
     "assets": [
       {
         "token": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
         "symbol": "WETH",
-        "amount": "8.850353385738304332",
-        "usd": 24225.478598536043
+        "amount": "8.854617847071422908",
+        "usd": 24236.62
       },
       {
         "token": "0x5ec03c1f7fa7ff05ec476d19e34a22eddb48acdc",
         "symbol": "ZED",
         "amount": "81210.286957137976683311",
-        "usd": 11.35074608689361
+        "usd": 11.38
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/GaslessReservoirEnabler_exp.sol",
-    "eip155:137:0xa1b1af7fc4608b18805e2fce5f2c2558a9e44a928ffd1527a4193c81062ddbf9",
-    "eip155:137:0x0475257d41ef8fc9609a10a0a1fdbfbdfd359393cf7160fe3cb16544ac23f886"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/GaslessReservoirEnabler_exp.sol"
   ],
   "notes": [
-    "Admin Safe 0xd5daab598cbae5dda1a1a57a60a494e5fcfa82bb, through a MultiSend delegatecall, called setModuleWhitelistStatus(WETH, true) (moduleWhitelist[WETH], mapping slot 5, 0 -> 1). _executeInternal reverts for non-whitelisted modules, so this value is necessary to the WETH drain; the deployment 3.7 hours earlier left it false and it was never toggled afterwards.",
-    "WETH is the sum of the anchor's 466 transferFrom pulls (8.719916012102510925) and the same attacker's second pass through the same path 21 blocks later (0.130437373635793407). ZED, a second whitelisted token module drained from 165 approvers through the same function, is valued at its realised proceeds: the helper sold it in the same transaction for 0.004146795847693404 WETH. The helper later forwarded exactly the sum of the three legs, 8.854500181585997736 WETH, to the attacker EOA."
+    "moduleWhitelist[WETH] is a module grant (rule 10): non-whitelisted modules revert, and the deployment hours earlier left it false.",
+    "Campaign: the attacker's second WETH pass and its ZED-module pass, plus two later copycat txs from 0xb0fe6e9c. Selected from all WETH and ZED Approval logs with the enabler as spender where a Transfer left a holder other than the tx sender for an address other than the enabler, outside the relayer's meta-tx flow."
   ]
 }

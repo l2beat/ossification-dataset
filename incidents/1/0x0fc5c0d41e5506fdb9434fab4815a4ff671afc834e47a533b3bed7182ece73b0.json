@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "bZx",
   "name": "bZx iToken empty-pool donation rounding",
-  "summary": "The attacker emptied iYFI, minted 5 wei of shares, and donated the flash-borrowed YFI directly to the pool. LoanTokenLogic derived an enormous collateral value from the resulting assets-per-share ratio, while integer rounding still let the attacker recover the 5 wei of iYFI after borrowing assets from other iToken pools. The same sequence was repeated in a second transaction.",
+  "summary": "iToken tokenPrice is the pool's underlying balance over share supply, and bZx accepted iTokens as loan collateral at that price. The attacker reduced iYFI to 5 wei of its own shares, donated flash-borrowed YFI to the pool, borrowed other iToken pools' assets against the 5 wei, withdrew the collateral through integer rounding and redeemed the donation.",
   "targets": [
     {
       "address": "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b",
@@ -13,23 +13,97 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb072f2e88058c147d8ff643694b43a42e36525b7173ce1daf76e6c06170b0e77"
+  ],
   "loss": {
-    "usd": 208606.55895233492,
+    "usd": 210829.5,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "99.749705423580994",
-        "usd": 208606.55895233492
+        "amount": "38.089742649328258427",
+        "usd": 79657.08
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "42329.522649",
+        "usd": 42301.59
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "39812.621697493752003219",
+        "usd": 39754.17
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "27251.348437",
+        "usd": 27261.36
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.22651422",
+        "usd": 8772.55
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "523.91425480441500561",
+        "usd": 7968.74
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "613.367858249823222724",
+        "usd": 3747.68
+      },
+      {
+        "token": "0x0de05f6447ab4d22c8827449ee4ba2d5c288379b",
+        "symbol": "OOKI",
+        "amount": "261367.6638629",
+        "usd": 600.28
+      },
+      {
+        "token": "0xbbbbca6a901c926f240b89eacb641d8aec7aeafd",
+        "symbol": "LRC",
+        "amount": "1987.645891232163697748",
+        "usd": 447.06
+      },
+      {
+        "token": "0x4d224452801aced8b2f0aebe155379bb5d594381",
+        "symbol": "APE",
+        "amount": "115.693075453404239155",
+        "usd": 185.35
+      },
+      {
+        "token": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "symbol": "AAVE",
+        "amount": "1.203854018221517355",
+        "usd": 121.7
+      },
+      {
+        "token": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "symbol": "MKR",
+        "amount": "0.004481",
+        "usd": 6.88
+      },
+      {
+        "token": "0xc00e94cb662c3520282e6f5717214004a7f26888",
+        "symbol": "COMP",
+        "amount": "0.098157285309061937",
+        "usd": 5.06
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/bZx_exp.sol",
-    "eip155:1:0xb072f2e88058c147d8ff643694b43a42e36525b7173ce1daf76e6c06170b0e77"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/bZx_exp.sol"
   ],
   "notes": [
-    "The iYFI proxy's owner-only setTarget call changed target_ in slot 20 from 0x528d205b9521a5e5193b3da9be940c6a18d32a4d to the LoanTokenLogicStandard implementation exploited 339.65 days later.",
-    "This is an exact realised-proceeds net measurement for the heterogeneous borrowed-token basket. After the YFI flash swaps and all liquidations, the attack contract forwarded 41.985181310472257483 ETH in the anchor and 57.764524113108736517 ETH in the follow-up transaction to the attacker EOA, totalling 99.749705423580994 ETH. At the nearest pre-anchor DefiLlama price of 2,091.30 USD, that is 208,606.5589523349327522 USD. Gas is not deducted and no later recovery is netted.",
-    "The exact figure is the campaign's realised ETH proceeds rather than a gross mark of every heterogeneous token and LP token borrowed from the iToken pools."
+    "The reset tx also switched the protocol's LoanMaintenance module and its PriceFeeds contract, the other two contracts on the collateral path, so the age is the same whichever of them is taken as the target.",
+    "This is a different vulnerability from the February and September 2020 bZx incidents (price manipulation, self-transfer duplication), so it stays a separate incident (rule 4).",
+    "Loss is gross depletion of all bZx loan pools over both transactions; the 5 wei iYFI supply was minted by the attacker in a preparatory transaction."
   ]
 }

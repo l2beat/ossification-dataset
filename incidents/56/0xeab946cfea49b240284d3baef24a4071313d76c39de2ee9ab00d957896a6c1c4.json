@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "YuliAI",
   "name": "YuliAI sell inventory live V3 quotation",
-  "summary": "YuliAI's sellToken path valued incoming YULIAI by forwarding the requested quantity to a QuoterV2 against the live YULIAI/USDT Pancake V3 pool, then paid that quote from protocol USDT inventory. One bounded receipt moved the pool before repeatedly exercising the path; this review nets protocol-controlled sell fees and the fair prestate value of the retained YULIAI consideration.",
+  "summary": "YuliAI's sellToken valued incoming YULIAI with a QuoterV2 quote against the live YULIAI/USDT Pancake V3 pool and paid that quote from its USDT inventory. With flash-loaned USDT the attacker pushed the pool price up, sold YULIAI to the contract in many calls at the inflated quote, then sold back into the pool.",
   "targets": [
     {
       "address": "0x8262325bf1d8c3be83eb99f5a74b8458ebb96282",
@@ -10,39 +10,26 @@
         "kind": "config",
         "tx": "0x76a05a10e73c7a660a2196e877e22808101be6bef0102aea41e3e9e77eaee694",
         "address": "0x8262325bf1d8c3be83eb99f5a74b8458ebb96282",
-        "slot": "0x0000000000000000000000000000000000000000000000000000000000000004"
+        "slot": "0x4"
       }
     }
   ],
   "loss": {
-    "usd": 83053.8331452925,
+    "usd": 94846.13,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "94846.132969304914150520",
-        "usd": 94846.13296930492
+        "amount": "94846.13296930491415052",
+        "usd": 94846.13
       }
     ]
   },
   "refs": [
-    "eip155:56:0xb90e722db235b97764912adeabb42384a15b97e9879fd6de70bbcfadbde7bbfe",
-    "eip155:56:0x0ba14a598d89bfe49a6f78bfc7c1cefbbe706fb8de36f67fdc22f1dfae70b115",
-    "eip155:56:0x2d543dc44d03e879cf8f342c96d290b308d13a8ff999b9bd5e691c31b2625bcf",
-    "eip155:56:0xeb47c74d949034f2e068146f5f8069d7e8b6cd05ae853aaeb6d7a1f168ff071e",
-    "eip155:56:0xf05fa383196e1ecae6b24f0d5480263cdd8352b9b8dda155a327e62a710b3a64",
-    "eip155:56:0x0635e28fc2eaac8bce957d8b0cc34e19f20a57f3b91846e6d472be49e02fd1db",
-    "eip155:56:0xa98a7b933c13f7827b195ea13f06c9ad9663789c0f0a7f7e191372c00312e1c9",
-    "eip155:56:0x90243125c7706dde067b36ef2040f537918193b5d49f21f4ce49f583a6993867",
-    "eip155:56:0x886ec70d55ea6eb0a9f1ce3560cd7a08cda916d64a66c410912dd187cb88c951",
-    "eip155:56:0xef1ae756f5d94499bdbc2368e630e4b286c938c1454084f95771c0eee9836858",
-    "eip155:56:0x4bc738adbc78bd653d788609d820bdd697ba9a80a83745e185c1725d017930db",
-    "eip155:56:0x639fca5ad25f64605323e8834a382f1eada3963713acb4b69e3975fdbc16e5a3",
-    "eip155:56:0x69828bd0d7510e997b98e3bc38e592984449d15ea2517bfc3358465e7bb59690",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-08/YuliAI_exp.sol"
   ],
   "notes": [
-    "The direct runtime and QuoterV2/USDT bindings were fixed at deployment, then the owner configured its fee receiver, V3 fee tier and sell mode before this final setToken call changed slot 0x04 from zero to YULIAI. That binding first activated the implicated YULIAI sell path. No receiver, quoter, USDT, token, fee, owner or sell-mode setter executed later before the incident.",
-    "The victim entity is sell contract 0x8262325bf1d8c3be83eb99f5a74b8458ebb96282 plus its creator, owner and configured receiverFee EOA 0x078f3f917c7355027a8388b7083b2199910c8a9a. Archive balances at blocks 57,432,055 and 57,432,056 move from 101,443.782000000000000000 + 663.393732000000000000 = 102,107.175732000000000000 USDT to 1,605.747295468511420520 + 5,655.295467226574428960 = 7,261.042762695085849480 USDT. The exact entity-level stable depletion is therefore 94,846.132969304914150520 USDT: the contract's 99,838.034704531488579480-USDT outflow less the owner's internal 4,991.901735226574428960-USDT five-percent fee recovery. In the same boundary, the sell contract gains exactly 3,347,358.354974243185076585 YULIAI and the owner balance is unchanged. Immediately before the receipt, Pancake V3 fee-10,000 pool 0xa687c7b3c2cf6adaef0c4edab234c55b88e01333 has token0 canonical 18-decimal Binance-Peg USDT, token1 18-decimal YULIAI, sqrtPriceX96 1,334,846,821,531,167,810,533,929,326,840, active liquidity 1,721,008,515,508,744,595,598,029, and balances 102,203.563337554348779303 USDT and 29,004,603.501598146291084966 YULIAI. Correct token orientation gives 0.003522867459496474822898258515289302553283462544060329020695 USDT per YULIAI. At that recorded 60-decimal price, retained consideration is $11,792.299824012411246321659065323531459767412921239379420208798892 to 60 decimal places, leaving net loss $83,053.833145292502904198340934676468540232587078760620579791201108 to 60 decimal places. The only other factory-discovered prestate YULIAI market is a dust V2 pair with 0.029203095562343651 USDT and 7.986386893235572202 YULIAI, so it is not a competing price anchor. The V3 pool gains 16,046.200892423232810268 USDT while providing the retained YULIAI, and flash proxy 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c sends and receives exactly 200,000 USDT with zero fee. The campaign EOA realizes 78,799.932076881681340252 USDT; proceeds are not substituted for entity loss. EOA nonce 2 creates the helper and nonce 3 is the sole loss. Nonce 4 approves a downstream aggregator; nonce 5 plus three permissioned relayer receipts dispose of all proceeds; nonce 6 withdraws only the helper's native balance, leaving it at zero USDT and YULIAI. Nonce 7 is a later unrelated native deposit. These disposal and withdrawal receipts contain no transfer to the victim contract or owner, and the bounded attacker/helper scan finds no later USDT or YULIAI return or recovery."
+    "setToken(YULIAI) is the latest owner setter before the exploit and first made the sell path live; the fee tier and receiver were set earlier, and the later slot change is buyToken's live counter.",
+    "Loss nets the 5% sell fee the contract paid its owner (receiver EOA counted as victim); the YULIAI the attacker left in the contract is consideration and is not subtracted (rule 14)."
   ]
 }
