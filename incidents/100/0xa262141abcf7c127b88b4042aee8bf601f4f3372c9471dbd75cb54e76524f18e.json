@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Agave",
   "name": "Agave ERC-677 reentrancy during aToken burn",
-  "summary": "Agave’s Aave fork burns the collateral aToken and sends the underlying to the liquidator before it finishes updating the borrower’s accounting. Gnosis bridged tokens are ERC-677, so that transfer calls onTokenTransfer on the liquidator, who re-entered borrow() while the position still looked healthy and drew LINK, WETH, USDC, WBTC, GNO and WXDAI against collateral that had already been seized.",
+  "summary": "Agave's Aave v2 fork liquidation sends the seized collateral to the liquidator before the borrower's accounting is final, with no reentrancy guard. Gnosis bridged WETH is ERC-677 and calls onTokenTransfer on the recipient, so the attacker liquidated its own position and re-entered borrow() from the callback, draining six markets against collateral already seized.",
   "targets": [
     {
       "address": "0x207e9def17b4bd1045f5af2c651c081f9fdb0842",
@@ -11,46 +11,54 @@
         "kind": "deployment",
         "tx": "0x26f0b0b982717c4c7f427efb550ecc47547bd4d9b7147af96893180f24cdba50"
       }
+    },
+    {
+      "address": "0x207e9def17b4bd1045f5af2c651c081f9fdb0842",
+      "code": "0x85b79018c781b499f2878bee14e4e8b5db31ac61",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x712ff2e656a2eb85285e89bcabaafa1b619a3eba48efdc78a3b28bd7ff0a5de5"
+      }
     }
   ],
+  "campaign": [],
   "loss": {
-    "usd": 5422965.233920522,
+    "usd": 5444384.25,
     "assets": [
       {
-        "token": "0xe2e73a1c69ecf83f464efce6a5be353a37ca09b2",
-        "symbol": "LINK",
-        "amount": "24562.188424818133394657",
-        "usd": 318992.03740090225
+        "token": "0x9c58bacc331c9aa871afd802db6379a98e80cedb",
+        "symbol": "GNO",
+        "amount": "8400.266606163732126645",
+        "usd": 2430643.44
       },
       {
         "token": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
         "symbol": "WETH",
-        "amount": "567.984778913459195220",
-        "usd": 1437327.3280839277
-      },
-      {
-        "token": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
-        "symbol": "USDC",
-        "amount": "243423.967351",
-        "usd": 243423.967351
+        "amount": "576.444475204443374882",
+        "usd": 1458735.21
       },
       {
         "token": "0x8e5bbbb09ed1ebde8674cda39a0c169401db4252",
         "symbol": "WBTC",
         "amount": "16.76923269",
-        "usd": 647484.5378228539
+        "usd": 647484.54
       },
       {
-        "token": "0x9c58bacc331c9aa871afd802db6379a98e80cedb",
-        "symbol": "GNO",
-        "amount": "8400.266606163732126645",
-        "usd": 2430643.4427481
-      },
-      {
-        "token": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
-        "symbol": "WXDAI",
+        "symbol": "XDAI",
         "amount": "347787.556021242542688213",
-        "usd": 345093.920513738
+        "usd": 345093.92
+      },
+      {
+        "token": "0xe2e73a1c69ecf83f464efce6a5be353a37ca09b2",
+        "symbol": "LINK",
+        "amount": "24562.421758151473394757",
+        "usd": 318995.07
+      },
+      {
+        "token": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
+        "symbol": "USDC",
+        "amount": "243423.967351",
+        "usd": 243432.07
       }
     ]
   },
@@ -59,7 +67,8 @@
     "eip155:100:0x45b2d71f5bbb17fa67341fdf30468f1de032db71760be0cf4df9bac316cda7cc"
   ],
   "notes": [
-    "The pool is an Aave-fork InitializableImmutableAdminUpgradeabilityProxy, which sets its implementation in the constructor and never emits Upgraded; the proxy emitted no Upgraded event at all between its creation block 15927425 and the exploit. Its EIP-1967 implementation slot is zero at block 15927424 and holds 0x2d5bc0f897ad211ef9f954eadf59c43fb1ec4788 from block 15927425 through block 21120283, so the proxy creation is the change that made the exploited implementation active.",
-    "Components are the net underlying-token gain of the attacker EOA and its exploit contract across the two transactions that touch the lending pool, at blocks 21120283 and 21120284; the debt tokens minted against them were never repaid. The transaction at block 21120285 only forwards the proceeds from the exploit contract to the EOA. The v1 snapshot carried USD 1,500,000, which is well below the measured amount and below contemporaneous reporting of roughly USD 5.5 million. Nothing was recovered."
+    "liquidationCall runs in the LendingPoolCollateralManager the AddressesProvider pointed to at launch, after the WETH listing and collateral setup; that route sets the age. LINK's later borrow enablement only shaped the attacker's dust position; the genesis markets already allowed it.",
+    "Loss is the aToken reserves' depletion in the exploit transaction, including WETH paid on to the flash-swap pairs; the setup transaction moved only dust. XDAI is WXDAI unwrapped by its aToken reserve.",
+    "Separate incident from Hundred Finance on Gnosis the same day: a Compound fork with its own borrow-before-accounting code."
   ]
 }

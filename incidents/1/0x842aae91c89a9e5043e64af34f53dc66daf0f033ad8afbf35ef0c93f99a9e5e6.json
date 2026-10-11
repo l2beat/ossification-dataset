@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Abracadabra Money",
   "name": "Abracadabra CauldronV4 cook() unhandled action clears the solvency check",
-  "summary": "CauldronV4's cook() tracks a CookStatus memory struct across the action loop. ACTION_BORROW (5) sets status.needsSolvencyCheck = true, but the trailing else branch for an unrecognised action assigns status = returnStatus from the empty base _additionalCookAction(), overwriting the struct with zeroed defaults. Calling cook([5, 0], ...) therefore borrows MIM and then clears the flag, so the closing require(_isSolvent(msg.sender, exchangeRate)) never executes and the borrow needs no collateral. The attacker drained the free MIM balance of six deprecated cauldron clones sharing two master contracts in a single transaction.",
+  "summary": "CauldronV4.cook() sends unrecognised action ids to the empty base _additionalCookAction() and assigns its zeroed CookStatus over the running status, clearing the needsSolvencyCheck flag ACTION_BORROW had set. Calling cook([5, 0]) borrowed MIM with no collateral; the attacker drained the free MIM of six cauldron clones of two masters in one transaction.",
   "targets": [
     {
       "address": "0x46f54d434063e5f1a2b2cc6d9aaa657b1b9ff82c",
@@ -13,22 +13,55 @@
       }
     },
     {
+      "address": "0x289424add4a1a503870eb475fd8bf1d586b134ed",
+      "code": "0x5e70f7acb8ec0231c00220d11c74dc2b23187103",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x033f964eb58ac702680076dcad70e3ceffb5bdbea75871ff741091d03d7309d7"
+      }
+    },
+    {
       "address": "0xce450a23378859fb5157f4c4cccaf48faa30865b",
       "code": "0xa9b386dcd598acf3ce53460631feefbba730cbf3",
       "reset": {
         "kind": "deployment",
         "tx": "0x5097d952effe78dde2102be67ac83e884c613079a2a0b58960d8f23d51abab4b"
       }
+    },
+    {
+      "address": "0x40d95c4b34127cf43438a963e7c066156c5b87a3",
+      "code": "0xa9b386dcd598acf3ce53460631feefbba730cbf3",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4b616030636a3a01d0c4dff77e9ac9d43058db0221a5179e315fce445ba22b0e"
+      }
+    },
+    {
+      "address": "0x6bcd99d6009ac1666b58cb68fb4a50385945cda2",
+      "code": "0xa9b386dcd598acf3ce53460631feefbba730cbf3",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xb8cb1d548229110306234c58ea141866c058aa04512eb78887f5b79eb7c6965e"
+      }
+    },
+    {
+      "address": "0xc6d3b82f9774db8f92095b5e4352a8bb8b0dc20d",
+      "code": "0xa9b386dcd598acf3ce53460631feefbba730cbf3",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8376841008599e2b1948807f8c045976785bf9f5e8ac613fc418cbf9a0cf5a77"
+      }
     }
   ],
+  "campaign": [],
   "loss": {
-    "usd": 1793766.133547645,
+    "usd": 1794779.52,
     "assets": [
       {
         "token": "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3",
         "symbol": "MIM",
-        "amount": "1793766.133547645084844120",
-        "usd": 1793766.133547645
+        "amount": "1793766.13354764508484412",
+        "usd": 1794779.52
       }
     ]
   },
@@ -37,9 +70,7 @@
     "https://threesigma.xyz/blog/exploit/mimspell-abracadabra-hack-breakdown"
   ],
   "notes": [
-    "EIP-1167 minimal proxy. The clone's entire 45-byte runtime 0x363d3d373d3d3d363d735e70f7acb8ec0231c00220d11c74dc2b231871035af43d82803e903d91602b57fd5bf3 hardcodes master 0x5e70f7acb8ec0231c00220d11c74dc2b23187103 and cannot be repointed, and the master PrivilegedCheckpointCauldronV4 is an immutable non-proxy contract, so the executable code this context uses is fixed from creation. The master was deployed earlier (block 19476914), so the latest change that put that code into service for this execution context is the clone's own CREATE2 by DegenBox 0xd96f48665a1410c0cd669a88898eca36b9fc2cce at block 19477071, log-free. One further clone of this master was drained in the same transaction, 0x289424add4a1a503870eb475fd8bf1d586b134ed, created at block 19477078:36 in transaction 0x033f964eb58ac702680076dcad70e3ceffb5bdbea75871ff741091d03d7309d7 by the same DegenBox, code age 48630636 s; it carries the identical artifact and failure mode and would deduplicate onto this target, so it is documented here rather than repeated as a target.",
-    "EIP-1167 minimal proxy. The clone's entire 45-byte runtime 0x363d3d373d3d3d363d73a9b386dcd598acf3ce53460631feefbba730cbf35af43d82803e903d91602b57fd5bf3 hardcodes master 0xa9b386dcd598acf3ce53460631feefbba730cbf3 and cannot be repointed, and the master PrivilegedCauldronV4 is an immutable non-proxy contract, so the executable code this context uses is fixed from creation. The master was deployed earlier (block 19476913), so the latest change that put that code into service for this execution context is the clone's own CREATE2 by DegenBox 0xd96f48665a1410c0cd669a88898eca36b9fc2cce at block 19522299, log-free. Three further clones of this master were drained in the same transaction - 0x40d95c4b34127cf43438a963e7c066156c5b87a3 (block 19522300:20, transaction 0x4b616030, age 48081216 s), 0x6bcd99d6009ac1666b58cb68fb4a50385945cda2 (block 19522301:10, transaction 0xb8cb1d54, age 48081204 s) and 0xc6d3b82f9774db8f92095b5e4352a8bb8b0dc20d (block 19522302:57, transaction 0x83768410, age 48081192 s), all CREATE2'd by the same DegenBox; they carry the identical artifact and failure mode and would deduplicate onto this target, so they are documented here rather than repeated as targets.",
-    "One transaction. Six uncollateralised cook([5, 0]) borrows moved the whole free MIM balance of six cauldron clones out of DegenBox 0xd96f48665a1410c0cd669a88898eca36b9fc2cce to the attack contract as 1,793,755.863303087483120210 shares - 736,232.217688 from 0x46f54d43, 75,477.235212 from 0x289424ad, 612,313.552562 from 0xce450a23, 274,846.689470 from 0x40d95c4b, 85,411.627254 from 0x6bcd99d6 and 9,474.541117 from 0xc6d3b82f - which the contract withdrew as 1,793,766.133547645084844120 MIM. MIM is valued at par; DefiLlama's nearest observation, 85 s after the incident, is USD 1.00056. The attacker sold the MIM through the Curve MIM-3CRV pool and the 3pool into DAI, USDC and USDT and then into 395.059753040555107478 ETH; that realisation is smaller than the MIM taken because of pool slippage and is not the measured loss. The matching liability is bad debt left on the six cauldrons, which cannot be liquidated because it has no collateral. No recovery is netted out: 46 later transactions from the attacker EOA deposit the proceeds into Tornado Cash, and the Abracadabra DAO's subsequent open-market MIM buyback is treasury market support, not a return of the stolen assets.",
-    "Not the knot: sibling instance of the same template and failure; target-2 carries the latest age reset and supplies the incident's single observation."
+    "Each target is an EIP-1167 clone of an immutable master, so its clone creation is its reset; all six drained clones are listed and the last-created one sets the age.",
+    "Campaign scan: every cook() on the six clones and the five other clones of the same masters, decoded; only the anchor borrows and then clears the solvency flag. The attacker's later transactions are Tornado Cash deposits. The MIM bad debt left on the cauldrons is the same loss, not counted twice."
   ]
 }

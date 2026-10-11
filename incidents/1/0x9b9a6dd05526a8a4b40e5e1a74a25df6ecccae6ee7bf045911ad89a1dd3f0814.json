@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Alkimiya",
   "name": "Alkimiya SilicaPools uint128 share-supply truncation",
-  "summary": "SilicaPools accepted a uint256 share quantity but narrowed it without a checked cast when updating the pool's uint128 sharesMinted accounting, while minting the full uint256 quantity as ERC-1155 long and short balances. The attacker minted 2^128 + 1 of each, making recorded supply wrap to 1, transferred away 2^128 - 1, and retained 2 short shares. After starting and ending the permissionless pool, redeemShort treated those 2 shares as twice the recorded supply and paid twice the deposited collateral, consuming the pool's pre-existing WBTC.",
+  "summary": "SilicaPools minted the full uint256 share quantity as ERC-1155 long and short balances but added only an unchecked uint128 cast of it to the pool's sharesMinted. Minting 2^128+1 shares on a permissionless pool recorded a supply of 1; after ending the pool, two retained short shares redeemed twice the deposited collateral, taking WBTC held for other pools.",
   "targets": [
     {
       "address": "0xf3f84ce038442ae4c4dcb6a8ca8bacd7f28c9bde",
@@ -12,14 +12,15 @@
       }
     }
   ],
+  "campaign": [],
   "loss": {
-    "usd": 96176.5420806,
+    "usd": 96087.61,
     "assets": [
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
-        "amount": "1.14015390",
-        "usd": 96176.5420806
+        "amount": "1.1401539",
+        "usd": 96087.61
       }
     ]
   },
@@ -27,7 +28,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-03/Alkimiya_io_exp.sol"
   ],
   "notes": [
-    "SilicaPools is a direct non-proxy contract. Its 19,196-byte runtime is absent in the preceding block and hashes identically at deployment and immediately before the exploit. Owner-set treasury, bounty and pause values do not alter the unbounded uint256 input, unchecked uint128 accounting conversion, or ERC-1155 mint quantity that caused the failure.",
-    "Archive balance calls show SilicaPools held exactly 114,015,390 WBTC satoshis before the exploit transaction and zero after it, establishing gross depletion of 1.14015390 WBTC independently of attacker financing. During the transaction a Morpho flash loan supplied 10 WBTC; the attacker added 0.56125794 WBTC directly and collateralizedMint transferred another 1.70141184 WBTC into SilicaPools. redeemShort then transferred the pool's full 3.40282368 WBTC balance out, the flash loan was repaid, and the exploit contract's final transfer sent 1.14015390 WBTC of proceeds onward. DefiLlama's BTC price of $84,354 values the depletion at $96,176.54."
+    "The anchor was sent by a generalized MEV bot that copied the attacker's prepared transaction one block ahead; the attacker's own attempt (0xc8875004) reverted. The proceeds went to the bot's payout EOA and no return to Alkimiya was found, so it counts as an unaffiliated exploit.",
+    "Every SilicaPools__CollateralizedMint event since deployment was scanned: the anchor is the only mint with shares above 2^127. Later owner changes to bounty and pause settings do not touch the cast."
   ]
 }

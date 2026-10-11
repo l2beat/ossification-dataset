@@ -2103,6 +2103,33 @@
     "claimsSha256": "d3909faa7229d3dcb152f0caa77a22877140cd6c8562f459cd823c3a524743c6"
   },
   {
+    "id": "eip155:56:0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
+    "chainId": 56,
+    "tx": "0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
+    "protocol": "ATMBlindBox",
+    "name": "ATM BlindBox predictable expired-blockhash settlement",
+    "summary": "BlindBox bets resolve on blockhash(betBlock+2), but anyone may settle any bet at any time, and after that hash expires _trySettle uses keccak256(prevrandao, betId, timestamp), known to the settler. The attacker stalled auto-settlement with 1-ATM filler bets and settled expired losing bets only in blocks where the fallback made them win 1.95x from DEAD.",
+    "lossUsd": 55139.25,
+    "codeAgeSeconds": 99372,
+    "exploit": {
+      "block": 87517587,
+      "index": 10,
+      "timestamp": 1773931459
+    },
+    "target": {
+      "address": "0x1f8336aef584795e282fece8de356babd7734c59",
+      "codeHash": "0xc0cabb4120336740866ab054e8458f3fa37e9c9207485f36f368a8a8e0c651ee"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x1bc86030be2c111d5a77881db0fe58515e2a5980ade0d5b5f4ff9aab72dd9be8",
+      "block": 87296867,
+      "index": 56,
+      "timestamp": 1773832087
+    },
+    "claimsSha256": "26d0ddf5b682d39845fdf17076bcd3d0b2f5e875c80a11dd30c6a236d8c125bb"
+  },
+  {
     "id": "eip155:56:0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d",
     "chainId": 56,
     "tx": "0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d",
@@ -2128,33 +2155,6 @@
       "timestamp": 1719397731
     },
     "claimsSha256": "82959147a8565cbf455f8c8099d088ecb88c6a074d4ff2e778c2ce8aa0ecb612"
-  },
-  {
-    "id": "eip155:56:0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
-    "chainId": 56,
-    "tx": "0xf99d9b6f5d16f5b9739cd426a73fa20bcda63a84b4b3d2ce4aefe025e9bd1dfa",
-    "protocol": "ATMBlindBox",
-    "name": "ATM BlindBox predictable expired-blockhash settlement",
-    "summary": "BlindBox bets resolve on blockhash(betBlock+2), but settle(betId) is public and caller-timed and lastUnsettledId auto-settles only one bet per entry. Once that blockhash expires, _trySettle falls back to keccak256(block.prevrandao, betId, block.timestamp), which the settler knows in advance. The attacker queued 1-ATM filler bets to block auto-settlement, settled winners at once and settled losers after expiry in blocks where the fallback made them win, draining the DEAD-address payout pool at 1.95x.",
-    "lossUsd": 55141.83454274973,
-    "codeAgeSeconds": 100056,
-    "exploit": {
-      "block": 87517587,
-      "index": 10,
-      "timestamp": 1773931459
-    },
-    "target": {
-      "address": "0x1f8336aef584795e282fece8de356babd7734c59",
-      "codeHash": "0xc0cabb4120336740866ab054e8458f3fa37e9c9207485f36f368a8a8e0c651ee"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x0d7894a59873925895a363237655a317089fe8227c2c74fadb6802e9c7c13c17",
-      "block": 87295347,
-      "index": 70,
-      "timestamp": 1773831403
-    },
-    "claimsSha256": "01724431c7a2d7a5e8667a2e550b065963854bb460607df5051787b4d00260f4"
   },
   {
     "id": "eip155:56:0x960f3fbbe53b80bc306a64ad33d16dd73bfc164c787114d57cfe0080b5c10b08",
@@ -6373,8 +6373,8 @@
     "tx": "0xddf8c15880a20efa0f3964207d345ff71fbb9400032b5d33b9346876bd131dc2",
     "protocol": "Akropolis",
     "name": "Akropolis Delphi SavingsModule fake-token reentrancy",
-    "summary": "SavingsModule.deposit(address,address[],uint256[]) accepts any token address the caller names: it never checks the token against the pool's registered token set, and its amount normalisation falls through to an identity case for tokens it does not know. It then calls that token's transferFrom while the caller's pool-token balance is still unadjusted, with no reentrancy guard. An attacker-controlled ERC20 could therefore reenter deposit() from inside its own transferFrom and deposit real DAI in the inner frame, so the outer frame credited the fake token's nominal amount on top of the real deposit and minted roughly twice the pool tokens the DAI justified; withdrawing them returned real DAI for value that was never delivered.",
-    "lossUsd": 2040805.0177255732,
+    "summary": "SavingsModule.deposit accepted any token address and credited pool tokens from the protocol's balance change around the token's transferFrom, with no reentrancy guard. The attacker named its own contract as the token and re-entered deposit with real DAI from its transferFrom, so the DAI was counted twice; it redeemed the doubled pool tokens for DAI.",
+    "lossUsd": 2057150.83,
     "codeAgeSeconds": 1562920,
     "exploit": {
       "block": 11242635,
@@ -6393,7 +6393,7 @@
       "index": 139,
       "timestamp": 1603618921
     },
-    "claimsSha256": "6b0477554e58d34b4a74ca34d951941a80a3fe15ccde01d9f7fbb8f260360bd5"
+    "claimsSha256": "ce572481eff617a12877c177570233927ea16352e42830020053bce839ddf22c"
   },
   {
     "id": "eip155:1:0xbeef09ee9d694d2b24f3f367568cc6ba1dad591ea9f969c36e5b181fd301be82",
@@ -10490,9 +10490,9 @@
     "tx": "0x7ff1364c3b3b296b411965339ed956da5d17058f3164425ce800d64f1aef8210",
     "protocol": "Allbridge",
     "name": "Allbridge Core pool withdraw removes equal token and vUsd amounts and resets the pool price",
-    "summary": "Allbridge Core's Pool holds a real tokenBalance and a virtual vUsdBalance on a stableswap curve of amplification a = 20, and swapToVUsd/swapFromVUsd price a trade by solving getY on those two balances. Pool.withdraw(amountLp) computes the withdrawer's payout from their pro-rata share of both balances, but then applies it with the source's own comment 'Always equal amounts removed from actual and virtual tokens': tokenBalance -= amountSP and vUsdBalance -= amountSP. Subtracting the same absolute amount from both legs preserves the pool's price only when the two legs are equal; on an imbalanced pool it drives the ratio away from parity without limit, and neither deposit nor withdraw charges any fee for doing so. A correct proportional withdrawal removes tokenBalance*share and vUsdBalance*share and leaves the price unchanged. In the anchor the attacker flash-borrows 7,500,000 BUSD, becomes the dominant LP of the BUSD pool 0x179aad597399b9ae078acfe2b746c09117799ca0 with a 5,000,000 BUSD deposit, bridges 492,669.980 vUsd into it so it pays out 491,586.447 BUSD and its state becomes tokenBalance 4,831,042,798 / vUsdBalance 5,799,131,313 in system precision, a ratio of only 1.2004, and then withdraws 4,830,262,616 LP. That single withdrawal removes 4,830,999,074 from each leg and leaves tokenBalance 43,724 against vUsdBalance 968,132,239, a ratio of 22,142. Swapping 40,000 BUSD into that state then mints 789,378,078 vUsd, which swapFromVUsd on the USDT pool 0xb19cd6ab3890f18b662904fd7a40c003703d2554 settles for 789,632.117482500000000000 real USDT. The violated invariant is that a proportional liquidity withdrawal must not move the pool's exchange rate. No parameter value restores it: the equal-amount reduction is unconditional, deposit and withdraw take no fee, and every amplification a leaves the same defect, so the 15 bp swap fee the attacker paid is two orders of magnitude below the extraction.",
-    "lossUsd": 572681.6693002323,
-    "codeAgeSeconds": 11178771,
+    "summary": "Allbridge Core's Pool.withdraw subtracted the same absolute amount from tokenBalance and vUsdBalance, so on an imbalanced pool a withdrawal pushed the curve price far from parity at no fee. With flash-loaned BUSD the attacker became the BUSD pool's dominant LP, skewed and withdrew it, then swapped through the Bridge for vUSD paid out as USDT by the USDT pool.",
+    "lossUsd": 572971.95,
+    "codeAgeSeconds": 11176145,
     "exploit": {
       "block": 26982068,
       "index": 0,
@@ -10503,13 +10503,13 @@
       "codeHash": "0xbe14cb131b8132808fdfa2d40f12e3123c02083ad9086d9d39f7a12b59a8ad49"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x2f9cf15ca8c93bf0bcf8a8ab08d6b44a8d5c5e0f5685ec8292b2920e053bfdcc",
-      "block": 23303834,
-      "index": 211,
-      "timestamp": 1669207451
+      "kind": "config",
+      "tx": "0x55a94b489dff92a97ed36d3b897ea2583318f8518fd15fe6cf85a9417b1afb82",
+      "block": 23304708,
+      "index": 72,
+      "timestamp": 1669210077
     },
-    "claimsSha256": "2adf0351ad133d18b488c42fa5f08208f45a34fb2f85a7b031ade928a624538a"
+    "claimsSha256": "ddd81fd4fd018543ff577cca8337248e1ba826d33ae7f4b533da0f10293aac2c"
   },
   {
     "id": "eip155:56:0xba0fa8c150b2408eec9bbbbfe63f9ca63e99f3ff53ac46ee08d691883ac05c1d",
@@ -11036,8 +11036,8 @@
     "tx": "0xcd5395f8181d70e702e7a90e9c1ee5d2e347d5ad504cd97a0deaf81901e3333b",
     "protocol": "ATM token",
     "name": "ATM expired-reward reserve-removal campaign",
-    "summary": "Staking.burnExpiredReward was permissionless and converted any expired USDT-denominated reward into an ATM amount at the current pair reserves. It then called ATMToken.recycle, which transferred ATM directly from the ATM/USDT pair to Staking and synchronized the reduced ATM reserve. The attacker repeated this reserve removal to raise ATM's apparent price, then sold through 30 farmer contracts; ATMToken's sell branch amplified the cashout by auto-selling contract-held ATM with no minimum output.",
-    "lossUsd": 181324.5643917167,
+    "summary": "Staking.burnExpiredReward was permissionless and made ATMToken.recycle move up to a third of the ATM/USDT pair's ATM out of the pair and sync. The attacker bought ATM, called it for thousands of expired reward records to strip ATM from the pair and inflate its price, then sold through 30 farmer contracts into the inflated USDT reserve.",
+    "lossUsd": 181043.5,
     "codeAgeSeconds": 13207707,
     "exploit": {
       "block": 102068601,
@@ -11055,7 +11055,7 @@
       "index": 93,
       "timestamp": 1767280123
     },
-    "claimsSha256": "63dad9aa4c84d1082ddcad0e9ca3c4c41c82a9466f1042807ddde59b3fc8660a"
+    "claimsSha256": "e0760ef093828215abd04b9569eb8a7713fd6a336f009055e971f02d2468847b"
   },
   {
     "id": "eip155:1:0x6e6e556a5685980317cb2afdb628ed4a845b3cbd1c98bdaffd0561cb2c4790fa",
@@ -11803,8 +11803,8 @@
     "tx": "0x9b9a6dd05526a8a4b40e5e1a74a25df6ecccae6ee7bf045911ad89a1dd3f0814",
     "protocol": "Alkimiya",
     "name": "Alkimiya SilicaPools uint128 share-supply truncation",
-    "summary": "SilicaPools accepted a uint256 share quantity but narrowed it without a checked cast when updating the pool's uint128 sharesMinted accounting, while minting the full uint256 quantity as ERC-1155 long and short balances. The attacker minted 2^128 + 1 of each, making recorded supply wrap to 1, transferred away 2^128 - 1, and retained 2 short shares. After starting and ending the permissionless pool, redeemShort treated those 2 shares as twice the recorded supply and paid twice the deposited collateral, consuming the pool's pre-existing WBTC.",
-    "lossUsd": 96176.5420806,
+    "summary": "SilicaPools minted the full uint256 share quantity as ERC-1155 long and short balances but added only an unchecked uint128 cast of it to the pool's sharesMinted. Minting 2^128+1 shares on a permissionless pool recorded a supply of 1; after ending the pool, two retained short shares redeemed twice the deposited collateral, taking WBTC held for other pools.",
+    "lossUsd": 96087.61,
     "codeAgeSeconds": 22188324,
     "exploit": {
       "block": 22146340,
@@ -11822,7 +11822,7 @@
       "index": 0,
       "timestamp": 1720987763
     },
-    "claimsSha256": "ac80624b5ebb9faa0195d2b9985678d5a9eea76a6e591eadf7feb472a8c16f14"
+    "claimsSha256": "eefaa46c800caaea599cc5dd27bdcdf13e7796f100fc0e739186148019c4d4a2"
   },
   {
     "id": "eip155:56:0xcc71a3bb131c73462b0f25533070113a63c85e942a22e18bc945eec184eb5799",
@@ -12077,9 +12077,9 @@
     "tx": "0xa262141abcf7c127b88b4042aee8bf601f4f3372c9471dbd75cb54e76524f18e",
     "protocol": "Agave",
     "name": "Agave ERC-677 reentrancy during aToken burn",
-    "summary": "Agave’s Aave fork burns the collateral aToken and sends the underlying to the liquidator before it finishes updating the borrower’s accounting. Gnosis bridged tokens are ERC-677, so that transfer calls onTokenTransfer on the liquidator, who re-entered borrow() while the position still looked healthy and drew LINK, WETH, USDC, WBTC, GNO and WXDAI against collateral that had already been seized.",
-    "lossUsd": 5422965.233920522,
-    "codeAgeSeconds": 26960960,
+    "summary": "Agave's Aave v2 fork liquidation sends the seized collateral to the liquidator before the borrower's accounting is final, with no reentrancy guard. Gnosis bridged WETH is ERC-677 and calls onTokenTransfer on the recipient, so the attacker liquidated its own position and re-entered borrow() from the callback, draining six markets against collateral already seized.",
+    "lossUsd": 5444384.25,
+    "codeAgeSeconds": 26960825,
     "exploit": {
       "block": 21120284,
       "index": 2,
@@ -12087,17 +12087,17 @@
     },
     "target": {
       "address": "0x207e9def17b4bd1045f5af2c651c081f9fdb0842",
-      "code": "0x2d5bc0f897ad211ef9f954eadf59c43fb1ec4788",
-      "codeHash": "0x98940c1f13847a5d4e3ad54bf27bbc513bd5cb05912dc17b0363b592881c9ce9"
+      "code": "0x85b79018c781b499f2878bee14e4e8b5db31ac61",
+      "codeHash": "0x4031799f044c125a7d5432c102bbc9f697a0ff67409b1969c6028cb135b8cfcb"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x26f0b0b982717c4c7f427efb550ecc47547bd4d9b7147af96893180f24cdba50",
-      "block": 15927425,
-      "index": 5,
-      "timestamp": 1620378980
+      "kind": "upgrade",
+      "tx": "0x712ff2e656a2eb85285e89bcabaafa1b619a3eba48efdc78a3b28bd7ff0a5de5",
+      "block": 15927451,
+      "index": 2,
+      "timestamp": 1620379115
     },
-    "claimsSha256": "2211838928507249d9a38ed4a7c4c586d36225f53659f07535d237ae194c5cbf"
+    "claimsSha256": "30edca0d1f0e33b5e511219774e497e8a9464e166f6bc7034d0dfe4048bf7a00"
   },
   {
     "id": "eip155:1:0x7b67e39cd253724372d67da78221a38eca98d2a6b69027a89010bca2101dd02a",
@@ -13039,27 +13039,27 @@
     "tx": "0x842aae91c89a9e5043e64af34f53dc66daf0f033ad8afbf35ef0c93f99a9e5e6",
     "protocol": "Abracadabra Money",
     "name": "Abracadabra CauldronV4 cook() unhandled action clears the solvency check",
-    "summary": "CauldronV4's cook() tracks a CookStatus memory struct across the action loop. ACTION_BORROW (5) sets status.needsSolvencyCheck = true, but the trailing else branch for an unrecognised action assigns status = returnStatus from the empty base _additionalCookAction(), overwriting the struct with zeroed defaults. Calling cook([5, 0], ...) therefore borrows MIM and then clears the flag, so the closing require(_isSolvent(msg.sender, exchangeRate)) never executes and the borrow needs no collateral. The attacker drained the free MIM balance of six deprecated cauldron clones sharing two master contracts in a single transaction.",
-    "lossUsd": 1793766.133547645,
-    "codeAgeSeconds": 48081228,
+    "summary": "CauldronV4.cook() sends unrecognised action ids to the empty base _additionalCookAction() and assigns its zeroed CookStatus over the running status, clearing the needsSolvencyCheck flag ACTION_BORROW had set. Calling cook([5, 0]) borrowed MIM with no collateral; the attacker drained the free MIM of six cauldron clones of two masters in one transaction.",
+    "lossUsd": 1794779.52,
+    "codeAgeSeconds": 48081192,
     "exploit": {
       "block": 23504546,
       "index": 0,
       "timestamp": 1759582463
     },
     "target": {
-      "address": "0xce450a23378859fb5157f4c4cccaf48faa30865b",
+      "address": "0xc6d3b82f9774db8f92095b5e4352a8bb8b0dc20d",
       "code": "0xa9b386dcd598acf3ce53460631feefbba730cbf3",
       "codeHash": "0xc45b777d90280c70a6d2bdb70f6eb0efcc55ef94ff79345af5a3eb37cd30facd"
     },
     "reset": {
       "kind": "deployment",
-      "tx": "0x5097d952effe78dde2102be67ac83e884c613079a2a0b58960d8f23d51abab4b",
-      "block": 19522299,
-      "index": 34,
-      "timestamp": 1711501235
+      "tx": "0x8376841008599e2b1948807f8c045976785bf9f5e8ac613fc418cbf9a0cf5a77",
+      "block": 19522302,
+      "index": 57,
+      "timestamp": 1711501271
     },
-    "claimsSha256": "9d176e1470c3089f4d7b241528661fdb263d4f762bee59ac4c2badb1fe0e2102"
+    "claimsSha256": "84019d15db67500d2ba00e1b5ae05cd2581f31e55840291f4b7e17bed539f8f9"
   },
   {
     "id": "eip155:1:0x93a033917fcdbd5fe8ae24e9fe22f002949cba2f621a1c43a54f6519479caceb",
@@ -14383,9 +14383,9 @@
     "tx": "0xe4b893f8b1b1738d88e02e2808aff7cfe6443ed15c98d7a01e2907f9bef17618",
     "protocol": "Aevo (legacy Ribbon DOV vaults)",
     "name": "Ribbon Gamma Oracle unrestricted setAssetPricer",
-    "summary": "Oracle.setAssetPricer in Ribbon's Gamma fork is declared external with no owner restriction and only guards the replacement case, so any caller can install an arbitrary pricer contract for an asset that has no pricer yet. The attacker registered pricers he controlled for stETH, AAVE, LINK and PAXG, used the equally unrestricted Whitelist.whitelistCollateral and whitelistProduct to create four oToken series against them, then pushed expiry prices inflated by 1e10 and redeemed a dust position for almost the entire collateral held in the shared MarginPool.",
-    "lossUsd": 2971315.457459867,
-    "codeAgeSeconds": 117347168,
+    "summary": "Ribbon's Gamma Oracle.setAssetPricer lacked an owner check, so anyone could install a pricer for an asset that had none. The attacker installed its own pricers for stETH, AAVE, LINK and PAXG, admitted products through the equally open Whitelist, minted oTokens on dust collateral, posted expiry prices inflated ~1e7-fold and redeemed against the MarginPool.",
+    "lossUsd": 2971206.44,
+    "codeAgeSeconds": 117347141,
     "exploit": {
       "block": 23954877,
       "index": 221,
@@ -14396,13 +14396,13 @@
       "codeHash": "0xf5051947510487306a66d6adc9095b992fc8ea4e76e5d6846870888af2f77bc8"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x47255641bb3b7a6b7aca773c9b0e08effc00a95eacc9cc2cc2ec1b0ad88bf805",
-      "block": 14416610,
-      "index": 1,
-      "timestamp": 1647689667
+      "kind": "upgrade",
+      "tx": "0x15c8d918b92644366d83d73e8293a07202ea5b72bf6d5b5f4daa2f1a0cf02449",
+      "block": 14416613,
+      "index": 7,
+      "timestamp": 1647689694
     },
-    "claimsSha256": "b186d250edb4505625b53449a08aef5b4d83acc7c2a5ba0ce315cc78000fb802"
+    "claimsSha256": "11f4a26164b9fc97d1d670face7904628b47aefb95d5d52b994b73c9538635e3"
   },
   {
     "id": "eip155:1:0x4e5b294488736d467abcb8d8ef8536a1dcaf8848cb64fdf9f39c3b04c06271b2",

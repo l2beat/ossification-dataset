@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Akropolis",
   "name": "Akropolis Delphi SavingsModule fake-token reentrancy",
-  "summary": "SavingsModule.deposit(address,address[],uint256[]) accepts any token address the caller names: it never checks the token against the pool's registered token set, and its amount normalisation falls through to an identity case for tokens it does not know. It then calls that token's transferFrom while the caller's pool-token balance is still unadjusted, with no reentrancy guard. An attacker-controlled ERC20 could therefore reenter deposit() from inside its own transferFrom and deposit real DAI in the inner frame, so the outer frame credited the fake token's nominal amount on top of the real deposit and minted roughly twice the pool tokens the DAI justified; withdrawing them returned real DAI for value that was never delivered.",
+  "summary": "SavingsModule.deposit accepted any token address and credited pool tokens from the protocol's balance change around the token's transferFrom, with no reentrancy guard. The attacker named its own contract as the token and re-entered deposit with real DAI from its transferFrom, so the DAI was counted twice; it redeemed the doubled pool tokens for DAI.",
   "targets": [
     {
       "address": "0x73fc3038b4cd8ffd07482b92a52ea806505e5748",
@@ -13,18 +13,7 @@
       }
     }
   ],
-  "loss": {
-    "usd": 2040805.0177255732,
-    "assets": [
-      {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "2040805.017725573147547534",
-        "usd": 2040805.0177255732
-      }
-    ]
-  },
-  "refs": [
+  "campaign": [
     "eip155:1:0x270836213a621d9f43159439065ddeb54cb9a69fec07fbb63d7f22edd9be5103",
     "eip155:1:0x2f06589d9e6176a8ed3a00931600ce728d54b28745fff04ee6d116418707eff7",
     "eip155:1:0xea0ae3796592b3f8fdd6c60756e624bc8b93546cd819ff2742d16730d3f21870",
@@ -40,13 +29,32 @@
     "eip155:1:0xdab73556148b2654bce5b0adc09b9ac57554a353317e8e822e8769f7b3886d83",
     "eip155:1:0xa7eea4d3cb7905c43364c7355929261c59015f8be6845f4c0822e0145fc092c8",
     "eip155:1:0xe1f375a47172b5612d96496a4599247049f07c9a7d518929fbe296b0c281e04d",
-    "eip155:1:0x3db8d4618aa3b97eeb3af01f01692897d14f2da090d5d6407f550a1b10c15133",
+    "eip155:1:0x3db8d4618aa3b97eeb3af01f01692897d14f2da090d5d6407f550a1b10c15133"
+  ],
+  "loss": {
+    "usd": 2057150.83,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "1965748.136067903654696647",
+        "usd": 1981485.1
+      },
+      {
+        "token": "0xfc1e690f61efd961294b3e1ce3313fbd8aa4f85d",
+        "symbol": "aDAI",
+        "amount": "74702.13482725459085257",
+        "usd": 75665.73
+      }
+    ]
+  },
+  "refs": [
     "eip155:1:0xf15623567231c67df2b8bcc5540236fbda2c3ac11ecbec427048f11b582cb869",
     "https://peckshield.medium.com/akropolis-incident-root-cause-analysis-c11ee59e05d4",
     "https://github.com/ethereumvex/Akropolis-delphi-exploit"
   ],
   "notes": [
-    "Sixth and last Upgraded(address) event on the AdminUpgradeabilityProxy before the exploit; its topic1 selects implementation 0x1cec0e358f882733c5ecc028d8a0c24baee02004, which had been created 322 blocks earlier in 0x5d12e69d020722fd9467aa5ef3dbcf961cf00141aab8bd16752aa88202971ed3. A complete eth_getLogs scan of the proxy from block 10000000 to the exploit block returns exactly six Upgraded events, at blocks 10665387, 10684107, 10722738, 10769291, 10841024 and 11124829, so this is the latest pre-exploit code change.",
-    "Measured as the net DAI the two Delphi pool adapters paid the attacker contract 0xe2307837524db8961c4541f943598654240bd62f over the whole campaign, by summing every DAI Transfer log in blocks 11242620-11242700 in which that contract is a party and netting per counterparty: 1276753.689692559845800164 DAI out of the sUSD pool 0x91d7b9a8d2314110d4018c88dbfdcf5e2ba4772e and 764051.328033013301747370 DAI out of the yCurve pool 0x7967ada2a32a633d5c055e2e075a83023b632b4e, so 2040805.017725573147547534 DAI net. The dYdX flash loans are attacker-supplied inputs and net to a 2 wei fee; the attacker's own 45.51280861515868 DAI of seed and the 9954.487191384842 DAI he spent buying gas on Uniswap are already inside those nets, which is why the amount finally swept to the attacker EOA in 0xf15623567231c67df2b8bcc5540236fbda2c3ac11ecbec427048f11b582cb869 is the smaller 2030850.530534188306235972 DAI. DAI is par-valued. Nothing was recovered."
+    "Loss is the DAI that left the sUSD and yCurve adapters, the Curve sUSD swap, the y zap and yDAI over the 17 transactions; yDAI paid part of its redemptions by burning aDAI, listed separately. It equals the attacker contract's DAI gain; the dYdX flash loans net out within each transaction.",
+    "The attacker's two earlier 2-DAI deposits through the same function were plain deposits without reentrancy and are not exploits."
   ]
 }

@@ -2,37 +2,42 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Allbridge",
   "name": "Allbridge Core pool withdraw removes equal token and vUsd amounts and resets the pool price",
-  "summary": "Allbridge Core's Pool holds a real tokenBalance and a virtual vUsdBalance on a stableswap curve of amplification a = 20, and swapToVUsd/swapFromVUsd price a trade by solving getY on those two balances. Pool.withdraw(amountLp) computes the withdrawer's payout from their pro-rata share of both balances, but then applies it with the source's own comment 'Always equal amounts removed from actual and virtual tokens': tokenBalance -= amountSP and vUsdBalance -= amountSP. Subtracting the same absolute amount from both legs preserves the pool's price only when the two legs are equal; on an imbalanced pool it drives the ratio away from parity without limit, and neither deposit nor withdraw charges any fee for doing so. A correct proportional withdrawal removes tokenBalance*share and vUsdBalance*share and leaves the price unchanged. In the anchor the attacker flash-borrows 7,500,000 BUSD, becomes the dominant LP of the BUSD pool 0x179aad597399b9ae078acfe2b746c09117799ca0 with a 5,000,000 BUSD deposit, bridges 492,669.980 vUsd into it so it pays out 491,586.447 BUSD and its state becomes tokenBalance 4,831,042,798 / vUsdBalance 5,799,131,313 in system precision, a ratio of only 1.2004, and then withdraws 4,830,262,616 LP. That single withdrawal removes 4,830,999,074 from each leg and leaves tokenBalance 43,724 against vUsdBalance 968,132,239, a ratio of 22,142. Swapping 40,000 BUSD into that state then mints 789,378,078 vUsd, which swapFromVUsd on the USDT pool 0xb19cd6ab3890f18b662904fd7a40c003703d2554 settles for 789,632.117482500000000000 real USDT. The violated invariant is that a proportional liquidity withdrawal must not move the pool's exchange rate. No parameter value restores it: the equal-amount reduction is unconditional, deposit and withdraw take no fee, and every amplification a leaves the same defect, so the 15 bp swap fee the attacker paid is two orders of magnitude below the extraction.",
+  "summary": "Allbridge Core's Pool.withdraw subtracted the same absolute amount from tokenBalance and vUsdBalance, so on an imbalanced pool a withdrawal pushed the curve price far from parity at no fee. With flash-loaned BUSD the attacker became the BUSD pool's dominant LP, skewed and withdrew it, then swapped through the Bridge for vUSD paid out as USDT by the USDT pool.",
   "targets": [
-    {
-      "address": "0x179aad597399b9ae078acfe2b746c09117799ca0",
-      "reset": {
-        "kind": "deployment",
-        "tx": "0xfeb31978637796c2614c9b939329c67319aa3abb40d5cb450c9f96b3743644dd"
-      }
-    },
     {
       "address": "0xb19cd6ab3890f18b662904fd7a40c003703d2554",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x2f9cf15ca8c93bf0bcf8a8ab08d6b44a8d5c5e0f5685ec8292b2920e053bfdcc"
+        "kind": "config",
+        "tx": "0x55a94b489dff92a97ed36d3b897ea2583318f8518fd15fe6cf85a9417b1afb82",
+        "address": "0x7e6c2522fee4e74a0182b9c6159048361bc3260a",
+        "slot": "0x86dde591b380fb3687762d77220adc413907ec4ee7a9b255d85ef4fae0246bcb"
+      }
+    },
+    {
+      "address": "0x179aad597399b9ae078acfe2b746c09117799ca0",
+      "reset": {
+        "kind": "config",
+        "tx": "0x38d0c7dcd1ccde177d43d53e93db7eb11fc0d237a7818a879b0699f1e3d8647f",
+        "address": "0x7e6c2522fee4e74a0182b9c6159048361bc3260a",
+        "slot": "0x31338cf3b8aa9cb43b7bfe480162852e9cdcd26dbbfb9f0842ea19f5c4ab7e4"
       }
     }
   ],
+  "campaign": [],
   "loss": {
-    "usd": 572681.6693002323,
+    "usd": 572971.95,
     "assets": [
-      {
-        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
-        "symbol": "BUSD",
-        "amount": "282403.115457925324692409",
-        "usd": 282403.11545792536
-      },
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "290278.553842307020179247",
-        "usd": 290278.553842307
+        "usd": 290568.83
+      },
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "282403.115457925324692409",
+        "usd": 282403.12
       }
     ]
   },
@@ -42,12 +47,8 @@
     "https://allbridge.medium.com/allbridge-core-updates-following-the-relaunch-9f7716eeb5da"
   ],
   "notes": [
-    "The BUSD pool is a plain non-upgradeable contract with no proxy or implementation slot; its 7,502-byte runtime is byte-identical at its creation block, immediately before the exploit and today.",
-    "The USDT pool is a plain non-upgradeable contract with no proxy or implementation slot; its 7,448-byte runtime is byte-identical at its creation block, immediately before the exploit and today.",
-    "Both figures are the net change in the two Allbridge pools' own token balances across the single exploit transaction, computed from its ERC-20 Transfer logs, so the attacker's 5,000,000 BUSD and 2,000,000 USDT deposits are already netted against the withdrawals they funded and no flash-loan principal is included. The BUSD pool 0x179aad597399b9ae078acfe2b746c09117799ca0 ends 282,403.115457925324692409 BUSD lighter and the USDT pool 0xb19cd6ab3890f18b662904fd7a40c003703d2554 ends 290,278.553842307020179247 USDT lighter, a total of 572,681.669300232344871656 units of stablecoin taken from the remaining liquidity providers. The books close: attacker EOA 0xc578d755cd56255d3ff6e92e1b6371ba945e3984 finishes 549,874.391584307393758024 BUSD up, the PancakeSwap pair 0x7efaef62fddcca950418312c6c91aef321375a00 keeps 22,500 BUSD of flash-swap fee, and the rest is the Wombat swap spread; under the gross-depletion rule the financing fee is not deducted. Allbridge later recovered most of the funds and compensated affected liquidity providers, which likewise does not reduce this figure. BUSD and Binance-Peg BSC-USD are valued at par.",
-    "Not the knot: sibling instance of the same template and failure; target-2 carries the latest age reset and supplies the incident's single observation.",
-    "The USDT pool is a sibling deployment of the same Pool template as target-1 and carries the same failureModeId, so curve construction keeps only the incident's earliest observation. Its runtime differs from target-1's because the immutable token address and derived precision differ, so the two are recorded separately.",
-    "The seed row's own measurement is superseded here: it aged 0x312bc7eaaf93f1c60dc5afc115fccde161055fb0, a Wombat Exchange pool proxy the attacker merely swapped through, and reported 213 days from its 2022-08-31 implementation upgrade. The targets in this record are the two Allbridge Core pools that were actually drained, both non-upgradeable, aged from their own deployments at 209.5 and 129.4 days.",
-    "Allbridge's relaunch removed the ability to hold more than one pool per chain, which prevents this particular composition rather than correcting the withdraw accounting. The defect measured here is the accounting itself, which is present in the deployed bytecode independently of how many pools a chain hosts."
+    "Both pools are immutable; each ages from the Bridge registering it as a pool (addPool), the route through which the exploit's cross-pool swaps reached it. The USDT pool's registration is the latest such change.",
+    "Loss is the two pools' net token depletion in the single exploit transaction from loss.mjs; the attacker's deposits net against its withdrawals, the flash-swap fee is not deducted and later recoveries are not netted.",
+    "Bridge swaps by other users into the dislocated pools after the exploit trade against the price it left, without the withdraw manipulation, and are not counted as campaign."
   ]
 }
