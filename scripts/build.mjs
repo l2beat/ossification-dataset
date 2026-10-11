@@ -84,7 +84,7 @@ export async function build({ root = ROOT, all = false, offline = false, log = (
     const old = previous.get(incident.id)
     if (old?.claimsSha256 === key) rows.push(row(incident, factsOf(old, incident.record), key))
     else if (offline) errors.push(`${incident.path}: onchain claims changed; run npm run build with an RPC`)
-    else pending.push({ incident, key })
+    else pending.push({ incident, key, old })
   }
 
   let done = 0
@@ -95,7 +95,11 @@ export async function build({ root = ROOT, all = false, offline = false, log = (
         for (const failure of report.failures) errors.push(`${item.incident.path}: ${failure}`)
         rows.push(row(item.incident, facts, item.key))
       } catch (error) {
-        errors.push(`${item.incident.path}: ${error.message}`)
+        // A chain no RPC serves keeps its previous facts while its targets are unchanged.
+        const carried = item.old && /^no RPC/.test(error.message) && factsOf(item.old, item.incident.record)
+        if (carried && carried.target >= 0)
+          rows.push(row(item.incident, { ...carried, unverified: [...new Set([...(carried.unverified ?? []), error.message])] }, item.key))
+        else errors.push(`${item.incident.path}: ${error.message}`)
       }
       log(`derived ${++done}: ${item.incident.path}`)
     }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "JulSwap",
   "name": "JulSwap JulProtocolV2 addBNB spot-reserve quote treasury drain",
-  "summary": "JulProtocolV2.addBNB() sizes the protocol's own JULb contribution from the instantaneous BSCswap WBNB/JULb reserve ratio: it calls BSCswapLibrary.getReserves(BSCSWAP_FACTORY, WBNB, TOKEN) and then tokenAmount = quote(msg.value, reserveWBNB, reserveJULb), spends tokenAmount out of the contract's own JULb balance, and passes that same figure as amountTokenMin to addLiquidityBNB with amountBNBMin = 1. The deposit-time reserve ratio is a caller-controllable quantity in the same transaction, so a swap that crashes JULb against WBNB immediately before the call makes the protocol pay out an arbitrarily larger share of its treasury for the same msg.value. The attacker moved the ratio from 15,123.22 JULb / 1,703.55 WBNB to 85,123.22 JULb / 303.41 WBNB with a flash-swapped 70,000 JULb sale, then deposited 515 BNB and drew 144,487.595825205639607875 JULb out of the protocol's 148,525.223539050531686881 JULb balance, versus 45.7 JULb at the unmanipulated ratio. Boundary test: BSCSWAP_FACTORY and router02Address are hard-coded at their declarations with no setter, WBNB and TOKEN are written once in the constructor, MINIMUM_DEPOSIT_AMOUNT is a compile-time constant, and the contract's only owner function is setInterestRadio, which does not enter this path; no parameter value bounds the quote, so the defect is in the executed runtime rather than in a configured value.",
+  "summary": "JulProtocolV2.addBNB() sized the protocol's own JULb contribution from the instantaneous WBNB/JULb reserve ratio and added it as liquidity with amountBNBMin = 1. Attackers crashed the JULb price with flash-swapped JULb, called addBNB so the treasury poured JULb into the pair at the crashed ratio, then bought JULb back cheaply and kept the BNB.",
   "targets": [
     {
       "address": "0x41a2f9ab325577f92e8653853c12823b35fb35c4",
@@ -12,24 +12,34 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x08c03aa292cd4ab5c7f2cb8b2b67bf0a82c3bfe15d555453a3e350cbfd97f478",
+    "eip155:56:0x9af2d732eae43e06c8559ed58bf082c56ad2c3a0688e30987a49a44fa2e16979",
+    "eip155:56:0xb0b74d6a2319d4e5917f7d4aa680af86bff3b1d7c2e948496649854b65ad3273",
+    "eip155:56:0xbd95789d5df0d410f10ef67c5e903f46078c9cc626f7f442f2d61cca94f8f18d"
+  ],
   "loss": {
-    "usd": 194298.75272611558,
+    "usd": 279101.87,
     "assets": [
       {
         "symbol": "BNB",
-        "amount": "522.838342910629238613",
-        "usd": 194298.75272611558
+        "amount": "775.550322042100512147",
+        "usd": 279101.87
+      },
+      {
+        "token": "0x32dffc3fe8e3ef3571bf8a72c0d0015c5373f41d",
+        "symbol": "JULb",
+        "amount": "1179.450974920266445305",
+        "usd": 0
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-05/JulSwap_exp.sol",
-    "eip155:56:0x9eb175efe70bbb7dd04c107f6a6c49d5615d3cc5b063828708875bc1c1dadb03"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-05/JulSwap_exp.sol"
   ],
   "notes": [
-    "JulProtocolV2 is a plain non-delegating deployment with no proxy or upgrade mechanism. The account has no code at block 1454078 and its runtime hashes to 0x96d59b4b8053cd5b356e4ac39bac1f0eab91334c2fc530541a1fe5200b7e5fbc at the creation block, at blocks 2500000, 4000000, 6000000, 7000000 and 7700000, at block 7785586 immediately before the exploit, and in the anchor transaction's prestate, so the deployment is the last executable-code change.",
-    "Measured as the attacker's realised proceeds, which is the only quantity in this incident that can be marked honestly. The attack contract 0x7c591aab9429af81287951872595a17d5837ce03 was created with zero value 14 blocks earlier and supplied no capital: inside the anchor transaction it received 1,400.146882180525770269 BNB from selling the flash-swapped JULb, paid 515 BNB into addBNB and 362.308539269896531656 BNB into the buy-back, and ended holding exactly 522.838342910629238613 BNB, which transaction 0x9eb175efe70bbb7dd04c107f6a6c49d5615d3cc5b063828708875bc1c1dadb03 forwarded to the attacker EOA. Gross victim depletion is separable in token terms - JulProtocolV2's JULb balance fell from 148,525.223539050531686881 to 4,037.627713844892079006, a 144,487.595825205639607875 JULb outflow, against 6,781.768441209196495678 newly minted WBNB/JULb LP tokens received - but it cannot be valued: JULb has no DefiLlama price series, the only venue was a pool holding 1,703.55 WBNB before the attack, and marking the net position change at the pre-attack ratio gives about 7,472 BNB while marking it at the post-attack ratio gives about 263 BNB. The seed row's 1,500,000 USD is the pre-attack spot mark of that treasury outflow and is not reproducible from receipts. The attacker's residual 100 JULb, swept in 0xb8adfe3579c8885c69bc036510f5136ee53b9c46bd9f097b1d41388fd01250bf, is unpriced and omitted. Flash-swap principal is netted inside the same transaction and gas is not deducted.",
-    "Loss is the attacker's realised BNB proceeds rather than gross victim depletion: the 144,487.595825205639607875 JULb that left JulProtocolV2's treasury has no price series and only one thin trading venue, and the protocol retained an LP claim on the same pair, so no gross figure can be marked honestly.",
-    "The seed inventory recorded the JULb token 0x32dffc3fe8e3ef3571bf8a72c0d0015c5373f41d as the victim contract and aged it from that token's 2020-09-20 deployment. This record ages the contract that actually executes the defect, JulProtocolV2 0x41a2f9ab325577f92e8653853c12823b35fb35c4, deployed 2020-10-18."
+    "Victims are JulProtocolV2 and the WBNB/JULb pair it supplies, netted per transaction: their BNB loss equals what each exploiter kept. The attacker's own earlier addBNB call 0xf2a37ce0 was an unmanipulated deposit, not an exploit.",
+    "JULb has no price and its only venue was crashed by the attack; the JULb that left the victims went to flash-swap repayment and fees, whose proceeds are already in the BNB, so it is listed at 0 USD (rule 15).",
+    "Contract-originated addBNB calls from 2026 by 0xc2182000 lost BNB for their sender and are not counted as exploits."
   ]
 }

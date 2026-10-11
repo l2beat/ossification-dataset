@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LavaLending",
   "name": "LavaLending borrowable WETH/USDC.e wrapper LP priced from dust residual supply",
-  "summary": "Lava listed the WETH/USDC.e UniV3 wrapper LP 0x6700b021 as a collateral and variable-borrow reserve and priced it with WrapperOracle: wrapper getAssetsBasedOnPrice(Chainlink-derived sqrtPrice) valued at Chainlink prices, divided by the wrapper's live totalSupply, guarded only by totalSupply >= 1e9 raw. A borrower could borrow the LP out of the reserve and redeem it, leaving aLP collateral claims far larger than the wrapper's residual supply. The per-share price of that dust residual could then be raised cheaply by fee donation, and the inflated price applied to every aLP claim. The attacker minted 430,623.99 LP and supplied it. A helper borrowed it all back and the attacker withdrew the other suppliers' 30.93 LP, then redeemed everything, cutting supply from 33.08 to 2.14 LP. After fee payments into the in-range pool, the oracle price rose from 14.25 to 19.88 USD, and the attacker borrowed every Lava reserve's cash.",
+  "summary": "Lava listed a UniV3 wrapper LP as borrowable collateral priced by WrapperOracle at wrapper assets (including unclaimed fees) over live totalSupply. The attacker borrowed the LP out of the reserve and redeemed it, leaving dust supply, donated fees to inflate the per-share price, and borrowed every reserve's cash against the inflated aLP collateral.",
   "targets": [
     {
       "address": "0xd13a2f836b60847d72d5e6ede6dbd0d604d27c0c",
@@ -15,37 +15,37 @@
     }
   ],
   "loss": {
-    "usd": 140022.29168823958,
+    "usd": 140022.3,
     "assets": [
       {
         "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "symbol": "USDC",
         "amount": "138491.937066",
-        "usd": 138491.937066
+        "usd": 138491.94
       },
       {
         "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
         "symbol": "USDC.e",
         "amount": "298.077739",
-        "usd": 298.077739
+        "usd": 298.08
       },
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
         "amount": "0.153407712731719084",
-        "usd": 375.10947101734484
+        "usd": 375.11
       },
       {
         "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
         "symbol": "WBTC",
         "amount": "0.00679208",
-        "usd": 416.22147367023655
+        "usd": 416.22
       },
       {
         "token": "0x6700b021a8bcfae25a2493d16d7078c928c13151",
         "symbol": "WETH/USDC.e wrapper LP",
         "amount": "30.934215456195",
-        "usd": 440.9459385519978
+        "usd": 440.95
       }
     ]
   },
@@ -54,7 +54,8 @@
     "eip155:42161:0xb0878c0570a684cede67b8fec4fe62247e9327032b3cd0bfc45289671cc13ac1"
   ],
   "notes": [
-    "The LP reserve, initialized with LTV 0 and borrowing disabled, becomes collateral (LTV 9000, liquidation threshold 9250, log 19) and variable-borrowable (BorrowingEnabledOnReserve, log 20). Both conditions are exercised, and this is the latest necessary change for the WrapperOracle/LP-reserve combination. It follows the oracle's deployment and its AssetSourceUpdated (block 214545658). The later LTV rise to 9450 at block 219351603 only changes exposure.",
-    "Gross depletion of third-party cash in the five Lava reserves the receipt drains to zero. The attacker's own campaign inputs are excluded: the helper's 6,492,300.768118 USDC deposit and the attacker's 430,623.991193131340 LP deposit, both recovered within the receipt. Their abandoned cross-positions (helper: USDC collateral against LP debt; attacker: aLP collateral against the reserve borrows) are not counted as consideration. The LP component is other suppliers' LP withdrawn and redeemed by the attacker. It is valued at the pre-exploit WrapperOracle price (Chainlink-derived fair reserves, block 259645907), not at the manipulated price. Attacker proceeds of about 125,795.6 USDC, 1 USDC.e, 0.00679208 WBTC and 2.25 WETH (the PoC's ~$130k) are not substituted for victim depletion."
+    "Reset: the configuration that made the LP reserve collateral (LTV 9000) and variable-borrowable, the last change the exploit needed; the oracle and wrapper beacon route are older, and the later LTV raise only changed exposure.",
+    "Gross depletion of third-party cash in the five reserves; the attacker's and helper's own deposits recovered in the tx are excluded. Other suppliers' 30.93 LP is valued at the pre-exploit WrapperOracle price, not the manipulated one.",
+    "A separate record (eip155:42161:0xcb1a2f5e) covers the March 2024 single-token fee-cap bug in a different wrapper; this October 2024 drain exploits the borrowable-LP supply reduction and is another incident."
   ]
 }
