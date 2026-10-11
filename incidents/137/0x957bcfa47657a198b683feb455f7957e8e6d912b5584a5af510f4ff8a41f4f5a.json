@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Fun.xyz",
   "name": "Fun.xyz retired CheckoutPool unauthenticated bridge()",
-  "summary": "Fun.xyz's retired first-generation CheckoutPool at 0x13046f51 exposes bridge(address,BridgeParams) with no caller authorisation - that runtime holds no operator variable at all - so the only remaining constraint on bridgeParams.target and bridgeParams.callData is the bridge-target and chain-id allowlist, and setAllowAll(true) had disabled it. Any address could therefore make the pool perform an arbitrary external call, violating the invariant that only the protocol operator selects the call a CheckoutPool makes on a checkout's behalf. Because the retired pool was still an allowed operator on CheckoutPaymaster, the attacker aimed that call at activateAndCall, which invoked the live CheckoutPool's onlyPaymaster execute() for a checkout the attacker had self-registered through the permissionless deposit() with params.targetAmount 85,730 USDC.e against 1 USDC.e held, and the pool paid the 85,729 USDC.e difference out of _POOL_EXCESS_.",
+  "summary": "A retired CheckoutPool's bridge() had no caller check and setAllowAll(true) had lifted its target allowlist, yet it stayed a CheckoutPaymaster operator. The attacker registered a checkout with an inflated targetAmount through the live pool's permissionless deposit(), then had the paymaster call the live pool's execute(), which paid it from pool excess.",
   "targets": [
     {
       "address": "0x13046f513802de93f3fc48f0cdb2cb7df22ec01a",
@@ -21,45 +21,58 @@
         "address": "0xd649ac385efe8ce69ece9d2e61ae602e2893c586",
         "slot": "0x76758decc43055341caad3688f7275167d3ca759892600156810e8ee62b32b1e"
       }
+    },
+    {
+      "address": "0x1929347e025d4f5f8d6b2bd2261e2f4efcacd215",
+      "reset": {
+        "kind": "config",
+        "tx": "0xad097726c19c3e76e1a14baee97f3dbecf32931a4cdc4361ae70bfaf3e890772",
+        "address": "0x1929347e025d4f5f8d6b2bd2261e2f4efcacd215",
+        "call": "0x16e4cbf9"
+      }
     }
   ],
+  "campaign": [
+    "eip155:137:0x979e0a9f1cca9e042b68df65ecc19b3339e5cbfe59fd8f50dfa663c6ed7cd297",
+    "eip155:137:0x8837ceff23a013f0ec25d70eec63f36ff9dc3b72e59b3fcaea471b819afa5405"
+  ],
   "loss": {
-    "usd": 85760.77,
+    "usd": 85770.5,
     "assets": [
       {
         "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         "symbol": "USDC.e",
-        "amount": "85735.269319",
-        "usd": 85735.27
+        "amount": "85740.093363",
+        "usd": 85740.25
       },
       {
         "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
         "symbol": "USDC",
-        "amount": "24.490243",
-        "usd": 24.49
+        "amount": "27.083153",
+        "usd": 27.08
       },
       {
         "token": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-        "symbol": "WMATIC",
-        "amount": "9.891240460827629941",
-        "usd": 1.01
+        "symbol": "WPOL",
+        "amount": "21.998563796995249506",
+        "usd": 2.24
+      },
+      {
+        "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+        "symbol": "DAI",
+        "amount": "0.933283241393044373",
+        "usd": 0.93
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-03/unverified_1304_exp.sol",
-    "eip155:137:0x8837ceff23a013f0ec25d70eec63f36ff9dc3b72e59b3fcaea471b819afa5405",
     "eip155:137:0x6f184d796ece031735207cbab19ba2e21f0ab7e1f454c02a8d8e5335db20877e",
     "eip155:137:0xa17108f276821bf669dfd0db3c3e3c6fca33c784b0080cd2f8f8aea72ed425cf"
   ],
   "notes": [
-    "setAllowAll(true) by owner 0x1bd170ca set the _ALLOW_ALL_ flag packed at byte 20 of slot 2 alongside FORWARDER_FACTORY, 0x00 -> 0x01. Until that write the ungated bridge() still had to hit an allowlisted target and chain id, and _ALLOWED_BRIDGE_TARGETS_[0xd649ac38] and _ALLOWED_CHAIN_IDS_[1] were false at the exploit block; replaying the exploit calldata at block 84291586 with only this byte cleared reverts BridgeTargetNotAllowed(0xd649ac385efe8ce69ece9d2e61ae602e2893c586).",
-    "setOperators([0x13046f51], true) one transaction after the paymaster's creation wrote _OPERATORS_[0x13046f51] = true at keccak(pad(0x13046f51) . pad(4)), emitting OperatorSet at log 239. The grant was never revoked before the exploit and is what let the retired pool's arbitrary call clear activateAndCall's onlyOperator modifier.",
-    "Gross depletion of the live CheckoutPool 0x1929347e, measured from its token balances and net of attacker-supplied deposits. Its USDC.e balance was 85,735.269319 before the campaign's first deposit at block 84290864 and zero after block 84292990; the attackers put 3.000000 USDC.e in through three deposit() calls and took 85,730.000000 out in the anchor transaction plus 8.269319 in the recurrence, so 85,735.269319 USDC.e of pre-campaign holdings were lost. _POOL_EXCESS_[USDC.e] fell 417,094.931356 -> 331,365.931356 across the anchor block, the protocol's own accounting of the 85,729 excess spent there. The recurrence at 84292990 by 0xc513e4f5 through contract 0x972c516a used the same defect and adds 24.490243 native USDC and 9.891240460827629941 WMATIC of net depletion. Stablecoins are valued at par, corroborated by DefiLlama observations of 1.0000018 and 0.9999971; WMATIC uses the DefiLlama mark at the recurrence. The seed inventory's 85,730 was the anchor transaction's gross transfer and did not net the attacker's own deposits or count the recurrence.",
-    "The retired pool 0x13046f51 is unverified on Polygonscan; its defect is established from the deployed runtime's dispatcher and storage layout plus eth_call reproduction, not from published source.",
-    "The drained contract, live CheckoutPool 0x1929347e, is not carried as a target: its execute() enforced onlyPaymaster as designed, and the checkout state it paid out was written by the attacker through deposit() 66 seconds before the exploit, so it is attack machinery rather than age-bearing victim state.",
-    "The runtime is unverified on Polygonscan; the absent operator gate was established from the dispatcher, the storage layout and an eth_call reproduction rather than from source.",
-    "Not the knot: the operator grant at 1705447984 precedes the retired pool's setAllowAll(true) at 1705513993 by 66,009 seconds, so the exploitable combination only existed from the later write.",
-    "The paymaster's own code is not defective; activateAndCall is operator-gated as designed and the implicated state is the retained grant to a decommissioned contract."
+    "The live pool is a target: its execute() pays whatever targetAmount a permissionless deposit() registered, trusting only its paymaster. setPaymaster pointing it at the paymaster whose retired operator was open is the latest change the exploit needed (rule 10 role grant); before it this pool could not be reached.",
+    "The retired pool 0x13046f51 is unverified; its ungated bridge() follows from the runtime (no operator getter) and from the attacker calling it directly. The referenced setup transactions are the attacker's deposit() registrations, whose 1 USDC.e inputs are not netted (rule 14).",
+    "Campaign: copycat 0xc513e4f5 repeated the path, draining the live pool and two other paymaster operators (0xed6dbff9, 0xc7044e4a); its probe 0x1eb47582 moved nothing and is omitted."
   ]
 }

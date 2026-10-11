@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "GROK",
-  "name": "GROK token pair-balance accounting",
-  "summary": "GROK's transfer logic let the attacker shrink the Uniswap V3 pool's own GROK balance during a flash swap, so the position could be closed against a manipulated pool balance and the pool's WETH extracted.",
+  "name": "GROK token triggerable zero-slippage swapback",
+  "summary": "GROK's _transfer sells the token contract's own accumulated GROK on Uniswap V2 with zero minimum output whenever a transfer to the pair finds that balance above a fixed threshold. The attacker topped the balance up by direct transfer, sandwiched the triggered sale inside flash loans, bought back cheaply and arbitraged the GROK against the V3 pool.",
   "targets": [
     {
       "address": "0x8390a1da07e376ef7add4be859ba74fb83aa02d5",
@@ -13,12 +13,12 @@
     }
   ],
   "loss": {
-    "usd": 55943.49097823476,
+    "usd": 55835.85,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "26.382963431285374891",
-        "usd": 55943.49097823476
+        "usd": 55835.85
       }
     ]
   },
@@ -27,7 +27,7 @@
     "https://twitter.com/Phalcon_xyz/status/1722841076120130020"
   ],
   "notes": [
-    "The exploitable balance-dependent transfer logic executes directly in GROK's immutable token runtime. The address had no code immediately before the creation transaction, and its 6,646-byte runtime hash at deployment matches the pre-exploit hash.",
-    "After the 30 WETH Uniswap V3 flash loan and 0.003 WETH fee were repaid, the trace records exactly 26.382963431285374891 ETH transferred from the attack helper to the attacker EOA. Transaction gas is excluded."
+    "Victims are the swapback (token balance and tax wallet) and the two GROK pools: their GROK flows cancel and their ETH/WETH net equals the attacker's ETH take plus the 0.003 WETH flash fee, so the loss is that ETH.",
+    "openTrading, 12 blocks after deployment, only opened trading and created the pair (launch, pause-like) and does not move the reset."
   ]
 }

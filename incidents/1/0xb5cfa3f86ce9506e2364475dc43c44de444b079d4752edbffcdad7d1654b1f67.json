@@ -2,43 +2,35 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "GradientMakerPool",
   "name": "GradientMakerPool heterogeneous-unit LP share accounting",
-  "summary": "GradientMarketMakerPool added raw GRAY token units and wei-denominated ETH when minting LP shares, then used those shares pro rata against the whole pool. The live GRAY/WETH pair constrained the deposit ratio but did not convert the two assets to a common value unit, so a deposit that was valid at the market ratio received shares as though each GRAY wei and ETH wei were economically interchangeable.",
+  "summary": "GradientMarketMakerPool minted LP shares on the raw sum of GRAY token units and wei of ETH and redeemed them pro rata against the pool's separate ETH and GRAY totals. A deposit at the pair's ratio, mostly GRAY by unit count, received shares worth far more ETH than it brought, and an immediate withdrawal took other providers' ETH.",
   "targets": [
     {
       "address": "0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc",
       "reset": {
-        "kind": "config",
-        "tx": "0x2b4d546e1bcbfe6c86348e9d4fe340aea994510ab66c4cdcef68160dc6e9162c",
-        "address": "0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc",
-        "slot": "0x35a35a0941ccfe30d19d7cda394e8682691c0bd19cb185f20ca3325520fac70a"
+        "kind": "deployment",
+        "tx": "0xa3bff2b36fbace5f11ab8730747dc946dab23145b7b9e4333637830ca1fcb13c"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x3b57c01d52db5c5d489462828757c86827b1e0acd03f22661ed84ffe4a2c339b",
+    "eip155:1:0x9d70b956bcd948c9f174c8dd87f95c7454a10467ef816b2761ef425a3b1f6110"
+  ],
   "loss": {
-    "usd": 6743.210529916518,
+    "usd": 6767.8,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "3.010899131704627093",
-        "usd": 6747.665826080606
+        "amount": "3.019516111236838802",
+        "usd": 6767.8
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-06/GradientMakerPool_exp.sol",
-    "eip155:1:0x164df9ffaf0b5406b5ce229764babc6d045a1eaf4b13b0db931e317dbcaaa2d7",
-    "eip155:1:0xdd7dc06511fd686bf08bdd12b84cdc812471058f91aa1cd2d9a082056c9061df",
-    "eip155:1:0xc68f673ac67420ef31ade43dba59a994b3675cb5ca5af391dc061281a5a4707d",
-    "eip155:1:0x6d33aa1371f10d41ce7cff23a1ecd40785c3bbb7526b9c6a93689302a2fbcdb2",
-    "eip155:1:0x9cd6c268b698dc8820db51ea1c08bf7b085436c2aedd43a95fcb13654e4ad463",
-    "eip155:1:0x1dd527c792a91752f90b7e6a0c1bab836dd99f3c85cdc90898b13fac6a244c90",
-    "eip155:1:0x0a2d35ea7a0a9a429d8e2ace41d0e6d7133c45205a2fe09d90c45fcd8fdb192e",
-    "eip155:1:0x6cdfc3078e8abab12d922bc010576a03e7468443768f653b5df9a95d06c774c5",
-    "eip155:1:0x0fffb1b7f0555fb641b53080ac3d88f632e7a9b8e1fb1389037e463610eb7fef",
-    "eip155:1:0x209f39a20e97a2437b83f5f3fafd3847eb43479daef5008738ae387df4214ede"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-06/GradientMakerPool_exp.sol"
   ],
   "notes": [
-    "The first GRAY provideLiquidity call persistently bound the GRAY pool entry to canonical Uniswap V2 pair 0x0846f55387ab118b4e59eee479f1a3e8ea4905ec. Later deposits, withdrawals, orderbook inventory movements and reward funding did not change the pair binding, registry, ownership or implicated share-accounting code.",
-    "The direct pool's archive ETH balance falls from 3.027810499442493292 at block 22765113 to 0.016911367737866199 at block 22765114, an exact gross reserve depletion of 3.010899131704627093 ETH. In the same receipt it retains 3.010899131704627094 GRAY as consideration. Immediately before the receipt, the sole credible GRAY market, canonical Uniswap V2 pair 0x0846f55387ab118b4e59eee479f1a3e8ea4905ec, held 261,545.090101530069672838 GRAY and 172.690952204762289631 WETH. The exact reserve-implied credit is (3.010899131704627094 * 172.690952204762289631) / 261,545.090101530069672838 = approximately 0.001988012995559277896495942208041284852218098342934136728762105924489847668692228748688376255407217518 ETH. Gross depletion less that credit is approximately 3.008911118709067815103504057791958715147781901657065863271237894075510152331307771251311623744592782 ETH. At the independently preceding $2,241.08 ETH mark, gross outflow is exactly $6,747.66582608060568558044, the GRAY credit is approximately $4.455296164087986508279126163597162656608935834382835140094180345255707813352780004110546258468007035, and net loss is approximately $6,743.210529916517699072160873836402837343391064165617164859905819654744292186647219995889453741531992. Morpho's 3-WETH flash principal is returned with zero token fee. A linked Uniswap trade spends 0.664800798545598825 WETH for 1,000 GRAY; 50 GRAY goes to the token contract, 950 is deposited, 946.989100868295372906 is returned to the helper, and the pool keeps the stated 3.010899131704627094-GRAY credit. The helper later transfers its returned GRAY to the attacker EOA for disposal; neither that activity nor any later transaction returns ETH or GRAY to the victim pool. The seed's $5,000 figure was attacker-proceeds scale rather than the pool's exact net impairment."
+    "The first provideLiquidity for GRAY bound the pool to its Uniswap V2 pair, but any first depositor writes the same deterministic pair, so it is pool state, not a reset; the age runs from deployment.",
+    "The GRAY the pool kept in the exploit is not netted against its ETH outflow (rule 14)."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Floor Protocol (Flooring Lab)",
   "name": "FlooringPeriphery extMulticall arbitrary call",
-  "summary": "Multicall.extMulticall() in the FlooringPeriphery implementation is an unguarded external function that loops over caller-supplied (target, callData) pairs and executes calli.target.call(calli.callData) from the periphery proxy's own context, with no access control, no target allowlist and no calldata filtering. Because users grant the periphery setApprovalForAll on their NFT collections and ERC-20 allowances, any caller could make the proxy invoke safeTransferFrom or transferFrom on an approval-holding victim and move the asset to itself.",
+  "summary": "Multicall.extMulticall() in the FlooringPeriphery implementation executed caller-supplied (target, callData) pairs from the periphery proxy with no access control. Users had approved the proxy for their NFTs and WETH, so the attacker made it call safeTransferFrom and transferFrom on approval holders and took their BAYC, Pudgy Penguins and WETH.",
   "targets": [
     {
       "address": "0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee",
@@ -13,41 +13,42 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xec8f6d8e114caf8425736e0a3d5be2f93bbea6c01a50a7eeb3d61d2634927b40",
+    "eip155:1:0xfb9942a119c45adab3980639cd829e57b41449e3b82d610892da4bb921e81d9c"
+  ],
   "loss": {
-    "usd": 1625029.1807156415,
+    "usd": 1708878.46,
     "assets": [
       {
         "token": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
         "symbol": "BAYC",
         "amount": "14",
-        "usd": 833278.60406
+        "usd": 815022.27
       },
       {
         "token": "0xbd3531da5cf5857e7cfaa92426877b022e612cf8",
         "symbol": "PPG",
         "amount": "36",
-        "usd": 764883.027
+        "usd": 866985.99
       },
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "12.063212894780222877",
-        "usd": 26867.549655641356
+        "usd": 26870.2
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/FloorProtocol_exp.sol",
     "https://protos.com/floor-protocol-exploited-bored-apes-and-pudgy-penguins-gone/",
-    "eip155:1:0xec8f6d8e114caf8425736e0a3d5be2f93bbea6c01a50a7eeb3d61d2634927b40",
-    "eip155:1:0xfb9942a119c45adab3980639cd829e57b41449e3b82d610892da4bb921e81d9c",
     "eip155:1:0x21bb82fd913e76dfdbf6ea93c7d154f6e22eacc8b3bcd948ccab712c4296eb0f",
     "eip155:1:0xc806abb1562980e3abdc70af66c5401ffe5daee4e785f0b0d7a82577e73ffbef",
     "eip155:1:0x0ec0f9aa9aee7f26d05adcb82819b2cbe0febd00894649d7a9ae84ab35270404"
   ],
   "notes": [
-    "Sixth and last pre-exploit Upgraded event on the periphery proxy, the only log of the UUPS upgradeToAndCall transaction 0x74f4226252e8b8ab9ab61de1a30d84a8456913ecb1d033634b11fa2f7e3c0903 sent by the deployer 0x43800c438f5d639c8b865396cb83a4efa220091b; topic1 selects implementation 0xc538d17a6aacc5271be5f51b891e2e92c8187edd, and the EIP-1967 implementation slot still holds that address at block 18802260.",
-    "The campaign is exactly three transactions from 0x4d0d746e0f66bf825418e6b3def1a46ec3c0b847 through its contract 0x7e5433f02f4bf07c4f2a2d341c450e07d7531428, all driving extMulticall on the periphery proxy: block 18802261 pulled 14 Bored Ape Yacht Club tokens (ids 638, 4112, 4523, 5271, 5864, 5914, 5986, 6019, 6074, 6255, 6517, 6936, 8272, 9488) from five approval holders, block 18802289 pulled 36 Pudgy Penguins (ids 1024, 1338, 1349, 1715, 2079, 2341, 2375, 2503, 2567, 3279, 3309, 4212, 4605, 4778, 4953, 5092, 5365, 5382, 5584, 5606, 5866, 5927, 6197, 6472, 6679, 6693, 6827, 7228, 7258, 7484, 7821, 7912, 7983, 8239, 8325, 8723) from 0xe5442ae87e0fef3f7cc43e507adf786c311a0529, and block 18802297 pulled 12.063212894780222877 WETH from five further approval holders. Token counts come from a trace_filter enumeration of every transferFrom/safeTransferFrom call made by the proxy 0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee between blocks 18341948 and 18830000 whose token owner is neither the transaction sender nor its entry contract. The NFT unit prices are the median arm's-length onchain sale price for each collection over blocks 18795000-18809000, taken from Seaport 1.1/1.4/1.5 OrderFulfilled and Blur v2 packed executions and excluding every transaction involving a campaign address: BAYC 26.683 ETH from 64 sales, Pudgy Penguins 9.525 ETH from 84 sales, converted at the DefiLlama ETH price for the incident timestamp. The medians are corroborated by the attacker's own disposal: he sold all 14 BAYC into Blur bids for 367.11 ETH (26.22 ETH average) and all 36 Pudgy Penguins for 391.04 ETH (10.86 ETH average) within 25 minutes. Excluded: 15 Azuki (ids 1657, 1892, 2230, 2480, 2583, 2953, 4313, 4371, 4406, 7230, 7371, 7689, 8305, 8561, 9627) pulled through the same defect between blocks 18802605 and 18802671 by 0x4526250a2e18dbd7fdd2dd0e49d58d88dc25da4c and 0x0171837c6461f551ab1eb5937374f52d6cefe7bb, because every one of them was returned to its original owner by block 18824263. Nothing taken by the exploiter was recovered: the 754.36 ETH of Blur proceeds plus the 12.06 ETH of unwrapped WETH left the exploiter address in two transfers at blocks 18802638 and 18802712.",
-    "The 15 Azuki pulled through the same defect at blocks 18802605-18802671 by 0x4526250a2e18dbd7fdd2dd0e49d58d88dc25da4c and 0x0171837c6461f551ab1eb5937374f52d6cefe7bb were all returned to their original owners within a day and are treated as rescue rather than theft."
+    "The NFTs have no DefiLlama price, so they are valued at what the attacker realised selling them into Blur bids within half an hour (the three referenced sales), priced at the ETH rate of each sale (rule 15).",
+    "Azuki pulled through the same defect by 0x4526250a2e18dbd7fdd2dd0e49d58d88dc25da4c and 0x0171837c6461f551ab1eb5937374f52d6cefe7bb are not in the campaign: all went back to their owners, directly or via Floor's recovery wallet 0xcf771bfd570a00364dedaba60ad293e06e414301 (rule 5 rescue)."
   ]
 }
