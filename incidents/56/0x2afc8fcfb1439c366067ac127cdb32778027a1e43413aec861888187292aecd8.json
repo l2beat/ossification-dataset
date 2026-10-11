@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "HedgePay",
   "name": "HedgePay staking forceExit pays out the stake without clearing the staked balance",
-  "summary": "The HedgePay HPAY staking proxy's implementation lets any staker call forceExit() to receive its full staked balance, but forceExit never decreases that balance or totalSupply, so the same stake can be withdrawn again. On 2025-12-22 a staker account paid out once through forceExit and again through withdraw eight blocks later; on 2026-02-25 an attacker staked 1.17M flash-borrowed HPAY and called forceExit 50 times, draining 57.5M HPAY of other stakers' deposits and selling it for 26.01 BNB.",
+  "summary": "The HedgePay HPAY staking proxy's implementation pays a staker's full balance on forceExit() but never reduces that balance or totalSupply, so the same stake can be paid out again by withdraw() or by repeated forceExit() calls, draining other stakers' HPAY.",
   "targets": [
     {
       "address": "0x6e30c17d2554dca5a1ac178939764c6bf61ab95a",
@@ -13,8 +13,15 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x48364ae299597c4cda8174263494664ff8c56dec207fc911668b40908c89934a",
+    "eip155:56:0x5f2ea6cb43d14986188fa2f474d9e22502fa95cc76cab72cd6ba1ba146ed137f",
+    "eip155:56:0xd6cc23a33593ae1407fde3e2c500d69a0ea5e625d30ffb3976b054e39efd14f4",
+    "eip155:56:0x5b52af8e31febfad89cbbc3fc80fad9be66e58ec7130141578d74816ba84a46d",
+    "eip155:56:0xd99ca15a9194ea914b2a6e4a4fa8f5fa2b71ece596b9bc1655c5d9f87d2af619"
+  ],
   "loss": {
-    "usd": 15698.39,
+    "usd": 15892.57,
     "assets": [
       {
         "token": "0xc75aa1fa199eac5adabc832ea4522cff6dfd521a",
@@ -27,18 +34,22 @@
         "symbol": "HPAY",
         "amount": "57525318.051272866453787233",
         "usd": 15682.22
+      },
+      {
+        "token": "0xc75aa1fa199eac5adabc832ea4522cff6dfd521a",
+        "symbol": "HPAY",
+        "amount": "1124047.264162863420962331",
+        "usd": 194.18
       }
     ]
   },
   "refs": [
-    "eip155:56:0x48364ae299597c4cda8174263494664ff8c56dec207fc911668b40908c89934a",
-    "eip155:56:0x5f2ea6cb43d14986188fa2f474d9e22502fa95cc76cab72cd6ba1ba146ed137f",
     "eip155:56:0xbb766ec413ff6087ebb358acc904ea2fc2c92cce4eb6c269f6bbb7a920075227",
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-23-mar-1-2026"
   ],
   "notes": [
-    "ProxyAdmin 0x0004b983d1b06fc3539170d75d15bc56875f1ac4 upgrade(proxy, 0xbe189fe9...) emitted the only Upgraded(address) event of the TransparentUpgradeableProxy before the exploit, replacing the constructor implementation 0xcd4b1ea3535dd37130c1bb2df42ee61a024b3e8a.",
-    "Gross depletion of the staking proxy's HPAY beyond the exploiting accounts' own stakes. Campaign 1 (2025-12-22, sweeper 0x07eb2a01 operating the EIP-7702-delegated 2022 staker account 0xf2552dd6): forceExit paid 25,475.22865342 HPAY and withdraw then paid 25,475.228653419999999999 HPAY again; only the second payout is counted, valued at the HPAY/BTCB pair spot reserves times the DefiLlama BTCB price (no HPAY feed). Campaign 2 (2026-02-25): proxy HPAY 58,649,389.75968834 -> 1,124,071.708415473546212768, i.e. 50 forceExit payouts of 1,173,986.082679038090893617 minus the attacker's single post-tax stake of the same amount; the attacker sold the proceeds via HPAY/BTCB and BTCB/WBNB for 26.014224201105944931 WBNB, valued at the DefiLlama WBNB price as realised proceeds. HPAY transfer taxes to fee addresses and the flash loan are not netted.",
-    "Implementation 0xbe189fe9 is unverified; the defect is established from execution (payouts and a successful full withdraw after forceExit) and BlockSec's analysis, not from source."
+    "Anchor: sweeper 0x07eb2a01, through 2022 staker 0xf2552dd6 (EIP-7702 delegated), called forceExit and withdrew the same stake again in 0x48364ae2; only that second payout counts. The 2026-02-25 attacker (50 forceExits) and three copycats in the next 1,300 blocks repeated it.",
+    "HPAY has no DefiLlama price. The 2025 payout is valued at HPAY/BTCB spot reserves times BTCB; the 2026 drains at what each actor realised selling into that pair (26.0142 WBNB for the main attacker, 0.3221 WBNB for the copycats together).",
+    "Implementation 0xbe189fe9 (deployed in the ref tx) is unverified; the defect is established from execution: payouts that leave the staked balance in place."
   ]
 }

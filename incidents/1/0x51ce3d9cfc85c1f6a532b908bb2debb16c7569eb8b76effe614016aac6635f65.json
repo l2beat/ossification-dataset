@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "HYPR",
   "name": "HYPR L1StandardBridge reinitialization",
-  "summary": "The HYPR L1StandardBridge implementation cleared the storage used by Initializable, leaving the deployed bridge reinitializable. The incident transaction reinitialized the bridge and released 2.57 million escrowed HYPR.",
+  "summary": "HYPR's L1StandardBridge implementation wraps initialize() in a clearLegacySlot modifier that zeroes storage slot 0, which also holds Initializable's version, so reinitializer(2) passes on every call. The attacker reinitialized the bridge with its own contract as messenger and, as that messenger, finalized a withdrawal of the bridge's escrowed HYPR.",
   "targets": [
     {
       "address": "0x40c31236b228935b0329eff066b1ad96e319595e",
@@ -14,13 +14,13 @@
     }
   ],
   "loss": {
-    "usd": 220000,
+    "usd": 210681.84,
     "assets": [
       {
         "token": "0x31adda225642a8f4d7e90d4152be6661ab22a5a2",
         "symbol": "HYPR",
         "amount": "2570000",
-        "usd": 220000
+        "usd": 210681.84
       }
     ]
   },
@@ -30,8 +30,7 @@
     "https://rekt.news/zh/hypr-network-rekt"
   ],
   "notes": [
-    "The ProxyAdmin transaction installed 0xe468b43b4ae4d750cd6a5d7edacc1a751302c99c in the bridge proxy's EIP-1967 implementation slot and initialized it. The receipt emitted Initialized(2), so selection is represented by the storage transition rather than an implementation-address event.",
-    "The transaction and commit-pinned reproduction record exactly 2,570,000 HYPR transferred from bridge custody. Rekt reported the amount as approximately $220,000; no independently reproducible incident-time HYPR price series was retained.",
-    "The $220,000 value is a contemporaneous reported approximation."
+    "HYPR has no DefiLlama price; it is valued at what the attacker realised (rule 15): the 20 sells of the 2.57M HYPR into the HYPR/WETH pair 0xeefaa1be within 135 blocks returned 97.3176 WETH, priced at $2,164.89 per ETH.",
+    "The two later initialize calls by 0xd4e69b4b moved no tokens and are not campaign transactions."
   ]
 }

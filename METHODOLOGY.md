@@ -82,8 +82,9 @@ transaction exploited.
     recoveries are not subtracted, and a victim's gain in one transaction
     never offsets its loss in another. Flash loans repaid within the
     transaction are not victim assets.
-15. An asset without a market price, for example one the attacker's own sale
-    crashed, is valued at what the attacker realised.
+15. An asset the market could not absorb, one without a market price, one
+    the attacker's own sale crashed or one too illiquid to sell, is valued at
+    what the attacker realised.
 16. `loss.assets` lists each asset with its amount and USD value;
     `loss.usd` is their sum.
 

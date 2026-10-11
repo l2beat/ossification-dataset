@@ -5743,8 +5743,8 @@
     "tx": "0xc34a6d9ad5566b23e7cd6aa3d5c2b1fe0576147db736aaf57c89699d21a4c688",
     "protocol": "Hyperdrive",
     "name": "Hyperdrive Router unrestricted CALL action abuses user operator approvals",
-    "summary": "RouterUpgradeable.execute dispatches CALL actions (kind 15) through RouterLib.call to any AddressRegistry-resolved target with caller-supplied calldata, without binding the call to the caller's own account. Users make the Router their market operator and share/WHYPE spender, so any caller could make the Router invoke market.withdrawCollateral, market.borrow or transferFrom naming another user, stealing collateral, borrowing against victims' positions and sweeping approved balances.",
-    "lossUsd": 1419492.7405553504,
+    "summary": "RouterUpgradeable's CALL action (kind 15) lets any caller make the Router call any AddressRegistry-listed contract with arbitrary calldata. Users approve the Router as market operator and token spender, so callers had it withdraw other users' collateral, borrow against their positions and transferFrom their approved balances.",
+    "lossUsd": 1419492.74,
     "codeAgeSeconds": 1130031,
     "exploit": {
       "block": 14177586,
@@ -5763,7 +5763,7 @@
       "index": 0,
       "timestamp": 1757067780
     },
-    "claimsSha256": "ddc5bb7d1e8241118ed314fa6ff7d14fd851c92894bc3cf1e53bdb09c02d3d0d"
+    "claimsSha256": "335fa38477a4553e94a516f678b17c7f1e27af90ee37a8ad4bb49b4e1ccf6ce9"
   },
   {
     "id": "eip155:56:0xe1f257041872c075cbe6a1212827bc346df3def6d01a07914e4006ec43027165",
@@ -6650,9 +6650,9 @@
     "tx": "0xe29799cfe4b0e3a54915b6f8619207e69549c9988cf1ff140e688d36ae1a2bdf",
     "protocol": "Hinkal",
     "name": "Hinkal legacy-note nullifier double-spend",
-    "summary": "The legacy note circuit constrained the shielded secret only through a product involving the note scalar while deriving the public nullifier from that secret independently. An attacker could change both private factors while preserving the proved relation, obtain a fresh nullifier for the same note, and make the selected verifier accept repeated spends.",
-    "lossUsd": 772809.1622596625,
-    "codeAgeSeconds": 1944336,
+    "summary": "Hinkal's legacy-note spend circuit, live through the verifier adapter registered in June 2026, did not bind a note's nullifier uniquely to its commitment. Changing private inputs while keeping the proved relation yields fresh nullifiers for the same note, so one shielded deposit can be spent repeatedly; the attacker double-spent small deposits and then a 25,000 USDC note.",
+    "lossUsd": 800597.07,
+    "codeAgeSeconds": 1944504,
     "exploit": {
       "block": 25447105,
       "index": 45,
@@ -6664,12 +6664,12 @@
     },
     "reset": {
       "kind": "upgrade",
-      "tx": "0x58d7dedee260a91c976ebd5425b0f7c0e0feb7b0f060356f4bf1a7bca5b9e856",
-      "block": 25285711,
-      "index": 68,
-      "timestamp": 1781078423
+      "tx": "0x90dc50fbb9f20c9d06eed9af9936da2f51db91aa5574061714e9b35cb3f97bc0",
+      "block": 25285697,
+      "index": 80,
+      "timestamp": 1781078255
     },
-    "claimsSha256": "5edf15600d79e93b86e526a0846799b602a5dbd9fb94817eb9a4d0ee1a62f6fe"
+    "claimsSha256": "09d6c32b065a44f2ec5ca8e5c991993ff56d9d91a45d74c39e2f04316dec9cf8"
   },
   {
     "id": "eip155:56:0x258e53526e5a48feb1e4beadbf7ee53e07e816681ea297332533371032446bfd",
@@ -6924,8 +6924,8 @@
     "tx": "0x51ce3d9cfc85c1f6a532b908bb2debb16c7569eb8b76effe614016aac6635f65",
     "protocol": "HYPR",
     "name": "HYPR L1StandardBridge reinitialization",
-    "summary": "The HYPR L1StandardBridge implementation cleared the storage used by Initializable, leaving the deployed bridge reinitializable. The incident transaction reinitialized the bridge and released 2.57 million escrowed HYPR.",
-    "lossUsd": 220000,
+    "summary": "HYPR's L1StandardBridge implementation wraps initialize() in a clearLegacySlot modifier that zeroes storage slot 0, which also holds Initializable's version, so reinitializer(2) passes on every call. The attacker reinitialized the bridge with its own contract as messenger and, as that messenger, finalized a withdrawal of the bridge's escrowed HYPR.",
+    "lossUsd": 210681.84,
     "codeAgeSeconds": 2431668,
     "exploit": {
       "block": 18774585,
@@ -9607,6 +9607,37 @@
     "claimsSha256": "cca0d778d788eea76ae9182f9b90abd7e16987194e805440efacd504c7e97276"
   },
   {
+    "id": "eip155:10:0x6e9ebcdebbabda04fa9f2e3bc21ea8b2e4fb4bf4f4670cb8483e2f0b2604f451",
+    "chainId": 10,
+    "tx": "0x6e9ebcdebbabda04fa9f2e3bc21ea8b2e4fb4bf4f4670cb8483e2f0b2604f451",
+    "protocol": "Hundred Finance",
+    "name": "Hundred Finance hWBTC exchange-rate inflation",
+    "summary": "Hundred's Compound-v2 CToken prices shares from its raw underlying balance and rounds the cTokens burned by redeemUnderlying down. In the near-empty hWBTC market the attacker kept two wei of hWBTC, donated WBTC to inflate their value, borrowed every other market against them, then redeemed the donation for almost no hWBTC, leaving bad debt.",
+    "lossUsd": 6779352.86,
+    "codeAgeSeconds": 8360139,
+    "exploit": {
+      "block": 90761918,
+      "index": 0,
+      "timestamp": 1681567920
+    },
+    "target": {
+      "address": "0x35594e4992dfefcb0c20ec487d7af22a30bdec60",
+      "code": "0x7100cbca885905f922a19006cf7fd5d0e1bbb26c",
+      "codeHash": "0x520130819cedc10fde00b96313ac79a2537d19639dbe3044421b79d3dc6af1e2"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x24d2be3017336d000ee1eb9eca9d5e86e35533dd117d6e243a9a3cea14082a7e",
+      "block": 62645474,
+      "index": 0,
+      "timestamp": 1673207781
+    },
+    "unverified": [
+      "0x35594e4992dfefcb0c20ec487d7af22a30bdec60: slot write attributed to block 62645474, not traced to 0x24d2be3017336d000ee1eb9eca9d5e86e35533dd117d6e243a9a3cea14082a7e"
+    ],
+    "claimsSha256": "aab0d020b9bfe65192034f2fb5a7119a8dcdb71644f2468e60bb5025edcf5a63"
+  },
+  {
     "id": "eip155:56:0x2b7efdac5f052ee9a8f6de8f966b948027b76f7cc183e4868c98c7afc2d69524",
     "chainId": 56,
     "tx": "0x2b7efdac5f052ee9a8f6de8f966b948027b76f7cc183e4868c98c7afc2d69524",
@@ -9714,34 +9745,6 @@
       "timestamp": 1663037518
     },
     "claimsSha256": "97a277e26c49def031106a37c681fc034656d1435a5b21da20cc50867301d36b"
-  },
-  {
-    "id": "eip155:10:0x6e9ebcdebbabda04fa9f2e3bc21ea8b2e4fb4bf4f4670cb8483e2f0b2604f451",
-    "chainId": 10,
-    "tx": "0x6e9ebcdebbabda04fa9f2e3bc21ea8b2e4fb4bf4f4670cb8483e2f0b2604f451",
-    "protocol": "Hundred Finance",
-    "name": "Hundred Finance hWBTC exchange-rate inflation",
-    "summary": "The Compound-v2 fork derived hWBTC's exchange rate from its raw WBTC balance and rounded redeemUnderlying share amounts down. In the nearly empty market, the attacker retained two wei of hWBTC, donated WBTC to inflate their collateral value, borrowed every other Optimism market, then redeemed the donation while the inflated collateral position remained.",
-    "lossUsd": 7400000,
-    "codeAgeSeconds": 8807413,
-    "exploit": {
-      "block": 90761918,
-      "index": 0,
-      "timestamp": 1681567920
-    },
-    "target": {
-      "address": "0x35594e4992dfefcb0c20ec487d7af22a30bdec60",
-      "code": "0x7100cbca885905f922a19006cf7fd5d0e1bbb26c",
-      "codeHash": "0x520130819cedc10fde00b96313ac79a2537d19639dbe3044421b79d3dc6af1e2"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x10a0f6b6c29dc6e390faa89783922f9c75e9f5fcb5ad969313d1da88619f81df",
-      "block": 59641454,
-      "index": 0,
-      "timestamp": 1672760507
-    },
-    "claimsSha256": "35b31a292b7b07efd62b92bd378fe7a36a0790896d55ebfe921bdb2ecf4d361a"
   },
   {
     "id": "eip155:56:0x7fe46c2746855dd57e18f4d33522849ff192e4e26c74835799ba8dab89099457",
@@ -10049,8 +10052,8 @@
     "tx": "0x19315e5b150d0a83e797203bb9c957ec1fa8a6f404f4f761d970cb29a74a5dd6",
     "protocol": "Grim Finance",
     "name": "Grim Finance GrimBoostVault depositFor reentrancy",
-    "summary": "GrimBoostVault.depositFor(token, amount, user) took the deposit token as a caller-supplied parameter and minted shares around an unguarded external transferFrom call, so the attacker passed its own contract as the token and re-entered depositFor from that callback, minting eight tranches of vault shares against a single SpiritSwap BTC/WFTM LP deposit before burning them all in withdrawAll to drain the vault.",
-    "lossUsd": 30000000,
+    "summary": "GrimBoostVault.depositFor(token, amount, user) takes the deposit token from the caller and mints shares from the vault's balance change around an unguarded token.transferFrom. Passing an attacker contract as the token lets its transferFrom re-enter depositFor with the real LP, so one deposit is credited at every nesting level; withdrawAll then drains the vault.",
+    "lossUsd": 35034630.46,
     "codeAgeSeconds": 9483100,
     "exploit": {
       "block": 25345003,
@@ -10068,7 +10071,7 @@
       "index": 0,
       "timestamp": 1630366055
     },
-    "claimsSha256": "ed2793bae0eb4aeeb0d878a94ffe3689f670b88b10e7aa7450575f0485616543"
+    "claimsSha256": "58c55a780a495a92f47713de06f96b799d1b10b918cf4cbcc468076171b31e95"
   },
   {
     "id": "eip155:8453:0x9f906fcd8fceaa6745e8d1c004861dcfa9b5e6a893fe1e8c5d0013a4e982e6a8",
@@ -13715,18 +13718,18 @@
     "claimsSha256": "8f63ee643c16d36419b814f98cfa9bc787b6dd6f552e3eef400bf87c57332562"
   },
   {
-    "id": "eip155:137:0xb469a24ec737be16fe41367a7b5b315c7f03b4e0ff3af50b3a2db03b3066b982",
+    "id": "eip155:137:0x619296d6f9ba99120a534f4eb93f3db291dabbbb22b1ba170d2a023078422b67",
     "chainId": 137,
-    "tx": "0xb469a24ec737be16fe41367a7b5b315c7f03b4e0ff3af50b3a2db03b3066b982",
-    "protocol": "INKFinance",
-    "name": "INKFinance",
-    "summary": "INK payroll claimPayroll scaled the payout to the instantaneous treasury balance, so seeding the treasury with a flashloan before claiming drained excess USDT.",
-    "lossUsd": 140180.175562,
-    "codeAgeSeconds": 74651820,
+    "tx": "0x619296d6f9ba99120a534f4eb93f3db291dabbbb22b1ba170d2a023078422b67",
+    "protocol": "INK Finance",
+    "name": "INK Finance payroll plugin unprotected addSchedulePayee",
+    "summary": "The INK Finance DAO payroll plugin's addSchedulePayee(scheduleId, payees) has no caller check. A throwaway contract added the attacker's precomputed CREATE2 address to payroll schedule 3 with a 165,162.83 USDT payout; the attacker then deployed that contract, topped the treasury up with a flash loan and called claimPayroll(3), draining the treasury.",
+    "lossUsd": 140180.18,
+    "codeAgeSeconds": 74651680,
     "exploit": {
-      "block": 86711192,
-      "index": 138,
-      "timestamp": 1778484294
+      "block": 86711112,
+      "index": 108,
+      "timestamp": 1778484154
     },
     "target": {
       "address": "0xef2c77f3b9b8aaa067239bc6b4588bae26433494",
@@ -13740,7 +13743,7 @@
       "index": 86,
       "timestamp": 1703832474
     },
-    "claimsSha256": "8cddc58b6332103b7d888a8bfab5e650e1635f35a2987d3ee4edfacb7c24b32f"
+    "claimsSha256": "d53a3736006d4fbf7a14abb0a45481d30e01fb0684bd552d1e361314c13c8858"
   },
   {
     "id": "eip155:1:0x7cbe0b4349513fed6d03ba8bf9ed708e10e07a501d10b5f344a25ae10595599b",
@@ -14482,8 +14485,8 @@
     "tx": "0x2afc8fcfb1439c366067ac127cdb32778027a1e43413aec861888187292aecd8",
     "protocol": "HedgePay",
     "name": "HedgePay staking forceExit pays out the stake without clearing the staked balance",
-    "summary": "The HedgePay HPAY staking proxy's implementation lets any staker call forceExit() to receive its full staked balance, but forceExit never decreases that balance or totalSupply, so the same stake can be withdrawn again. On 2025-12-22 a staker account paid out once through forceExit and again through withdraw eight blocks later; on 2026-02-25 an attacker staked 1.17M flash-borrowed HPAY and called forceExit 50 times, draining 57.5M HPAY of other stakers' deposits and selling it for 26.01 BNB.",
-    "lossUsd": 15698.39,
+    "summary": "The HedgePay HPAY staking proxy's implementation pays a staker's full balance on forceExit() but never reduces that balance or totalSupply, so the same stake can be paid out again by withdraw() or by repeated forceExit() calls, draining other stakers' HPAY.",
+    "lossUsd": 15892.57,
     "codeAgeSeconds": 121112062,
     "exploit": {
       "block": 72548454,
@@ -14502,7 +14505,7 @@
       "index": 61,
       "timestamp": 1645301280
     },
-    "claimsSha256": "f83f80aa5a86e8a8848e5a6b179e0e4eb39062673f502b8faddaec4a35f9e9ea"
+    "claimsSha256": "801d6efac9b7e8d87fcfaf6444fa5dfd38472f884aff09345c33e563dadd3f9c"
   },
   {
     "id": "eip155:1:0x1bc83899060c27106b6fb4257b208925085794e83b21c444854442fd3554862c",
