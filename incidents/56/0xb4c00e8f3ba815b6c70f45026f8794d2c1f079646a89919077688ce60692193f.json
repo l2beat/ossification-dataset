@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BonfireSwap",
   "name": "BonfireSwap router transfer() pulls BONFIRE from any approved holder",
-  "summary": "BonfireSwap.transfer(to, amountAIn, beneficiary, deadline) and loggedTransfer call BONFIRE.transferFrom(to, pancakePair, amountAIn). There is no check that msg.sender is `to`, so the router spends any holder's standing router allowance for any caller. The function then calls skimPools(beneficiary), which pays the pair's excess BONFIRE to the caller-chosen beneficiary. The attacker named 65 approved holders as `to` and itself as beneficiary. It emptied their BONFIRE balances into the pair, skimmed the tokens back and sold them through the router for 66.08 BNB.",
+  "summary": "BonfireSwap.transfer(to, amount, beneficiary, deadline) moved BONFIRE from the caller-chosen 'to' into the pair with transferFrom and then skimmed the pair's surplus to 'beneficiary', without checking that the caller was 'to'. The attacker named 65 holders with standing router approvals as 'to', took their balances and sold them for BNB.",
   "targets": [
     {
       "address": "0x17e801e17cefc6334059189c178d4783830e03d3",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 55945.68767765976,
+    "usd": 55945.69,
     "assets": [
       {
         "token": "0x5e90253fbae4dab78aa351f4e6fed08a64ab5590",
         "symbol": "BONFIRE",
-        "amount": "6022302608127.130500287",
-        "usd": 55945.68767765976
+        "amount": "6022302821076.616846502",
+        "usd": 55945.69
       }
     ]
   },
@@ -27,7 +27,13 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/BonfireSwap_exp.sol"
   ],
   "notes": [
-    "Immutable non-proxy BonfireSwap router. transfer() pulls from its `to` argument by construction. The only configuration write, setPool(pair, true) at block 14934742, lets skimPools pay the attacker. It does not create the unauthorized pull, which debits victims whether or not the skim pays.",
-    "The loss is the 65 victims' whole BONFIRE balances before the exploit, 6022302608127.130500287 BONFIRE (9 decimals). All 65 balances are 0 after source-1. BONFIRE's 10% transfer fee is not deducted: it came out of the victims' balances. The unit value is the attacker's disposal in the same transaction. Two router sell() calls debited 5084276867162.854999227 BONFIRE and returned 66.080052256436953636 WBNB, which the router unwrapped to the attack contract. BNB is valued at DefiLlama WBNB 714.764306662756 USD (source-7), giving 9.28975e-9 USD per BONFIRE. That is below DefiLlama's pre-exploit BONFIRE quote of 9.6255e-9 (source-8), so the dump moved the price. The victims' depletion is worth 78.2715 BNB at that rate; the attacker's realised BNB was 66.08. Later abuses of the same function are de minimis and not added: 0x3ae217b0 pulled 146609.934596658 and 66339.006546790 BONFIRE (logged) from 0x284a931f in 0xf1e58aed... and 0xc0e37d95... (blocks 122183344/122184014), and 0x1fc3f1bd pulled 0.545202767 BONFIRE from 0x9f8f224a in 0xd6d06f57... (block 124310589). Together they are under 0.00001 BNB at the same unit value."
+    "The router is immutable. Its only configuration write, setPool(pair) at block 14934742, lets skimPools pay the caller, but the unauthorized pull does not need it: the pulled tokens sit in the pair as skimmable surplus either way.",
+    "Loss is the victims' whole BONFIRE balances, valued at the attacker's realisation rate (66.08 BNB for 5.08e12 BONFIRE sold), which is below DefiLlama's pre-exploit quote because the dump moved the price. The three copycat pulls add about 213,000 BONFIRE, under 0.01 USD.",
+    "Copycats were found by scanning BONFIRE transfers into the pair whose sender was not the transaction's signer, from the router's deployment to block 127100000."
+  ],
+  "campaign": [
+    "eip155:56:0xf1e58aed7a1ca807804def7a51fea775b8b07be890e3da9591faa2d305378e34",
+    "eip155:56:0xc0e37d95336f646fc5542dcb6696fea57ac6db09893e2ed1eae8000b66e07be3",
+    "eip155:56:0xd6d06f577c1e38644f8e19381de11b54c144ec1c4c61471f620dd5ce8e4aeefb"
   ]
 }

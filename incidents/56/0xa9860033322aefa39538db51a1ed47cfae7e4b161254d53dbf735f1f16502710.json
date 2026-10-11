@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Bogged Finance",
   "name": "Bogged Finance BOG transfer-fee distribution mint",
-  "summary": "The original BOG token 0xd7b729ef857aa773f47d37088a1181bb3fbf0099 credits the staker share of every transfer fee by only raising _totalFees in _distribute, while _transferFrom debits the sender just the amount sent plus the burnt part. The distributed share is therefore minted for LP stakers without leaving the sender. The attacker staked BOG/WBNB LP so that it held most of the stake, then made hundreds of transfers to itself per transaction, each paying itself newly created BOG. It sold the inflated BOG into the PancakeSwap V1 WBNB/BOG pair 0x1490c68d0d5e3e7c9d53299824c9bb816639aa66, taking 11,865.986498156644903693 WBNB over 33 transactions.",
+  "summary": "BOG's _txBurn credited each transfer's staker fee share by only raising _totalFees, without debiting the sender, so every transfer minted new BOG for BOG/WBNB LP stakers. The attacker staked most of the LP and made hundreds of transfers to itself per transaction, collecting freshly minted BOG, then sold it into the PancakeSwap WBNB/BOG pair.",
   "targets": [
     {
       "address": "0xd7b729ef857aa773f47d37088a1181bb3fbf0099",
@@ -15,18 +15,25 @@
     }
   ],
   "loss": {
-    "usd": 3844209.549473751,
+    "usd": 3844209.55,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
         "amount": "11865.986498156644903693",
-        "usd": 3844209.549473751
+        "usd": 3844209.55
       }
     ]
   },
   "refs": [
-    "eip155:56:0xf3a66e59b69f45b127e399cc363d7ea671e7d50f25c648c242a738b04fbf5c47",
+    "https://bscscan.com/address/0xd7b729ef857aa773f47d37088a1181bb3fbf0099#code"
+  ],
+  "notes": [
+    "setPairAddress set _pair and _pairInitialized; stake() requires it, so no account could receive the minted fee share before. Later setDistributionRatio and setBurnRate calls only resized the fee and its split.",
+    "Loss is the pair's net WBNB outflow over the attacker's 33 transactions, the last of which (0xf3a66e59) sold the accumulated BOG; liquidity adds, removals and flash swaps net out. Stakers' dilution is not valued separately.",
+    "The stake-selector scan to block 7633630 finds no other large staker after the attack; the pair had been emptied to about 1,947 WBNB."
+  ],
+  "campaign": [
     "eip155:56:0x47a355743456714d9abc23e1dff9e26430e38e84cc8b8e0a0b4ca475918f3475",
     "eip155:56:0xcdc6c745ccd379f0e6db134e17dcbb1fbb59fbedcd7ae5ddf3dbdfac26c2b00c",
     "eip155:56:0x36bc94cb59c0fe3c670b74ebca0b06e832f92b69945b0963f49285998b2505d5",
@@ -58,10 +65,6 @@
     "eip155:56:0xa95cad29aee9cd5bb30ca3e5346464504f1e439b6d81a78fa2611a41fdc66690",
     "eip155:56:0xc92deff96ec94a97844ebf1f8d4b271c1939ae30d28131ed546abbf3b958c293",
     "eip155:56:0x35b7c3cc53437c5d478c59a6ac582199be0f0f8701c8d53487d72048373e748a",
-    "https://bscscan.com/address/0xd7b729ef857aa773f47d37088a1181bb3fbf0099#code"
-  ],
-  "notes": [
-    "Owner setPairAddress(0x1490c68d...) set _pair and _pairInitialized; stake() and unstake() carry the pairInitialized modifier, so no account could hold the LP stake that receives the minted distribution before this write. Later setDistributionRatio (5413662, 5685227, 5776080) and setBurnRate (5413671, 6227809, 6332231, 6600517) calls only resize the fee and its split, and there is no later setPairAddress.",
-    "Exact net WBNB Transfer outflow of the WBNB/BOG pair across the 33 successful calls from EOA 0x4622a1f3 to its contract 0xe576790f (blocks 7633044-7633176); the attacker entered with 2 BNB and supplied no other WBNB, so flash swaps, liquidity adds and removals net out inside the sum. The final call 0xf3a66e59 alone nets 11,358.106750514743826316 WBNB. Pair WBNB reserves fell from 14,729.847493066028204336 (block 7633043) to 1,947.278848679801098223 (block 7633176); the difference beyond the attacker's sum is other traders' sells in the same window. BOG stakers' dilution is not valued. DefiLlama lists 3.0M USD."
+    "eip155:56:0xf3a66e59b69f45b127e399cc363d7ea671e7d50f25c648c242a738b04fbf5c47"
   ]
 }

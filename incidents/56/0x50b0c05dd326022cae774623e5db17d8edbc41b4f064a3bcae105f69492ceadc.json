@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Belt Finance",
   "name": "Belt Finance beltBUSD Ellipsis LP mispricing",
-  "summary": "StrategyEllipsisImpl.eps3ToWant() values the strategy's staked 3EPS position as the raw sum of the BUSD, USDC and USDT ERC-20 balances held by the Ellipsis StableSwap pool, scaled by the strategy's LP share. That sum is not the pool's StableSwap invariant and moves with any single-transaction swap, so wantLockedTotal() is an attacker-controlled spot quantity. MultiStrategyTokenImpl consumes it unfiltered: _deposit() mints beltBUSD shares from the calcPoolValueInToken() delta and _withdraw() redeems shares at pool * shares / totalSupply, paying out of whichever strategy holds the most assets. Cycling deposit -> Ellipsis exchange() -> withdraw inside one transaction therefore minted shares against a depressed Ellipsis valuation and redeemed them against an inflated one, draining BUSD out of the Venus strategy.",
+  "summary": "StrategyEllipsisImpl.eps3ToWant() valued the strategy's 3EPS stake as its share of the raw sum of BUSD, USDC and USDT balances in the Ellipsis pool, a spot quantity any swap moves. beltBUSD minted and redeemed shares against that value, so cycling deposit, Ellipsis exchange and withdraw in one transaction drained BUSD from the Venus strategy.",
   "targets": [
     {
       "address": "0x4cdb64df300a2b8f6f0e5c72909b9fbcf3b3f135",
@@ -22,32 +22,31 @@
     }
   ],
   "loss": {
-    "usd": 46944373.92777555,
+    "usd": 46944373.93,
     "assets": [
       {
         "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
         "symbol": "BUSD",
         "amount": "46944373.927775550409686974",
-        "usd": 46944373.92777555
+        "usd": 46944373.93
       }
     ]
   },
   "refs": [
+    "https://halborn.com/explained-the-belt-finance-hack-may-2021/"
+  ],
+  "notes": [
+    "Both proxies were last upgraded before the exploit (StrategyEllipsis at block 6952957, beltBUSD at 6637440); later strategy deposits only read eps3ToWant through staticcalls, which is why campaign.mjs misses the seven follow-up transactions.",
+    "Loss is the drop in beltBUSD's own pool value between blocks 7838861 and 7839266 (price per share 1.0185 to 0.8022), net of shares other users redeemed in that window. The attacker kept 6,234,753 BUSD; the rest went to Ellipsis imbalance and flash-loan fees and still counts.",
+    "BUSD at par. Belt's later compensation is a recovery and is not subtracted."
+  ],
+  "campaign": [
     "eip155:56:0xc4d4156aab1fca85c99e85352b836274d3c53bafe98a2c9867b68950e1eafde9",
     "eip155:56:0xb57acfeab13d52664416aa2ada9b490e340292731fced049fc8c4a730b7af700",
     "eip155:56:0xcca1ebf01e694bb4c447f6018eebb34a3b829cff9ea1ec5fce236eb3cc2ef99c",
     "eip155:56:0x7719e1bae25dbe80539edea37c962e941ec4141145e6eabe63540b7178ffd0d0",
     "eip155:56:0xd790026feda9a16646647e9df0779dc4a7b173053369847691b8f3f678da1f66",
     "eip155:56:0xf598e092ab82ce08798f9dab7ea6ade64f152aa91db897f3449b23ab591baa1d",
-    "eip155:56:0x7b3b727a56d1649ee325c42416a1199f4a9b4f4eb024a60b5848a7b1485953b1",
-    "https://halborn.com/explained-the-belt-finance-hack-may-2021/",
-    "eip155:56:0x35f0860bdb55646f5631617c7100739a2a45370bfc1a10d96283520303f5667b",
-    "eip155:56:0x1e205434cb48f88f641a4213e98dc1f5b2ea2fdd955739c1cfe764bfac0eebf9"
-  ],
-  "notes": [
-    "Second and last pre-exploit Upgraded event from the StrategyEllipsis proxy, selecting implementation 0xa56e834fbc2087024d329aa69eec1392d0a8d4c4. The EIP-1967 implementation slot still holds that address at block 7838861 and the implementation runtime is byte-identical from its own deployment through the exploit.",
-    "The only pre-exploit Upgraded event from the beltBUSD MultiStrategyToken proxy, selecting implementation 0xff997862e88785ceacc8b3ce791c0a487682ee98. The EIP-1967 implementation slot still holds that address at block 7838861 and the implementation runtime is byte-identical from its own deployment through the exploit.",
-    "Measured from the victim vault's own accounting. beltBUSD 0x9171bf7c050ac8b4cf7835e51f7b4841dfb2ccd0 reports calcPoolValueInToken() = 221115445.035265077214489032 BUSD on 217103856.217843203380419587 shares at block 7838861 (immediately before the first successful attack transaction) and 174161472.163601099685723562 BUSD on 217091891.155444809406501592 shares at block 7839266 (immediately after the last one), i.e. price per share falls from 1.018477740963737758 to 0.802247708270668928 BUSD. The raw pool drop is 46953972.871663977528765470 BUSD; 9598.943888427119078496 BUSD of that is the value of the 11965.062398393973917995 shares legitimately redeemed by other users inside the same 20-minute window, leaving 46944373.927775550409686974 BUSD of exploit-attributable depletion. Per-strategy, bVenusBUSD 0x53a53a9e10abe9d18d009f6f962f51dc8b1d6edc falls from 66067863.16 to 6063192.61 BUSD while bEllipsisBUSD 0x2ec2ddd12566b66f4da248b1ecdee8619b5c56cd rises from 65923134.14 to 78973831.82 BUSD; the other four strategies are unchanged. The attacker-supplied PancakeSwap flash-loan principal is repaid inside each transaction and is not counted. Of the depletion, 6234753.171048180404312114 BUSD reached attacker address 0x8937dd570e3cb32df77e39c0805d17e88f9d14ae and the remainder was dissipated as Ellipsis imbalance value and PancakeSwap flash-loan fees paid out of vault assets; both are gross victim depletion and are not netted out. BUSD is valued at par. Belt's later user compensation is a recovery and does not reduce the exploit-time gross loss. The 4Belt Vyper pool's 5.51% mark-down is a downstream consequence of this same beltBUSD depletion and is not counted separately.",
-    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+    "eip155:56:0x7b3b727a56d1649ee325c42416a1199f4a9b4f4eb024a60b5848a7b1485953b1"
   ]
 }

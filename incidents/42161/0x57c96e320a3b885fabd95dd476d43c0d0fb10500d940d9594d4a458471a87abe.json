@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BelugaDex",
   "name": "BelugaDex liability/coverage withdrawal accounting",
-  "summary": "The pool applied inconsistent liability and equilibrium-coverage accounting across deposits, swaps, and withdrawals, allowing a repeated 21-transaction campaign to deplete its USDT and USDC.e custody assets.",
+  "summary": "BelugaDex's Platypus-style stableswap pool priced deposits, swaps and withdrawals from per-asset cash and liability with inconsistent slippage, haircut and withdrawal-fee accounting. A flash-loaned cycle of large USDT and USDC.e deposits, swaps between them and withdrawals took out more than it put in, and the attacker repeated it in 21 transactions.",
   "targets": [
     {
       "address": "0x15a024061c151045ba483e9243291dee6ee5fd8a",
@@ -14,25 +14,31 @@
     }
   ],
   "loss": {
-    "usd": 180717.574351,
+    "usd": 180605.78,
     "assets": [
       {
         "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
         "symbol": "USDT",
         "amount": "65348.918901",
-        "usd": 65348.918901
+        "usd": 65321.97
       },
       {
         "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
         "symbol": "USDC.e",
-        "amount": "115368.655450",
-        "usd": 115368.65545
+        "amount": "115368.65545",
+        "usd": 115283.81
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-10/BelugaDex_exp.sol",
-    "https://medium.com/neptune-mutual/analysis-of-the-beluga-protocol-exploit-206fc52b8cd3",
+    "https://medium.com/neptune-mutual/analysis-of-the-beluga-protocol-exploit-206fc52b8cd3"
+  ],
+  "notes": [
+    "The only pre-exploit upgrade of the pool proxy installed the exploited implementation; no storage the exploit read changed afterwards. A campaign scan of the pool from that upgrade to block 141500000 finds only this attacker's 21 transactions beyond normal router use.",
+    "Loss is the net USDT and USDC.e outflow of the pool's two asset custody contracts over the 21 transactions, so flash loans and the attacker's deposits net out."
+  ],
+  "campaign": [
     "eip155:42161:0x4036ce71f070b186023859aefa2e442825deab4e12e2759134e87b051350deb4",
     "eip155:42161:0x8440df66ec665229cc1008845842cea977e963c4ce55c02af6f0188444799485",
     "eip155:42161:0xc3d8ae664ee199dfd7cd48f1354b7d1a746caf59ce531ab9075ecc244ab2a603",
@@ -53,10 +59,5 @@
     "eip155:42161:0x4d1f05a8ad86629de7a6471c93e57aaf92c1dba5bd4f8ad7bf4b557c2728f6fc",
     "eip155:42161:0x519eb36d8522a9e18f60bbe25207bce5187ffaab15fce39244dfdc025f96a34b",
     "eip155:42161:0xc2c8966d5c6c3e097cfda34899bf07fdfef2eb6c1925d70292d754b06d3e75fd"
-  ],
-  "notes": [
-    "The only pre-incident canonical Upgraded event on the proxy installed implementation 0x22d909abe10cc2f9fffa4770d8adca0a89493eb0. The implementation slot still selected it immediately before the incident, its 19,738-byte runtime hash was unchanged from activation, and every incident-trace call to the proxy delegated to it.",
-    "Gross loss is the exact net ERC-20 outflow across all 21 successful campaign receipts from Beluga's USDT custody contract 0xcff307451e52b7385a7538f4cf4a861c7a60192b and USDC.e custody contract 0x7cc32ee9567b48182e5424a2a782b2aa6cd0b37b. Netting transfers into the same custody contracts excludes campaign financing and returns 65,348.918901 USDT plus 115,368.655450 USDC.e. Both components are valued at par at the incident anchor; later exchange proceeds, fees, gas, and recovery are outside this gross victim-depletion boundary.",
-    "Replaces the seed's rounded $175,000 loss with exact gross stablecoin custody depletion across the complete 21-transaction campaign."
   ]
 }

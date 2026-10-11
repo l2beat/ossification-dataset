@@ -2325,8 +2325,8 @@
     "tx": "0x725f0d65340c859e0f64e72ca8260220c526c3e0ccde530004160809f6177940",
     "protocol": "Bedrock",
     "name": "Bedrock uniBTC vault native mint without price conversion",
-    "summary": "The uniBTC Vault's payable mint() treats msg.value as \"native BTC\" and mints uniBTC at _amount / EXCHANGE_RATE_BASE (1e10), i.e. one 8-decimal uniBTC per whole 18-decimal native coin, with no ETH/BTC price conversion. That path is only sound on BTC-gas chains; on Ethereum it minted BTC-denominated uniBTC one-for-one against ETH. The implementation activated at block 20826624 also replaced the native-mint guard require(address(this).balance <= caps[NATIVE_BTC]) with require(ISupplyFeeder(supplyFeeder).totalSupply(NATIVE_BTC) <= caps[NATIVE_BTC]); with caps[NATIVE_BTC] = 0 and the supply feeder reporting 0 for NATIVE_BTC, the check that had previously blocked every native mint on Ethereum passed, opening the path.",
-    "lossUsd": 1711485.8184311974,
+    "summary": "The uniBTC Vault's payable mint() minted one uniBTC per whole native coin, a rate only sound on BTC-gas chains. The upgrade that activated this code replaced the balance-based cap check with a supply-feeder total that returned 0 for NATIVE_BTC, so native mints passed on ETH chains. Attackers minted uniBTC 1:1 for ETH or BNB and sold it into uniBTC pools.",
+    "lossUsd": 1889424.97,
     "codeAgeSeconds": 120060,
     "exploit": {
       "block": 20836584,
@@ -2345,7 +2345,7 @@
       "index": 62,
       "timestamp": 1727255243
     },
-    "claimsSha256": "18db798e4b8158295a8a1f2b3391e3a29cb1e59440ce707bf3596cb497b52890"
+    "claimsSha256": "115b87b97d00e790102f8ac1b41465a08c5ddf889d0016cdbaf8e1ab9d90d522"
   },
   {
     "id": "eip155:56:0x442ce0af4d10b23968a66b0b53d7b95f5bb611d55f19dc5a1963c763f65128f0",
@@ -7360,8 +7360,8 @@
     "tx": "0x50b0c05dd326022cae774623e5db17d8edbc41b4f064a3bcae105f69492ceadc",
     "protocol": "Belt Finance",
     "name": "Belt Finance beltBUSD Ellipsis LP mispricing",
-    "summary": "StrategyEllipsisImpl.eps3ToWant() values the strategy's staked 3EPS position as the raw sum of the BUSD, USDC and USDT ERC-20 balances held by the Ellipsis StableSwap pool, scaled by the strategy's LP share. That sum is not the pool's StableSwap invariant and moves with any single-transaction swap, so wantLockedTotal() is an attacker-controlled spot quantity. MultiStrategyTokenImpl consumes it unfiltered: _deposit() mints beltBUSD shares from the calcPoolValueInToken() delta and _withdraw() redeems shares at pool * shares / totalSupply, paying out of whichever strategy holds the most assets. Cycling deposit -> Ellipsis exchange() -> withdraw inside one transaction therefore minted shares against a depressed Ellipsis valuation and redeemed them against an inflated one, draining BUSD out of the Venus strategy.",
-    "lossUsd": 46944373.92777555,
+    "summary": "StrategyEllipsisImpl.eps3ToWant() valued the strategy's 3EPS stake as its share of the raw sum of BUSD, USDC and USDT balances in the Ellipsis pool, a spot quantity any swap moves. beltBUSD minted and redeemed shares against that value, so cycling deposit, Ellipsis exchange and withdraw in one transaction drained BUSD from the Venus strategy.",
+    "lossUsd": 46944373.93,
     "codeAgeSeconds": 2718971,
     "exploit": {
       "block": 7838862,
@@ -7380,7 +7380,7 @@
       "index": 431,
       "timestamp": 1619596403
     },
-    "claimsSha256": "776d804a6d31a5e49ccc79322edab8e2813321f5fbb6751a87abe2e7bb56f6f3"
+    "claimsSha256": "1b123a5d0c2c65ca2fcf4fe15f615e17832d9b17a8fcec19b08a5189ad93c85d"
   },
   {
     "id": "eip155:1:0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c",
@@ -8594,9 +8594,9 @@
     "tx": "0x31957ecc43774d19f54d9968e95c69c882468b46860f921668f2c55fadd51b19",
     "protocol": "BonqDAO",
     "name": "BonqDAO TellorPriceFeed accepts the latest Tellor report unvalidated",
-    "summary": "BonqDAO's TellorPriceFeed.price() is the single expression uint256(bytes32(oracle.getCurrentValue(queryId))). It returns the most recent value any Tellor reporter has submitted for the wALBT query id, with no dispute window, no staleness bound, no deviation limit and no sanity range, even though TellorFlex lets anyone become a reporter by staking 10 TRB and Tellor's own consumer guidance requires reading through getDataBefore() behind a delay buffer. Trove.borrow() sizes the mint from ITokenPriceFeed.tokenPrice(wALBT), which resolves through ConvertedPriceFeed 0x7d4c36c7 to that feed, so a self-submitted price is accepted as collateral valuation. The attacker staked 10 TRB, reported wALBT at 5,000,000,000 USD, and minted 100,514,098.34 BEUR against 0.1 wALBT; 108 seconds later the second leg reported a near-zero price and liquidated 33 third-party wALBT troves. The invariant violated is that collateral valuation must not be settable by the borrower.",
-    "lossUsd": 1744418.550449469,
-    "codeAgeSeconds": 4847467,
+    "summary": "BonqDAO's TellorPriceFeed.price() returned Tellor's latest wALBT report via getCurrentValue(), with no dispute delay, staleness or deviation check, although anyone staking 10 TRB can report. The attacker reported a huge wALBT price and minted 100M BEUR against 0.1 wALBT, then reported a near-zero price and liquidated 33 other wALBT troves.",
+    "lossUsd": 1744418.55,
+    "codeAgeSeconds": 4847453,
     "exploit": {
       "block": 38792978,
       "index": 85,
@@ -8607,13 +8607,13 @@
       "codeHash": "0x8a02063d58648a1939959e06ceb5feff59f46ab54ad9f939702e3f85bf5168cf"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xd24188e40b0ec49ba75837183503a219ad84737049cedfe83cf4b5c5ab34be55",
-      "block": 36542739,
-      "index": 51,
-      "timestamp": 1670428691
+      "kind": "config",
+      "tx": "0x4ec381af46e23e7ffcc6dc6fb47d3368ec79016a4a9e0d1384a205e79ea33532",
+      "block": 36542746,
+      "index": 60,
+      "timestamp": 1670428705
     },
-    "claimsSha256": "88e8c2f40d2bffed2712e1ec06124a5bab97364de788152165d99bcd5793d5a6"
+    "claimsSha256": "08c2d62cb757a24326ca0f8ff005650243485d24f8f2f2460361b9e71aeab4f4"
   },
   {
     "id": "eip155:56:0x93a9b022df260f1953420cd3e18789e7d1e095459e36fe2eb534918ed1687492",
@@ -9251,8 +9251,8 @@
     "tx": "0xa9860033322aefa39538db51a1ed47cfae7e4b161254d53dbf735f1f16502710",
     "protocol": "Bogged Finance",
     "name": "Bogged Finance BOG transfer-fee distribution mint",
-    "summary": "The original BOG token 0xd7b729ef857aa773f47d37088a1181bb3fbf0099 credits the staker share of every transfer fee by only raising _totalFees in _distribute, while _transferFrom debits the sender just the amount sent plus the burnt part. The distributed share is therefore minted for LP stakers without leaving the sender. The attacker staked BOG/WBNB LP so that it held most of the stake, then made hundreds of transfers to itself per transaction, each paying itself newly created BOG. It sold the inflated BOG into the PancakeSwap V1 WBNB/BOG pair 0x1490c68d0d5e3e7c9d53299824c9bb816639aa66, taking 11,865.986498156644903693 WBNB over 33 transactions.",
-    "lossUsd": 3844209.549473751,
+    "summary": "BOG's _txBurn credited each transfer's staker fee share by only raising _totalFees, without debiting the sender, so every transfer minted new BOG for BOG/WBNB LP stakers. The attacker staked most of the LP and made hundreds of transfers to itself per transaction, collecting freshly minted BOG, then sold it into the PancakeSwap WBNB/BOG pair.",
+    "lossUsd": 3844209.55,
     "codeAgeSeconds": 6975974,
     "exploit": {
       "block": 7633044,
@@ -9270,7 +9270,7 @@
       "index": 6,
       "timestamp": 1614718852
     },
-    "claimsSha256": "55a9f3a310cb93fa2f49365f5ce3f98e1df38577cc55cf2dba962bb42908b54d"
+    "claimsSha256": "9a92d17da995f980e5d6d300e57267a74e54d8f956dd6f0ed5ab561884dc0984"
   },
   {
     "id": "eip155:56:0xad03894a195e0fda0852491e8f3ad95b0177f943fceb9f25f198131d2c29fae7",
@@ -9556,8 +9556,8 @@
     "tx": "0x57c96e320a3b885fabd95dd476d43c0d0fb10500d940d9594d4a458471a87abe",
     "protocol": "BelugaDex",
     "name": "BelugaDex liability/coverage withdrawal accounting",
-    "summary": "The pool applied inconsistent liability and equilibrium-coverage accounting across deposits, swaps, and withdrawals, allowing a repeated 21-transaction campaign to deplete its USDT and USDC.e custody assets.",
-    "lossUsd": 180717.574351,
+    "summary": "BelugaDex's Platypus-style stableswap pool priced deposits, swaps and withdrawals from per-asset cash and liability with inconsistent slippage, haircut and withdrawal-fee accounting. A flash-loaned cycle of large USDT and USDC.e deposits, swaps between them and withdrawals took out more than it put in, and the attacker repeated it in 21 transactions.",
+    "lossUsd": 180605.78,
     "codeAgeSeconds": 7940865,
     "exploit": {
       "block": 140129167,
@@ -9576,7 +9576,7 @@
       "index": 1,
       "timestamp": 1689220880
     },
-    "claimsSha256": "479cdf2a8b1fd45bad10871946df3ee0ed1d753b2cb17ceb7fcfafe980d74f6d"
+    "claimsSha256": "91aaf3bd4acaa5b49e638b265e272f5050e06e217e64d5ed1b33150d0892a652"
   },
   {
     "id": "eip155:56:0x8501a9d34fc28bee21fd08505b3e4b1b0a4aec3a5496b508a290531d8eb25281",
@@ -13341,10 +13341,10 @@
     "id": "eip155:56:0x03d363462519029cf9a544d44046cad0c7e64c5fb1f2adf5dd5438a9a0d2ec8e",
     "chainId": 56,
     "tx": "0x03d363462519029cf9a544d44046cad0c7e64c5fb1f2adf5dd5438a9a0d2ec8e",
-    "protocol": "Beefy Moo CAKE CTX vault",
-    "name": "Beefy StrategySyrup unsettled-reward share pricing",
-    "summary": "StrategySyrup.balanceOf() omitted accrued MasterChef and SmartChef rewards even though deposit() materialized them, while the vault minted shares from that pre-deposit balance before calling deposit(). The attacker could therefore deposit 50,000 CAKE at the stale low share price, trigger settlement of rewards earned by prior depositors, and immediately withdraw a pro-rata share of those rewards.",
-    "lossUsd": 147945.50803644783,
+    "protocol": "Beefy",
+    "name": "Beefy Moo CAKE CTK vault: StrategySyrup unsettled-reward share pricing",
+    "summary": "StrategySyrup.balanceOf() omitted CAKE rewards pending in MasterChef, while deposit() claimed them; the vault priced new shares from the balance before calling deposit(). The attacker deposited 50,000 flash-borrowed CAKE at the stale share price, let the deposit and a harvest settle about 53,800 CAKE of prior depositors' rewards, and withdrew its pro-rata share.",
+    "lossUsd": 147945.51,
     "codeAgeSeconds": 63945898,
     "exploit": {
       "block": 22832428,
@@ -14769,8 +14769,8 @@
     "tx": "0xb4c00e8f3ba815b6c70f45026f8794d2c1f079646a89919077688ce60692193f",
     "protocol": "BonfireSwap",
     "name": "BonfireSwap router transfer() pulls BONFIRE from any approved holder",
-    "summary": "BonfireSwap.transfer(to, amountAIn, beneficiary, deadline) and loggedTransfer call BONFIRE.transferFrom(to, pancakePair, amountAIn). There is no check that msg.sender is `to`, so the router spends any holder's standing router allowance for any caller. The function then calls skimPools(beneficiary), which pays the pair's excess BONFIRE to the caller-chosen beneficiary. The attacker named 65 approved holders as `to` and itself as beneficiary. It emptied their BONFIRE balances into the pair, skimmed the tokens back and sold them through the router for 66.08 BNB.",
-    "lossUsd": 55945.68767765976,
+    "summary": "BonfireSwap.transfer(to, amount, beneficiary, deadline) moved BONFIRE from the caller-chosen 'to' into the pair with transferFrom and then skimmed the pair's surplus to 'beneficiary', without checking that the caller was 'to'. The attacker named 65 holders with standing router approvals as 'to', took their balances and sold them for BNB.",
+    "lossUsd": 55945.69,
     "codeAgeSeconds": 145570679,
     "exploit": {
       "block": 122003954,
@@ -14788,7 +14788,7 @@
       "index": 229,
       "timestamp": 1643893053
     },
-    "claimsSha256": "ff0a7c81d839a87a3106681d5beca9cd76d0f3c7444051da287db8d050d2f750"
+    "claimsSha256": "cd33072b239dc6ab31d15438ff7a696622c5550d04e8fcc595365f90b37e28af"
   },
   {
     "id": "eip155:1:0xa75bb6e89a9dd2573553112c226e400a847fd748e917aec6a4def89a4578ab15",
