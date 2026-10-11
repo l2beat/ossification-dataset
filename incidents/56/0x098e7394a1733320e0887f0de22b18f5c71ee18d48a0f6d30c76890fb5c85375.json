@@ -2,13 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BabyDogeCoin",
   "name": "BabyDoge FarmZAP arbitrary-farm and auto-liquidity manipulation",
-  "summary": "FarmZAP trusted a caller-supplied farm contract, approved it for swap output and did not verify that depositOnBehalf settled the tokens. The attacker combined that access to fee-exempt swaps with BabyDoge's unbounded internal swapAndLiquify sell to manipulate the BABYDOGE/BNB price and extract BNB.",
+  "summary": "FarmZAP accepted any caller-supplied farm and gave it an unlimited approval on the swap output; since the zap was exempt from BabyDoge's transfer fees, this gave the attacker fee-free moves of flash-bought BabyDoge. It crashed the PancakeSwap price, triggered BabyDoge's unbounded swapAndLiquify sell into it, bought back and sold on BabyDogeSwap.",
   "targets": [
     {
       "address": "0x451583b6da479eaa04366443262848e27706f762",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x2e2792453a521f89de736a27086dacdbea78d0304eb8cb377953c02ede8c07c7"
+        "kind": "config",
+        "tx": "0x33a037094d49e6278815676695e8ec8709fe4b281d5bda1cc558d39e540381c5",
+        "address": "0xc748673057861a797275cd8a068abb95a902e8de",
+        "call": "0x5342acb4000000000000000000000000451583b6da479eaa04366443262848e27706f762"
       }
     },
     {
@@ -19,35 +21,28 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xbaf3e4841614eca5480c63662b41cd058ee5c85dc69198b29e7ab63b84bc866c"
+  ],
   "loss": {
-    "usd": 244633.3642716574,
+    "usd": 269979.5,
     "assets": [
       {
         "symbol": "BNB",
-        "amount": "437.12309351999527629",
-        "usd": 134983.61127897454
-      },
-      {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "441.904457311420882068",
-        "usd": 109649.75299268286
+        "amount": "963.345804520612553631",
+        "usd": 269979.5
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-05/BabyDogeCoin_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/BabyDogeCoin02_exp.sol",
     "https://crypto.training/hacks/2023-05-babydogecoin/",
-    "https://medium.com/@MetatrustL/cracking-the-code-delving-into-the-elaborate-scheme-behind-babydoge-coins-flash-loan-attack-9c94f59041ff",
-    "eip155:56:0xbaf3e4841614eca5480c63662b41cd058ee5c85dc69198b29e7ab63b84bc866c",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/BabyDogeCoin02_exp.sol"
+    "https://medium.com/@MetatrustL/cracking-the-code-delving-into-the-elaborate-scheme-behind-babydoge-coins-flash-loan-attack-9c94f59041ff"
   ],
   "notes": [
-    "FarmZAP was deployed with the arbitrary-farm callback and approval behavior. The directly executed runtime remained byte-identical immediately before the incident.",
-    "The direct BabyDoge token was deployed with the internal swapAndLiquify path. Its runtime remained byte-identical immediately before the incident.",
-    "Both components measure attacker proceeds after every loan and borrow was repaid inside the exploit transaction, net of identifiable attacker-supplied inputs; financing fees, builder payments and gas are not added back. 2023-05-28: the attack helper 0x51873a0b615a51115f2cfbc2e24d9db4bfa2e6e2 holds no native BNB before the transaction and exactly 437.123093519995276290 BNB after the flash loan is repaid. 2023-06-21: helper 0x9a6b926281b0c7bc4f775e81f42b13eda9c1c98e sweeps 441.905957368884914737 WBNB to attacker EOA 0xee6764ac7aa45ed52482e4320906fd75615ba1d1 in the last call of the transaction, of which 0.001500057464032669 WBNB is the helper's own pre-funded seed and is deducted, leaving 441.904457311420882068 WBNB. That figure reconciles with the victim side: the BabyDogeSwap pair is depleted by 454.222711001031799752 WBNB less flash fees of 7.496201410465721525 and 4.822052278730673748 WBNB. Remaining attacker inputs on that leg, 986809918461 BABYDOGE base units and 4e9 BabyDogeSwap LP units, are together under 1e-9 BNB and are not deducted. No component is counted by another record.",
-    "Not the knot: an independently sufficient defect whose age reset precedes target-1's; the sibling with the latest age reset supplies the incident's single observation.",
-    "The seed row's $7.5 million value belongs to the Jimbo Protocol exploit reported on the same date. This BabyDoge transaction's exact net proceeds are 437.123093519995276290 BNB, consistent with contemporary reporting of roughly $157,000.",
-    "A second campaign exercised the same BabyDoge swapAndLiquify defect on 2023-06-21 in transaction 0xbaf3e4841614eca5480c63662b41cd058ee5c85dc69198b29e7ab63b84bc866c at block 29295011:86, by attacker 0xee6764ac7aa45ed52482e4320906fd75615ba1d1 through helper 0x9a6b926281b0c7bc4f775e81f42b13eda9c1c98e. It never called FarmZAP: the fee-exempt swap access was replaced by a PancakeV3 USDT/BUSD flash loan and a Venus vBNB borrow of 99463.293771243647112315 BNB. Its loss is merged here as the second asset component and the 2023-05-28 transaction remains the incident anchor; incidents/56/0xbaf3e4841614eca5480c63662b41cd058ee5c85dc69198b29e7ab63b84bc866c.json was removed in favour of this record."
+    "FarmZAP's open farm approval only grants fee-free BabyDoge transfers once the zap is fee-exempt; the token owner's excludeFromFee(zap), about seven hours after the zap's deployment, is the latest change the exploit needed.",
+    "The 2023-06-21 transaction repeats the swapAndLiquify sandwich through another fee-exempt BabyDoge helper (AddRemoveLiquidityForFeeOnTransferTokens) instead of FarmZAP. A scan of every SwapAndLiquify event for sells far below neighbouring prices finds only these two.",
+    "Loss is the WBNB the BabyDogeSwap pair lost, netted per transaction with the PancakeSwap pair and the token contract, whose BabyDoge moves cancel; flash-loan fees the attacker paid out of it are not subtracted."
   ]
 }

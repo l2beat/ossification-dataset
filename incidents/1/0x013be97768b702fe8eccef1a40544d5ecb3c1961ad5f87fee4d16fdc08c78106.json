@@ -1,49 +1,85 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Balancer",
-  "name": "Balancer STA deflationary-token pool drain",
-  "summary": "The BPool credited swapExactAmountIn with the requested tokenAmountIn instead of the amount actually received, and exposed a permissionless gulp() that resyncs a token's recorded balance to the real one, so repeatedly swapping the 1%-transfer-fee token STA and calling gulp drove the pool's recorded STA balance to 1 wei and let 1 STA be swapped out for essentially the whole WETH side - the pool's own accounting, not any external price, is what failed.",
+  "name": "Balancer V1 deflationary-token (STA/STONK) pool drain",
+  "summary": "BPool credited swaps with the requested amountIn rather than the amount received and let anyone gulp() a token's recorded balance down to its real one. Repeated flash-loaned swaps of the 1%-burn token STA plus gulp drove the pool's STA balance to dust, so 1 wei of STA bought each of the pool's other tokens; the same was then done to a STONK pool.",
   "targets": [
     {
       "address": "0x0e511aa1a137aad267dfe3a6bfca0b856c1a3682",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x2b6b9111d9ef67921ea62e1aaaf9e8446863c3b7702d74d0e658a39f670661e6"
+        "kind": "config",
+        "tx": "0xfed3b67eec2990f904a5938b46f85a37627434a440153409eabc3569a7d46c0e",
+        "address": "0x0e511aa1a137aad267dfe3a6bfca0b856c1a3682",
+        "call": "0x2f37b624000000000000000000000000a7de087329bfcda5639247f96140f9dabe3deed1"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xeb008786a7d230180dbd890c76d6a7735430e836d55729a3ff6e22e254121192",
+    "eip155:1:0xdb22b438085dc8fdfc61574e3f7892e989424e78fbd8c96577883875ef84a15e",
+    "eip155:1:0xb650c426387769e5e2355f7e71afed5475761e7796eac7d1d3065c525e884d58"
+  ],
   "loss": {
-    "usd": 518055.82302771637,
+    "usd": 456690.16,
     "assets": [
       {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "455.846948032849336628",
-        "usd": 103300.41590531835
+        "symbol": "ETH",
+        "amount": "481.20684895795766812",
+        "usd": 109007.18
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "23108.986208611187768322",
+        "usd": 106230.84
+      },
+      {
+        "token": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+        "symbol": "SNX",
+        "amount": "61795.605681896325130574",
+        "usd": 105109.19
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
         "amount": "11.35684364",
-        "usd": 104011.57665680013
-      },
-      {
-        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
-        "symbol": "LINK",
-        "amount": "22593.091001342188353163",
-        "usd": 103858.0943873347
-      },
-      {
-        "token": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
-        "symbol": "SNX",
-        "amount": "60915.305864698149602959",
-        "usd": 103590.44217267953
+        "usd": 104015.48
       },
       {
         "token": "0xa7de087329bfcda5639247f96140f9dabe3deed1",
         "symbol": "STA",
         "amount": "2396522.196928941001681855",
-        "usd": 103295.2939055837
+        "usd": 24261.29
+      },
+      {
+        "token": "0xb60fde5d798236fbf1e2697b2a0645380921fccf",
+        "symbol": "STONK",
+        "amount": "367376.728507630225916635",
+        "usd": 2718.46
+      },
+      {
+        "token": "0xbbbbca6a901c926f240b89eacb641d8aec7aeafd",
+        "symbol": "LRC",
+        "amount": "30029.089554755310513156",
+        "usd": 2327.37
+      },
+      {
+        "token": "0xc00e94cb662c3520282e6f5717214004a7f26888",
+        "symbol": "COMP",
+        "amount": "6.527798946139665982",
+        "usd": 1606.21
+      },
+      {
+        "token": "0x1985365e9f78359a9b6ad760e32412f4a445e862",
+        "symbol": "REP",
+        "amount": "43.56078116073207676",
+        "usd": 707.53
+      },
+      {
+        "token": "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+        "symbol": "KNC",
+        "amount": "637.340487892842132458",
+        "usd": 706.61
       }
     ]
   },
@@ -52,7 +88,8 @@
     "https://medium.com/balancer-protocol/incident-with-non-standard-erc20-deflationary-tokens-95a0f6d46dea"
   ],
   "notes": [
-    "The BFactory created this direct BPool runtime in this transaction, and the same runtime remained selected through the exploit.",
-    "Gross assets lost are the exact decreases in each token's balance at the affected pool between the block immediately before the exploit and the exploit block. Each asset is valued at CoinGecko's nearest observation before the exploit."
+    "BPool's swap and gulp code is only exploitable once a fee-on-transfer token is bound, so the controller's bind(STA) is the reset (a market listing); the later setSwapFee only sizes the loss, and setPublicSwap/finalize are trading gates.",
+    "Campaign: the same attacker's three drains of the STONK BPool 0xb9eaf49d 45 minutes later. No earlier exploit: the STA pool's 69 earlier gulp() calls are standalone syncs with no outflow.",
+    "STA is valued at the attacker's in-transaction Uniswap sale (109.69 ETH for 2.45M STA, which crashed the price), STONK at its later sale (12.00 ETH), and REP v1 at CoinGecko's Augur price; DefiLlama prices the rest."
   ]
 }

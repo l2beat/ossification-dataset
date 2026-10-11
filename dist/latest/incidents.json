@@ -2054,7 +2054,7 @@
     "tx": "0x7fdd140f7631f62d62f7256ee4a38af51a4723ad5d66adc9b9685bf78f750f2d",
     "protocol": "Bazaar",
     "name": "Bazaar Balancer-fork exitPool without sender validation",
-    "summary": "The Bazaar vault is a Balancer fork whose exitPool() never checks that the caller is the position holder or an approved relayer of it. The attacker called exitPool naming another holder as the sender, burning 850,000,000 of that holder’s BZR pool tokens and receiving the corresponding 392.37 WETH and 880,539,680 rYOLO.",
+    "summary": "The Bazaar vault, a Balancer fork, passed exitPool's caller-chosen sender to the LBP without checking that the caller was that sender or its approved relayer, and the LBP only required sender to be its owner. The attacker exited the only registered LBP naming its owner as sender and itself as recipient, taking the pool's WETH and rYOLO.",
     "lossUsd": 1440195.639792327,
     "codeAgeSeconds": 92548,
     "exploit": {
@@ -2924,8 +2924,8 @@
     "tx": "0x995e880635f4a7462a420a58527023f946710167ea4c6c093d7d193062a33b01",
     "protocol": "Barley Finance",
     "name": "wBARL pod flash-loan bond reentrancy",
-    "summary": "The wBARL WeightedIndex pod's flash() sent out the pod's entire BARL reserve and only checked the balance after the callback, so the attacker called bond() inside the callback and minted pod shares against the flash-loaned BARL, repeating it before debonding.",
-    "lossUsd": 133971.27171106517,
+    "summary": "The wBARL WeightedIndex pod's flash() sent out the pod's entire BARL reserve and only checked its balance after the callback, so the attacker called bond() inside the callback: the bonded BARL repaid the loan and also minted pod shares. Repeating this and debonding the free shares drained the pod's BARL, which was sold for DAI and WETH.",
+    "lossUsd": 145243.51,
     "codeAgeSeconds": 190824,
     "exploit": {
       "block": 19106655,
@@ -2943,7 +2943,7 @@
       "index": 89,
       "timestamp": 1706273675
     },
-    "claimsSha256": "87b05e4b57e3623f7ee012f6b3421c8eb092edb65db5841c8c885956f2e5d0f4"
+    "claimsSha256": "c53e65a6ac172932e1b3452c85fbe2ecdc77db0b8e7c693b7483693482cb2c7e"
   },
   {
     "id": "eip155:42161:0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a",
@@ -6237,8 +6237,8 @@
     "tx": "0xbc60a68514ceeaf9d56c2b6bff8d1df9136baa0bd8557afab35bdd77d313c551",
     "protocol": "Bamboo AI",
     "name": "Bamboo AI spoofable sale activation and pair-burn drain",
-    "summary": "BambooAI._transfer sets sale = block.number whenever sender == addressDev and recipient == the pair, and once sale > 0 every transfer from a non-pair sender runs updatePool, which moves amount/100 of the pair's BAMBOO balance to a hardcoded address and calls sync. transferFrom(addressDev, pair, 0) needs no allowance, so anyone could activate the pair burn; repeated self-transfers or transfer-and-skim loops then shrank the pair's BAMBOO reserve and sold into the inflated price, draining the WBNB side.",
-    "lossUsd": 56579.97,
+    "summary": "BambooAI._transfer set sale = block.number on any addressDev-to-pair transfer, and transferFrom(addressDev, pair, 0) needed no allowance, so anyone could switch on updatePool. That moved 1% of every non-pair transfer amount out of the pair's BAMBOO balance and synced, so loops of self-transfers shrank the BAMBOO reserve and let attackers sell into it for the pair's WBNB.",
+    "lossUsd": 56570.76,
     "codeAgeSeconds": 1458229,
     "exploit": {
       "block": 29667516,
@@ -6256,7 +6256,7 @@
       "index": 141,
       "timestamp": 1687012599
     },
-    "claimsSha256": "8f6a11b3c5e20fa2c19ce8003b9ccf55451282849bce638310fe2119bd66874b"
+    "claimsSha256": "548c6d00f9adebecf3e323eaf1d3e17a0252c04a1e351b2deaf18960f30e3ac8"
   },
   {
     "id": "eip155:56:0x7e2a6ec08464e8e0118368cb933dc64ed9ce36445ecf9c49cacb970ea78531d2",
@@ -7250,10 +7250,10 @@
     "chainId": 1,
     "tx": "0x013be97768b702fe8eccef1a40544d5ecb3c1961ad5f87fee4d16fdc08c78106",
     "protocol": "Balancer",
-    "name": "Balancer STA deflationary-token pool drain",
-    "summary": "The BPool credited swapExactAmountIn with the requested tokenAmountIn instead of the amount actually received, and exposed a permissionless gulp() that resyncs a token's recorded balance to the real one, so repeatedly swapping the 1%-transfer-fee token STA and calling gulp drove the pool's recorded STA balance to 1 wei and let 1 STA be swapped out for essentially the whole WETH side - the pool's own accounting, not any external price, is what failed.",
-    "lossUsd": 518055.82302771637,
-    "codeAgeSeconds": 2611558,
+    "name": "Balancer V1 deflationary-token (STA/STONK) pool drain",
+    "summary": "BPool credited swaps with the requested amountIn rather than the amount received and let anyone gulp() a token's recorded balance down to its real one. Repeated flash-loaned swaps of the 1%-burn token STA plus gulp drove the pool's STA balance to dust, so 1 wei of STA bought each of the pool's other tokens; the same was then done to a STONK pool.",
+    "lossUsd": 456690.16,
+    "codeAgeSeconds": 2609403,
     "exploit": {
       "block": 10355807,
       "index": 12,
@@ -7264,13 +7264,13 @@
       "codeHash": "0x974df1c33872ba8aab782be5117ff348802441590f84ed7701d734bb9c21683e"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x2b6b9111d9ef67921ea62e1aaaf9e8446863c3b7702d74d0e658a39f670661e6",
-      "block": 10160718,
-      "index": 39,
-      "timestamp": 1590755833
+      "kind": "config",
+      "tx": "0xfed3b67eec2990f904a5938b46f85a37627434a440153409eabc3569a7d46c0e",
+      "block": 10160867,
+      "index": 139,
+      "timestamp": 1590757988
     },
-    "claimsSha256": "b6fdc05e9dc8de786a1194816e7e0abf3f19a05e110e342bcbed39aa9a4eb593"
+    "claimsSha256": "d060ebdf88f5afca7105086dd0bb23af07d1a5ecc62b5022062af35d51e60939"
   },
   {
     "id": "eip155:324:0x35a0172fb6bd450ceb29aa67dc85221826dfd0b7528375400b4ccf15c1eed0d8",
@@ -11610,9 +11610,9 @@
     "tx": "0x098e7394a1733320e0887f0de22b18f5c71ee18d48a0f6d30c76890fb5c85375",
     "protocol": "BabyDogeCoin",
     "name": "BabyDoge FarmZAP arbitrary-farm and auto-liquidity manipulation",
-    "summary": "FarmZAP trusted a caller-supplied farm contract, approved it for swap output and did not verify that depositOnBehalf settled the tokens. The attacker combined that access to fee-exempt swaps with BabyDoge's unbounded internal swapAndLiquify sell to manipulate the BABYDOGE/BNB price and extract BNB.",
-    "lossUsd": 244633.3642716574,
-    "codeAgeSeconds": 18906952,
+    "summary": "FarmZAP accepted any caller-supplied farm and gave it an unlimited approval on the swap output; since the zap was exempt from BabyDoge's transfer fees, this gave the attacker fee-free moves of flash-bought BabyDoge. It crashed the PancakeSwap price, triggered BabyDoge's unbounded swapAndLiquify sell into it, bought back and sold on BabyDogeSwap.",
+    "lossUsd": 269979.5,
+    "codeAgeSeconds": 18881925,
     "exploit": {
       "block": 28593355,
       "index": 3,
@@ -11623,13 +11623,13 @@
       "codeHash": "0x891aa451167773220a29584cba5e04143f6ebd0ce213cdc02df427d649698389"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x2e2792453a521f89de736a27086dacdbea78d0304eb8cb377953c02ede8c07c7",
-      "block": 22360184,
-      "index": 31,
-      "timestamp": 1666332961
+      "kind": "config",
+      "tx": "0x33a037094d49e6278815676695e8ec8709fe4b281d5bda1cc558d39e540381c5",
+      "block": 22368459,
+      "index": 121,
+      "timestamp": 1666357988
     },
-    "claimsSha256": "c5959a829afcd48f68d5ec556d88c2fe0efe3ca45c7f532f872b387a44b036c2"
+    "claimsSha256": "76385fb78e9ce56a43ccfbee74a368d2886d7a39be7b23da6fbe902d2307c469"
   },
   {
     "id": "eip155:10:0xeb56829179b23436c570894d54d766668585c8bcb5c3932076363866261fa72c",
@@ -11830,7 +11830,7 @@
     "tx": "0xcc71a3bb131c73462b0f25533070113a63c85e942a22e18bc945eec184eb5799",
     "protocol": "BeatSwap",
     "name": "BeatSwap LiquidityVestingConvert slot0 spot-price BTX quote",
-    "summary": "BeatSwap's LiquidityVestingConvert and LiquidityVestingConvertOnce let anyone deposit USDT and then pair it with BTX from the contract's own reserve. The BTX amount comes from a single slot0 spot price read from the PancakeSwap V3 USDT/BTX pool, and the only slippage check compares the mint against that same quote. Using flash loans, the attacker crashed the pool's BTX price and deposited 10,000 and 2,000 USDT. The two contracts put essentially their whole reserves, 3.07M BTX, into bad-tick LP positions. The attacker then bought the BTX back out of the pool and sold it.",
+    "summary": "LiquidityVestingConvert and its Once variant paired a deposit's USDT with BTX from their own reserves, sized from the V3 pool's slot0 spot price and checked only against that same quote. With flash loans the attacker crashed the BTX price, deposited 10,000 and 2,000 USDT so both contracts put nearly all their BTX into LP at that price, then bought it back and sold it.",
     "lossUsd": 79796.00089853126,
     "codeAgeSeconds": 22828802,
     "exploit": {
@@ -13281,33 +13281,6 @@
       "timestamp": 1697179271
     },
     "claimsSha256": "818e7aec6babcda95dfe69de71a53c6859b5db9b5387c41d48fbe872ea057b5a"
-  },
-  {
-    "id": "eip155:56:0xe7abe6416e386332b41d63cf5f16903251dc178942cd79bf080fe61058587628",
-    "chainId": 56,
-    "tx": "0xe7abe6416e386332b41d63cf5f16903251dc178942cd79bf080fe61058587628",
-    "protocol": "Balance Protocol",
-    "name": "Balance Protocol BTCB spot-poke unbacked mint and withdrawal",
-    "summary": "Balance Protocol's permissionless BTCB price path accepted a manipulated price with no validation: the oracle wrapper and Spotter poke calls refreshed the stored price and filed it into Vat, and Vat.frob then authorized unbacked BLC debt minting and BTCB collateral withdrawal against the false spot. GemJoin and BlcJoin exits paid the attacker directly, and PancakeSwap and SmartRouter swaps realized the proceeds in USDT.",
-    "lossUsd": 885964.7337095859,
-    "codeAgeSeconds": 59495799,
-    "exploit": {
-      "block": 111351152,
-      "index": 1,
-      "timestamp": 1784667601
-    },
-    "target": {
-      "address": "0x2f950d6c97d8813182c7ec2043f4f6deed956239",
-      "codeHash": "0x3215e08f042b071d30eebc6672d7f8d204d6be940884ff497f23fc83d1a04459"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xe80fe548d82e36af26c184636b95addca9b9a0bcfb9553020c82b5468ae3009a",
-      "block": 41865717,
-      "index": 49,
-      "timestamp": 1725171802
-    },
-    "claimsSha256": "3b44b1ade27d4ea637582f0e525860f78a191b85663fe95887beb255f9187a40"
   },
   {
     "id": "eip155:1:0x6ed07db1a9fe5c0794d44cd36081d6a6df103fab868cdd75d581e3bd23bc9742",

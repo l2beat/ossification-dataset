@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BeatSwap",
   "name": "BeatSwap LiquidityVestingConvert slot0 spot-price BTX quote",
-  "summary": "BeatSwap's LiquidityVestingConvert and LiquidityVestingConvertOnce let anyone deposit USDT and then pair it with BTX from the contract's own reserve. The BTX amount comes from a single slot0 spot price read from the PancakeSwap V3 USDT/BTX pool, and the only slippage check compares the mint against that same quote. Using flash loans, the attacker crashed the pool's BTX price and deposited 10,000 and 2,000 USDT. The two contracts put essentially their whole reserves, 3.07M BTX, into bad-tick LP positions. The attacker then bought the BTX back out of the pool and sold it.",
+  "summary": "LiquidityVestingConvert and its Once variant paired a deposit's USDT with BTX from their own reserves, sized from the V3 pool's slot0 spot price and checked only against that same quote. With flash loans the attacker crashed the BTX price, deposited 10,000 and 2,000 USDT so both contracts put nearly all their BTX into LP at that price, then bought it back and sold it.",
   "targets": [
     {
       "address": "0x1e647faadb05f2124bfccfc003edc06d1a90bf5d",
@@ -34,9 +34,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/BeatXswap_exp.sol"
   ],
   "notes": [
-    "Immutable non-proxy LiquidityVestingConvert: TARGET_POOL, the position manager and the spot-quote logic are compile-time constants. The only later configuration writes are setMinDeposit(10000e18) and a transferOwnership; neither is necessary to the manipulable quote.",
-    "Immutable non-proxy LiquidityVestingConvertOnce: the same _calculateQuote and _executeMint logic, with a one-deposit-per-address fixed amount. setFixedDeposit(2000e18) at block 72168002 only sets the deposit size, which scales the loss, and is not necessary to the manipulable quote.",
-    "Gross BTX depletion of the two vesting contracts in the single exploit transaction: 1240403.080995608300764898 BTX from LiquidityVestingConvert plus 1832090.195547302813148498 from LiquidityVestingConvertOnce. Each amount left its contract's reserve for the V3 pool as the BTX leg of the manipulated LP mint. The LP NFTs remain in the vesting contracts but are recorded to the attacker's vesting entries, which only the attacker can withdraw, and the attacker bought the BTX back out of the pool in the same transaction. The attacker sold 3067057.865885379791008385 BTX in the same transaction for 79654.837356523361110351 USDT at par, 0.02597109 USD per BTX. DefiLlama spot at 1788954700 was 0.031656 (source-8), so the dump moved the price and realised proceeds value the whole depletion. The 5435.410657531322905011 BTX difference stayed in the pool. The attacker's 12,000 USDT deposits (9,000 to treasury 0xaa2ea785744b123b1e8a1679c8e7ab9b255aad94), its flash loans and its swap round-trip are attacker inputs and are not netted. Net attacker profit was 63704.837356523361110351 USDT.",
-    "Sibling runtime with the same defect, deployed at block 72165322, 124 blocks (93 s) before LiquidityVestingConvert (target-1), which carries the knot."
+    "Both contracts are immutable non-proxies with TARGET_POOL and the quote logic fixed; the later setMinDeposit(10000e18) and setFixedDeposit(2000e18) only set deposit sizes, which scale the loss, so deployment is the reset. LiquidityVestingConvert, deployed 124 blocks after its sibling, sets the age.",
+    "Loss is the two contracts' BTX reserve that left for the manipulated LP mints. The attacker's dump moved the price, so all of it is valued at its in-transaction sale rate (79,654.84 USDT for 3,067,057.87 BTX), not DefiLlama's /bin/bash.0317. The attacker's deposits, flash loans and round trip are its own inputs.",
+    "Campaign: no other deposit into either contract swapped the pool in the same transaction, and the attacker has not withdrawn its vesting entries."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Bamboo AI",
   "name": "Bamboo AI spoofable sale activation and pair-burn drain",
-  "summary": "BambooAI._transfer sets sale = block.number whenever sender == addressDev and recipient == the pair, and once sale > 0 every transfer from a non-pair sender runs updatePool, which moves amount/100 of the pair's BAMBOO balance to a hardcoded address and calls sync. transferFrom(addressDev, pair, 0) needs no allowance, so anyone could activate the pair burn; repeated self-transfers or transfer-and-skim loops then shrank the pair's BAMBOO reserve and sold into the inflated price, draining the WBNB side.",
+  "summary": "BambooAI._transfer set sale = block.number on any addressDev-to-pair transfer, and transferFrom(addressDev, pair, 0) needed no allowance, so anyone could switch on updatePool. That moved 1% of every non-pair transfer amount out of the pair's BAMBOO balance and synced, so loops of self-transfers shrank the BAMBOO reserve and let attackers sell into it for the pair's WBNB.",
   "targets": [
     {
       "address": "0xed56784bc8f2c036f6b0d8e04cb83c253e4a6a94",
@@ -12,19 +12,7 @@
       }
     }
   ],
-  "loss": {
-    "usd": 56579.97,
-    "assets": [
-      {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "230.243237591379867937",
-        "usd": 56579.97
-      }
-    ]
-  },
-  "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Bamboo_exp.sol",
+  "campaign": [
     "eip155:56:0xda41af9d60d62eef28444b4c42f80754140767efb8ecef1b68b4fb1c11baa789",
     "eip155:56:0x5abde3804002e3625dddb48407204d107eae65069df938489737eadcd79f282f",
     "eip155:56:0x88a6c2c3ce86d4e0b1356861b749175884293f4302dbfdbfb16a5e373ab58a10",
@@ -32,8 +20,23 @@
     "eip155:56:0xc8918afb183d0e356a47b5f0e5bf3ab09452310c279e3d06368b0c658fdfe3a7",
     "eip155:56:0xdf3f472917686af1728d4e662b93240620190eda1d5bf29fd211ca0655896096"
   ],
+  "loss": {
+    "usd": 56570.76,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "230.243237591379867937",
+        "usd": 56570.76
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Bamboo_exp.sol"
+  ],
   "notes": [
-    "Immutable direct BambooAI runtime; addressDev, uniswapPair, isMarketPair and the hardcoded burn recipient are fixed in the constructor and the forgeable sale trigger needs no later configuration. setTrading(true) at block 29668034 follows the anchor and so cannot reset the age.",
-    "Net WBNB depletion of the BAMBOO/WBNB pair 0x0557713d02a15a69dea5dd4116047e50f521c1b1 in the six drain transactions of source-7 (blocks 29668035..29668055, four actors), each netting its flash-loan legs within the transaction. The first drain (216.3359 WBNB) came from 0x16c4da1afe64634ab72968d8f7f9a80518b84e61, one block after trading opened; the anchor account's own drain (source-7 third hash) took 11.9136 WBNB. The BAMBOO moved from the pair to the hardcoded address is excluded as the token was worthless after the drain. WBNB is valued at the last DefiLlama point before the first drain."
+    "The anchor is the zero-amount transferFrom that activated the pair burn (sale was 0 until then); the drains followed. setTrading(true) at block 29668034 is a trading gate, not a reset.",
+    "Campaign: every transaction with 20 or more BAMBOO Transfer events (the 300-transfer drain loops) from the anchor on; four actors, the largest 0x16c4da1a (216.34 WBNB), the anchor's sender 11.91 WBNB. None before the anchor.",
+    "Loss is the pair's WBNB depletion; the BAMBOO moved out of the pair is realised through that WBNB and not counted again."
   ]
 }

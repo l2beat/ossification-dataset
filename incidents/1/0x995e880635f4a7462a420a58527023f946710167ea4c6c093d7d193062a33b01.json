@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Barley Finance",
   "name": "wBARL pod flash-loan bond reentrancy",
-  "summary": "The wBARL WeightedIndex pod's flash() sent out the pod's entire BARL reserve and only checked the balance after the callback, so the attacker called bond() inside the callback and minted pod shares against the flash-loaned BARL, repeating it before debonding.",
+  "summary": "The wBARL WeightedIndex pod's flash() sent out the pod's entire BARL reserve and only checked its balance after the callback, so the attacker called bond() inside the callback: the bonded BARL repaid the loan and also minted pod shares. Repeating this and debonding the free shares drained the pod's BARL, which was sold for DAI and WETH.",
   "targets": [
     {
       "address": "0x04c80bb477890f3021f03b068238836ee20aa0b8",
@@ -12,31 +12,50 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x2a50db3dac1b4468d226deb53cb34737669b5f93848ac04d4e296ade06f9876c",
+    "eip155:1:0x032c9e7fa7d1697fa64fd4a59f0d08278d27aa537525e9bd17f71f01d36b8b6a",
+    "eip155:1:0x8b6fe106c93961dab7a6334be9aea2cb8374b61e4ccda9a5d005853f6e8d0824",
+    "eip155:1:0x18b7ec247e7af2c9a7d871dc9a4c8281b54a8c6587017fca9ea64980ffbcedb1",
+    "eip155:1:0x39065a8ffeeea2ee77eef9dc09e6f49e8a3d0119d3764d07c319e3ec3cc4c942",
+    "eip155:1:0xb13997f84b9500a0c6347b095d2bdba012a50e11f8f5fe04e877e6d6fb6f43b9",
+    "eip155:1:0x6742253c25cc401f30ea10636a6cd2d80a4ac0c24b28f9a4acf97748f9346d06",
+    "eip155:1:0xb95f56a93af1dbf477b2c527e186cc37aa4a973f8007717ff6c58ac62eb28a62",
+    "eip155:1:0x76330e56849bb1d5e3c1364a986797dab668b246e15eb757b40104c6d63b193f",
+    "eip155:1:0x42ee8803b0c26d2d44371080f6f6eb1cecd2c5d12a1bc180003f5f3a436ed72d",
+    "eip155:1:0x22fc19257bbe1d636c1db3c43a8279c928c75bb9cb5388ddda4659e62e0a64cf",
+    "eip155:1:0x7045e70b1261b87e2e5eede62c2484c13d5096870a8360ddc815ab3d75f7b704",
+    "eip155:1:0xca5744491de4832636183d9f3ac86889b16c5d1c34034a8e91133fcc648dd04a"
+  ],
   "loss": {
-    "usd": 133971.27171106517,
+    "usd": 145243.51,
     "assets": [
       {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
+        "symbol": "ETH",
         "amount": "59.050958554556785566",
-        "usd": 133971.27171106517
+        "usd": 134105.65
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "7102.619787537270218779",
+        "usd": 7081.89
+      },
+      {
+        "token": "0x3e2324342bf5b8a1dca42915f0489497203d640e",
+        "symbol": "BARL",
+        "amount": "234578.572367947182363214",
+        "usd": 4055.97
       }
     ]
   },
   "refs": [
     "https://twitter.com/Phalcon_xyz/status/1751788389139992824",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/BarleyFinance_exp.sol",
-    "eip155:1:0x02400a41ba4a8e6173c5cba8077af8c56ce55f689c8d2b634515ab2458c52826",
-    "eip155:1:0x954604de22bc0fe57a132b77b7e9831a138100a5c38dbfd76beab35b754771fa",
-    "eip155:1:0xa685928b5102349a5cc50527fec2e03cb136c233505471bdd4363d0ab077a69a",
-    "eip155:1:0xaaa197c7478063eb1124c8d8b03016fe080e6ec4c4f4a4e6d7f09022084e3390",
-    "eip155:1:0x2b32972bacac11262588a2d7d72a440478a09359c3380a9efa1d9d1b19b6209e",
-    "eip155:1:0xbc7766e18163a9c0fd29ef2135bade924b17c547945d0eaf5813059c3a195a57",
-    "eip155:1:0x75c5faeb0577b3f5db10e7fb905050c0d80979331163e851ae253e951bca161c",
-    "eip155:1:0x2a50db3dac1b4468d226deb53cb34737669b5f93848ac04d4e296ade06f9876c"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/BarleyFinance_exp.sol"
   ],
   "notes": [
-    "The wBARL pod is directly deployed. Its 16,571-byte runtime is absent one block before creation and has code hash 0x1087aac050442f4f86d91fc9419262927aa23f89948020a521d098b59b842a17 at deployment and immediately before the incident. The EIP-1967 implementation, admin, and beacon slots are zero, and the incident trace contains no delegatecall from the pod. Deployment is therefore the latest age reset.",
-    "Gross loss is exact net WETH depletion from the wBARL pod, BARL/DAI pool, and DAI/WETH pool treated as one incident victim set. In the anchor receipt the union conserves exactly 180,115,268.225698757678458280 BARL and 119,220.660871058657167624 DAI while sending 52.133956080457251524 WETH. The second receipt conserves exactly 34,460,652.829973374255498438 BARL and 15,727.075468297283066862 DAI while sending 6.917002474099534042 WETH. BARL and DAI therefore cancel inside the union, leaving 59.050958554556785566 WETH gross depletion. Four precursor transfers fund the helper with 400 DAI, which it pays as 40 ten-DAI flash fees to separate recipient 0xd719345fe7030aeae8e2e9eb0e00e299f3a1ce15; those funds never enter the victim union and do not offset WETH depletion. After the second receipt the helper holds zero DAI, BARL, and WETH, while the EOA holds exactly the summed WETH. Its later exact unwrap, separate DAI disposal, and native distributions do not return value to the victim set and are outside the gross boundary. Archive union WETH balances reconcile both incident blocks after separately accounting for unrelated pool inputs. The closest preceding DefiLlama ETH observation is $2,268.74 at 1706464495, four seconds before the anchor. Exact loss is $133,971.27171106517, replacing the seed's rounded $130,000 estimate."
+    "Campaign: every later successful flash() into the pod with a bond() in its callback: the attacker's second run and eleven copycat runs by four other actors over the next eight hours; flash() has no earlier exercise.",
+    "Victims are the pod and the BARL/DAI, DAI/WETH and wBARL/DAI pools the pod's BARL was dumped into, netted per transaction (loss.mjs): their WETH and DAI depletion is the realised value of the drained BARL.",
+    "BARL is unpriced; the 234,578.57 BARL that left the victim set in three copycat runs is valued at the 4,061.98 DAI the pools received for it in those runs."
   ]
 }
