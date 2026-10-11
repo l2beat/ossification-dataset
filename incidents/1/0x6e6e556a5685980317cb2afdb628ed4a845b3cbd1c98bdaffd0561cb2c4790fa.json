@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "protocol": "EarningFram",
-  "name": "EarningFram",
-  "summary": "ENF_ETHLEV ERC4626 withdraw is reentered via ETH callback to withdraw assets twice against stale share accounting.",
+  "protocol": "EarningFarm",
+  "name": "EarningFarm ENF ETH vault withdraw share-burn reentrancy",
+  "summary": "EFVault.withdraw() computed the shares to burn, had the controller pay the receiver in ETH, and only then capped the burn at the caller's current balance. In the ETH callback the attacker moved its shares to a helper, so withdraw burned almost nothing and the helper withdrew again with the same shares; repeated until the strategy was drained.",
   "targets": [
     {
       "address": "0x5655c442227371267c165101048e4838a762675d",
@@ -14,20 +14,35 @@
     }
   ],
   "loss": {
-    "usd": 295911.91000020964,
+    "usd": 596028.45,
     "assets": [
       {
-        "symbol": "ETH",
-        "amount": "159.324268834097852251",
-        "usd": 295911.91000020964
+        "token": "0x1982b2f5814301d4e9a8b0201555376e62f82428",
+        "symbol": "aSTETH",
+        "amount": "991.319527116792461615",
+        "usd": 596028.45
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x25567821ea31a8efd395654b7fafbab8511e777420803b99b08ca8500dcc3e95",
+    "eip155:1:0x878d8986ed05ab32cc01e05663d27ea471576d2baff1081b15ed5fb550f9d81b",
+    "eip155:1:0x8454beb56ca22f710706c00ac4b969caa7b8848b4a45202cf52715f10a09fc0f",
+    "eip155:1:0xb35faeee64205e3018a1331e59abf7fa7a20bd0163dd2eed4657a9693e9c7ecf",
+    "eip155:1:0x2b492dd5184f2c0f5049923ea61036bc3aee44dd3aa5454dd3de2be2f354c2b6",
+    "eip155:1:0x0d5106d4fa1bddee97a3ed0cb78f5ee6cf08bac4e7201883b63a7b4e71e5fddc",
+    "eip155:1:0xefb27bfca4bfb0111b8d858340178ccb936c2872026fdfaaabb15eb306e70e4f",
+    "eip155:1:0x09349d03e1961cd067f3a049ddef27e6d4b2b516e0252fb885854ba109089301",
+    "eip155:1:0x8e12959dc243c3ff24dfae0ea7cdad48f6cfc1117c349cdc1742df3ae3a3279b",
+    "eip155:1:0xbc161af1dd9d775a0039ec806e6d50353862d200e2e320e97023bf02f03f57bb",
+    "eip155:1:0x35f8117f843fd0b503e39e2c903fa834efa21f8e1590fd00e15e7611ba323656"
+  ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-08/EarningFram_exp.sol"
   ],
   "notes": [
-    "The last of three pre-exploit Upgraded events restored implementation 0x863e572b215fd67c855d973f870266cf827aea5e.",
-    "The trace records 320.599641877332363469 ETH deposited into the strategy and 479.923910711430215720 ETH returned by the two reentrant withdrawals, for an exact strategy net loss of 159.324268834097852251 ETH."
+    "The last of three pre-exploit upgrades restored the vulnerable implementation; the route change resets the age even though the code was the same as at creation.",
+    "Campaign: the attacker repeated the reentrant withdraw nine more times, and two copycats repeated it after; no other vault of the deployer runs this implementation.",
+    "The strategy's Aave stETH collateral is listed net of the WETH debt repaid while unwinding it, so the asset value is the ETH the withdrawals paid out beyond the attackers' deposits."
   ]
 }

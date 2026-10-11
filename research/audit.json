@@ -32,6 +32,18 @@
     },
     "reason": "Separate incident from 0x726459…84d0 (rule 4: different defect). Nothing was double-counted: Compound paid the clone 0x7b7246 its accrued 268.53 COMP once (log 0x7d) and the clone's five collectUBIInterest calls sold it in 0.3%-of-spot-reserve chunks with amountOutMin 0 into the COMP/WETH pair the attacker had loaded with 20,096 COMP, receiving 95.7 DAI in total. The defect is in GoodCompoundStakingV2 (an EIP-1167 clone created in 0x186dadd6, block 14338454), not in the GoodFundManager upgrade 0xe710b21c. A single call was already profitable, so the duplicate entries only scaled the loss. Loss is the gross COMP depletion, $14,796.13, not the attacker's net 250.63 COMP. No earlier non-keeper call to the clone; no campaign. Orchestrator: reset moved to the maxLiquidityPercentageSwap 0->300 change (rule 10 threshold)."
   },
+  "eip155:1:0x138daa4cbeaa3db42eefcec26e234fc2c89a4aa17d6b1870fc460b2856fd11a6": {
+    "decision": "update",
+    "anchor": "eip155:1:0xb3cfbd40752c149761d105890f40d860a4366a819add6f5414db9bc474cc6481",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": -240,
+      "loss": "within-10"
+    },
+    "reason": "campaign.mjs shows attacker 0x684083f3's contract 0x194fc30f drained 11.346 WETH from 0xc440604d via selfSwap in 0xb3cfbd40 (block 16646003) before the recorded TRU drain (block 16646023), so it is the anchor. Record lacked the campaign (5 more Ethereum drains, 17 on the Arbitrum proxy 0x7222b106) and per-asset loss; measured $2,115,821.30 vs reported $2,047,635.17."
+  },
   "eip155:1:0x185a16017fb4d9b2fefdf5935435253d53d4758238275426b507fe54eb4fe97a": {
     "decision": "update",
     "compare": {
@@ -214,6 +226,17 @@
     },
     "reason": "Attacker 0x14c19962 ran the reentrant flash/deposit on the XIDR pool at block 15941674 (0x390def74), 30 blocks before 0x6bfd9e28; it and bot 0xfde0d157 hit all seven v2 pools in 49 txs. Loss is tool-measured pool depletion ($9.71M incl. NZDS at Chainlink NZD/USD), not the $4M estimate. Kept deployment reset: blind used stopWhitelisting, treated as an unpause."
   },
+  "eip155:1:0x6e6e556a5685980317cb2afdb628ed4a845b3cbd1c98bdaffd0561cb2c4790fa": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-50"
+    },
+    "reason": "Target and reset (upgrade 0xdfe12c81 back to 0x863e572b) confirmed; no earlier withdraw exploit. Record counted only the anchor (159.32 ETH): campaign.mjs shows the attacker's contract 0xfe141c32 repeated it in 9 more txs (0x25567821 .. 0x8e12959d) and copycats 0xbc161af1 and 0x35f8117f reused it via 0x5841e3e2; strategy depletion over all 12 txs is $596,028.45 (aSTETH net of repaid WETH debt)."
+  },
   "eip155:1:0x726459a46839c915ee2fb3d8de7f986e3c7391c605b7a622112161a84c7384d0": {
     "decision": "update",
     "compare": {
@@ -312,6 +335,17 @@
       "loss": "off-50"
     },
     "reason": "Same BatchSwap code lineage and same campaign as 0xc310e760: identical closeSwapIntent/editCounterPart path (only a nonReentrant on closeSwapIntent, not on editCounterPart), exploited by the same attack contract 0xc446e0a1 (and 0x54937e19 at 0x32af9431, block 18796599) within hours. Rule 4 merges it into the earliest exploit 0x3dc11530 (block 18791785)."
+  },
+  "eip155:1:0x92cdcc732eebf47200ea56123716e337f6ef7d5ad714a2295794fdc6031ebb2e": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": -300,
+      "loss": "off-10-50"
+    },
+    "reason": "DSA.executeAction requires msg.sender == DoughIndex.getDoughConnector(22); 0x9f54e8ea was registered there by 0x44192729 (block 20084089), 24 blocks after its deployment, and never changed before the exploit, so the registration sets the age. Record lacked the campaign: 99 further third-party collateral pulls (attacker 0x67104175/0x0a971d85 and copycats) after excluding c0ffeebabe and 0xcdd9e99d, whose proceeds went to Dough Safe 0xf788c7ea; loss measured $2,375,065.70 net of repaid debt vs reported $1.8M."
   },
   "eip155:1:0xa17001eb39f867b8bed850de9107018a2d2503f95f15e4dceb7d68fff5ef6d9d": {
     "decision": "update",
@@ -479,6 +513,17 @@
       "loss": "within-10"
     },
     "reason": "Facts unchanged; only summary and notes trimmed to the rule lengths. claimProjectFunds() requires refundProgress >= totalBids but processRefunds() stops at bidIndex; the anchor is the last successful processRefunds (refundProgress 3191 -> 3669 = bidIndex, totalBids 5495), after which every claimProjectFunds attempt reverted and 11,539.5 ETH stays locked (balance unchanged today). No later code or config change; loss within 0.05% of mine ($34,159,226 at the DefiLlama ETH price)."
+  },
+  "eip155:1:0xe3eab35b288c086afa9b86a97ab93c7bb61d21b1951a156d2a8f6f5d5715c475": {
+    "decision": "exclude",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "within-10"
+    },
+    "reason": "Rule 5: the only exercise of swapToWETH on this clone (campaign scan from factory clone creation 23717358 to head, siblings 0x67c202be/0xef4b6cd0/0x5889b7ab included) is c0ffeebabe.eth's tx, and c0ffeebabe sent 26.24858204 ETH (more than its 26.1266 ETH take) to the vault's owner/creator 0x76d6f63a in 0x18f0abd1cdf62561f8a6c7840ea15249f682b3c447b8ad8270df4b1aa49dceb7 ~10 h later: an affiliated rescue whose proceeds went back to the user, so no unaffiliated successful exploit exists."
   },
   "eip155:1:0xf0464b01d962f714eee9d4392b2494524d0e10ce3eb3723873afd1346b8b06e4": {
     "decision": "update",
@@ -669,6 +714,17 @@
     },
     "reason": "Same attacker 0x53515361 exploited the same Clearing v1.2.3 single-sided ratio-check exception (sibling Ramses deployment 0xcfb851b1, vault 0x80709a76 with priceThreshold 200) 65 s after anchor 0x025cf285 in one campaign across four vaults; rule 4 merges sibling-template legs. Its txs and loss are in the merged record's campaign and loss."
   },
+  "eip155:42161:0xb1141785b7b94eb37c39c37f0272744c6e79ca1517529fec3f4af59d4c3c37ef": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Anchor, target and reset 0xbd61af33 (block 81036830, slot unchanged to the exploit) confirmed; no zero-amount burn precedes the anchor on Arbitrum, BNB (buggy impl from 27943182) or Ethereum (from 17118515). The record had no campaign and a reported $6.5M with no assets; measured legs: Arbitrum USDC.e+DEUS $5.80M (incl. copycat 0xf8b5e2e9), BNB frontrunner 0xde2c8718 $1.34M USDT, Ethereum $136k realised; 160 campaign txs. The Fantom DEI lender records are separate oracle defects."
+  },
   "eip155:42161:0xf52a681bc76df1e3a61d9266e3a66c7388ef579d62373feb4fd0991d36006855": {
     "decision": "update",
     "compare": {
@@ -724,6 +780,18 @@
     },
     "reason": "Same attacker campaign on two chains: Avalanche 0xece4efbe (ts 1731310543) precedes Arbitrum 0x6a2f989b (ts 1731310565); all 19 attacker txs call claimReward 0xb2af870a and wrapNativeToken 0xd75c7462 (traced). Merged per rule 4: campaign gets 5 Avalanche + 13 Arbitrum txs, loss = pool depletion on both chains $4,879,583.82 (record held only the Avalanche $4.13M). Target/reset confirmed (DiamondCut 0x1c24e72a is the last route change for 0xb2af870a)."
   },
+  "eip155:56:0x437b26887ba03c08b7541a86e8eeda5e92a9059244fcf814c721dc13f2c1b303": {
+    "decision": "update",
+    "anchor": "eip155:56:0xb107f19af1a8ff90d19cbb40d935f8be5d79f5fb9b497824e4ed28b9e7555fe9",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": -91534,
+      "loss": "off-10-50"
+    },
+    "reason": "The recorded tx is one later 500-call leg. Replaying all 9,749 onLock and 1.63M onUnlock events shows attacker 0xc4574dde's first payout beyond its deposit in 0xb107f19a (block 100812090: five unlocks of a 12.87-LP lock created in 0xe211904a), and 3,935 further over-paying txs to block 101536778, all receipt-verified; no other account was ever paid beyond its deposits. Loss priced per LP from pair reserves: $5,648,417.74 across 1,032 LP tokens vs BlockSec's rounded $7.3M."
+  },
   "eip155:56:0x4a304ff08851106691f626045b0f55d403e3a0958363bdf82b96e8ce7209c3a6": {
     "decision": "update",
     "compare": {
@@ -756,6 +824,17 @@
       "loss": "within-10"
     },
     "reason": "Anchor, target and deployment reset confirmed; the only earlier emergencyBurn calls (0xf277f8b7, 0x5e044e60) are the deployer's own and paid out nothing extra. The record kept the attacker's four follow-up txs in refs and left out copycats; the campaign now lists 27 txs (those four plus 22 copycat txs on sibling vaults, through block 8548983), found from per-caller Withdrawn-minus-Deposited balances across the nine emergencyBurn vaults. Two returned or team drains (0x8e0d334a, 0x2981bb8f/0x3e1b8554) are excluded under rule 5. Loss rises from $4,638,919.01 to $4,649,710.54, with the record's underlying LP valuation kept."
+  },
+  "eip155:56:0x8d9cd0a12ec69f62ef6a373d0259d8ef679037d1e04bde3bcfc94d9922acfc8e": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-10-50"
+    },
+    "reason": "Anchor/target/reset confirmed: 189k router Approval events from deployment to block 20M show no multi-owner pull and the 476 from 20M to the anchor were all sent by the owners. The record measured 7,308 exploit txs but listed none; campaign now lists the 7,310 non-owner pull txs through block 126.6M (record stopped at 63.99M) and the loss re-measured per token at pull-time DefiLlama prices: $2,013,442.47 vs $1,779,347.56."
   },
   "eip155:56:0x97381c260e50a54b80db68391f1838f73e10988d0b41165aa29fe708cb165ace": {
     "decision": "update",
@@ -845,6 +924,17 @@
       "loss": "within-10"
     },
     "reason": "No pair-to-dead burn before the anchor (Etherscan logs 36880062-37221235); the only later one (0xe0cd45fa, block 37457807) is a single burn with no extraction. startTradeBlock set in 0x848a2cb9 one block earlier is trading enablement (pause-like), not a reset. Pair WBNB loss 348.147 WBNB = $195,714.47 at DefiLlama vs record $194,844.10."
+  },
+  "eip155:56:0xec317deb2f3efdc1dbf7ed5d3902cdf2c33ae512151646383a8cf8cbcd3d4577": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": -2598,
+      "loss": "within-10"
+    },
+    "reason": "The Reserve's redeem calls withdraw on treasuries 0xcb5a02bb and 0xaf0980a0 and mint on TRUNK; resets.mjs --watch shows TRUNK's mint grant (0xf85f82b7, block 15318892) and addAddressToWhitelist(0xd520a3b4) on 0xaf0980a0 (0x9edc4a23, 15318896) and 0xcb5a02bb (0xbfb244e3, 15318897), all after deployment 15318031 and unchanged to the exploit, so the last grant sets the age. Only the anchor ever minted and redeemed in one tx (19,095 mint / 4,289 redeem events); loss unchanged in substance (BNB realised), summary/notes trimmed."
   },
   "eip155:56:0xee10553c26742bec9a4761fd717642d19012bab1704cbced048425070ee21a8a": {
     "decision": "update",

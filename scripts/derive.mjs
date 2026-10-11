@@ -150,12 +150,15 @@ export async function derive(chainId, hash, record) {
   const exploit = await anchor(chainId, hash)
   if (!exploit.success) report.failures.push(`exploit ${hash} reverted`)
 
-  for (const id of record.campaign ?? []) {
-    const [, campaignChain, campaignHash] = id.split(':')
-    const receipt = await rpc(Number(campaignChain), 'eth_getTransactionReceipt', [campaignHash])
-    if (!receipt) report.failures.push(`campaign ${id} not found`)
-    else if (receipt.status === '0x0') report.failures.push(`campaign ${id} reverted`)
-  }
+  const legs = [...(record.campaign ?? [])]
+  await Promise.all(Array.from({ length: 8 }, async () => {
+    for (let id = legs.shift(); id; id = legs.shift()) {
+      const [, campaignChain, campaignHash] = id.split(':')
+      const receipt = await rpc(Number(campaignChain), 'eth_getTransactionReceipt', [campaignHash])
+      if (!receipt) report.failures.push(`campaign ${id} not found`)
+      else if (receipt.status === '0x0') report.failures.push(`campaign ${id} reverted`)
+    }
+  }))
 
   const trace = await callTrace(chainId, hash).catch(() => null)
   if (!trace) report.unverified.push('exploit trace')

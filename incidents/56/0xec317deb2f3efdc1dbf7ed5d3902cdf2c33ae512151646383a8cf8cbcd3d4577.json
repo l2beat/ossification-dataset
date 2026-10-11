@@ -1,24 +1,26 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Elephant Money",
-  "name": "Elephant Money Reserve TRUNK redemption spot-price collateral valuation",
-  "summary": "The Elephant Money Reserve at 0xd520a3b47e42a1063617a9b6273b206a07bdf834 is the deployed contract that computes the TRUNK exchange rate. Both mint(uint256) (selector 0xa0712d68) and redeem(uint256) (selector 0xdb006a75) price the ELEPHANT collateral by quoting the live PancakeSwap V2 state in the same transaction: mint buys collateral through PancakeRouter02 0x10ed43c718714eb63d5aa57b78b54704e256024e with swapExactTokensForTokens/swapExactTokensForTokensSupportingFeeOnTransferTokens (0x38ed1739, 0x5c11d795), and redeem converts the burned TRUNK notional into an ELEPHANT payout quantity with the router's getAmountsOut/getAmountsIn views (0xd06ca61f, 0x1f00ca74) read straight off the ELEPHANT/WBNB pair 0x1cea83ec5e48d9157fcae27a19807bef79195ce1 and the WBNB/BUSD pair 0x58f876857a02d6762e0101bb5c46a8c1ed44dc16. The code validates only a blacklist lookup on 0x3064cda024b921f83e72c996bc06982a5885ed97 and never checks the quote against a manipulation-resistant reference: there is no TWAP or cumulative-price snapshot, no external oracle, no deviation bound, and no restriction on minting and redeeming inside one transaction, so the redeemer sets the rate the Reserve applies. Buying ELEPHANT with 100,000 flash-loaned BNB, minting TRUNK against flash-loaned BUSD at the inflated collateral price, dumping the ELEPHANT, and then redeeming the TRUNK made the Reserve pay out 196,967,214,123,823.406098696 ELEPHANT from its collateral buffer 0xaf0980a0f52954777c491166e7f40db2b6fbb4fc, roughly five times the whole ELEPHANT/WBNB pair reserve. No parameter value of this deployed code is correct: the router address is stored configuration, but every value of it yields a single-transaction spot quote, so the defect is the valuation logic itself.",
+  "name": "Elephant Money Reserve TRUNK mint/redeem spot-price valuation",
+  "summary": "The Elephant Money Reserve priced TRUNK mint and redeem from live PancakeSwap ELEPHANT/WBNB and WBNB/BUSD reserves in the same transaction. With flash-loaned BNB and BUSD the attacker pumped ELEPHANT, minted TRUNK, dumped ELEPHANT, then redeemed the TRUNK so the Reserve paid out a multiple of the ELEPHANT pool from its treasury.",
   "targets": [
     {
       "address": "0xd520a3b47e42a1063617a9b6273b206a07bdf834",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x9f7bca8933668b445f7322e839771afdc47d79a200b1919754a4825c48a6b65c"
+        "kind": "config",
+        "tx": "0xbfb244e32fd8e2badeb2a7a4b7437f928cef5daedac94b32f53a618582dcd759",
+        "address": "0xcb5a02bb3a38e92e591d323d6824586608ce8ce4",
+        "slot": "0xaee414fa57d1ef2f5b4e6d29a9315e5b1964306196a0dcddc5e940ec83fcdc38"
       }
     }
   ],
   "loss": {
-    "usd": 11302955.121016769,
+    "usd": 11293640.7,
     "assets": [
       {
         "symbol": "BNB",
         "amount": "27416.465815239196663328",
-        "usd": 11302955.121016769
+        "usd": 11293640.7
       }
     ]
   },
@@ -27,8 +29,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-04/Elephant_Money_exp.sol"
   ],
   "notes": [
-    "The Reserve runtime is immutable, contains no DELEGATECALL, and is byte-identical at its deployment block and at the block immediately before the exploit.",
-    "Measured from the transaction state diff: the attacker EOA 0xe552133cc829a7f7e98e349763fac7ab0f3828b0 ends the anchor transaction 27,416.299660449196663328 BNB richer after paying 0.16615479 BNB of gas, so it received 27,416.465815239196663328 BNB while both attacker contracts end at a zero native balance and every flash loan is repaid inside the same transaction. Realised proceeds are used rather than a spot mark on the stolen collateral because the attacker's own dumping set the price: the Reserve's ELEPHANT buffer 0xaf0980a0f52954777c491166e7f40db2b6fbb4fc was depleted by 196,967,214,123,823.406098696 ELEPHANT (9 decimals), 171,552,429,480,071.979064221 of which were sold straight into the ELEPHANT/WBNB pair, a quantity many times the pair's entire reserve that could not have been sold at the pre-attack price. Offsetting inflows to the protocol in the same transaction were 1,039,345.062525 BUSD into the collateral buffer 0xcb5a02bb3a38e92e591d323d6824586608ce8ce4 and 10,550.558267717257 BUSD retained by the Reserve. A further 30,414,784,643,751.426 ELEPHANT left stranded in the attacker contract 0xbceda90b2880fea5d511d54716229145508996da is excluded as it was never realised. The gas paid does not reduce the measurement. DefiLlama's nearest BNB datapoint to the anchor timestamp is stamped 1649782177, four seconds later; the valuation timestamp records the anchor time that was queried. The reported approximately $11.2 million figure agrees with this reconstruction.",
-    "The Reserve at 0xd520a3b47e42a1063617a9b6273b206a07bdf834 is unverified on BscScan, so the root cause rests on the executed call trace, the deployed runtime and the reproduced exploit rather than on published source."
+    "Reset: after deploying the Reserve the team granted it the TRUNK mint role and whitelisted it on the ELEPHANT and BUSD treasuries; redeem needs all three, and the BUSD treasury whitelisting came last.",
+    "The drained ELEPHANT has no usable price (the attack set it), so the loss is valued at the BNB the attacker realised; ELEPHANT left unsold in the attack contract is not counted.",
+    "No other transaction minted and redeemed in one go before redeem stopped, so the campaign is empty."
   ]
 }
