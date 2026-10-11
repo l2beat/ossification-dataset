@@ -3857,7 +3857,7 @@
     "protocol": "edel-xStock",
     "name": "edel-xStock mutable ERC-4626 share-rate oracle",
     "summary": "The wGOOGLx price source multiplied an independent stock price by wGOOGLx's same-transaction convertToAssets rate, so an underlying donation could atomically inflate collateral value and support reserve borrowing.",
-    "lossUsd": 406564.7973738385,
+    "lossUsd": 406564.79,
     "codeAgeSeconds": 364992,
     "exploit": {
       "block": 25434062,
@@ -5908,8 +5908,8 @@
     "tx": "0x7cc7d935d895980cdd905b2a134597fb91004b5d551d6db0fb265e3d9840da22",
     "protocol": "xToken",
     "name": "xToken xSNXa and xBNTa unvalidated mint pricing",
-    "summary": "xSNX.mint(uint256 minRate) derived the fund's SNX unit value from the caller's own swap execution rate (weiPerOneSnx = ethContributed * 1e18 / snxContributed, where snxContributed is whatever kyberNetworkProxy.swapEtherToToken returned for a caller-supplied minRate) and fed it to TradeAccounting.calculateIssueTokenPrice, so a flash-loan-skewed SNX/ETH market collapsed the computed NAV per token and 0.125 ETH minted 1,282,360,456.05 xSNXa against a 7,567,827.98 xSNXa supply; no deviation check against the Synthetix oracle rate was applied. In the same transaction xBNT.mint(address[] path, uint256 minReturn) forwarded an arbitrary caller-supplied Bancor path to convertByPath and treated the returned amount as incrementalBnt without requiring path[path.length-1] == address(bnt), so four 0.03 ETH conversions ending in the SPD token 0x1dea979ae76f26071870f824088da78979eb91c8 were credited as BNT and minted 3,908,930,748.753742907112776888 xBNTa, half of which was sold through Bancor for 781,673.47 BNT inside the same transaction and half kept.",
-    "lossUsd": 25247248.955728587,
+    "summary": "xSNX.mint priced new xSNXa from the caller's own Kyber swap (TradeAccounting took weiPerOneSnx as ETH paid over SNX received), so a flash-loan-skewed SNX market let 0.125 ETH mint 1.28B xSNXa. xBNT.mint passed a caller-supplied Bancor path and credited its output as BNT, so paths ending in a junk token minted xBNTa. Both were sold into pools.",
+    "lossUsd": 25635353.01,
     "codeAgeSeconds": 1275519,
     "exploit": {
       "block": 12419918,
@@ -5928,7 +5928,7 @@
       "index": 84,
       "timestamp": 1619551507
     },
-    "claimsSha256": "2c8e536b6220002249e1ed023c64f838d543aed25aaa4878bbeeeaca0695f3ee"
+    "claimsSha256": "2f6a79ca3a08ec53ef532b42830722344366b42ef07d40aea298e526de01231c"
   },
   {
     "id": "eip155:42161:0x0e29dcf4e9b211a811caf00fc8294024867bffe4ab2819cc1625d2e9d62390af",
@@ -10267,6 +10267,33 @@
     "claimsSha256": "0d2df16b0004fc9073a0a7e10b017108ca31d5f6ac83192d60cb9e76b96f6875"
   },
   {
+    "id": "eip155:1:0xe49304cd3edccf32069dcbbb5df7ac3b8678daad34d0ad1927aa725a8966d52a",
+    "chainId": 1,
+    "tx": "0xe49304cd3edccf32069dcbbb5df7ac3b8678daad34d0ad1927aa725a8966d52a",
+    "protocol": "dForce",
+    "name": "Lendf.Me (imBTC ERC-777 reentrancy)",
+    "summary": "Lendf.Me's MoneyMarket.supply computed the supplier's new balance before pulling the tokens and stored it afterwards. With ERC-777 imBTC listed, the attacker's tokensToSend hook re-entered withdraw mid-supply, so the outer supply restored the withdrawn balance; looping doubled its imBTC credit, which it withdrew and borrowed every other market against.",
+    "lossUsd": 25173103.66,
+    "codeAgeSeconds": 9826524,
+    "exploit": {
+      "block": 9899736,
+      "index": 50,
+      "timestamp": 1587257923
+    },
+    "target": {
+      "address": "0x0eee3e3828a45f7601d5f54bf49bb01d1a9df5ea",
+      "codeHash": "0x01742f4a4c5582771d36e79e1aa009070116bd33c232e42321d03c6ab1314c89"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0xe05c22ded02fc8f3c50ce5b7fbf4f4ccd4ef93afed7abe21a466b26945813e4f",
+      "block": 9169673,
+      "index": 78,
+      "timestamp": 1577431399
+    },
+    "claimsSha256": "4e47d03e16efe97dc743ee9350a0d78f079586e3fa127ca48dfd2229276223de"
+  },
+  {
     "id": "eip155:1:0xeb87ebc0a18aca7d2a9ffcabf61aa69c9e8d3c6efade9e2303f8857717fb9eb7",
     "chainId": 1,
     "tx": "0xeb87ebc0a18aca7d2a9ffcabf61aa69c9e8d3c6efade9e2303f8857717fb9eb7",
@@ -10895,6 +10922,33 @@
     "claimsSha256": "8761a56f7fc4b53171016b93fbbe27e0f8763f2b3a9a9a5bfaf44397db16805e"
   },
   {
+    "id": "eip155:1:0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156",
+    "chainId": 1,
+    "tx": "0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156",
+    "protocol": "yETH",
+    "name": "yETH weighted-stableswap solver invariant collapse",
+    "summary": "Extreme imbalanced deposits drove the yETH weighted-stableswap supply solver outside its valid domain until its product term hit zero, and the pool over-minted yETH. The attacker used permissionless rate updates to burn the staking contract's LP, drained the LSTs, then hit an unchecked underflow at zero supply to mint yETH and drain the Curve pool.",
+    "lossUsd": 9695144.9,
+    "codeAgeSeconds": 12895608,
+    "exploit": {
+      "block": 23914086,
+      "index": 0,
+      "timestamp": 1764537119
+    },
+    "target": {
+      "address": "0xccd04073f4bdc4510927ea9ba350875c3c65bf81",
+      "codeHash": "0x62b1a1586e4b27d6c6fac09e72d0c5d2a3b8f640fb5a636ad81be479c3fa38b6"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x6e3c7f76fc76407f06e1f81ec88591d6769d65911550347f940be8064e5c778d",
+      "block": 22846632,
+      "index": 216,
+      "timestamp": 1751641511
+    },
+    "claimsSha256": "c3f07af23bbcb046cedb41c24204936a1dd50fcb02318cb710ee7f99830c8172"
+  },
+  {
     "id": "eip155:8453:0xed62bb27bd1058d3d7cc93d55421d6d0001ced8cb4529b02773f5126a4edb08b",
     "chainId": 8453,
     "tx": "0xed62bb27bd1058d3d7cc93d55421d6d0001ced8cb4529b02773f5126a4edb08b",
@@ -10947,33 +11001,6 @@
       "timestamp": 1660324124
     },
     "claimsSha256": "9fbca370f55857b72c549eaa2b9ebd5506aad5451c844eece0420638c1f826ae"
-  },
-  {
-    "id": "eip155:1:0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156",
-    "chainId": 1,
-    "tx": "0x53fe7ef190c34d810c50fb66f0fc65a1ceedc10309cf4b4013d64042a0331156",
-    "protocol": "yETH",
-    "name": "yETH weighted-stableswap solver invariant collapse",
-    "summary": "Extreme imbalanced deposits drove the weighted-stableswap supply solver outside its valid domain until its product term collapsed to zero, yet the pool accepted the divergent result and over-minted yETH LP. The attacker repaired only the product through zero-value removal, used permissionless rate reconciliation to burn protocol-owned LP rather than their own, drained the LST pool, then re-entered the zero-supply bootstrap path and triggered an unchecked underflow to mint enough yETH to drain the yETH/WETH Curve pool.",
-    "lossUsd": 9000000,
-    "codeAgeSeconds": 13169064,
-    "exploit": {
-      "block": 23914086,
-      "index": 0,
-      "timestamp": 1764537119
-    },
-    "target": {
-      "address": "0xccd04073f4bdc4510927ea9ba350875c3c65bf81",
-      "codeHash": "0x62b1a1586e4b27d6c6fac09e72d0c5d2a3b8f640fb5a636ad81be479c3fa38b6"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x7f21203f05a7c0ec927861b700c33ce278424233d982fb175b12bda257d81ed0",
-      "block": 22823989,
-      "index": 172,
-      "timestamp": 1751368055
-    },
-    "claimsSha256": "30ac220ffbadde52bfcbea2ebe2e5bcb5c1f086bfe34b82aa167e14bcebe4983"
   },
   {
     "id": "eip155:42161:0x3390bf37f7104808fc6ceba7d6f2a3c76ab7e4be205ecc775242d7604fe0d940",
@@ -11769,33 +11796,6 @@
       "0x0b24e9420c125242a5ec438bc65e48af1e866ddd: slot write attributed to block 15846647, not traced to 0x826e7afd84b6f36960daed799ed5d3db6c7c81b87ba92a1995b53191f9dbae07"
     ],
     "claimsSha256": "eecd6b307d42f536f1f79baed3e526ca49b9fa91e66866d18f749de3728395b1"
-  },
-  {
-    "id": "eip155:1:0xae7d664bdfcc54220df4f18d339005c6faf6e62c9ca79c56387bc0389274363b",
-    "chainId": 1,
-    "tx": "0xae7d664bdfcc54220df4f18d339005c6faf6e62c9ca79c56387bc0389274363b",
-    "protocol": "dForce",
-    "name": "Lendf.Me (imBTC ERC-777 reentrancy)",
-    "summary": "MoneyMarket.supply() credited the supplier only after doTransferIn(), so imBTC's ERC-777 tokensToSend hook re-entered withdraw() while the deposit was still counted, letting the attacker keep both the collateral credit and the withdrawn tokens.",
-    "lossUsd": 25000000,
-    "codeAgeSeconds": 22185718,
-    "exploit": {
-      "block": 9899738,
-      "index": 105,
-      "timestamp": 1587257935
-    },
-    "target": {
-      "address": "0x0eee3e3828a45f7601d5f54bf49bb01d1a9df5ea",
-      "codeHash": "0x01742f4a4c5582771d36e79e1aa009070116bd33c232e42321d03c6ab1314c89"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x00cfa6e44d4cf85240f2a1f24c5e9512f34421a4e352626b7cef93527a669210",
-      "block": 8295432,
-      "index": 31,
-      "timestamp": 1565072217
-    },
-    "claimsSha256": "a177b2517a4d285cb77eb4c2008eb070dd10796631b7f63378e2f820ea5be833"
   },
   {
     "id": "eip155:1:0x9b9a6dd05526a8a4b40e5e1a74a25df6ecccae6ee7bf045911ad89a1dd3f0814",
@@ -13757,8 +13757,8 @@
     "tx": "0x7cbe0b4349513fed6d03ba8bf9ed708e10e07a501d10b5f344a25ae10595599b",
     "protocol": "ether.fi",
     "name": "ether.fi AtomicQueue unauthenticated solver",
-    "summary": "AtomicQueue.solve takes the solver as a caller-supplied argument and pulls the want token from it via transferFrom without requiring solver == msg.sender. The attacker registered its own request with a worthless offer token and an atomicPrice equal to each victim's balance, then named third-party wallets holding standing liquidETH or USDC allowances to the queue as solvers, draining them. Copycats repeated it within two hours against sETHFI, weETHs, eEIGEN, liquidUSD and liquidElixir allowances.",
-    "lossUsd": 39410.85842737939,
+    "summary": "AtomicQueue.solve takes the solver as an argument and pulls the want token from it with transferFrom, without requiring solver == msg.sender. The attacker queued a request offering a worthless token at a price equal to each victim's balance and solved it naming wallets with standing liquidETH or USDC allowances to the queue as solvers; copycats followed.",
+    "lossUsd": 39410.86,
     "codeAgeSeconds": 78480900,
     "exploit": {
       "block": 25952624,
@@ -13776,7 +13776,7 @@
       "index": 14,
       "timestamp": 1710630311
     },
-    "claimsSha256": "b1692aa25caa71044d61a9edd71b59e920dfd51a41ff7dfb37a84f603336cb40"
+    "claimsSha256": "78db1104ba0982800fd33387289b5a31cd255092db314457479d6587e074e662"
   },
   {
     "id": "eip155:1:0x674f74b30a3d7bdf15fa60a7c29d96a402ea894a055f624164a8009df98386a0",
@@ -14246,10 +14246,10 @@
     "chainId": 1,
     "tx": "0x325999373f1aae98db2d89662ff1afbe0c842736f7564d16a7b52bf5c777d3a4",
     "protocol": "kTAF (kTeslaAppleFacebook market)",
-    "name": "kTAF liquidation seize rounding",
-    "summary": "Repeated tiny liquidations rounded the seized kTAF collateral up, allowing more collateral to be redeemed than the DAI repaid was worth.",
-    "lossUsd": 8187.514103413431,
-    "codeAgeSeconds": 102187798,
+    "name": "kTAF empty-market exchange-rate inflation and redeem rounding",
+    "summary": "kTAF, a Compound V2 fork market, let a donation inflate the exchange rate of a near-empty market and truncated the shares burned by redeemUnderlying. The attacker emptied kTAF by liquidating its only, underwater supplier, then per helper minted, donated TAF to leave 3 wei backing 3,300 TAF, borrowed DAI and redeemed nearly all TAF, leaving bad debt.",
+    "lossUsd": 8183.13,
+    "codeAgeSeconds": 102187649,
     "exploit": {
       "block": 18385886,
       "index": 110,
@@ -14260,13 +14260,13 @@
       "codeHash": "0x99d334b97cbc99d6b743a08d40f02b2c14b425110fb646afa658fdd414b60d6a"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x8e5861f2ba6d0554684ca372efdc029259437ea95e51da5858255d0d8ee02bd2",
-      "block": 10518850,
-      "index": 22,
-      "timestamp": 1595548921
+      "kind": "config",
+      "tx": "0x15a1a96211e2be873098efe4fa9ddbb88d300c3d1b5422b8f74efdfb0251a890",
+      "block": 10518863,
+      "index": 31,
+      "timestamp": 1595549070
     },
-    "claimsSha256": "8f81b98b6811488ac9177a9c6b22efc207c62300b1d3efe3918fbf3b42fea97e"
+    "claimsSha256": "a3355b7a9f7df4896fc452a5fc63450b903a797962da96c9ac4346c49d97995b"
   },
   {
     "id": "eip155:56:0xef386a69ca6a147c374258a1bf40221b0b6bd9bc449a7016dbe5240644581877",
@@ -14437,8 +14437,8 @@
     "tx": "0x3bba4fb6de00dd38df3ad68e51c19fe575a95a296e0632028f101c5199b6f714",
     "protocol": "pNetwork",
     "name": "pNetwork Burner convertAndBurn slippage sandwich",
-    "summary": "Burner.convertAndBurn() is permissionless and swaps the contract's accumulated USDT/WBTC into PNT through Uniswap V2 with a zero minimum-output, so the whole conversion could be sandwiched by pre-buying and re-selling PNT in the same transaction.",
-    "lossUsd": 6320.950352695166,
+    "summary": "pNetwork's PNT fee Burner let anyone call convertAndBurn, which sold the contract's whole ETH, WBTC and USDT balances for PNT through Kyber with a minimum conversion rate of 1. The attacker flash-borrowed WETH, bought PNT on the Uniswap pair Kyber routed through, triggered the conversion at the inflated price and sold the PNT back.",
+    "lossUsd": 6658.91,
     "codeAgeSeconds": 120439782,
     "exploit": {
       "block": 19917291,
@@ -14456,7 +14456,7 @@
       "index": 61,
       "timestamp": 1595842745
     },
-    "claimsSha256": "1e71d96bda796b93f4f7a8d73bc530f5d728b9445f6bd9a5a507b02ee4d7329f"
+    "claimsSha256": "b566ba7bd3d3243c682fa76c8eb87af200613b53f2ca1ab4b39632e5297288bc"
   },
   {
     "id": "eip155:56:0x2afc8fcfb1439c366067ac127cdb32778027a1e43413aec861888187292aecd8",

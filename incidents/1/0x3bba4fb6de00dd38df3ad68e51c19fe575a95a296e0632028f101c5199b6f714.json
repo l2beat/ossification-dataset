@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "pNetwork",
   "name": "pNetwork Burner convertAndBurn slippage sandwich",
-  "summary": "Burner.convertAndBurn() is permissionless and swaps the contract's accumulated USDT/WBTC into PNT through Uniswap V2 with a zero minimum-output, so the whole conversion could be sandwiched by pre-buying and re-selling PNT in the same transaction.",
+  "summary": "pNetwork's PNT fee Burner let anyone call convertAndBurn, which sold the contract's whole ETH, WBTC and USDT balances for PNT through Kyber with a minimum conversion rate of 1. The attacker flash-borrowed WETH, bought PNT on the Uniswap pair Kyber routed through, triggered the conversion at the inflated price and sold the PNT back.",
   "targets": [
     {
       "address": "0x4d4d05e1205e3a412ae1469c99e0d954113aa76f",
@@ -13,20 +13,53 @@
     }
   ],
   "loss": {
-    "usd": 6320.950352695166,
+    "usd": 6658.91,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "1.726285094628080033",
-        "usd": 6320.950352695166
+        "amount": "1.553202311489518237",
+        "usd": 5683.03
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.007168",
+        "usd": 508.88
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "331.71706",
+        "usd": 332.05
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "81.334349968559354116",
+        "usd": 81.3
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "43.675349",
+        "usd": 43.66
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "1.040585095871035078",
+        "usd": 9.99
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x83806aebe0bcd8a874afecaf9bf6bc3d239c4721ef8db5e2a9042772c11c259e"
+  ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/Burner_exp.sol"
   ],
   "notes": [
-    "The vulnerable conversion executes directly in Burner's immutable runtime. The address had no code immediately before the creation transaction, and its 4,973-byte runtime hash at deployment matches the pre-exploit hash.",
-    "After the 70 WETH Balancer flash loan was repaid, the call trace records the helper unwrapping and transferring exactly 1.726285094628080033 ETH to the attacker EOA. Transaction gas is excluded."
+    "Loss is the Burner's gross outflow (ETH, WBTC, USDT; the copycat's DAI, USDC, LINK), not the attacker's ETH profit. The PNT it burned or forwarded to unburnedDestination is its designed output and is excluded.",
+    "The 2020 convertAndBurn calls were plain EOA calls of a few dollars each without a sandwich; 0x83806aeb repeats the flash-loan sandwich."
   ]
 }
