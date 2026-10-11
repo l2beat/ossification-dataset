@@ -94,7 +94,11 @@ async function flows(id) {
   if (receipt.status === '0x0') console.error(`warning: ${id} reverted`)
   const block = await rpc(chain, 'eth_getBlockByNumber', [tx.blockNumber, false])
   const net = new Map()
-  const move = (from, to, asset, amount) => {
+  // The canonical wrapped token counts as native, minted from and burnt to the wrapper itself,
+  // so wrapping and unwrapping net out for everyone.
+  const move = (source, target, token, amount) => {
+    const asset = token === wrapped ? NATIVE : token
+    const [from, to] = [source, target].map((party) => (token === wrapped && party === ZERO ? wrapped : party))
     if (!amount || from === to) return
     for (const [address, sign] of [[from.toLowerCase(), -1n], [to.toLowerCase(), 1n]]) {
       const assets = net.get(address) ?? net.set(address, new Map()).get(address)
