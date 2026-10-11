@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Balancer",
   "name": "Balancer V1 BPool single-join rounding drain",
-  "summary": "BPool.joinswapPoolAmountOut reverse-computes the single-asset input for a requested BPT output in 18-decimal fixed-point math with no minimum effective input, minimum pool balance, or relative-error check. After flash-loan-funded swaps compress one reserve to dust, the required input rounds down to one base unit while the full BPT amount is minted; the attacker repeated the join and exited pro-rata across eleven Balancer V1 pools within four hours.",
+  "summary": "BPool single-asset join math (joinswapPoolAmountOut, also joinswapExternAmountIn) has no minimum-balance or rounding guard. After swaps compress one reserve to a few wei, each join rounds the required input down, minting BPT below cost; repeated joins followed by exits drained BPools, and copycats replayed it across the BFactory pools.",
   "targets": [
     {
       "address": "0x294de1cde8b04bf6d25f98f1d547052f8080a177",
@@ -13,106 +13,189 @@
     }
   ],
   "loss": {
-    "usd": 366253.6,
+    "usd": 1405044.7,
     "assets": [
       {
-        "token": "0xedeec5691f23e4914cf0183a4196bbeb30d027a0",
-        "symbol": "WSTA",
-        "amount": "869118.277209486668266093"
-      },
-      {
-        "token": "0x5732046a883704404f284ce41ffadd5b007fd668",
-        "symbol": "BLZ",
-        "amount": "126986.89671717280302349",
-        "usd": 1194.9939091180386
-      },
-      {
-        "token": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
-        "symbol": "SNX",
-        "amount": "50955.534560205446052859",
-        "usd": 10502.96002225819
-      },
-      {
-        "token": "0x04fa0d235c4abf4bcf4787af4cf447de572ef828",
-        "symbol": "UMA",
-        "amount": "23293.504284808674858297",
-        "usd": 8733.435661078756
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "110.259792309464929547",
+        "usd": 270528.3
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
-        "amount": "21919.304581921731131753",
-        "usd": 21919.304581921733
-      },
-      {
-        "token": "0x748a9631bad6af6d048ae66e2e6e3f44213fb1e0",
-        "symbol": "UNI-V2 TWA/WETH",
-        "amount": "4255.621433210366418105",
-        "usd": 8986.8872170149
-      },
-      {
-        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
-        "symbol": "LINK",
-        "amount": "1170.860061888217164387",
-        "usd": 13220.024148677461
-      },
-      {
-        "token": "0x59f96b8571e3b11f859a09eaf5a790a138fc64d0",
-        "symbol": "UNI-V2 STA/WETH",
-        "amount": "1022.810671026316671601",
-        "usd": 8641.33124591452
-      },
-      {
-        "token": "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
-        "symbol": "DPI",
-        "amount": "546.265103273796367196",
-        "usd": 27559.775372614513
-      },
-      {
-        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
-        "symbol": "UNI",
-        "amount": "457.52886055023387962",
-        "usd": 2349.6542991455767
-      },
-      {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "42.50863533088955969",
-        "usd": 103783.38709571098
-      },
-      {
-        "token": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
-        "symbol": "MKR",
-        "amount": "5.346353852687096693",
-        "usd": 8590.277488740892
-      },
-      {
-        "token": "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
-        "symbol": "AMPL",
-        "amount": "27523.515144423",
-        "usd": 33586.23373941177
+        "amount": "264069.32373120964326505",
+        "usd": 264029.42
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "46402.971595",
-        "usd": 46402.971595
+        "amount": "262709.009718",
+        "usd": 262684.4
+      },
+      {
+        "token": "0x8f8221afbb33998d8584a2b05749ba73c37a938a",
+        "symbol": "REQ",
+        "amount": "3996268.022493534125406734",
+        "usd": 223281.72
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
-        "amount": "0.86110924",
-        "usd": 67162.87110157791
+        "amount": "1.38132464",
+        "usd": 107559.81
       },
       {
         "token": "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
         "symbol": "renBTC",
-        "amount": "0.15373323",
-        "usd": 3619.49623515629
+        "amount": "1.69022332",
+        "usd": 39331.08
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "3165.164033622184544245",
+        "usd": 35589.41
+      },
+      {
+        "token": "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+        "symbol": "AMPL",
+        "amount": "27572.409906606",
+        "usd": 33644.8
+      },
+      {
+        "token": "0x1337def18c680af1f9f45cbcab6309562975b1dd",
+        "symbol": "arNXM",
+        "amount": "541.180316584838429772",
+        "usd": 32052.49
+      },
+      {
+        "token": "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+        "symbol": "DPI",
+        "amount": "568.277275597277300068",
+        "usd": 28817.95
+      },
+      {
+        "token": "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+        "symbol": "MANA",
+        "amount": "253993.589831826299656356",
+        "usd": 18132.04
+      },
+      {
+        "token": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+        "symbol": "SNX",
+        "amount": "53963.847062878054137459",
+        "usd": 11211.96
+      },
+      {
+        "token": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "symbol": "MKR",
+        "amount": "7.439972986059133652",
+        "usd": 9697.05
+      },
+      {
+        "token": "0xf1f955016ecbcd7321c7266bccfb96c68ea5e49b",
+        "symbol": "RLY",
+        "amount": "321199895.994089567445949225",
+        "usd": 9436.94
+      },
+      {
+        "token": "0x04fa0d235c4abf4bcf4787af4cf447de572ef828",
+        "symbol": "UMA",
+        "amount": "23473.303636592506179937",
+        "usd": 8572.53
+      },
+      {
+        "token": "0xe2f2a5c287993345a840db3b0845fbc70f5935a5",
+        "symbol": "mUSD",
+        "amount": "8146.818050643559239413",
+        "usd": 8140.84
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "1081.0892261104364484",
+        "usd": 5566.2
+      },
+      {
+        "token": "0x59f96b8571e3b11f859a09eaf5a790a138fc64d0",
+        "symbol": "UNI-V2 STA/WETH",
+        "amount": "1122.938743047193333729",
+        "usd": 4698.06
+      },
+      {
+        "token": "0x748a9631bad6af6d048ae66e2e6e3f44213fb1e0",
+        "symbol": "UNI-V2 TWA/WETH",
+        "amount": "4416.68023073469310181",
+        "usd": 4621.21
+      },
+      {
+        "token": "0x3a810ff7211b40c4fa76205a14efe161615d0385",
+        "symbol": "AIN",
+        "amount": "483868.873811843654623246",
+        "usd": 4398.73
+      },
+      {
+        "token": "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+        "symbol": "YFI",
+        "amount": "1.166251569057656626",
+        "usd": 2640.75
+      },
+      {
+        "token": "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+        "symbol": "KNC",
+        "amount": "23401.116330822289993515",
+        "usd": 2555.23
+      },
+      {
+        "token": "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+        "symbol": "BAT",
+        "amount": "34288.359624545754340294",
+        "usd": 2355.11
+      },
+      {
+        "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "symbol": "CRV",
+        "amount": "5513.018130179393782088",
+        "usd": 1910.38
+      },
+      {
+        "token": "0x0e29e5abbb5fd88e28b2d355774e73bd47de3bcd",
+        "symbol": "HAKKA",
+        "amount": "884942.183099862339436159",
+        "usd": 1833.98
+      },
+      {
+        "token": "0x39aa39c021dfbae8fac545936693ac917d5e7563",
+        "symbol": "cUSDC",
+        "amount": "66881.34766156",
+        "usd": 1693.34
+      },
+      {
+        "token": "0x7866e48c74cbfb8183cd1a929cd9b95a7a5cb4f4",
+        "symbol": "KIT",
+        "amount": "5618.43646711614270482",
+        "usd": 1394.28
+      },
+      {
+        "token": "0x5732046a883704404f284ce41ffadd5b007fd668",
+        "symbol": "BLZ",
+        "amount": "127769.574242922352442355",
+        "usd": 1185.69
+      },
+      {
+        "token": "0xba100000625a3754423978a60c9317c58a424e3d",
+        "symbol": "BAL",
+        "amount": "8404.504424772186361183",
+        "usd": 1001.36
+      },
+      {
+        "symbol": "82 other tokens, each under $1,000 (49 without a market price, valued at zero)",
+        "usd": 6479.64
       }
     ]
   },
-  "refs": [
+  "campaign": [
     "eip155:1:0x72510b257cc09bde8435b83ac1636f9498ffc353583330600b5b8da43d0d1aff",
     "eip155:1:0xeef311556b2a2a5be915d1d21785f47311faab26051d5cc832f701fd4ced2c2c",
     "eip155:1:0x2e597cc80344eeb3494aa605f887807638e338761b98bd8271ad1050212b4118",
@@ -139,11 +222,21 @@
     "eip155:1:0x756f66eedd5dd3dfb1d4a12dac33ca98fc1fa37f618732e06241ea0e5886ea72",
     "eip155:1:0xa9c66e0ec57ddca5edfd815f9874b2cf251c9ab2a3a721bf874e1224d8b9a30a",
     "eip155:1:0xa721261fc746fbafc606998e02b40be1f760cce7bdf03bbd0a95377e8fa69ff4",
+    {
+      "chainId": 1,
+      "count": 4356,
+      "from": 25872491,
+      "to": 26168872,
+      "selection": "Successful txs not sent by 0x338c7ec9befbb451d66fd8a468c32184f5689a41 in which BPools with BFactory 0x9424b1412450d0f8fc2255faf6046b98213b76bd isBPool()=true emit LOG_CALL for joinswapPoolAmountOut (0x6d06dfa0) or joinswapExternAmountIn (0x5db34277) and for exitswapPoolAmountIn, exitswapExternAmountOut or exitPool (0x46ab38f1, 0x02c96748, 0xb02f0b73), and those BPools' token Transfers net out of the pools in at least one token"
+    }
+  ],
+  "refs": [
     "https://x.com/SlowMist_Team/status/2094272540193722744",
     "https://itokenly.com/hacks/balancer-v1-bpool-rounding"
   ],
   "notes": [
-    "BPool runtime created by the Balancer factory inside a proxy-driven pool setup transaction. Immutable code with no proxy path; the runtime hashes identically at deployment and immediately before the incident, and the ten sibling pools drained later in the campaign carry the same runtime hash.",
-    "Exact pool depletion: for each of the 27 exploit transactions, every pool token's balanceOf(pool) at the block before minus at the block of the transaction, summed per token across the 11 drained BPools (all runtime hash 0x974df1c33872ba8aab782be5117ff348802441590f84ed7701d734bb9c21683e). Flash-loan legs wash inside each transaction and so cancel in the block-boundary deltas. Tokens are priced at the DefiLlama observation nearest before the campaign end; the two Uniswap V2 LP tokens are valued as their share of pair reserves (TWA has no price series, so that pair is taken as twice its WETH side) and wSTA carries no USD value for lack of a price series. SlowMist reported $234,000 for the campaign without publishing a basis."
+    "Immutable BPool, bound and finalized in its creation tx, so deployment sets the age. Pre-anchor repeated single joins (2022, Apr 2026) hit the STA pool whose reserve was left at dust by the 2020 deflationary-token drain, or were one-off joins into dormant pools: not this rounding defect.",
+    "Copycats (83 senders) used both join selectors on 186 BFactory BPools; all are in the bundle. BPool forks with other runtimes (factory 0x58bab52a… and others on Ethereum, pools on BSC and Gnosis) are other codebases and excluded. Polygon, Arbitrum, Optimism, Base and Avalanche show no such calls.",
+    "Loss is each tx's net token outflow from BFactory BPools, priced on DefiLlama 4h series at tx time; loss.mjs on the attacker's own 27 txs agrees within 0.1%. UNI-V2 LP tokens count at their WETH share of pair reserves; 49 dead or unlisted tokens have no market price and carry zero."
   ]
 }
