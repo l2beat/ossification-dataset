@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Palmswap",
   "name": "Palmswap PLP AUM ignores collateral bought as USDP",
-  "summary": "Palmswap's PlpManager prices the PLP liquidity token off PlpManager.getAum(), which credits the whole of Vault.poolAmount() to PLP holders and deducts only permanentPoolAmount, aumDeduction and open-trader profit. It never deducts the vault's own Vault.usdpAmount() liability, so BUSDT deposited through Vault.buyUSDP by an account that is not the PlpManager raises the PLP redemption rate even though the depositor keeps a fully redeemable USDP claim on the same pool. With inManagerMode false, buyUSDP and sellUSDP were callable by anyone. The attacker flash-loaned 3,000,000 BUSDT, minted 996,324.456826157454206069 PLP at an AUM of 1,060,591.303897471446528544 USDP against a supply of 1,060,117.814431969258921599 PLP, then sent 2,000,000 BUSDT straight to the vault and called buyUSDP for itself, lifting AUM to 4,050,654.353532854041808248 USDP against 2,056,442.271258126713127668 PLP, and redeemed its PLP at the inflated 1.9697 rate before selling the USDP it had just bought back for BUSDT.",
+  "summary": "PlpManager priced PLP from getAum(), which counts the vault's whole poolAmount but never deducts USDP held outside PlpManager, and the Vault ran with manager mode off, so anyone could call buyUSDP/sellUSDP. The attacker bought PLP, deposited USDT through buyUSDP for itself to inflate AUM, redeemed its PLP at the inflated rate and sold the USDP back.",
   "targets": [
     {
       "address": "0x6876b9804719d8d9f5aeb6ad1322270458fa99e0",
@@ -11,16 +11,24 @@
         "kind": "upgrade",
         "tx": "0x5d5d68187ebc1283f64234370e29d7c3a0f322f90772511cf2410b5a587fa0c3"
       }
+    },
+    {
+      "address": "0x806f709558cdbba39699fbf323c8fda4e364ac7a",
+      "code": "0xea625e24a40b07f5094b390257f772580e757055",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x5f00e5518aa69f091d21b7b61e22e9e18113738e38871bd16ff5e55cd7a34c1b"
+      }
     }
   ],
   "loss": {
-    "usd": 904155.9215477032,
+    "usd": 903997.69,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "BUSDT",
+        "symbol": "USDT",
         "amount": "904155.921547703167737871",
-        "usd": 904155.9215477032
+        "usd": 903997.69
       }
     ]
   },
@@ -29,8 +37,7 @@
     "https://twitter.com/BlockSecTeam/status/1683680026766737408"
   ],
   "notes": [
-    "The PlpManager proxy's only Upgraded event, log 281 of its own creation transaction, selected implementation 0xa68f4b2c69c7f991c3237ba9b678d75368ccff8f; the EIP-1967 implementation slot still holds that address at block 30248637.",
-    "The Palmswap vault proxy 0x806f709558cdbba39699fbf323c8fda4e364ac7a holds 1073754.395280771243426859 BUSDT at block 30248637 and 169598.473733068075688988 BUSDT at block 30248638; the 904155.921547703167737871 BUSDT difference is the loss and it all occurs in the single exploit transaction. It reconciles exactly against the transaction's BUSDT transfers: 901455.921547703167737871 BUSDT to the attacker EOA 0xf84efa8a9f7e68855cf17eaac9c2f97a9d131366 and 2700 BUSDT of Radiant flash-loan premium to the aToken 0x4ff2dd7c6435789e0bb56b0553142ad00878a004 on a 3,000,000 BUSDT loan. The widely reported ~$900k is the attacker EOA's net take alone. BUSDT is valued at par; DefiLlama has no bsc:0x55d398326f99059ff775485246999027b3197955 observation at this timestamp and prices Tether at 0.999825 at the nearest observation 1690219500. The vault held no other token at the exploit block. Not netted out: the attacker moved the full 901455.921547703167737871 BUSDT to 0x0fe7457f5909778b15d8e46768678abbf0c98329, negotiated onchain with the Palmswap team, and on 2023-07-27 returned 721450 BUSDT to the Palmswap deployer 0xa237d6b4bdf35ba51b732577260154849b4eff20, keeping the remainder as a bounty.",
-    "The Palmswap Vault proxy 0x806f709558cdbba39699fbf323c8fda4e364ac7a (implementation 0xea625e24a40b07f5094b390257f772580e757055) is not aged as a separate target: its buyUSDP/sellUSDP guard _validateManager() is correct code that was disabled by the configuration flag inManagerMode = false, and configuration state is not an executable-code-age basis. The defective accounting exploited here is PlpManager.getAum()."
+    "Both contracts carry the defect: PlpManager's AUM omits outside USDP claims, and the Vault left inManagerMode at its default false from deployment (enabled only after the exploit). Launch setup within minutes of deployment (setParams, LiquidityEvent tiers, handlers) does not move the reset.",
+    "The anchor is the only BuyUSDP with a receiver other than PlpManager in the vault's history. The 721,450 USDT the attacker returned after negotiation is a later recovery and is not subtracted."
   ]
 }

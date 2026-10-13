@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "PLN",
   "name": "PLN permissionless liqBurnAt pair-reserve destruction",
-  "summary": "PLNTOKEN._transfer contains an unauthenticated branch that destroys the Uniswap V2 pair's own token reserve: when the sender or the recipient is fee-exempt and the recipient is 0xdead, it calls liqBurnAt(), which _basicTransfer's balanceOf(uniswapV2Pair) - minimumTokens from the pair to the dead address and then calls IUniswapV2Pair.sync(). Nothing restricts who may reach that branch, and transferFrom needs no allowance for amount 0 because it settles the allowance with SafeMath.sub(allowance, 0). The attacker therefore bought PLN, called transferFrom(0x3f5a63b89773986fd436a65884fcd321de77b832, 0xdead, 0) to burn 497,295,516.022683914 of the pair's 497,295,616.022683914 PLN and resync the reserves, and sold its position back into the emptied pool. The invariant broken is that an ERC-20 transfer may only move the caller's own approved balance; here a zero-value call moves and burns a third party's liquidity. No parameter repairs it: minimumTokens only sets the burn floor, and the branch stays reachable by any caller at every value.",
+  "summary": "PLN's _transfer called liqBurnAt, burning all but a floor of the Uniswap pair's PLN and syncing it, whenever a fee-exempt party sent to 0xdead. transferFrom settled the allowance after the transfer, so a zero-amount transferFrom from the exempt team wallet to 0xdead let anyone empty the pair's PLN reserve and sell a small buy back for its WETH.",
   "targets": [
     {
       "address": "0xe0c218e1633a5c76d57ff4f11149f07bfff16aea",
@@ -12,24 +12,26 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x6fbb95edcc32b59bea918eb6a7eabca3179eae56693b66af05a11e3468e7388e"
+  ],
   "loss": {
-    "usd": 405988.81044600555,
+    "usd": 406003.86,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "164.993847285453536788",
-        "usd": 405988.81044600555
+        "amount": "164.999966164440113324",
+        "usd": 406003.86
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-09/PLN_exp.sol",
-    "eip155:1:0xfdb5249679bba34ad713af91e74b171aceb884299a2fd3566abdbbf3b402d508",
     "https://x.com/TenArmorAlert/status/1831525062253654300"
   ],
   "notes": [
-    "PLNTOKEN is a plain non-proxy Solidity 0.8.19 contract created by a top-level CREATE from the EOA 0x0e0821bf742b68e2e2eedf84a7d9179e1608e3c7. Its 9,810-byte runtime hashes to 0x8246a8bc7771bc158a61321adfb61b54e1c780aafabce9bd56c14801dfc01a48 both at the creation block 20681068 and at block 20681142 immediately before the exploit, and the address is empty at block 20681067, so deployment is the only executable-code change.",
-    "Exact depletion of the PLN/WETH Uniswap V2 pair 0x2b818dd5134cd1761decdeaa157683a83d32c849 in the single exploit transaction. The pair held 165.0 WETH before the campaign (Sync log 0x1a0 reports 165.9 WETH after the attacker's 0.9 WETH buy) and 0.006152714546463212 WETH after (Sync log 0x1a9), so victim depletion is 164.993847285453536788 WETH. The attacker's own 0.9 ETH seed is an attacker-supplied input and is netted out; the attack contract's realised gross proceeds were 165.893847285453536788 WETH, unwrapped and forwarded to the EOA in the same transaction. The 497,295,516.022683914 PLN burned out of the pair is the mechanism, not a separate loss: PLN has no price series independent of this pool and valuing it would double count the WETH already taken. WETH is liquid and deep, so the spot DefiLlama price applies; only PLN was repriced by the attack. The seed row's round 400,000 USD is close but unsourced."
+    "launchLPs (4 blocks before the exploit) created the pair, stored it as uniswapV2Pair and seeded it; like openTrading elsewhere this is the token's launch, not a change to the vulnerable code or rules, so the deployment stays the reset.",
+    "The campaign tx is a bot reusing the attacker's unprotected contract two blocks later on the pair's leftover WETH. The burned PLN is the mechanism and is not valued separately; the loss is the pair's WETH net of the attackers' own buys."
   ]
 }

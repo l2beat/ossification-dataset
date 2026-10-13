@@ -337,8 +337,8 @@
     "tx": "0xcc36283cee837a8a0d4af0357d1957dc561913e44ad293ea9da8acf15d874ed5",
     "protocol": "PLN",
     "name": "PLN permissionless liqBurnAt pair-reserve destruction",
-    "summary": "PLNTOKEN._transfer contains an unauthenticated branch that destroys the Uniswap V2 pair's own token reserve: when the sender or the recipient is fee-exempt and the recipient is 0xdead, it calls liqBurnAt(), which _basicTransfer's balanceOf(uniswapV2Pair) - minimumTokens from the pair to the dead address and then calls IUniswapV2Pair.sync(). Nothing restricts who may reach that branch, and transferFrom needs no allowance for amount 0 because it settles the allowance with SafeMath.sub(allowance, 0). The attacker therefore bought PLN, called transferFrom(0x3f5a63b89773986fd436a65884fcd321de77b832, 0xdead, 0) to burn 497,295,516.022683914 of the pair's 497,295,616.022683914 PLN and resync the reserves, and sold its position back into the emptied pool. The invariant broken is that an ERC-20 transfer may only move the caller's own approved balance; here a zero-value call moves and burns a third party's liquidity. No parameter repairs it: minimumTokens only sets the burn floor, and the branch stays reachable by any caller at every value.",
-    "lossUsd": 405988.81044600555,
+    "summary": "PLN's _transfer called liqBurnAt, burning all but a floor of the Uniswap pair's PLN and syncing it, whenever a fee-exempt party sent to 0xdead. transferFrom settled the allowance after the transfer, so a zero-amount transferFrom from the exempt team wallet to 0xdead let anyone empty the pair's PLN reserve and sell a small buy back for its WETH.",
+    "lossUsd": 406003.86,
     "codeAgeSeconds": 900,
     "exploit": {
       "block": 20681143,
@@ -356,7 +356,7 @@
       "index": 21,
       "timestamp": 1725499283
     },
-    "claimsSha256": "2de8c8302259080162451d5e4030e1f73d478ef3483fc26cefb5370bd51545fb"
+    "claimsSha256": "df8673afacebc969d64d992a459e22791d68c6fe9d9f410160b67aeebf52a808"
   },
   {
     "id": "eip155:1:0x1fe5a53405d00ce2f3e15b214c7486c69cbc5bf165cf9596e86f797f62e81914",
@@ -5578,8 +5578,8 @@
     "tx": "0x62dba55054fa628845fecded658ff5b1ec1c5823f1a5e0118601aa455a30eac9",
     "protocol": "Palmswap",
     "name": "Palmswap PLP AUM ignores collateral bought as USDP",
-    "summary": "Palmswap's PlpManager prices the PLP liquidity token off PlpManager.getAum(), which credits the whole of Vault.poolAmount() to PLP holders and deducts only permanentPoolAmount, aumDeduction and open-trader profit. It never deducts the vault's own Vault.usdpAmount() liability, so BUSDT deposited through Vault.buyUSDP by an account that is not the PlpManager raises the PLP redemption rate even though the depositor keeps a fully redeemable USDP claim on the same pool. With inManagerMode false, buyUSDP and sellUSDP were callable by anyone. The attacker flash-loaned 3,000,000 BUSDT, minted 996,324.456826157454206069 PLP at an AUM of 1,060,591.303897471446528544 USDP against a supply of 1,060,117.814431969258921599 PLP, then sent 2,000,000 BUSDT straight to the vault and called buyUSDP for itself, lifting AUM to 4,050,654.353532854041808248 USDP against 2,056,442.271258126713127668 PLP, and redeemed its PLP at the inflated 1.9697 rate before selling the USDP it had just bought back for BUSDT.",
-    "lossUsd": 904155.9215477032,
+    "summary": "PlpManager priced PLP from getAum(), which counts the vault's whole poolAmount but never deducts USDP held outside PlpManager, and the Vault ran with manager mode off, so anyone could call buyUSDP/sellUSDP. The attacker bought PLP, deposited USDT through buyUSDP for itself to inflate AUM, redeemed its PLP at the inflated rate and sold the USDP back.",
+    "lossUsd": 903997.69,
     "codeAgeSeconds": 1058624,
     "exploit": {
       "block": 30248638,
@@ -5598,7 +5598,7 @@
       "index": 113,
       "timestamp": 1689160794
     },
-    "claimsSha256": "90efa8ba235f8c8dff59a151fdc70ae9f2a86a61238d89e5abffd5aaf5b923e3"
+    "claimsSha256": "5f8abe2b135da5810599edb77d0e2eb7063bd8dd4462cf48e86105fcaad157ef"
   },
   {
     "id": "eip155:56:0x19671f5781acc3f5e3a869491a880aa9ee894911f4898a43254fa942d71594ed",
@@ -5656,6 +5656,34 @@
     "claimsSha256": "5abd49040308fcefcfd222c34da4db1b2f567122c78b1d71e381436cfdf9c1d6"
   },
   {
+    "id": "eip155:1:0x8d3036371ccf27579d3cb3d4b4b71e99334cae8d7e8088247517ec640c7a59a5",
+    "chainId": 1,
+    "tx": "0x8d3036371ccf27579d3cb3d4b4b71e99334cae8d7e8088247517ec640c7a59a5",
+    "protocol": "Pawnfi",
+    "name": "ApeStaking NFT ownership accounting",
+    "summary": "Pawnfi's ApeStaking credited an NFT's existing ApeCoinStaking position and caller-supplied amounts to whoever held the NFT, without receiving matching ApeCoin. Looping depositAndBorrowApeAndStake and withdrawApeCoin on borrowed BAYCs drained staked APE into sAPE collateral, against which the attacker borrowed ETH, WBTC, stablecoins and ape NFTs.",
+    "lossUsd": 809522.95,
+    "codeAgeSeconds": 1097652,
+    "exploit": {
+      "block": 17496620,
+      "index": 75,
+      "timestamp": 1686969707
+    },
+    "target": {
+      "address": "0x0b89032e2722b103386adccae18b2f5d4986afa0",
+      "code": "0x85018cf6f53c8bbd03c3137e71f4fca226cda92c",
+      "codeHash": "0x4ec84833ccf762264e04dbef27e12734fa894354d0ebc7330c3c3b49dca9b18c"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x445ead6fc9f511d5411052c247c3b79b96b7c971e8887b658e7f0b374a4fd928",
+      "block": 17406453,
+      "index": 37,
+      "timestamp": 1685872055
+    },
+    "claimsSha256": "af72bab06bcc0e18f350da1028a49178cf32279ff315ce1e023980bad2810e12"
+  },
+  {
     "id": "eip155:56:0x42f56d3e86fb47e1edffa59222b33b73e7407d4b5bb05e23b83cb1771790f6c1",
     "chainId": 56,
     "tx": "0x42f56d3e86fb47e1edffa59222b33b73e7407d4b5bb05e23b83cb1771790f6c1",
@@ -5708,34 +5736,6 @@
       "timestamp": 1693064690
     },
     "claimsSha256": "f5bf5ba538a13930ec0c58d6f8828707f72bc66d30dbb92e241ad9a334542df5"
-  },
-  {
-    "id": "eip155:1:0x8d3036371ccf27579d3cb3d4b4b71e99334cae8d7e8088247517ec640c7a59a5",
-    "chainId": 1,
-    "tx": "0x8d3036371ccf27579d3cb3d4b4b71e99334cae8d7e8088247517ec640c7a59a5",
-    "protocol": "Pawnfi",
-    "name": "ApeStaking NFT ownership accounting",
-    "summary": "ApeStaking's deposit path could attribute an already-staked NFT position and caller-supplied stake amounts to a temporary NFT holder without receiving corresponding ApeCoin, allowing repeated withdrawApeCoin calls to drain APE and support cross-market borrowing.",
-    "lossUsd": 629929.32,
-    "codeAgeSeconds": 1113036,
-    "exploit": {
-      "block": 17496620,
-      "index": 75,
-      "timestamp": 1686969707
-    },
-    "target": {
-      "address": "0x0b89032e2722b103386adccae18b2f5d4986afa0",
-      "code": "0x85018cf6f53c8bbd03c3137e71f4fca226cda92c",
-      "codeHash": "0x4ec84833ccf762264e04dbef27e12734fa894354d0ebc7330c3c3b49dca9b18c"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0xe6d512aeeea5be068b460fe24a6d30f61e508e69179856d9290d1e8cb3c82c0a",
-      "block": 17405188,
-      "index": 17,
-      "timestamp": 1685856671
-    },
-    "claimsSha256": "f08066a7092789f788fd0cfac9fedf31da4c508a64703e02105a260f1139b530"
   },
   {
     "id": "eip155:999:0xc34a6d9ad5566b23e7cd6aa3d5c2b1fe0576147db736aaf57c89699d21a4c688",
@@ -9280,8 +9280,8 @@
     "tx": "0xad03894a195e0fda0852491e8f3ad95b0177f943fceb9f25f198131d2c29fae7",
     "protocol": "Paraluni",
     "name": "Paraluni MasterChef depositByAddLiquidity unvalidated tokens",
-    "summary": "MasterChef.depositByAddLiquidity() passes the caller-supplied token addresses straight into _doTransferIn and paraRouter.addLiquidity without checking them against the pool LP pair, and addLiquidityInternal then credits the deposit with the raw increase of the pool LP token balance (newBalance - oldBalance). The attacker supplied two tokens of their own whose transferFrom re-entered deposit(pid, amount) with real LP tokens, so the same real LP deposit was counted twice: once by the reentrant deposit and once as the balance delta measured by depositByAddLiquidity. Two withdraw() calls then removed roughly twice the LP that had been paid in.",
-    "lossUsd": 1780448.587060597,
+    "summary": "MasterChef.depositByAddLiquidity passed caller-supplied tokens to paraRouter.addLiquidity without checking them against the pool's LP pair and credited the raw increase of the pool token balance. Attacker tokens whose transferFrom re-entered deposit() with real pool tokens got the same deposit counted twice, and two withdrawals took out double.",
+    "lossUsd": 1879000.16,
     "codeAgeSeconds": 7066558,
     "exploit": {
       "block": 16005645,
@@ -9300,7 +9300,7 @@
       "index": 133,
       "timestamp": 1640055398
     },
-    "claimsSha256": "308c45e1f0c676e38e95bc436422d076328e5f325df8ec380300cfa3e6e95c3a"
+    "claimsSha256": "c3d8e03faf1dbd773352ac22af8d71e1af9de28a576188cee5458210537b98b8"
   },
   {
     "id": "eip155:1:0x56e09abb35ff12271fdb38ff8a23e4d4a7396844426a94c4d3af2e8b7a0a2813",
@@ -10547,8 +10547,8 @@
     "tx": "0xf43abdac5422087f645d77923eb1c825178bff3eb86d17d40fa18d89701e1814",
     "protocol": "Payy",
     "name": "Payy verifier accepted zero-hash USDC burns",
-    "summary": "Payy L2 admitted UTXO burns of USDC with a zero burn hash, which the UTXO circuit binds to the first input-note commitment and permits only for zero-kind padding notes. The registered recursive Honk verifier accepted the aggregated statements, and two settlement batches depleted the bridge through direct payouts and a reimbursed fast withdrawal.",
-    "lossUsd": 1918788.198148,
+    "summary": "Payy's registered recursive Honk verifier accepted aggregated rollup proofs containing USDC burns with a zero burn hash, which the UTXO circuit should allow only for zero-kind padding notes. The protocol's prover settled the attacker's forged burns, paying bridge USDC directly and reimbursing a fast-withdrawal substitutor.",
+    "lossUsd": 1918788.2,
     "codeAgeSeconds": 11361516,
     "exploit": {
       "block": 26044909,
@@ -10566,7 +10566,7 @@
       "index": 71,
       "timestamp": 1778862167
     },
-    "claimsSha256": "4f998349494d395ef6e985229c340a3b965eb382b3f1f4c2d6b680632ecebcd3"
+    "claimsSha256": "5800962f2093fab55524add64019bcac01e5e410f2a4d4fbf52fed142e2bfae8"
   },
   {
     "id": "eip155:1:0x8c3f442fc6d640a6ff3ea0b12be64f1d4609ea94edd2966f42c01cd9bdcf04b5",
@@ -10683,8 +10683,8 @@
     "tx": "0xd9b3e229acc755881890394cc76fde0d7b83b1abd4d046b0f69c1fd9fd495ff6",
     "protocol": "Particle Trade",
     "name": "ParticleExchange onERC721Received forged lien",
-    "summary": "ParticleExchange trusted caller-supplied ERC721 callback and lien data, letting a malicious collection fabricate NFT ownership and credit an unbacked ETH balance.",
-    "lossUsd": 138969.98873208265,
+    "summary": "ParticleExchange.onERC721Received trusted the caller as the NFT collection and its lien data, so an attacker contract could accept its own bid with from=0, leaving the lien re-acceptable with a forged margin credited as unbacked accountBalance. The attacker withdrew the exchange's ETH and spent the rest via swapWithEth on lent NFTs.",
+    "lossUsd": 270050,
     "codeAgeSeconds": 11685564,
     "exploit": {
       "block": 19231446,
@@ -10703,7 +10703,7 @@
       "index": 42,
       "timestamp": 1696291763
     },
-    "claimsSha256": "bfa0da354b4405c1418f7711cdb796eb7542e221334086923ae8426cfdfd171a"
+    "claimsSha256": "1cb467b1615b6e7c6bc1304dab5ffe7c05adfc75f0c28fc6fc56f32cb9d37aec"
   },
   {
     "id": "eip155:1:0x2b023d65485c4bb68d781960c2196588d03b871dc9eb1c054f596b7ca6f7da56",
@@ -12823,9 +12823,9 @@
     "chainId": 1,
     "tx": "0x3cecc3f347edff1d27a0c929f2e7a4c04522afb3a74e24db94684cb6b51b1d65",
     "protocol": "PegaBall",
-    "name": "PegaBall",
-    "summary": "buyGamesFrom self-funds purchases from the proxy balance instead of requiring msg.value, letting a vendor drain vendor/referrer cuts.",
-    "lossUsd": 1512.161332053179,
+    "name": "PegaBall buyGamesFrom pays vendor cuts from the pool",
+    "summary": "PegaBall's buyGamesFrom never checked msg.value: it only required the caller's wallet balance to cover the price, 'paid' the price by sending the proxy's own ETH to itself, then paid the vendor and referrer cuts from the pool. A self-registered vendor looped it to drain the proxy's ETH.",
+    "lossUsd": 1698.21,
     "codeAgeSeconds": 43775580,
     "exploit": {
       "block": 22626978,
@@ -12844,7 +12844,7 @@
       "index": 6,
       "timestamp": 1705212551
     },
-    "claimsSha256": "d4795a710d2eb707e3181fc5673aac82538af8a964ebff29ef3d8480ee1d3b95"
+    "claimsSha256": "6b2abd2d4cc8a45af55ed77aa4fffbd4e527de75fee6953634e8b78e06dbee59"
   },
   {
     "id": "eip155:1:0xc42fc0e22a0f60cc299be80eb0c0ddce83c21c14a3dddd8430628011c3e20d6b",
@@ -12874,32 +12874,32 @@
     "claimsSha256": "b37e014a277fefbb84d893f23936241ebbdde4c76ae72fcbdbb3bcd27e4e74b7"
   },
   {
-    "id": "eip155:137:0x6fa6374d43df083679cdab97149af8207cda2471620a06d3f28b115136b8e2c4",
+    "id": "eip155:137:0x23723e2dcd1258dbd405b93bdd8ddd2669b398916a19f56713bceb6f9d7de854",
     "chainId": 137,
-    "tx": "0x6fa6374d43df083679cdab97149af8207cda2471620a06d3f28b115136b8e2c4",
+    "tx": "0x23723e2dcd1258dbd405b93bdd8ddd2669b398916a19f56713bceb6f9d7de854",
     "protocol": "Phoenix Finance",
     "name": "Phoenix Finance missing delegateCallSwap authorization",
-    "summary": "The main implementation exposed delegateCallSwap(bytes) without authorization and forwarded caller-supplied swap calldata to its configured swap module, so the attacker could route assets borrowed into the Phoenix proxy through an attacker-priced token pair.",
-    "lossUsd": 10258.326219,
-    "codeAgeSeconds": 46387670,
+    "summary": "Phoenix's leveragedPool implementation exposed delegateCallSwap(bytes) without authorization, delegatecalling caller-supplied calldata into its swap module. After buyLeverage made the pool borrow USDC and buy WETH, the attacker had the pool swap that WETH with no slippage limit into its own OPTS pair and sold the OPTS back, over 12 rounds.",
+    "lossUsd": 102935.61,
+    "codeAgeSeconds": 46567491,
     "exploit": {
-      "block": 40067323,
-      "index": 48,
-      "timestamp": 1678186254
+      "block": 40066947,
+      "index": 24,
+      "timestamp": 1678185392
     },
     "target": {
       "address": "0x65baf1dc6fa0c7e459a36e2e310836b396d1b1de",
-      "code": "0x95620f30263ac0b0b4ffd9b7465838084e89cb84",
-      "codeHash": "0x7f925b66a6cf2e6071f700339049a455da383ac88c9963eee7f77235a98cef17"
+      "code": "0x6d68beb09ea7e76d561ea8c4aac34a6611dd9821",
+      "codeHash": "0xdaea3c0796f1faaeb4409c72faa8fed85451d8f5c197b2e4314fe1b9b2616530"
     },
     "reset": {
       "kind": "upgrade",
-      "tx": "0x9157bcfcefff7e4b47947fa36c7c8e192875bb67d8f8f1653fa962b7a5a8f322",
-      "block": 19172145,
-      "index": 24,
-      "timestamp": 1631798584
+      "tx": "0x5f896cf805f4c69bcfd725b744058864165e84d211806a4319c632c836783578",
+      "block": 19095584,
+      "index": 272,
+      "timestamp": 1631617901
     },
-    "claimsSha256": "e08d52da4df809601ea6cef7b2cb9ebd908854640b73da89d41d0ab37536e610"
+    "claimsSha256": "90bc0c7c16100de301e1c479bd0c76c799b650647daa89e6c18526ff37b116fa"
   },
   {
     "id": "eip155:137:0x957bcfa47657a198b683feb455f7957e8e6d912b5584a5af510f4ff8a41f4f5a",

@@ -1,0 +1,48 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Phoenix Finance",
+  "name": "Phoenix Finance missing delegateCallSwap authorization",
+  "summary": "Phoenix's leveragedPool implementation exposed delegateCallSwap(bytes) without authorization, delegatecalling caller-supplied calldata into its swap module. After buyLeverage made the pool borrow USDC and buy WETH, the attacker had the pool swap that WETH with no slippage limit into its own OPTS pair and sold the OPTS back, over 12 rounds.",
+  "targets": [
+    {
+      "address": "0x65baf1dc6fa0c7e459a36e2e310836b396d1b1de",
+      "code": "0x6d68beb09ea7e76d561ea8c4aac34a6611dd9821",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x5f896cf805f4c69bcfd725b744058864165e84d211806a4319c632c836783578"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:137:0x4c4691f719115a03fa6f6cc0b09b0b28a92c6b058571f502d2c5237ecf1930c9",
+    "eip155:137:0xcdcd85d532fe60b72a8edd51e04b5686097eab50358cc86e45528a871d672869",
+    "eip155:137:0xb7b569f24e76becb58deec8665fa7205c68169704935ccd03630a4d693fe76cf",
+    "eip155:137:0x909404db5066e01e803e0fd65fea10cec81b30c840c9cabe2940bff75c2da516",
+    "eip155:137:0xf828765d440c2ae84d65fa11e9fff1067aa1e95325e92ce79a9ba9903a65f8af",
+    "eip155:137:0x574891899771ada1c02a49e7d46b9d80cbc16814a831d5a51e18ae60472ffd1f",
+    "eip155:137:0x6fa6374d43df083679cdab97149af8207cda2471620a06d3f28b115136b8e2c4",
+    "eip155:137:0x4463a1afbd84acc377a3fca25e2b3d7b44aec4985734634f29e5bee4d6b1b2a7",
+    "eip155:137:0x231fd19f58ed92b1c47c2312ea350800276814b2c224d4b0bd900f861cee9e31",
+    "eip155:137:0x5e96acdbd56fd1f8393d5de667a202d0b7dd042e37e1d79566ddd5f059cc23ea",
+    "eip155:137:0x9c4ba33d9011186aaeb4f793dce68cff2821ea0b503f782c5d8f5cdb5966cd21"
+  ],
+  "loss": {
+    "usd": 102935.61,
+    "assets": [
+      {
+        "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "symbol": "USDC",
+        "amount": "102868.742126",
+        "usd": 102935.61
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-03/Phoenix_exp.sol",
+    "https://blog.verichains.io/p/verichains-weekly-security-digest-793"
+  ],
+  "notes": [
+    "The swap module 0x95620f30 is not a target: its swap() is a delegatecall helper whose only defect is being reachable through the implementation's public delegateCallSwap, and the module it replaced (0x3e9e2ae9) had an identical swap(), so the exploit replays against the state before the module pointer write 0x9157bcfc.",
+    "Loss is the USDC the Phoenix money pool 0xd0289082 lent into the proxy across the 12 rounds; the attacker's own buyLeverage USDC returns to it and is not counted."
+  ]
+}

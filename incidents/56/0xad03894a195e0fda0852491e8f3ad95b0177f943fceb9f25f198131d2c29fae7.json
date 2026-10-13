@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Paraluni",
   "name": "Paraluni MasterChef depositByAddLiquidity unvalidated tokens",
-  "summary": "MasterChef.depositByAddLiquidity() passes the caller-supplied token addresses straight into _doTransferIn and paraRouter.addLiquidity without checking them against the pool LP pair, and addLiquidityInternal then credits the deposit with the raw increase of the pool LP token balance (newBalance - oldBalance). The attacker supplied two tokens of their own whose transferFrom re-entered deposit(pid, amount) with real LP tokens, so the same real LP deposit was counted twice: once by the reentrant deposit and once as the balance delta measured by depositByAddLiquidity. Two withdraw() calls then removed roughly twice the LP that had been paid in.",
+  "summary": "MasterChef.depositByAddLiquidity passed caller-supplied tokens to paraRouter.addLiquidity without checking them against the pool's LP pair and credited the raw increase of the pool token balance. Attacker tokens whose transferFrom re-entered deposit() with real pool tokens got the same deposit counted twice, and two withdrawals took out double.",
   "targets": [
     {
       "address": "0x633fa755a83b015cccdc451f82c57ea0bd32b4b4",
@@ -13,50 +13,7 @@
       }
     }
   ],
-  "loss": {
-    "usd": 1780448.587060597,
-    "assets": [
-      {
-        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
-        "symbol": "BTCB",
-        "amount": "18.621155551300289444",
-        "usd": 728835.8188568688
-      },
-      {
-        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
-        "symbol": "BUSD",
-        "amount": "401063.370474069764561084",
-        "usd": 401063.3704740697
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "222245.505490414301643077",
-        "usd": 222245.5054904143
-      },
-      {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "586.877538111462265849",
-        "usd": 220609.07059805433
-      },
-      {
-        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
-        "symbol": "ETH",
-        "amount": "66.246555557625178212",
-        "usd": 171682.6210405974
-      },
-      {
-        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
-        "symbol": "CAKE",
-        "amount": "6005.338651931080554936",
-        "usd": 36012.20060059259
-      }
-    ]
-  },
-  "refs": [
-    "https://halborn.com/explained-the-paraluni-hack-march-2022/",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/Paraluni_exp.sol",
+  "campaign": [
     "eip155:56:0x103aab06f1252505073522804dab7fb2c6b49799cddaf42fb86be0354dc50c3f",
     "eip155:56:0xb2b45e0d90dab55f6df32eff773abdde1540cdf07ed34900573d0df5c5292636",
     "eip155:56:0xd0b4a1d4964cec578516bd3a2fcb6d46cadefe1fea5a2f18eec4c0a496e696f9",
@@ -100,10 +57,131 @@
     "eip155:56:0x81a96cbc11031dabff9a7446433b75fbf526884d47982abe10b6e85e0be5f774",
     "eip155:56:0x0a529c8257136fe56eb747ecc9020725facad8fed684af43e15da211c0dc8072",
     "eip155:56:0x981afd0164bf4d714d658446362a8deaf556090860bbfa7725909b049cc5b1d6",
-    "eip155:56:0x25d27e649578afbd5b66d7d94e3d1e7b167406af0368b9af1092e88dac5d11f8"
+    "eip155:56:0x25d27e649578afbd5b66d7d94e3d1e7b167406af0368b9af1092e88dac5d11f8",
+    "eip155:56:0xbfec34cbb7ec8b6ad337c3213e8efd0a1aade4bfb6ae769f77b5e8b338ce8163",
+    "eip155:56:0xb552374785e1f20b2655f87c947ace25f7ebf0980ae824ce8c65fd9f3c4719fe",
+    "eip155:56:0x2148d911c1ba1cc59ac332f4e7f4a528fd141e04c7b5a9eca3d8f6d07356a2a8",
+    "eip155:56:0x41bbddeb5c8faf5989c37aacdb66a4bf24c2636ca72233ab5c1a0454ab2cadbb",
+    "eip155:56:0xf22497d3dbc5c569d11664c424c0a4043547d7e107279869765a7c2e47a2e080",
+    "eip155:56:0x26bdb60a21e1002f028592dcdcf39ad96c446fee74ae7dce2bab85a75b00ce60",
+    "eip155:56:0x29c838a5bbf19b8a26a12c050def4fa5f84528feb1f9ff5525953ee98b988cb0",
+    "eip155:56:0x0531482c1604add5674ded4ae4901d9939896816656a9f57e9dc94f0cbbca4fc",
+    "eip155:56:0xc44ff563b5f7b28bccbadc4acc1784b8647c2624707c97c9b5e6ee2ba7668d1e",
+    "eip155:56:0x9195694cb9b8b4a0b8379ceb79c54328ce9ac04e4f21185d074af6aded340e9e",
+    "eip155:56:0xf6a6ecbd2412457b55c399754fe0e96931ed64caa627547e9707af59e35b3bda",
+    "eip155:56:0x30a6d472952cdf9d491468498bdcdf4f4f4faa160d7450d31c2d6f98ede4ccc0",
+    "eip155:56:0x740a981284043cf322723fef7f79f6b217aede00bf5b7495da02e67875d9b193",
+    "eip155:56:0x7e1af84f3a299b18f855bdd88d90bd611e965df237d29b7b756bca1ca5a945ec",
+    "eip155:56:0x91f63578a9f99000d5f126bcc15fc22640c8016e5f4a52bdd4236db1c42c56a0",
+    "eip155:56:0xd5c248fa1019cd00dbdb3966ccc33515e8557415127f686d2e3a2acb559df341",
+    "eip155:56:0x0f2dc6edfc0ed9e0625966da56df4c5fb708aaa15700fcec6a07b05489907fc7",
+    "eip155:56:0x3ef50e0026125ddd4606e54eb6c22391ec0dd968b4f0380ce131978dc0b73222",
+    "eip155:56:0xb9f2c68a54986f153014d5e5dab13ac4b3b67fc1cb11067b805c69bef06cb11a",
+    "eip155:56:0x892aacd2871cd8717655d74af947713727a772363b967d53751f7568caa44a47",
+    "eip155:56:0x9061a76591b62cb64c42ebb4e381a7957a7ad8d83b8b4760fe1bb74b64bf64fc",
+    "eip155:56:0x9f8bd8f0fbe3add8bc0f347994d0bf8a08509170fbb33331fc607b561e895cc0"
+  ],
+  "loss": {
+    "usd": 1879000.16,
+    "assets": [
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "12.937257935935226619",
+        "usd": 501911.61
+      },
+      {
+        "token": "0x3fd4fbd7a83062942b6589a2e9e2436dd8e134d4",
+        "symbol": "Para-LP USDT/BUSD",
+        "amount": "220760.392147321091610368",
+        "usd": 444810.43
+      },
+      {
+        "token": "0xdc009de0bf74e90b10e243e103d5d07afd1c450e",
+        "symbol": "Para-LP BTCB/WBNB",
+        "amount": "34.988011674692057714",
+        "usd": 266738.42
+      },
+      {
+        "token": "0xbe6621067f4c9ed308ae07e2d8b0f636c11dcafb",
+        "symbol": "Para-LP BTCB/BUSD",
+        "amount": "441.367896732979141899",
+        "usd": 175073.38
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "40.931924021235680678",
+        "usd": 105201.57
+      },
+      {
+        "token": "0x781f5d719dcd59b6ee01adee6170750dc9132247",
+        "symbol": "Para-LP T42/BTCB",
+        "amount": "11037.845297580580691497",
+        "usd": 92616.09
+      },
+      {
+        "token": "0x7b97ae900fca3d8f909e1b335a792ab784c72141",
+        "symbol": "Para-LP ETH/WBNB",
+        "amount": "44.402791154001324517",
+        "usd": 87291
+      },
+      {
+        "token": "0xf14c92fdfe809390ef9154cff8faa59be4582864",
+        "symbol": "Para-LP CAKE/BUSD",
+        "amount": "14627.197755208809754584",
+        "usd": 71865.56
+      },
+      {
+        "token": "0x6bb7c8968f29c51293229bbd8140962166438088",
+        "symbol": "Para-LP WBNB/BUSD",
+        "amount": "1674.617368475105344132",
+        "usd": 65513.65
+      },
+      {
+        "token": "0x65855f11d7238ee33580174adcfa2a78cf009118",
+        "symbol": "Para-LP ETH/BUSD",
+        "amount": "422.118760287837538705",
+        "usd": 43064.5
+      },
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "27.550797321353786054",
+        "usd": 10275.4
+      },
+      {
+        "token": "0x7294c6659d4c4733e2ffed579eacc5dd6cf68d3c",
+        "symbol": "Para-LP 0x965f52/BUSD",
+        "amount": "5909.869073285159183941",
+        "usd": 6505.58
+      },
+      {
+        "token": "0xcdd33e0a056470e281a03b1d1f3ef05334f9dbe1",
+        "symbol": "Para-LP T42/BUSD",
+        "amount": "206981.14310307620799707",
+        "usd": 4131.5
+      },
+      {
+        "token": "0x5976815f279d8bf22748f75072887591e1f65264",
+        "symbol": "Para-LP T42/WBNB",
+        "amount": "6978.043677876505384051",
+        "usd": 2858.87
+      },
+      {
+        "token": "0x47902f5ed61711e71882c25fc3114390f5a373d9",
+        "symbol": "Para-LP BUSD/0xf8a0bf",
+        "amount": "156.256389615873388756",
+        "usd": 1142.6
+      }
+    ]
+  },
+  "refs": [
+    "https://halborn.com/explained-the-paraluni-hack-march-2022/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/Paraluni_exp.sol"
   ],
   "notes": [
-    "The second and last NewImplementation(address,address) the ParaProxy emitted before the exploit, log 373 of block 13657442, whose second data word installs 0xa386f30853a7eb7e6a25ec8389337a5c6973421d in place of 0x905072738158b5e74251c82e6165b62f3eb513a5. ParaProxyAdminStorage slot 2 reads 0x905072738158b5e74251c82e6165b62f3eb513a5 at block 13657441 and 0xa386f30853a7eb7e6a25ec8389337a5c6973421d from block 13657442 through block 16005644, and the anchor trace shows the proxy delegate-calling exactly that implementation for depositByAddLiquidity.",
-    "Components are the MasterChef 0x633fa755a83b015cccdc451f82c57ea0bd32b4b4 net ERC-20 outflow across the 45 depositByAddLiquidity transactions of the campaign (blocks 16005645-16009258), with the seven Para-LP positions resolved into their underlying tokens at the pre-campaign pair state of block 16005644. Raw LP outflow: 220760.392147321091610368 USDT/BUSD LP (98.81% of supply), 14627.197755208809754584 CAKE/BUSD LP, 1674.617368475105344132 WBNB/BUSD LP, 441.367896732979141899 BTCB/BUSD LP, 422.118760287837538705 ETH/BUSD LP, 44.402791154001324517 ETH/WBNB LP and 34.988011674692057714 BTCB/WBNB LP, plus the single-asset pools' 12.937257935935226619 BTCB, 25.823882791173237295 WBNB and 40.931924021235680678 ETH. The 3,774,958.8 T42 minted into the MasterChef as block reward and the 45 worthless attacker-pair LP tokens deposited are excluded. Cross-check: the attacker EOA 0x94bc1d555e63eea23fe7fdbf937ef3f9ac5fcf8f went from 0.889503956097239466 BNB at block 16002700 to 4638.544756398378995119 BNB at block 16009400 after selling everything, i.e. about USD 1.74M realised against USD 1.78M of gross assets removed, the difference being swap fees and slippage. Nothing was recovered."
+    "The anchor is the attacker's first live test on the single-asset BTCB pool, which already double-counted a deposit. Campaign: every tx with two Deposit events for one pid whose trace shows deposit() re-entered inside depositByAddLiquidity (primary attacker 45, copycats 0x19c31e72 18, 0x28dd7b8b 3, 0xd0ef261d 1).",
+    "Loss is the MasterChef's net outflow per tx. Para-LP is valued at the pair's reserves before each tx; BSC USDT/BUSD at 1 USD, Binance-peg ETH at ETH, and the T42 half of T42 pairs at the paired side's value. Minted T42 rewards are excluded."
   ]
 }
