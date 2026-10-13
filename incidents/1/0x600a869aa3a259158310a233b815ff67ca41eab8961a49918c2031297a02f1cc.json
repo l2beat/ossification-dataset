@@ -2,36 +2,36 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Cheese Bank",
   "name": "Cheese Bank LP oracle priced from spot pair reserves",
-  "summary": "CheesePriceOracle.fetchLPAnchorPrice() values a Uniswap V2 LP token as `wETH.balanceOf(pair) * 2 * ethPrice / pair.totalSupply()`, a single-block spot read of the pair's WETH balance. Every non-LP asset in the same contract is priced through fetchAnchorPrice(), which reads Uniswap's cumulative-price accumulator over a TWAP window; the LP branch has no accumulator, no window and no sanity band. refresh() is permissionless, so an attacker could swap 20,000 ETH into the CHEESE/WETH pair, call refresh in the same transaction to write the inflated LP price into `prices`, and then borrow against LP collateral through the Comptroller's ordinary borrow() checks.",
+  "summary": "CheesePriceOracle valued the CHEESE/WETH Uniswap V2 LP token from the pair's spot WETH balance, without the TWAP its other assets used, and refresh() was permissionless. The attacker swapped flash-loaned ETH into the pair, refreshed the inflated LP price, and borrowed the USDC, USDT and DAI markets' cash against LP collateral.",
   "targets": [
     {
       "address": "0x833e440332caa07597a5116fbb6163f0e15f743d",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xe43a7dba24b95680f60c1ab82531705b86b63f38f8c7d5596dabcd84ab35c286"
+        "kind": "upgrade",
+        "tx": "0x506934314db9b460ccd964e70b3b896200586aee8cdc8e976348aef98b63474a"
       }
     }
   ],
   "loss": {
-    "usd": 3393834.917744785,
+    "usd": 3394850.16,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "2068252.649482",
-        "usd": 2068252.649482
+        "usd": 2067343.58
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "1237995.403809",
-        "usd": 1237995.403809
+        "usd": 1239157.19
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
         "amount": "87586.864453785145669360",
-        "usd": 87586.86445378515
+        "usd": 88349.39
       }
     ]
   },
@@ -39,8 +39,7 @@
     "https://peckshield.medium.com/cheese-bank-incident-root-cause-analysis-d076bf87a1e7"
   ],
   "notes": [
-    "CheesePriceOracle is a non-upgradeable contract created directly by an EOA, with its whole TokenConfig array fixed in constructor arguments and no implementation slot or delegatecall. Its runtime hashes to 0xa648fc87e532b50bfa445cb5ac06ee5d0a7a41f68abaec48c48d4a6d98edc500 both at the creation block 11061144 and at block 11205647 immediately before the exploit.",
-    "Reconstructed from the exploit receipt, not from reporting. Logs 193, 197 and 201 are the three Cheese Bank markets paying the attacker contract: 2068252649482 USDC units from 0x5e181bdde2fa8af7265cb3124735e9a13779c021, 1237995403809 USDT units from 0x4c2a8a820940003cfe4a16294b239c8c55f29695 and 87586864453785145669360 DAI wei from 0xa80e737ded94e8d2483ec8d2e52892d9eb94cf1f. All three are par-valued dollar stablecoins. The 21000 ETH dYdX flash loan and the 50 ETH used to buy CHEESE are attacker-supplied inputs and are not loss. Cheese Bank retained the 2833.226849227665 CHEESE/WETH UNI-V2 LP tokens the attacker had deposited into market 0x7e4956688367fb28de3c0a62193f59b1526a00e7 at log 180, but that collateral was itself attacker-supplied and, once the 20000 ETH manipulation swap was unwound inside the same transaction, worth a small fraction of the stablecoins removed, so the gross depletion is reported without netting it. No ETH-denominated market paid out in this transaction.",
-    "Which oracle the Comptroller consults is configuration, but the defect measured here is inside the deployed oracle's own LP pricing function, so the oracle's deployment is the executable-code age basis and the market listing and collateral factors are context."
+    "The oracle is immutable, but the Comptroller (via its timelock) switched its oracle pointer to it after deployment; that switch is when the markets began pricing LP collateral with this code, so it is the reset.",
+    "Loss is the cash of the three stablecoin markets at DefiLlama prices. The LP collateral the attacker left behind is not subtracted (rule 14)."
   ]
 }

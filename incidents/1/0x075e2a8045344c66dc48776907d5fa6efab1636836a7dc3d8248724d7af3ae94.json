@@ -1,0 +1,92 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "ChainSwap",
+  "name": "ChainSwap bridge receive() accepts self-signed signatories via auto quota",
+  "summary": "ChainSwap's receive() only checked that each signature recovered to the signatory it named, then charged that signatory's quota. authQuotaOf() accrues quota from lasttimeUpdateQuotaOf, zero for a never-seen address, so any fresh key held a full auto quota. The attacker self-signed receives, releasing locked tokens on Ethereum and minting mapped tokens on BSC.",
+  "targets": [
+    {
+      "address": "0x7ab088fedae4fa8ada4df638c07cef6c23aff002",
+      "code": "0x2a8a3cf57b89507e6e255f468e7b974f351efaba",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x98b658ed78a34c92bfbec01796ff5013511e67b397b869521abba0a64bd073bc"
+      }
+    }
+  ],
+  "campaign": [
+    {
+      "chainId": 1,
+      "count": 529,
+      "from": 12801461,
+      "to": 12801621,
+      "selection": "Successful transactions after the anchor emitting ChainSwap Authorize (topic0 0xc1eec22a7978d1b4b28441f2aaf2119e35d06f3aaff9a37f1b64cec88c1ab28b) whose signatory is none of the five registered signers 0x8c46b006, 0x4f559d3c, 0xab97039e, 0x6ea6d36d, 0xaf700fb5; all pay 0xeda5066780de29d00dfb54581a707ef6f52d8113"
+    },
+    {
+      "chainId": 56,
+      "count": 606,
+      "from": 9042270,
+      "to": 9042351,
+      "selection": "Successful transactions emitting ChainSwap Authorize (topic0 0xc1eec22a7978d1b4b28441f2aaf2119e35d06f3aaff9a37f1b64cec88c1ab28b) whose signatory is none of the five registered signers 0x8c46b006, 0x4f559d3c, 0xab97039e, 0x6ea6d36d, 0xaf700fb5; all pay 0xeda5066780de29d00dfb54581a707ef6f52d8113"
+    },
+    "eip155:56:0x83b4adaf73ad34c5c53aa9b805579ed74bc1391c5297201e6457cde709dff723"
+  ],
+  "loss": {
+    "usd": 3648590.26,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "2446584.360111091800",
+        "usd": 2452647.15
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "107150.272527",
+        "usd": 107491.25
+      },
+      {
+        "token": "0x525794473f7ab5715c81d06d10f52d11cc052804",
+        "symbol": "TSHP",
+        "amount": "19919000.35888756",
+        "usd": 4443.95
+      },
+      {
+        "chainId": 56,
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "2756.30510216944960",
+        "usd": 868610.96
+      },
+      {
+        "chainId": 56,
+        "symbol": "BNB",
+        "amount": "94.10792751382543",
+        "usd": 29656.8
+      },
+      {
+        "chainId": 56,
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "43.648165244825286",
+        "usd": 91712.85
+      },
+      {
+        "chainId": 56,
+        "token": "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3",
+        "symbol": "DAI",
+        "amount": "93794.87484442386",
+        "usd": 94027.3
+      }
+    ]
+  },
+  "refs": [
+    "https://chain-swap.medium.com/chainswap-exploit-11-july-2021-post-mortem-6e4e346e5a32",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-07/Chainswap_exp2.sol"
+  ],
+  "notes": [
+    "Released and minted tokens were dumped into thin pools, so loss is the attacker's realised proceeds (rule 15): stablecoins, BNB and ETH received for the tokens, by the attacker and by helper wallets 0x9192b202 and 0xbf8fb7ca that sold tokens it sent them. ETH bridged from BSC and swapped to USDT is not counted twice.",
+    "TSHP sent unsold to 0x81c503b0 is valued at market. About 18.0M UFARM and 0.93M ROCKS released from Ethereum custody and never sold have no DefiLlama price and no realised proceeds, so they add nothing. Polygon's ChainSwap contracts saw no forged signatures; HECO could not be checked.",
+    "The ETH TokenMapped and BSC MappingToken implementations share MappingBase.receive(); the anchor executed only the DORA TokenMapped, whose implementation the factory set in the reset. The June 2021 sendFrom drain is a different defect and stays a separate record."
+  ]
+}

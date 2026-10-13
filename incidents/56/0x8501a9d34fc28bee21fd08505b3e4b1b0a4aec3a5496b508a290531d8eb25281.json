@@ -2,32 +2,28 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Cashverse",
   "name": "Cashverse staking distributor public depositBNB swaps with no minimum output",
-  "summary": "Unverified staking/reward distributor 0x2d70d62d held 225.995 BNB. Its public depositBNB() (0x42220f34) swaps the whole BNB balance for ADAcash through PancakeSwap with amountOutMin 0 once any stake exists. The attacker flash-borrowed 12,000 WBNB and pushed up the ADAcash price with 53 maximum-size buys. It then called depositBNB() and sold into the inflated pair, capturing the distributor's BNB.",
+  "summary": "An unverified staking reward distributor exposed depositBNB() without access control. Once any stake existed it swapped its entire BNB balance for ADAcash on PancakeSwap with amountOutMin 0. The attacker pumped ADAcash with flash-borrowed WBNB, called depositBNB() so the distributor bought at the inflated price, and sold its ADAcash back into the pair.",
   "targets": [
     {
       "address": "0x2d70d62deb1cb9918ff6be7bb5d173e8cd4ad854",
       "reset": {
-        "kind": "config",
-        "tx": "0x465c619f5a04e3a5e1bf8eda10ba4e565b9b8744ac85571a06d5d8c1b98fb33c",
-        "address": "0x2d70d62deb1cb9918ff6be7bb5d173e8cd4ad854",
-        "slot": "0x0000000000000000000000000000000000000000000000000000000000000007"
+        "kind": "deployment",
+        "tx": "0x5212d1f11b02a9191a2d8341d7e0e9f42c5bb5019e1825073ca734f024314e35"
       }
     }
   ],
   "loss": {
-    "usd": 131515.68531203037,
+    "usd": 131515.69,
     "assets": [
       {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "BNB",
         "amount": "225.995266371155725731",
-        "usd": 131515.68531203037
+        "usd": 131515.69
       }
     ]
   },
   "notes": [
-    "Owner 0x2198c955's enterStaking(10000e18) (0x41441d3b) wrote the first nonzero total stake (slot 7) into the distributor. It had been dormant since 2021 with 225.985 BNB. Before this write, depositBNB() returned without swapping; from this block on it swaps the full BNB balance with zero minimum. The runtime is unchanged since 2021 deployment.",
-    "Exact native BNB depletion of distributor 0x2d70d62deb1cb9918ff6be7bb5d173e8cd4ad854, recorded as the wrapped-BNB address and valued at the DefiLlama WBNB quote. The attacker's flash-loaned WBNB and buys are circular. The EOA's BNB balance rose by 150.36 BNB across the block; the rest went to pools and fees. The candidate figure of USD 107.9k is not this gross measure.",
-    "The distributor has no verified source; selector names come from the public signature database. The missing caller check and zero minimum are established from the trace (an attacker contract created in the same block was served; router call swapExactETHForTokensSupportingFeeOnTransferTokens with amountOutMin 0). The age basis is established from debug_traceCall simulations and the slot-7 write, not from source text."
+    "depositBNB() is a no-op while total stake (slot 7) is zero; the owner's first enterStaking in November 2024 made it nonzero. Total stake is a live value any staker could set (the staking token was fixed in the constructor), so it is not a reset; the runtime and its swap path date from deployment.",
+    "The distributor has no verified source; selector names come from the public signature database. Missing access control is shown by the attacker contract, created in the same block, being served, and by a debug_traceCall from an arbitrary address reaching the router swap."
   ]
 }
