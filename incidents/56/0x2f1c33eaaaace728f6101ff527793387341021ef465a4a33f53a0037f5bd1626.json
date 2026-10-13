@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "EST",
   "name": "EST delayed sell-burn drained by skim loop",
-  "summary": "ESTToken records every taxed transfer into the pair as a sell in _pendingSellBurn. The next non-pair transfer then burns that amount, capped at 10% of the pair's EST balance, directly from the pair and calls sync(). Nothing ties that burn to tokens that stayed in the pair. The attacker bought EST through fee-excluded BNBDeposit and claimed EST from it. It then looped 'transfer EST to pair, skim() to BNBDeposit' about 150 times. Each iteration burned 10% of the pair's real EST reserve and synced, shrinking it to 0.1045 EST, and the attacker sold 18.74M EST for all of the pair's WBNB.",
+  "summary": "ESTToken books every taxed transfer into the pair as a pending sell burn; the next non-pair transfer burns that amount, capped at 10% of the pair's EST, from the pair and syncs, even if the tokens were skimmed back out. The attacker looped transfer-to-pair and skim about 150 times, shrinking the pair's EST to dust, and sold EST for its WBNB.",
   "targets": [
     {
       "address": "0xd4524be41cd452576ab9ff7b68a0b89af8498a91",
@@ -27,7 +27,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-03/EST_exp.sol"
   ],
   "notes": [
-    "The immutable ESTToken runtime holds the _pendingSellBurn pair-burn logic. The pair, fee exclusion of BNBDeposit and minSupply were fixed at construction. Later owner calls (two excludeFromFee for unrelated accounts, setFeeWallet, donate/withdraw dust) do not bear on the burn condition, so deployment supplies the age.",
-    "Exact net WBNB depletion of the EST/WBNB Pancake pair 0x74986cd86caf54961dd70eedcaf7cb3fe813c0b9 in the exploit transaction. The attacker's own WBNB, which enters the pair through BNBDeposit deposits and the 245400-WBNB round-trip buy, is netted as inflow. The Moolah flash loan is repaid in the same tx. The pair's EST side (moved to BNBDeposit or burned) is not valued separately. The attacker's net WBNB gain is 160.889451187958247246, which includes its own unwrapped BNB, so it is not used."
+    "Immutable token; the pair, BNBDeposit's fee exclusion and minSupply were set at construction and later owner calls do not touch the burn path, so deployment sets the age.",
+    "Loss is the pair's net WBNB depletion in the transaction, with the attacker's WBNB entering through BNBDeposit netted as inflow; the pair's EST side is not valued separately.",
+    "No other transaction burned the pair's EST more than twice (pair-to-zero Transfer logs per transaction), so the anchor is the first and only exploit."
   ]
 }

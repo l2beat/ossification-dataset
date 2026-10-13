@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "EGA Token",
   "name": "EGA pond _openAPond unbounded buyback percentage",
-  "summary": "The EGA deposit pond 0x67db1b06 exposes payable _openAPond(uint256,uint256). It swaps percent/100 of the remaining deposit into EGA via swapExactETHForTokens with amountOutMin 1, without bounding the caller's percent to 100. With a 1,500 WBNB flash loan, the attacker bought EGA and called _openAPond with 1 wei and a percent of 100 times the pond's balance. The pond then spent its entire 506.67 BNB buying EGA at the inflated price, and the attacker sold its EGA back into the pair.",
+  "summary": "The EGA deposit pond's payable _openAPond(uint256,uint256) swaps percent/100 of its BNB into EGA with amountOutMin 1 and never caps the caller's percent. After a flash-loan buy of EGA, the attacker called it with 1 wei and a percent of 100 times the pond's balance, so the pond spent all its BNB at the inflated price; the attacker then sold back.",
   "targets": [
     {
       "address": "0x67db1b06e507603d19a27fa128c80969e629a38e",
@@ -23,8 +23,8 @@
     ]
   },
   "notes": [
-    "Direct, non-upgradeable runtime whose EGA token and router addresses are constructor constants. The unbounded percentage in _openAPond is present from deployment.",
-    "Exact native-BNB depletion of pond 0x67db1b06e507603d19a27fa128c80969e629a38e: eth_getBalance 506665157500000000038 wei at block 42857880, and 1 wei (the attacker's msg.value) at 42857881. The attacker's net profit was 481.023461112559800467 WBNB; the gap went to swap fees and EGA's transfer-tax recipients. The 1,500 WBNB flash loan and the 1 wei input are attacker-supplied and are not loss. The BNB is valued at the DefiLlama WBNB quote.",
-    "The pond has no verified source. The percentage logic is read from the creation bytecode's 0x9305a1fe path and the exploit trace, not from source text."
+    "Unverified, non-upgradeable runtime whose EGA token and router addresses are constructor constants, so deployment sets the age; the 0x9305a1fe percentage path is read from bytecode and the trace.",
+    "Among all calls into the pond (Etherscan normal and internal transaction lists), only this transaction swapped more BNB than its msg.value, so it is the first and only exploit.",
+    "Loss is the pond's native BNB balance drop; the attacker's smaller profit reflects swap fees and EGA's transfer tax."
   ]
 }

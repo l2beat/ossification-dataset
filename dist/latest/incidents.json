@@ -392,7 +392,7 @@
     "tx": "0x1fe5a53405d00ce2f3e15b214c7486c69cbc5bf165cf9596e86f797f62e81914",
     "protocol": "Eden Finance EFVault",
     "name": "EFVault v4 upgrade storage-layout collision",
-    "summary": "The EFVault v4.0 implementation installed on the ENF USDC vault proxy inserted a new assetDecimal variable at the storage slot that v3.0 used for maxDeposit, without re-initialising it. assetDecimal therefore read the old 5,000,000 USDC maxDeposit value, and the new redeem() priced shares with assetsPerShare() = totalAssets * assetDecimal * 1e18 / totalSupply, inflating each share by roughly five million times. A depositor redeemed 676,562 share units (about 0.69 USDC of value) twice for 5.16m USDC withdrawn from the controller's strategies.",
+    "summary": "The EFVault v4.0 implementation put a new assetDecimal variable on the storage slot v3.0 used for maxDeposit without re-initialising it, so assetsPerShare() scaled by the old 5M USDC cap and inflated each share about five million-fold. A small depositor redeemed tiny share amounts twice and withdrew the strategies' funds as USDC.",
     "lossUsd": 5165727.639684612,
     "codeAgeSeconds": 1188,
     "exploit": {
@@ -412,7 +412,7 @@
       "index": 221,
       "timestamp": 1677216623
     },
-    "claimsSha256": "6785f165bd70bd1da9cc7239e8ce060ce37a0619a23c9b537c0edb3896c5368d"
+    "claimsSha256": "9ed6b2790fc1dc36579663c2283de86a7c5cb37338c629b5854973b41e8d264e"
   },
   {
     "id": "eip155:1:0xc9244e5349f49f3b74a54a882e71f1ca11ba14ed74f73bf2cd091ed8be2b0001",
@@ -1456,9 +1456,9 @@
     "tx": "0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8",
     "protocol": "Eminence",
     "name": "Eminence EMN claim/award bypasses bonding-curve reserve accounting",
-    "summary": "EminenceCurrency prices buy() and sell() from a Bancor curve over (totalSupply, reserveBalance), but its external claim(address,uint256) and award(address,uint256) burn and mint EMN without any matching change to reserveBalance. The Eminence AAVE sub-currency, made a gamemaster by its own constructor through EMN.addGM, calls exactly those two functions, so converting EMN into eAAVE cut EMN's totalSupply while the DAI reserve accounting stayed put and raised the redemption price of every remaining EMN. Under a flash loan the attacker bought EMN, burned half of it into eAAVE, sold the rest back at the inflated rate, minted the EMN back out of eAAVE and sold again, three rounds per transaction. The violated invariant is that the curve's supply and reserve variables must move together on every supply change.",
-    "lossUsd": 15151298.902592022,
-    "codeAgeSeconds": 51048,
+    "summary": "EminenceCurrency prices buy() and sell() on a Bancor curve over totalSupply and reserveBalance, but its gamemaster functions claim() and award() burn and mint EMN without touching the reserve. eAAVE, a gamemaster, calls them. Under a flash loan the attacker bought EMN, burned half into eAAVE to lift EMN's price, sold, minted it back and sold again.",
+    "lossUsd": 15366673.18,
+    "codeAgeSeconds": 50695,
     "exploit": {
       "block": 10954411,
       "index": 3,
@@ -1469,13 +1469,13 @@
       "codeHash": "0xdaf4426c283c6ffc402fe60fcbdf6700a3040147533a84c0fd3d9304a8d5a55f"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xef1a1f263e2527e5629765cb7e9ad73fbb353b998eb34afc404e636d38be77cb",
-      "block": 10950651,
-      "index": 36,
-      "timestamp": 1601291393
+      "kind": "config",
+      "tx": "0x3539eeee9d1c3bef5613844c8a75c65d78a52c8a40541fb439bd078544c795fe",
+      "block": 10950678,
+      "index": 199,
+      "timestamp": 1601291746
     },
-    "claimsSha256": "d593b1ad40140fe2b25a21bc070cc484add907192362316826b72e269437c4cb"
+    "claimsSha256": "02cb48a3554b3ca3858c681cc5311326aa1fc93c1fb7a5289a0c2be170b721d8"
   },
   {
     "id": "eip155:56:0x72f8dd2bcfe2c9fbf0d933678170417802ac8a0d8995ff9a56bfbabe3aa712d6",
@@ -4647,7 +4647,7 @@
     "tx": "0x2f1c33eaaaace728f6101ff527793387341021ef465a4a33f53a0037f5bd1626",
     "protocol": "EST",
     "name": "EST delayed sell-burn drained by skim loop",
-    "summary": "ESTToken records every taxed transfer into the pair as a sell in _pendingSellBurn. The next non-pair transfer then burns that amount, capped at 10% of the pair's EST balance, directly from the pair and calls sync(). Nothing ties that burn to tokens that stayed in the pair. The attacker bought EST through fee-excluded BNBDeposit and claimed EST from it. It then looped 'transfer EST to pair, skim() to BNBDeposit' about 150 times. Each iteration burned 10% of the pair's real EST reserve and synced, shrinking it to 0.1045 EST, and the attacker sold 18.74M EST for all of the pair's WBNB.",
+    "summary": "ESTToken books every taxed transfer into the pair as a pending sell burn; the next non-pair transfer burns that amount, capped at 10% of the pair's EST, from the pair and syncs, even if the tokens were skimmed back out. The attacker looped transfer-to-pair and skim about 150 times, shrinking the pair's EST to dust, and sold EST for its WBNB.",
     "lossUsd": 94720.68044166411,
     "codeAgeSeconds": 614613,
     "exploit": {
@@ -5084,7 +5084,7 @@
     "tx": "0x50da0b1b6e34bce59769157df769eb45fa11efc7d0e292900d6b0a86ae66a2b3",
     "protocol": "EGD Finance",
     "name": "EGD Finance claimAllReward prices rewards from live pair balances",
-    "summary": "EGD_Finance.claimAllReward converts each stake's USDT-denominated reward quota into EGD as quota * 1e18 / getEGDPrice(), and getEGDPrice divides the EGD/USDT pair's live USDT balance by its EGD balance. Inside a flash swap that removed 99.99999925% of the pair's USDT, the attacker claimed the reward of an 18-block-old 100 USDT stake, received 5.61M EGD (99% of the contract's EGD) and sold it for about 36k USDT.",
+    "summary": "EGD_Finance.claimAllReward converts each stake's USDT reward quota into EGD at getEGDPrice(), the EGD/USDT pair's live USDT balance divided by its EGD balance. Inside a flash swap that emptied the pair's USDT, the attacker claimed the reward of an 18-block-old 100 USDT stake, received 99% of the contract's EGD and sold it.",
     "lossUsd": 36054.12115686523,
     "codeAgeSeconds": 834061,
     "exploit": {
@@ -8290,7 +8290,7 @@
     "tx": "0xece4a4ac46660618ecee43826fc6f89fe4beaef87ca5e5786f763892b48bc999",
     "protocol": "EGA Token",
     "name": "EGA pond _openAPond unbounded buyback percentage",
-    "summary": "The EGA deposit pond 0x67db1b06 exposes payable _openAPond(uint256,uint256). It swaps percent/100 of the remaining deposit into EGA via swapExactETHForTokens with amountOutMin 1, without bounding the caller's percent to 100. With a 1,500 WBNB flash loan, the attacker bought EGA and called _openAPond with 1 wei and a percent of 100 times the pond's balance. The pond then spent its entire 506.67 BNB buying EGA at the inflated price, and the attacker sold its EGA back into the pair.",
+    "summary": "The EGA deposit pond's payable _openAPond(uint256,uint256) swaps percent/100 of its BNB into EGA with amountOutMin 1 and never caps the caller's percent. After a flash-loan buy of EGA, the attacker called it with 1 wei and a percent of 100 times the pond's balance, so the pond spent all its BNB at the inflated price; the attacker then sold back.",
     "lossUsd": 285100.48412525,
     "codeAgeSeconds": 4270391,
     "exploit": {
@@ -11692,8 +11692,8 @@
     "tx": "0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0",
     "protocol": "Ekubo",
     "name": "Ekubo router payCallback settles with a caller-supplied payer",
-    "summary": "The Ekubo router takes the address whose tokens settle a Core debt from its own calldata and does not check it against the caller. The attacker locked Core, called withdraw to send 17 WBTC of Core-held liquidity to themselves, and then settled the resulting debt through pay(), whose payCallback ran transferFrom against a third party that still held a router approval. The debt was paid with the victim’s tokens and the withdrawal kept.",
-    "lossUsd": 1376975.3020429024,
+    "summary": "The Ekubo router's payCallback takes the payer of a Core debt from caller-supplied calldata and never checks it against the caller. The attacker locked Core, withdrew WBTC to itself and settled the debt via pay(), whose callback ran transferFrom on a third party holding a router approval. Copycats then drained other approval holders the same way.",
+    "lossUsd": 1416516.52,
     "codeAgeSeconds": 20920056,
     "exploit": {
       "block": 25030409,
@@ -11711,7 +11711,7 @@
       "index": 29,
       "timestamp": 1757083379
     },
-    "claimsSha256": "23f45d5bab57031a7c7bfc08ca4c94cb92bbf59f3b3ba7ad6092eed75f5c1e5d"
+    "claimsSha256": "5e59d15b1353d63b83aa4c2135e87bde80bd630fa07e035b6a574cd921bc0a01"
   },
   {
     "id": "eip155:56:0xac8a739c1f668b13d065d56a03c37a686e0aa1c9339e79fcbc5a2d0a6311e333",
@@ -13587,6 +13587,33 @@
     "claimsSha256": "b9734fedbec6456bfca6d9e10c2087470259496549314f20056df652c9d143a1"
   },
   {
+    "id": "eip155:1:0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
+    "chainId": 1,
+    "tx": "0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
+    "protocol": "ERC20TokenBank",
+    "name": "ERC20TokenBank",
+    "summary": "ExchangeBetweenPools.doExchange(uint256) is permissionless: as a trusted issuer it pulls the USDC ERC20TokenBank's balance and swaps it through the Curve y pool with min_dy 0. The attacker skewed the pool, called doExchange so the bank's whole USDC balance bought almost no USDT, then unwound the skew and kept the difference.",
+    "lossUsd": 119023.523157,
+    "codeAgeSeconds": 73691454,
+    "exploit": {
+      "block": 17376907,
+      "index": 0,
+      "timestamp": 1685512463
+    },
+    "target": {
+      "address": "0x765b8d7cd8ff304f796f4b6fb1bcf78698333f6d",
+      "codeHash": "0x584e03aa874e1603d9e375630d738a9a0b79bedd089ebd872eeeb7f22886da64"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x42618dd3d292680b3c3bfd8d35118c742d86e72410555bd4006e3459ba0f2e00",
+      "block": 11743121,
+      "index": 118,
+      "timestamp": 1611821009
+    },
+    "claimsSha256": "8e4d0070c65127e6b89e53379b9a963a40319b79c0c88f331828494bc0b48849"
+  },
+  {
     "id": "eip155:1:0xab306cd2184d23b6ba3e151b10b3b9a0b81f211cc16f4f3b0c79f0b17a59c2b5",
     "chainId": 1,
     "tx": "0xab306cd2184d23b6ba3e151b10b3b9a0b81f211cc16f4f3b0c79f0b17a59c2b5",
@@ -13613,33 +13640,6 @@
       "timestamp": 1707996527
     },
     "claimsSha256": "f8a6d04ed96f21680ec514d88d043908c4c51f8a2c0924126519c1ce962933b1"
-  },
-  {
-    "id": "eip155:1:0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
-    "chainId": 1,
-    "tx": "0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
-    "protocol": "ERC20TokenBank",
-    "name": "ERC20TokenBank",
-    "summary": "ExchangeBetweenPools.doExchange(uint256) is permissionless and sends the selected ERC20TokenBank balance through Curve with min_dy = 0. The attacker distorted the USDC/USDT yPool, invoked doExchange to force the bank's 119,023.523157 USDC through the manipulated price for 47.391213 USDT, then reversed the distortion and captured the difference.",
-    "lossUsd": 119023.523157,
-    "codeAgeSeconds": 73771765,
-    "exploit": {
-      "block": 17376907,
-      "index": 0,
-      "timestamp": 1685512463
-    },
-    "target": {
-      "address": "0x765b8d7cd8ff304f796f4b6fb1bcf78698333f6d",
-      "codeHash": "0x584e03aa874e1603d9e375630d738a9a0b79bedd089ebd872eeeb7f22886da64"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x2456271d66958717cdaeb4ad49553a2b1c6de735365764afb7340efd31cc2c72",
-      "block": 11737078,
-      "index": 137,
-      "timestamp": 1611740698
-    },
-    "claimsSha256": "8f63ee643c16d36419b814f98cfa9bc787b6dd6f552e3eef400bf87c57332562"
   },
   {
     "id": "eip155:137:0x619296d6f9ba99120a534f4eb93f3db291dabbbb22b1ba170d2a023078422b67",
@@ -14851,7 +14851,7 @@
     "tx": "0xd4a382da03c99ce3084661b913b50b525a4b283f66f510bcf1040152830b2a7e",
     "protocol": "Enjin CryptoItems",
     "name": "Enjin CryptoItems ERC-1538 registry adapter initialize manager takeover",
-    "summary": "The two Enjin ERC-1538 adapter registries route every registered adapter selector through their own fallback, including the adapter template's initialize(uint256). Called directly on a registry, that initializer runs in registry storage, where its once-only guard slot was never set and its owner slot is the registry's pending-manager slot. Any caller could therefore make itself pending manager and accept management. The attacker took over both registries and pointed the item-adapter transfer selectors at its own code. It then pulled ERC-1155 items from holders without approval and melted them, draining 6.58M ENJ of backing from the platform reserve.",
+    "summary": "Two Enjin ERC-1538 adapter registries route the adapter template's initialize(uint256) through their own fallback, so it runs in registry storage and writes the caller into the pending-manager slot. The attacker took both registries, routed adapter selectors to its own code, then pulled others' items through new adapters without approval and melted them for ENJ.",
     "lossUsd": 178021.15622500525,
     "codeAgeSeconds": 151917396,
     "exploit": {
@@ -14871,7 +14871,7 @@
       "index": 7,
       "timestamp": 1635765923
     },
-    "claimsSha256": "e5c9a39d689346e77da528e96b9a2d5ddb3c853ae69e83abcae51de42f1e22c3"
+    "claimsSha256": "ff2320ca7bbcc782397dc8164b194e05b8f48005086363eadb65f570e0bef98c"
   },
   {
     "id": "eip155:1:0xfae5e751b8ce01457cbb6b529839f24a0cff50faaabcbd0fd02ca0cf559b050e",

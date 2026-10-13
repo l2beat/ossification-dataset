@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Eden Finance EFVault",
   "name": "EFVault v4 upgrade storage-layout collision",
-  "summary": "The EFVault v4.0 implementation installed on the ENF USDC vault proxy inserted a new assetDecimal variable at the storage slot that v3.0 used for maxDeposit, without re-initialising it. assetDecimal therefore read the old 5,000,000 USDC maxDeposit value, and the new redeem() priced shares with assetsPerShare() = totalAssets * assetDecimal * 1e18 / totalSupply, inflating each share by roughly five million times. A depositor redeemed 676,562 share units (about 0.69 USDC of value) twice for 5.16m USDC withdrawn from the controller's strategies.",
+  "summary": "The EFVault v4.0 implementation put a new assetDecimal variable on the storage slot v3.0 used for maxDeposit without re-initialising it, so assetsPerShare() scaled by the old 5M USDC cap and inflated each share about five million-fold. A small depositor redeemed tiny share amounts twice and withdrew the strategies' funds as USDC.",
   "targets": [
     {
       "address": "0xbdb515028a6fa6cd1634b5a9651184494abfd336",
@@ -12,6 +12,9 @@
         "tx": "0xab86672eb5335264c4c4b75262630ae1fb8dcf2a68aaafe4bb9fc3232b886712"
       }
     }
+  ],
+  "campaign": [
+    "eip155:1:0x31565843d565ecab7ab65965d180e45a99d4718fa192c2f2221410f65ea03743"
   ],
   "loss": {
     "usd": 5165727.639684612,
@@ -25,11 +28,10 @@
     ]
   },
   "refs": [
-    "eip155:1:0x31565843d565ecab7ab65965d180e45a99d4718fa192c2f2221410f65ea03743",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/EFVault_exp.sol"
   ],
   "notes": [
-    "Third and last pre-exploit Upgraded event: the project Safe 0x66945268093f28c28a2dce11a1640e06c070df7b, via ProxyAdmin 0xd06ef24eb2da8b3e5a042da39ec303dd9162e0a6 upgrade(proxy, impl), installed EFVault v4.0 0x80cb73074a6965f60df59bf8fa3ce398ffa2702c, whose layout places assetDecimal on the slot holding v3.0 maxDeposit. The EIP-1967 implementation slot still holds it at block 16696239.",
-    "Exact USDC paid out by the vault controller 0xf491afe5101b2ee8abc1272fa8e2f85d68828396 in the two successful redeem calls (source-1 and source-5): 5,155,406.505541 USDC to the attacker-named receiver plus 5,160.567071 USDC withdrawal fee to 0x39f4ef6294512015ab54ed3ab32baa1794e8de70; the fee is part of depositor depletion and is not deducted. The attacker's fair entitlement for the 1,353,124 burned share units at pre-upgrade pricing is about 1.38 USDC and is not subtracted. Internal strategy unwinds (cUSDC, cDAI, Curve 3pool, COMP) are intermediate legs, not additional loss."
+    "The reset is the project Safe's ProxyAdmin upgrade to v4.0 shortly before the exploit; the attacker's reverted redeem attempts in between extracted nothing.",
+    "Loss is the USDC the controller paid out in both redeems, including the withdrawal fee; strategy unwinds through Notional, Compound and Curve are intermediate legs. The attacker's roughly 1 USDC fair entitlement and its earlier 150 USDC deposit, mostly left in the vault, are not netted."
   ]
 }

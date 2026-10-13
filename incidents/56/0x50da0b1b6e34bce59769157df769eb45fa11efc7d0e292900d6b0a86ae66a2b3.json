@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "EGD Finance",
   "name": "EGD Finance claimAllReward prices rewards from live pair balances",
-  "summary": "EGD_Finance.claimAllReward converts each stake's USDT-denominated reward quota into EGD as quota * 1e18 / getEGDPrice(), and getEGDPrice divides the EGD/USDT pair's live USDT balance by its EGD balance. Inside a flash swap that removed 99.99999925% of the pair's USDT, the attacker claimed the reward of an 18-block-old 100 USDT stake, received 5.61M EGD (99% of the contract's EGD) and sold it for about 36k USDT.",
+  "summary": "EGD_Finance.claimAllReward converts each stake's USDT reward quota into EGD at getEGDPrice(), the EGD/USDT pair's live USDT balance divided by its EGD balance. Inside a flash swap that emptied the pair's USDT, the attacker claimed the reward of an 18-block-old 100 USDT stake, received 99% of the contract's EGD and sold it.",
   "targets": [
     {
       "address": "0x34bd6dba456bc31c2b3393e499fa10bed32a9370",
@@ -29,7 +29,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-08/EGD_Finance_exp.sol"
   ],
   "notes": [
-    "ProxyAdmin 0x8f8c3495800c708eae49df3269c60e9575240b41 upgrade(proxy, 0x93c175439726797dcee24d08e4ac9164e88e7aee) moved the EIP-1967 slot from 0x35afc46f5392304eab8e57ecfc4a93170db415e2 to the exploited implementation. A second upgrade to the same address at block 19968082 re-emitted Upgraded without changing code or state.",
-    "The EGD Finance proxy paid 5,614,105.648378533801366233 EGD to the attack contract. Its disposal in the same transaction realised 36,054.121156865234135946 USDT, the EGD/USDT pair's net USDT outflow; EGD's 10% transfer tax withheld 561,410.56 EGD for token fee recipients, and that share is included in the quantity but realised nothing, so the effective unit value is below the pre-attack spot of 0.008094 USDT per EGD. USDT at par. The attacker's 100 USDT stake (transaction 0x4a66d01a017158ff38d6a88db98ba78435c606be57ca6df36033db4d9514f9f8) and the 10 USDT flash-swap fee are not netted; the honest reward due was about 0.0003 USDT."
+    "The reset is the ProxyAdmin upgrade to the exploited implementation; the second Upgraded event to the same implementation at block 19968082 changed neither code nor state.",
+    "EGD is valued at what the attacker's same-transaction sale realised, the pair's net USDT outflow with USDT at par (rule 15); the 10% transfer-tax share realised nothing. The attacker's 100 USDT stake is setup, not netted.",
+    "All other claimAllReward calls came directly from EOAs at unmanipulated prices, so there is no earlier exploit and no campaign."
   ]
 }
