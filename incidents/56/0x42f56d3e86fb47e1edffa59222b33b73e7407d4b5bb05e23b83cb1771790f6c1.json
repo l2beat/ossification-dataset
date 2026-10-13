@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Nimbus Platform",
   "name": "Nimbus fixed-APY staking rewards priced from spot swap feed",
-  "summary": "Nimbus StakingRewardFixedAPY and LockStakingRewardFixedAPY convert NIMB-denominated accrued rewards into GNIMB with PriceFeeds.queryRate. On 2022-12-01 the owner rewired PriceFeeds' NIMB and GNIMB feeds from owner-set static NimbusPriceFeed contracts to PriceFeedSwap contracts that return the live NimbusRouter getAmountsOut spot quote. The attacker staked through three helper contracts, and 8.6 days later flash-borrowed about 75,477 BNB, bought NIMB in the NBU_WBNB/NIMB pair to raise the NIMB/GNIMB rate about 42,000-fold, and claimed rewards that emptied all three staking contracts.",
+  "summary": "Nimbus fixed-APY staking contracts converted accrued NIMB rewards into GNIMB at PriceFeeds.queryRate, whose NIMB feed the owner had switched to a PriceFeedSwap returning the router's spot quote. Using positions staked days earlier, the attacker flash-borrowed BNB, pumped NIMB and claimed rewards that emptied the staking contracts' GNIMB.",
   "targets": [
     {
       "address": "0xb8ac7fabff0d901878c269330b32cdd8d2ba3b8c",
@@ -33,6 +33,13 @@
         "kind": "deployment",
         "tx": "0x4900902ee26a6daf0edf3f05b8c83241219377d8fe0d9e8a60049491f1f9986b"
       }
+    },
+    {
+      "address": "0xdef57a7722d4411726ff40700eb7b6876bee7ecb",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x6412485d7cbdedef7e19c3f32dd885920eedaf0a82071b6c30502b34328cd248"
+      }
     }
   ],
   "loss": {
@@ -47,16 +54,11 @@
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/Nmbplatform_exp.sol",
-    "eip155:56:0x6412485d7cbdedef7e19c3f32dd885920eedaf0a82071b6c30502b34328cd248"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/Nmbplatform_exp.sol"
   ],
   "notes": [
-    "Owner 0x284d1e620bfbe77e7de522bc3e48f6097c7e970c called setPriceFeed([GNIMB, NIMB], [0x58edbb48887711e179e66c4e86351fd06af52a87, 0x199600cb7fdb1a72fc978f435e04b1cd1d260aa3]). pricesFeeds(NIMB) changed from static owner-set NimbusPriceFeed 0x5ee5c6bfe28b1cc47bea759a49c87226c4434137 to spot PriceFeedSwap 0x199600cb. With the static feeds, queryRate(NIMB, GNIMB) cannot be moved within a transaction.",
-    "Immutable PriceFeedSwap (router and path fixed at construction; multiplier never changed) returning the NimbusRouter getAmountsOut spot quote for 1 NIMB in NBU_WBNB.",
-    "StakingRewardFixedAPY converts accrued rewards with an unbounded, instantaneous rate: PriceFeeds.queryRate when usePriceFeeds is set, else router getAmountsOut, which is itself a spot quote. So its own configuration (priceFeed and usePriceFeeds set at blocks 23044984/23044985) does not decide exploitability.",
-    "LockStakingRewardFixedAPY has the same reward conversion as target-3. This target also represents byte-identical sibling 0xdef57a7722d4411726ff40700eb7b6876bee7ecb (created in 0x6412485d7cbdedef7e19c3f32dd885920eedaf0a82071b6c30502b34328cd248, block 23045051:4), which was drained in the same transaction.",
-    "Other stakers' GNIMB taken from the three staking contracts. Their combined pre-exploit GNIMB balance of 16,480,792.579260974757935462 fell to zero. Excluded from loss: the attacker's own principal of 187,100.345016290273752920 GNIMB staked in 0x7d2d8d2c, and the 424.966629926279399044 GNIMB of legitimately accrued rewards returned by earned() at block 23886614. The attacker's GNIMB top-ups sent to the contracts in the same transaction cancel out in the balance difference. In the same transaction the attacker sold exactly 16,480,792.579260974757935462 GNIMB for 546.826074786203541275 NBU_WBNB (Nimbus-wrapped BNB, redeemed 1:1 for BNB), and that sale moved the price. The unit value is those proceeds per GNIMB sold, at the DefiLlama WBNB price. Attacker net profit was only 278.03 WBNB, because the NIMB pump round trip and flash-swap fees ate the rest. DeFiHackLabs reports ~76K USD.",
-    "Not the knot: deployed 61 blocks before target-1's configuration change wired it into PriceFeeds; it was unreachable from the staking contracts until then.",
-    "Not the knot: deployed before target-1's configuration change, which created the in-transaction-manipulable rate this consumer read."
+    "The age is set by setPriceFeed on PriceFeeds, which replaced the static owner-set NimbusPriceFeed for NIMB with spot PriceFeedSwap 0x199600cb; before it, queryRate(NIMB, GNIMB) could not move within a transaction. The staking contracts' own feed settings date from deployment.",
+    "Loss is the other stakers' GNIMB, excluding the attacker's own staked principal and the rewards it had legitimately accrued, valued at the attacker's realised NBU_WBNB per GNIMB on its sale, which moved the price; NBU_WBNB redeems 1:1 for BNB.",
+    "Each helper of the attacker staked days earlier in a separate setup transaction; only the claim transaction drained value."
   ]
 }

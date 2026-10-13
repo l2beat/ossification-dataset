@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "NXUSD",
   "name": "NXUSD Cauldron LP-price accounting",
-  "summary": "The Cauldron accepted a live reserve-derived LP valuation when checking solvency, allowing one borrower to withdraw 998,000 NXUSD against insufficient JLP collateral.",
+  "summary": "The JLP collateral oracle priced WAVAX/USDC LP tokens from the pair's spot reserves. The attacker flash-borrowed USDC, skewed the pair, minted LP, deposited it into the cauldron at the inflated price and borrowed NXUSD far above the collateral's value.",
   "targets": [
     {
       "address": "0xc0a7a7f141b6a5bce3ec1b81823c8afa456b6930",
@@ -10,6 +10,13 @@
       "reset": {
         "kind": "deployment",
         "tx": "0xfec980e2671ccc947bf063a5cb3ac41299eacf3729eec9a2d1f7d74b534ee9d7"
+      }
+    },
+    {
+      "address": "0xf955a6694c6f5629f5ecd514094b3bd450b59000",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf9097809f56d7d003e5eb16235ed6618bf3a242af3f2df2e3ccd41500e5f93c1"
       }
     }
   ],
@@ -37,7 +44,7 @@
     "https://medium.com/nereus-protocol/post-mortem-flash-loan-exploit-in-single-nxusd-market-343fa32f0c6"
   ],
   "notes": [
-    "DegenBox CREATE2-created and initialized the 45-byte EIP-1167 clone in one transaction. Its runtime hardcodes the CauldronV2 master, so the clone creation is the immutable activation of that implementation for this market.",
-    "The sole successful loss receipt transfers exactly 998,000 NXUSD from DegenBox 0x0b1f9c2211f77ec3fa2719671c5646cf6e59b775 to the helper with no NXUSD inflow or return. The DegenBox archive balance falls by exactly that amount, from 60,793,507.532450031356773887 to 59,795,507.532450031356773887 NXUSD. DegenBox receives and retains 0.045330977931305070 USDC/WAVAX JLP collateral, exactly matching its archive increase; this borrower-supplied consideration is not another victim asset loss. The helper's NXUSD, JLP, USDC, USDC.e, WAVAX, and native balances all end at zero. Downstream conversions and the 371,406.644911-USDC transfer to the profit receiver dispose of already-counted NXUSD and are excluded. NXUSD is valued at par; this corrects the seed's attacker-profit-style 50,000 USD estimate to gross victim depletion."
+    "The cauldron clone fixes its oracle at creation and received no admin calls before the exploit, so its creation activates the master code and the spot-reserve oracle for this market; the oracle itself is older.",
+    "NXUSD is valued at par: DefiLlama's 0.975 is below the attacker's own realised Curve rate on the full 998k (0.979), so it understates the pre-trade price by more than 1%. The JLP collateral left in DegenBox is not subtracted."
   ]
 }

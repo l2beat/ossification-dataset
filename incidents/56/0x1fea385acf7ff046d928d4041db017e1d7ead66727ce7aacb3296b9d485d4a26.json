@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "NewFreeDAO",
   "name": "NewFreeDAO reward contract repeatable claim",
-  "summary": "The NFD reward contract pays its bonus, selector 0x6811e3b9, to any caller in proportion to that caller’s NFD balance and records the claim only against the caller’s own address. The attacker looped: deploy a fresh claimer contract, move the same NFD into it, claim again. The payout multiplied without limit, and the accumulated NFD was sold into the NFD/WBNB pair for its WBNB.",
+  "summary": "The NFD reward contract's claim paid NFD in proportion to the caller's current NFD balance and recorded the claim only per address. The attacker bought NFD with flash-loaned WBNB, passed it through freshly created contracts that each claimed and handed it on, and dumped the accumulated NFD into the NFD/USDT pair.",
   "targets": [
     {
       "address": "0x8b068e22e9a4a9bca3c321e0ec428abf32691d1e",
@@ -13,24 +13,26 @@
     }
   ],
   "loss": {
-    "usd": 1251290.7206958646,
+    "usd": 1267022.01,
     "assets": [
       {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "4481.324982360678881755",
-        "usd": 1251290.7206958646
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "1266832.838326531513707",
+        "usd": 1267022.01
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/NewFreeDAO_exp.sol",
-    "https://twitter.com/SlowMist_Team/status/1567854876633309186",
-    "eip155:56:0x8b77d75efa185295b09bdf2edcb509541fdde40ed5484212331ceac41b2f4ac0",
-    "eip155:56:0xb6f9b5ef1feeadb379a2de8f79bb04dd6920bfb214136d057eed4ce23a0003f8"
+    "https://twitter.com/SlowMist_Team/status/1567854876633309186"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0x2088f7052f78b32d41cd34b126f84b52eaa1e0a81dc86e3ae13b3834a33ae820 both at the deployment block 21113880 and at block 21140434, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "Three of the attacker’s transactions call the reward contract, at blocks 21140435, 21140481 and 21140498; netting them gives the attacker exactly 4481.324982360678881755 WBNB, which is what the NFD/WBNB pair lost to the dumping. The seven earlier transactions the attacker sent to other contracts of its own between blocks 21139097 and 21140296 never touch the reward contract and are excluded. The nominal NFD the claims minted is not valued: it only had worth to the extent the pair absorbed it, which the WBNB figure already measures. Nothing was recovered."
+    "Loss is the USDT the NFD/USDT pair gave up to the dumped NFD over the three claim transactions; the claimed NFD itself is valued only through that sale. The attacker's later USDT-to-WBNB swaps were fair trades and are not victim depletion.",
+    "setInitLockTime (11 blocks after deployment) only opened the claim window; a replay with the old value reverts 'The collection time was not reached', a start gate rather than a reset. Single claims by holders after the crash (e.g. 0x57677411) used the contract as designed and are not counted."
+  ],
+  "campaign": [
+    "eip155:56:0xb6f9b5ef1feeadb379a2de8f79bb04dd6920bfb214136d057eed4ce23a0003f8",
+    "eip155:56:0x8b77d75efa185295b09bdf2edcb509541fdde40ed5484212331ceac41b2f4ac0"
   ]
 }

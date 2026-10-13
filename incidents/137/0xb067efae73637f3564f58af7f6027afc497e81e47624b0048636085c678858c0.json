@@ -2,20 +2,24 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Nimiq",
   "name": "Nimiq HTLC handler GSN execute verification bypass",
-  "summary": "Nimiq's ERC20PermitHTLCHandler and ERC20MetaHTLCHandler are each their own OpenGSN forwarder, paymaster and recipient. Their forwarder execute() (onlyRelayHub) discards the signature, domain and type hash, skips checkOpen/checkRefund, and opens or closes an HTLC for request.from; signature, nonce and business checks live only in the handler's own preRelayedCall. RelayHub lets a staked relay name any paymaster, so a relay naming its own always-accept paymaster made the handlers pull a liquidity wallet's approved USDC, USDT0 and USDC.e into attacker-recipient HTLCs, and a later actor refunded other users' expired HTLCs to itself.",
+  "summary": "Nimiq's ERC20 HTLC handlers are their own GSN forwarder and paymaster: execute() trusts any RelayHub call and acts for request.from, while signature checks live only in the handler's preRelayedCall. A relay naming its own paymaster made the handlers pull a wallet's approved stablecoins into attacker HTLCs; a copycat refunded others' HTLCs to itself.",
   "targets": [
     {
       "address": "0x0cfd862be942846cebad797d7c1bc6e47714959b",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xab827b175e2e4cb407dd402c7f7a51c7d42d995d9c4cefdf33c68767c27f8dac"
+        "kind": "config",
+        "tx": "0xda699c7e153729f70556bca71a70aea8c37260df5fbefd4af94047e130c26bc0",
+        "address": "0x0cfd862be942846cebad797d7c1bc6e47714959b",
+        "slot": "0x1"
       }
     },
     {
       "address": "0xf615bd7ea00c4cc7f39faad0895db5f40891359f",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x0f388c1122bb5a94184397f919113bcbbe9ae17e938a215185c04141c01a14e0"
+        "kind": "config",
+        "tx": "0x0db7f5ea84c5883e52c5daed92088babe398cc82ba009708e08246e2e1d0507d",
+        "address": "0xf615bd7ea00c4cc7f39faad0895db5f40891359f",
+        "slot": "0x1"
       }
     }
   ],
@@ -44,14 +48,14 @@
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/Nimiq_exp.sol",
-    "eip155:137:0x5868d4aba1562b7eea3ac9dfc9fa119d413df516c3f6d8383674f22408c73b16",
-    "eip155:137:0x15cc67b04020c4ce9bfd3ab75de1a04cb6fd4793f96b402d484d97d84c868a63",
     "eip155:137:0xb2ca76dfbfe571742b4b66465b777ab1e06988a8632be1631bef9654cc64d169"
   ],
   "notes": [
-    "Immutable direct ERC20PermitHTLCHandler runtime contains execute() without verification; the owner's setRelayHub to the standard OpenGSN RelayHub 480 blocks later is ordinary initial wiring, and token registration is not checked on the execute path.",
-    "Immutable direct ERC20MetaHTLCHandler runtime carries the same execute() without verification; setRelayHub 16 blocks later and later token registrations do not bear on the defect.",
-    "Campaign 1 (attacker 0x2258491525c21f334c5a2dc22ce55e55023fc45d, source-1): the liquidity wallet 0x24cb173ae221aea93369f34bdcf0ddb35b436773 loses its full balances, 26130.641710 USDC, 24332.489269 USDT0 and 0.661117 USDC.e; source-11 later redeems the three HTLCs to 0x4b0e8b2c38b0044405e24db481d00be7d5419e04 (payout of already-counted assets). Campaign 2 (0xfa20e2bd6cc9c41218d9811ffd984ae333fca618, source-7, about 48 minutes later): two relayed refund() calls through the same execute path send 27.781516 USDT0 and 4.541131 USDC from other users' expired HTLCs to that actor instead of their refund addresses. Component amounts sum both campaigns. realizedAt is the last campaign-2 transaction.",
-    "Older sibling handler (2023-03-07) with the same execute() defect exercised in the same anchor transaction; target-1 has the later deployment and supplies the knot."
+    "Each handler's reset is its setRelayHub: execute() is onlyRelayHub and the hub slot was zero at deployment. Replaying the anchor at block 93930783 with the permit handler's hub slot cleared reverts ('relay rejected'). Token registration is not checked on the execute path.",
+    "Exploit transactions were found as handler token inflows without an Open event and outflows without Redeem/Refund (the foreign paymaster skips the handler's postRelayedCall): only the anchor and the copycat's two refunds. The attacker's later redeem (in refs) pays out already-counted assets."
+  ],
+  "campaign": [
+    "eip155:137:0x5868d4aba1562b7eea3ac9dfc9fa119d413df516c3f6d8383674f22408c73b16",
+    "eip155:137:0x15cc67b04020c4ce9bfd3ab75de1a04cb6fd4793f96b402d484d97d84c868a63"
   ]
 }

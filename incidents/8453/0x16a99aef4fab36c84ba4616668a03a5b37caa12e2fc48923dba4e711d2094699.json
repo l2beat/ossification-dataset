@@ -2,15 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Nalakuvara",
   "name": "LotteryTicketSwap50 live-reserve redemption misprices LP",
-  "summary": "LotteryTicketSwap50 sized each ticket redemption's LP burn from the NATA/USDC pair's live reserves. A flash-financed reserve skew let one helper mint 2,600 tickets and redeem them in 130 calls while destroying too much protocol-owned LP, depleting the protocol entity's native Base USDC.",
+  "summary": "LotteryTicketSwap50 swapped and added ticket deposits at the NATA/USDC pair's spot reserves without slippage bounds, and redeemed tickets for fixed USDC by burning protocol-owned LP sized from live reserves. A flash-loan skew of the pair let the attacker buy tickets, recapture the mispriced deposit swap and redeem the tickets from protocol LP.",
   "targets": [
     {
       "address": "0x172119155a48de766b126de95c2cb331d3a5c7c2",
       "reset": {
         "kind": "config",
-        "tx": "0xe845313d3fb267bfa9c8b63ce370d69353c7c935aebc4c7819a8936c0a3f5978",
-        "address": "0x172119155a48de766b126de95c2cb331d3a5c7c2",
-        "slot": "0x000000000000000000000000000000000000000000000000000000000000000b"
+        "tx": "0x159c8a01be2c9577d5eb6a831deb98be215cd8feede3a65f4604f5a49a704019",
+        "address": "0xadcaab077f636d74fd50fda7f44ad41e20a21fee",
+        "slot": "0x35165bfc91e5488f489d893e4b8cdbd8a2391a7b5f147c7acbe09d7a4a7cf1c5"
       }
     }
   ],
@@ -35,7 +35,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-05/Nalakuvara_LotteryTicket50_exp.sol"
   ],
   "notes": [
-    "The constructor bound Base USDC, NATA, the ticket token and their pair, but flag1 initially prevented transferToken() from adding liquidity to LotteryTicketSwap50. The owner set flag1 true here, activating the intended deposit path that accumulated the contract-owned LP inventory consumed by the defective redemption calculation. The value stays true through the incident. A later whitelist addition for unrelated 0xc7c8c2a3c30fa626de7f4c88511b1f4a494674f7 does not affect the attacker's non-whitelisted branch, and no other token, ticket, flag or ownership setter executed before the loss.",
-    "The victim entity is LotteryTicketSwap50 0x172119155a48de766b126de95c2cb331d3a5c7c2, its NATA/USDC pair 0xadcaab077f636d74fd50fda7f44ad41e20a21fee and the owner/deployer's LP position. At anchor-1 the pair had 170.154260915765325861 LP outstanding: 99.415567080707983861 (58.42672792%) held by LotteryTicketSwap50 and 70.738693835057341000 (41.57327207%) held by its owner/deployer 0x66d9748e58f3bbfb4e400b3c6991bd578dabbeb2. Exhaustive LP Transfer history leaves no external holder. The pair sent 3037219.668858 and received 2929805 USDC, losing 107414.668858, while the swap contract received 259219.668858 and sent 259025, recovering 194.668858 internally. Entity loss is therefore exactly 107220 USDC: 105470 reached the attacker EOA and 1750 was the fee paid to external Uniswap V3 WETH/USDC 0.05% pool 0xd0b53d9277642d899df5c87a3966a349a798f224. Archive USDC balances agree: pair 291143.873072 -> 183729.204214 and swap 413.324943 -> 607.993801. Base USDC returns name USD Coin, symbol USDC and 6 decimals at anchor-1. DefiLlama observed $0.999946 29 seconds before the receipt; exact decimal multiplication is $107214.21012."
+    "The last enabling grant was the factory whitelisting router 0x09923035 on the pair: redemptions sell through it and it calls the pair's whitelist-gated subPool. Replaying the exploit at block 30001612 with that slot cleared reverts (NostrSwap: Transfer Not Allowed); clearing flag1 or the ticket mint grant, both set earlier, also reverts.",
+    "Victims are the pair and LotteryTicketSwap50, whose LP the owner and the contract held; their net USDC loss is counted. The NATA the router burned from the pair to the dead address went to no one and is not valued separately; the LP tokens are not counted beside their underlying."
   ]
 }

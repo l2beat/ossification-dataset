@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Notional Finance",
   "name": "Notional V1 Escrow uint128 truncation in free-collateral ETH conversion",
-  "summary": "Notional V1 Escrow.convertBalancesToETH (ExchangeRate._convertToETH) casts abs(balance) to uint128 without a bound check, so a net currency balance of -2^128 converts to 0 ETH. Via public ERC1155Trade.safeTransferFrom fCash pair mints the attacker made one account owe exactly 2^128 DAI fCash while passing the free-collateral check, used the unbacked 2^128-1 receiver leg as collateral to mint matured DAI/USDC claims sized to the escrow balances, then settled and withdrew all DAI and USDC from the escrow.",
+  "summary": "Notional V1 Escrow's ETH conversion cast abs(balance) to uint128 unchecked, so a -2^128 balance counted as 0 ETH. Via public ERC1155Trade fCash pair mints the attacker made one account owe 2^128 DAI fCash while passing free collateral, used the unbacked receiver leg to mint matured DAI/USDC claims, then settled and withdrew them.",
   "targets": [
     {
       "address": "0x9abd0b8868546105f6f48298eadc1d9c82f7f683",
@@ -31,11 +31,13 @@
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/NotionalFinance_exp.sol",
-    "eip155:1:0xc3f3e318f7ab2d0daaba59e6ec901d25d1fe8a89aafe2b2b62e3b9aee1a24efa"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/NotionalFinance_exp.sol"
   ],
   "notes": [
-    "The first of two Upgraded events on the Escrow proxy selected Escrow implementation 0x8a134e65, which inlines the truncating ExchangeRate._convertToETH; the second (block 25901449, the post-incident fix) follows the exploit.",
-    "Exact escrow depletion in source-3: the Escrow proxy's entire DAI and USDC balances. The attacker supplied no tokens (source-1 moves no ERC-20). WETH and WBTC held by the escrow were not taken by the attacker. A third-party liquidation at block 25900571 is excluded (liquidator paid USDC for WETH collateral)."
+    "The truncating conversion is inlined in the Escrow implementation installed in 0xd94e36ee; its second Upgraded event (block 25901449) is the post-incident fix. Portfolios and ERC1155Trade were upgraded within minutes of it in December 2020 and only carried the calls.",
+    "The anchor minted the unbacked fCash and moved no ERC-20; the campaign transaction settled and withdrew. Loss is the escrow's entire DAI and USDC; its WETH and WBTC were not taken, and a third-party liquidation at block 25900571 is excluded."
+  ],
+  "campaign": [
+    "eip155:1:0xc3f3e318f7ab2d0daaba59e6ec901d25d1fe8a89aafe2b2b62e3b9aee1a24efa"
   ]
 }
