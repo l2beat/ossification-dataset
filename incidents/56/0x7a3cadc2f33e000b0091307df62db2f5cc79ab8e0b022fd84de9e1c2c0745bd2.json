@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Falcon Heavy Token (FH)",
   "name": "FH sell path burns the sold amount from the FH/USDT pair before the sale",
-  "summary": "On a sale to the FH/USDT pair, FHToken._transfer burns 80% of the seller's after-fee amount from the pair's own balance, moves another 20% from the pair to the treasury, and calls sync() before the seller's tokens arrive. Buys are only allowed to whitelisted recipients, but the constructor whitelists PancakeSwap router 0x1b81d678ffb9c0263b24a97847620c99d213eb14, whose public sweepToken releases tokens held for any caller. Four minutes after the community wallet added 19,999.5 USDT of liquidity, a generic exploit bot looped 25 times with flash-loaned USDT: buy to that router, sweep, sell. It took the pair's USDT.",
+  "summary": "On a sale to the FH/USDT pair, FHToken._transfer burns 80% of the after-fee amount from the pair, moves 20% to the treasury and syncs before the sold tokens arrive. Buys need a whitelisted recipient, but a whitelisted PancakeSwap router's public sweepToken releases held tokens. An attacker looped flash-loaned buys to that router, sweeps and sells.",
   "targets": [
     {
       "address": "0xdcf0dfe0053677a67610c6d08ea1f5c78df8ca37",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 19999.02,
+    "usd": 19994.4,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "19999.018106552928530404",
-        "usd": 19999.02
+        "usd": 19994.4
       }
     ]
   },
@@ -28,7 +28,7 @@
     "https://x.com/TenArmorAlert/status/2092427353456812207"
   ],
   "notes": [
-    "Direct immutable FHToken runtime (no DELEGATECALL or SELFDESTRUCT). The constructor sets the pair, the router whitelist used for buys and tradingEnabled; the only later owner writes are two setBuyerWhitelist calls for addresses absent from the exploit.",
-    "Exact USDT depletion of the FH/USDT pair 0x8f2d1a3992856a860304f1b86534b6b129cc4df7, all of which reached the attacker EOA; the flash-loaned USDT buy legs are attacker inputs. The pair's FH burned to DEAD or moved to the treasury and slippage wallets is the same liquidity and is not added."
+    "Immutable token; the constructor set the pair, the router whitelist and tradingEnabled, and the only later owner writes are two setBuyerWhitelist calls for addresses the exploit did not use.",
+    "The pair's FH burned or moved to project wallets is the same liquidity as the drained USDT and is not added. The pair had no other USDT outflow."
   ]
 }

@@ -2,24 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "FloorDAO",
   "name": "FloorStaking stake/unstake supply accounting",
-  "summary": "FloorStaking transferred a stake into its FLOOR balance before rebase() calculated balance minus circulating supply as distributable profit. An attacker could therefore have borrowed principal counted as reward, mint gFLOOR at the old index, trigger the resulting index increase during unstake(), and redeem at the new index for more FLOOR.",
+  "summary": "FloorStaking.stake() pulls FLOOR in before rebase() sets the next distribution to balance minus circulating supply, so the staked principal counts as profit. With the epoch clock months behind, each stake or unstake could run another rebase: the attacker flash-borrowed FLOOR and looped stake to gFLOOR and unstake with rebase, redeeming at rising indexes.",
   "targets": [
     {
       "address": "0x759c6de5bca9ade8a1a2719a31553c4b7de02539",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x555cf29ccf18cf767f460eb9aa19c2891bd4ad0b1700ba8a5037f29c47585ce4"
+        "kind": "config",
+        "tx": "0xd179f1312a7c98f0f4eef36061869c6d69dc26cc88486727b38c4bcb420f6e8e",
+        "address": "0x164afe96912099543bc2c48bb9358a095db8e784",
+        "slot": "0x8"
       }
     }
   ],
   "loss": {
-    "usd": 65076.98940206191,
+    "usd": 69331.79,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "40.146353823753349478",
-        "usd": 65076.98940206191
+        "amount": "42.145206534486488251",
+        "usd": 69331.79
       }
     ]
   },
@@ -28,7 +30,12 @@
     "https://medium.com/floordao/floor-post-mortem-incident-summary-september-5-2023-e054a2d5afa4"
   ],
   "notes": [
-    "The direct FloorStaking runtime containing the principal-as-profit rebase accounting was installed by this top-level contract creation.",
-    "After repaying the FLOOR flash loan and swapping the 14,606.145072279 FLOOR surplus, the exploit receipt records exactly 40.146353823753349478 WETH leaving the DAO-owned FLOOR/WETH pool."
+    "The reset is sFLOOR.initialize, which made the staking contract the only caller of sFLOOR.rebase, one block after the staking deployment; the exploit needed that grant. The distributor and later emission settings only change the reward minted per rebase.",
+    "Campaign: the only transactions that ran more than one rebase (sFLOOR LogSupply per tx, deployment to the last rebase), two later ones by copycat 0x8fffd5f7.",
+    "Loss is the WETH the attackers' FLOOR sales took from the FLOOR/WETH pool (their realised proceeds); the FLOOR they took from staking, including newly minted rewards, crashed in those sales (rule 15)."
+  ],
+  "campaign": [
+    "eip155:1:0x0a03e2a2e45ccc65ada80f398ab3782b3b70bec4ff589be2172dd60413c3054d",
+    "eip155:1:0x5551b24212e6eb72ea8cf5974c58d5a53c80aec4a0e5d74229365f52da9d4176"
   ]
 }

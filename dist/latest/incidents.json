@@ -2680,8 +2680,8 @@
     "tx": "0x3a9dd216fb6314c013fa8c4f85bfbbe0ed0a73209f54c57c1aab02ba989f5937",
     "protocol": "FPC",
     "name": "FPC sell hook drains the pair reserve and syncs",
-    "summary": "On every sell the FPC token's _update override calls burnLpToken(value * 65 / 100), which moves 10 percent of the sold amount from the PancakeSwap pair to treasuryAddress and 55 percent from the pair to rewardPoolAddress with super._update(usdtPool, ...), then calls IUniswapV2Pair(usdtPool).sync(). The transfer hook therefore rewrites the counterparty AMM's reserves in the middle of the very swap it is settling: sync() lowers reserve1 to the post-drain FPC balance while reserve0 keeps the full USDT balance, and the router then prices the incoming FPC against that collapsed reserve. In the anchor the attacker first bought 790,178.970489172772916652 FPC so the pair held only 160,836.761063161996185171 FPC, then sold 247,441.170766403071054109 FPC through swapExactTokensForTokensSupportingFeeOnTransferTokens; burnLpToken removed 160,836.761 FPC from the pair and sync() set reserve1 to 65,000,000,000,002 wei, so PancakeRouter computed getAmountOut(235,069.112228082917501404, 0.000065000000000002, 27,693,883.534817151619771979) and the pair paid out 27,693,883.527140201011205321 USDT for the sale.",
-    "lossUsd": 4673883.527140201,
+    "summary": "On every sell FPC's _update calls burnLpToken, which moves 65% of the sold amount out of the PancakeSwap pair and calls sync() before the swap settles, collapsing the pair's FPC reserve. The attacker flash-borrowed USDT, bought most of the pair's FPC, then sold FPC so the router priced it against a near-zero reserve.",
+    "lossUsd": 4673883.53,
     "codeAgeSeconds": 170938,
     "exploit": {
       "block": 52624701,
@@ -4155,8 +4155,8 @@
     "tx": "0x9870a6a207a3a01e0b666e04c0722f39004d20cc8a516740eca6b1a8483ce634",
     "protocol": "EvoDeFi",
     "name": "EvoDeFi MasterChef updatePower raises power without settling rewardDebt",
-    "summary": "MasterChef.updatePower(pid) is public and recomputes user.power from the staked amount and the caller's current NFT/proxy bonus without paying pending rewards or resetting rewardDebt. A staker whose bonus rises can call updatePower and the next claim pays the new power times the whole accumulated reward per power minus the old debt. The first exercise (April 2021, a staker whose bonus rose 9%) paid about 0.0039 GEN extra; on 2021-06-10 an attacker flash-borrowed GEN, and six helper contracts each deposited, raised their NFT bonus, called updatePower and withdrew, draining 456,262 GEN from the MasterChef.",
-    "lossUsd": 489520.164376,
+    "summary": "MasterChef.updatePower(pid) is public and recomputes the caller's power from its stake and current NFT bonus without paying pending rewards or resetting rewardDebt, so the next claim pays the added power times the pool's entire accumulated reward per power. Attackers staked, raised their NFT bonus, called updatePower and claimed.",
+    "lossUsd": 486887.32,
     "codeAgeSeconds": 494602,
     "exploit": {
       "block": 6590138,
@@ -4174,7 +4174,7 @@
       "index": 23,
       "timestamp": 1618004013
     },
-    "claimsSha256": "767e2a49907db896f7e18ac21973baadcc2d441e2c6a2f18db26ba6a5527f7cf"
+    "claimsSha256": "028e542db7ea5b73adca5abff4387d0fc58885eeebfebe8d20d94f446d57939d"
   },
   {
     "id": "eip155:1:0x3e9bcee951cdad84805e0c82d2a1e982e71f2ec301a1cbd344c832e0acaee813",
@@ -4566,8 +4566,8 @@
     "tx": "0x7a3cadc2f33e000b0091307df62db2f5cc79ab8e0b022fd84de9e1c2c0745bd2",
     "protocol": "Falcon Heavy Token (FH)",
     "name": "FH sell path burns the sold amount from the FH/USDT pair before the sale",
-    "summary": "On a sale to the FH/USDT pair, FHToken._transfer burns 80% of the seller's after-fee amount from the pair's own balance, moves another 20% from the pair to the treasury, and calls sync() before the seller's tokens arrive. Buys are only allowed to whitelisted recipients, but the constructor whitelists PancakeSwap router 0x1b81d678ffb9c0263b24a97847620c99d213eb14, whose public sweepToken releases tokens held for any caller. Four minutes after the community wallet added 19,999.5 USDT of liquidity, a generic exploit bot looped 25 times with flash-loaned USDT: buy to that router, sweep, sell. It took the pair's USDT.",
-    "lossUsd": 19999.02,
+    "summary": "On a sale to the FH/USDT pair, FHToken._transfer burns 80% of the after-fee amount from the pair, moves 20% to the treasury and syncs before the sold tokens arrive. Buys need a whitelisted recipient, but a whitelisted PancakeSwap router's public sweepToken releases held tokens. An attacker looped flash-loaned buys to that router, sweeps and sells.",
+    "lossUsd": 19994.4,
     "codeAgeSeconds": 581658,
     "exploit": {
       "block": 117979402,
@@ -8458,8 +8458,8 @@
     "tx": "0x199c4b88cab6b4b495b9d91af98e746811dd8f82f43117c48205e6332db9f0e0",
     "protocol": "FFIST",
     "name": "FFIST predictable airdrop balance overwrite",
-    "summary": "FFIST._airdrop assigns one raw token unit to a predictably chosen address. A crafted zero-value transfer overwrote the pair balance; sync and tiny sales then drained its USDT reserves.",
-    "lossUsd": 55413.106238566936,
+    "summary": "FFIST._airdrop sets the balance of addresses derived from lastAirdropAddress, block number, sender, recipient and amount to one raw unit, overwriting whatever they held. A zero-value transfer to a crafted recipient made the derived address the USDT pair; after sync, a tiny FFIST sale drained the pair's USDT.",
+    "lossUsd": 53198.43,
     "codeAgeSeconds": 4649465,
     "exploit": {
       "block": 30113118,
@@ -10845,10 +10845,10 @@
     "chainId": 56,
     "tx": "0x13d19809b19ac512da6d110764caee75e2157ea62cb70937c8d9471afcb061bf",
     "protocol": "Fortress Loans",
-    "name": "Fortress Loans Chain price feed submit() without validator verification",
-    "summary": "Chain.submit() accepts a caller-supplied price array with caller-supplied signatures and never rejects signers that hold no validator stake, so any address can set any feed value. In one transaction the attacker executed a queued governance proposal that made fFTS collateral, called submit() to set FTS/USD to 4e34, and borrowed every Fortress market dry against 5,000 fFTS minted from 100 FTS.",
-    "lossUsd": 2356794.4920739466,
-    "codeAgeSeconds": 12637742,
+    "name": "Umbrella Chain.submit() accepts unstaked signatures, faking FTS and MAHA prices",
+    "summary": "Umbrella's Chain.submit() counts signatures from addresses without validator stake and never checks signing power, so anyone can publish any price. In one transaction the attacker executed its proposal making fFTS collateral, submitted huge FTS and MAHA prices, borrowed every Fortress market against 100 FTS and minted ARTH on MAHA to dump into Ellipsis.",
+    "lossUsd": 3136847.9,
+    "codeAgeSeconds": 12637661,
     "exploit": {
       "block": 17634663,
       "index": 21,
@@ -10859,13 +10859,13 @@
       "codeHash": "0x586c43e5b4661aff337a3424dfafec4fb81d00570da3bb4a161b51f7aa0ba62d"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xafd567be00b74626876501675fd22355cb915116644b26abe0a8f04f33f41ee3",
-      "block": 13441159,
-      "index": 260,
-      "timestamp": 1639404340
+      "kind": "upgrade",
+      "tx": "0xb003703e17cc75693811e9be3fc9f4b847a5f91dee76b9550a0cad480ba5dd7d",
+      "block": 13441186,
+      "index": 274,
+      "timestamp": 1639404421
     },
-    "claimsSha256": "e5fdc595657756895bd95514caeb8d08607d26ae98c80bdc0ed6eab43d3f9115"
+    "claimsSha256": "c61714eae36eb5cda9a52788cf2c7c20bf5cf509e20e507f210179293e4be369"
   },
   {
     "id": "eip155:1:0xff261a49c61861884d0509dac46ed67577a7d48cb73c2f51f149c0bf96b29660",
@@ -11584,9 +11584,9 @@
     "tx": "0x7e448bbf1566c20b6973d2cbdb49092d5c6fca90ad7f1a1fc4b102e8095899d2",
     "protocol": "FEG",
     "name": "FEG SmartBridge relayer whitelists forged Wormhole source on superAdmin payload",
-    "summary": "The unverified FEG relayer's receiveWormholeMessages sets whitelist[sourceAddress] = true whenever DataReader.superAdmin(payload.user) is true, before requiring that the Wormhole source address be whitelisted. The attacker sent a Wormhole message from its own contract naming the FEG superAdmin as user with amount 0, which whitelisted the attacker contract, then sent a second message that made SmartBridge.registerWithdraw credit the attacker. On BSC, Base and Ethereum it withdrew about 99.5% of each SmartBridge's FEG reserve and sold it into FEG liquidity pools for ETH and BNB.",
-    "lossUsd": 1080453.3057903463,
-    "codeAgeSeconds": 18773562,
+    "summary": "FEG's unverified relayer whitelists a Wormhole message's source address whenever the payload's user is a superAdmin, so any contract can make itself a trusted source. The attacker sent such a message naming the FEG admin, then a second one that made SmartBridge.registerWithdraw credit it, and withdrew and sold nearly all bridged FEG on BSC, Base and Ethereum.",
+    "lossUsd": 1080453.3,
+    "codeAgeSeconds": 18773004,
     "exploit": {
       "block": 45289131,
       "index": 84,
@@ -11597,13 +11597,13 @@
       "codeHash": "0x868e41c90cad94645520bc8c47b5cbdbd0802718574fa83ea4820b26bff4043e"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x13b0468ca3b1135f1833aaa0dbdbb8489afa56cb75f81c68236d9bcb2fa26e21",
-      "block": 39042585,
-      "index": 12,
-      "timestamp": 1716674965
+      "kind": "config",
+      "tx": "0xd287d87eb929bec6b4123219122b34d14f5617782946e3e5189c4d11584c09b0",
+      "block": 39042768,
+      "index": 8,
+      "timestamp": 1716675523
     },
-    "claimsSha256": "d0da4b682a3ebecb9842f1e08ffb2d417157afdb192f77cb8f7e0f9ade446cb0"
+    "claimsSha256": "9a1bd4d9d2988701888bfb3af4fd5dc8993b8195be4b6bbcd24147882ec0c3b8"
   },
   {
     "id": "eip155:56:0x098e7394a1733320e0887f0de22b18f5c71ee18d48a0f6d30c76890fb5c85375",
@@ -12985,9 +12985,9 @@
     "tx": "0x1274b32d4dfacd2703ad032e8bd669a83f012dde9d27ed92e4e7da0387adafe4",
     "protocol": "FloorDAO",
     "name": "FloorStaking stake/unstake supply accounting",
-    "summary": "FloorStaking transferred a stake into its FLOOR balance before rebase() calculated balance minus circulating supply as distributable profit. An attacker could therefore have borrowed principal counted as reward, mint gFLOOR at the old index, trigger the resulting index increase during unstake(), and redeem at the new index for more FLOOR.",
-    "lossUsd": 65076.98940206191,
-    "codeAgeSeconds": 47901060,
+    "summary": "FloorStaking.stake() pulls FLOOR in before rebase() sets the next distribution to balance minus circulating supply, so the staked principal counts as profit. With the epoch clock months behind, each stake or unstake could run another rebase: the attacker flash-borrowed FLOOR and looped stake to gFLOOR and unstake with rebase, redeeming at rising indexes.",
+    "lossUsd": 69331.79,
+    "codeAgeSeconds": 47901033,
     "exploit": {
       "block": 18068773,
       "index": 0,
@@ -12998,13 +12998,13 @@
       "codeHash": "0xedfa9860249e9c6806b86532b9cff3d9b209fd34b5627fd02ce56d6a7ee0948b"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x555cf29ccf18cf767f460eb9aa19c2891bd4ad0b1700ba8a5037f29c47585ce4",
-      "block": 14290678,
-      "index": 16,
-      "timestamp": 1645997651
+      "kind": "config",
+      "tx": "0xd179f1312a7c98f0f4eef36061869c6d69dc26cc88486727b38c4bcb420f6e8e",
+      "block": 14290679,
+      "index": 18,
+      "timestamp": 1645997678
     },
-    "claimsSha256": "e92c428ebb23e0518ebd9c5323384966ec2382d31f04657a78c2cdb04ed0ae79"
+    "claimsSha256": "230f79b602bbf5ee627500933833a15ca87a632e4b1052d3bf03dfbf91f3b5c0"
   },
   {
     "id": "eip155:1:0xe3cba90e865c6cba950ebce36a52607f51f1fd33cd9fb920c78803f19b57791a",
@@ -14988,8 +14988,8 @@
     "tx": "0xb2bb14d61e95e1e3255770a2f1cc68d69052ae4b63adbe9987c8021ccaed14da",
     "protocol": "EtherFreakers",
     "name": "EtherFreakers capture pays out before settling the target, transfer hook re-dissipates stale energy",
-    "summary": "In EtherFreakers.attack(), a successful capture sends the target's full energy to the defender and then transfers the NFT; the ERC-721 _beforeTokenTransfer hook recomputes the target's energy from its not-yet-updated balance and dissipates 0.1% of that already-paid energy into the global freakerIndex. The index therefore grows without ETH backing. Attackers minted fresh Freakers, charged them with flash-loaned ETH, looped captures between their own tokens to inflate the index, and discharged more ETH than they put in, draining the contract's 17.87 ETH over two campaigns.",
-    "lossUsd": 34860.98663842144,
+    "summary": "EtherFreakers.attack() pays a captured target's energy to the defender before transferring the NFT; the transfer hook then recomputes the target's energy from its stale balance and dissipates 0.1% of it into the reward indexes, unbacked. Attackers looped flash-loan-charged captures between their own Freakers to inflate the index and discharged the excess.",
+    "lossUsd": 34744.38,
     "codeAgeSeconds": 156451941,
     "exploit": {
       "block": 24602560,
@@ -15007,7 +15007,7 @@
       "index": 171,
       "timestamp": 1616398166
     },
-    "claimsSha256": "6041271717f60c3f895e8d4d31ee439f75f39ba3fb90c976c9f29d450814db45"
+    "claimsSha256": "78382f06ecd840295b332ca707da3d1cd5090277c51217eb269e4297c27d9b38"
   },
   {
     "id": "eip155:1:0x90f40d3c3b60370f7287d51d972ef54596c46e98f21af91b03a4e84c5e410f64",

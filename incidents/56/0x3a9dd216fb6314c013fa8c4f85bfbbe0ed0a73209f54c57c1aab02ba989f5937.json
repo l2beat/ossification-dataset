@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "FPC",
   "name": "FPC sell hook drains the pair reserve and syncs",
-  "summary": "On every sell the FPC token's _update override calls burnLpToken(value * 65 / 100), which moves 10 percent of the sold amount from the PancakeSwap pair to treasuryAddress and 55 percent from the pair to rewardPoolAddress with super._update(usdtPool, ...), then calls IUniswapV2Pair(usdtPool).sync(). The transfer hook therefore rewrites the counterparty AMM's reserves in the middle of the very swap it is settling: sync() lowers reserve1 to the post-drain FPC balance while reserve0 keeps the full USDT balance, and the router then prices the incoming FPC against that collapsed reserve. In the anchor the attacker first bought 790,178.970489172772916652 FPC so the pair held only 160,836.761063161996185171 FPC, then sold 247,441.170766403071054109 FPC through swapExactTokensForTokensSupportingFeeOnTransferTokens; burnLpToken removed 160,836.761 FPC from the pair and sync() set reserve1 to 65,000,000,000,002 wei, so PancakeRouter computed getAmountOut(235,069.112228082917501404, 0.000065000000000002, 27,693,883.534817151619771979) and the pair paid out 27,693,883.527140201011205321 USDT for the sale.",
+  "summary": "On every sell FPC's _update calls burnLpToken, which moves 65% of the sold amount out of the PancakeSwap pair and calls sync() before the swap settles, collapsing the pair's FPC reserve. The attacker flash-borrowed USDT, bought most of the pair's FPC, then sold FPC so the router priced it against a near-zero reserve.",
   "targets": [
     {
       "address": "0xb192d4a737430aa61cea4ce9bfb6432f7d42592f",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 4673883.527140201,
+    "usd": 4673883.53,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "4673883.527140201011205321",
-        "usd": 4673883.527140201
+        "usd": 4673883.53
       }
     ]
   },
@@ -28,7 +28,7 @@
     "https://x.com/TenArmorAlert/status/1940423393880244327"
   ],
   "notes": [
-    "The immutable FPC token runtime was created in this transaction; it contains no DELEGATECALL or CALLCODE and its 6,801-byte runtime is byte-identical at the creation block and at block 52624700.",
-    "Exact depletion of the FPC/USDT PancakeSwap pair 0xa1e08e10eb09857a8c6f2ef6cca297c1a081ed6b, whose USDT balance is 4,673,883.534817151619771979 at block 52624700 and 0.007676950608566658 at block 52624701; the difference is the liquidity providers' loss and is measured net of the 23,020,001 USDT the attacker paid into the pair on the preceding buy, so no attacker-supplied capital is counted. The 23,020,000 USDT PancakeSwap v3 flash loan and its 2,302 USDT fee are financing, not loss: the attacker's realised take is 4,671,581.527140201011205321 USDT, 2,302 USDT less than the gross depletion recorded here. DefiLlama prices BSC-USD at exactly 1.0 at the incident timestamp. The pair additionally lost 160,836.761063161996185171 FPC that burnLpToken moved to the project's own treasury 0x0fa6c0bd9704a7a45b16e0487549b10218a82baa and reward pool 0xcea188c6bb0db78fd17904c03e28f43ae4e46d5a; that component is not valued because the same transaction destroyed the only FPC market. Nothing was recovered."
+    "Immutable token; the owner's later changes before the exploit (fee recipients, whitelists, and open() five blocks earlier) are fee routing or the trading gate, which do not reset the age.",
+    "The pair's USDT depletion nets the attacker's own flash-loaned buy within the transaction. The FPC that burnLpToken moved out of the pair is not valued: the same transaction destroyed FPC's only market. No other large USDT outflow from the pair followed."
   ]
 }

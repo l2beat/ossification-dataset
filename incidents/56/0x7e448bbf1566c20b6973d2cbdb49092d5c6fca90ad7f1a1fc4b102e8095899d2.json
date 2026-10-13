@@ -2,65 +2,60 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "FEG",
   "name": "FEG SmartBridge relayer whitelists forged Wormhole source on superAdmin payload",
-  "summary": "The unverified FEG relayer's receiveWormholeMessages sets whitelist[sourceAddress] = true whenever DataReader.superAdmin(payload.user) is true, before requiring that the Wormhole source address be whitelisted. The attacker sent a Wormhole message from its own contract naming the FEG superAdmin as user with amount 0, which whitelisted the attacker contract, then sent a second message that made SmartBridge.registerWithdraw credit the attacker. On BSC, Base and Ethereum it withdrew about 99.5% of each SmartBridge's FEG reserve and sold it into FEG liquidity pools for ETH and BNB.",
+  "summary": "FEG's unverified relayer whitelists a Wormhole message's source address whenever the payload's user is a superAdmin, so any contract can make itself a trusted source. The attacker sent such a message naming the FEG admin, then a second one that made SmartBridge.registerWithdraw credit it, and withdrew and sold nearly all bridged FEG on BSC, Base and Ethereum.",
   "targets": [
     {
       "address": "0x3a3709b8c67270a84fe96291b7e384044160c6b1",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x13b0468ca3b1135f1833aaa0dbdbb8489afa56cb75f81c68236d9bcb2fa26e21"
+        "kind": "config",
+        "tx": "0xd287d87eb929bec6b4123219122b34d14f5617782946e3e5189c4d11584c09b0",
+        "address": "0xdae383661587232fbd254b05a395cb8e35e6e7b6",
+        "slot": "0xbb93bfbda904c4b6fc557603fd2d9758180c9d603afc19c49e6ff1cd2b2a1f6f"
       }
     }
   ],
   "loss": {
-    "usd": 1080453.3057903463,
+    "usd": 1080453.3,
     "assets": [
       {
         "token": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
         "symbol": "FEG",
         "amount": "45715693242.627421547897258927",
-        "usd": 506843.74450715736
+        "usd": 506843.74
       },
       {
         "chainId": 8453,
         "token": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
         "symbol": "FEG",
         "amount": "95809472542.067884409468186734",
-        "usd": 247916.1792851705
+        "usd": 247916.18
       },
       {
         "chainId": 1,
         "token": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
         "symbol": "FEG",
         "amount": "57532022461.471026362052505299",
-        "usd": 325693.3819980185
+        "usd": 325693.38
       }
     ]
   },
   "refs": [
     "https://www.certik.com/resources/blog/feg-bridge-exploit-technical-analysis",
-    "eip155:56:0x8d57aacd101b585ed5e68f9f5f79bea2082ec03862456615d9175d6c967289e4",
-    "eip155:56:0x3de4f3584203d7545b252df73a3b7e75db691a2c12467de42028552ca3bbf04f",
-    "eip155:8453:0x08b06e5b5906308a6fa64e2bc965189ea4c6e3338d0037e1ba2b9b3db88dd6c0",
-    "eip155:8453:0x7bd64979a1da87448a65643e33f1453ce06065533da087a971f1a5c9dd37b77b",
-    "eip155:8453:0x940fd735665d32afe4893c5e6370745206507c55cb900c18cea83f7c0a0dc330",
-    "eip155:1:0x039d16382474370361293b2ea11c4b782a343aced0bd4831f996bf160f4365a0",
-    "eip155:1:0xaac5c0465103d01c9546c622dad64ac70f550f32c9f1e05a77e138a580432335",
-    "eip155:56:0x001d8ec72cd59b31172ee7414be198021b05733bda44c551e78c6d40f078be2b",
-    "eip155:56:0x987eda08bd482981ec062f7fdb8fc9c879a5a6d71cde385c9dd5e216ccd4a040",
-    "eip155:56:0x2d754ff34983a2867b480830639d9f5217a6efb7361ff5246a360a2df3ebcd58",
-    "eip155:56:0x13806061e9411940ce0aee35a85869da0a7549df8c93784d99365aad636146d0",
-    "eip155:56:0xa1e786e00818a477c6ba5c7a946bfa48a601203334642fb872ff16b494c63825",
-    "eip155:56:0xc547a2615f9872691ea4faba08bec25c3a1a4af8c8a784906cdb310eb93754fb",
-    "eip155:56:0x8d158a543ce2c87a0d5811670ec26ab7973fd03f61abd98dd5d33362f90d11b5",
-    "eip155:56:0x1a6f23ed28ce0d5fceb35b4163a72e87bc048c33607b1c110363f6004a5f40ca",
-    "eip155:56:0xec99afc3b478945157277fa701f7672252feb81e2d050ea62297daeaf423d298",
-    "eip155:56:0xf832e852cd0ab0cc1afdf17268f54c05826a8b3bc624232d73fd4568586bd6f2",
-    "eip155:8453:0x60fd436dbd0e99c7585b775095048eced56bfc11e18331cfcb0cdad6f9fe7d87",
-    "eip155:1:0x6c3cf48e9c8b22f60fc2b702b03f93926ee8624639b100fe851b757947e61759"
+    "https://www.halborn.com/blog/post/explained-the-feed-every-gorilla-feg-hack-december-2024"
   ],
   "notes": [
-    "Direct non-proxy FEG relayer runtime. The superAdmin-payload source whitelisting is in its bytecode. Post-deployment admin calls only set gas and threshold parameters and outbound peer addresses, none of which the exploited condition depends on.",
-    "Gross loss is the SmartBridge FEG reserve released on three chains, valued at the native currency that its sale drew out of FEG liquidity. FEG totalSupply() is 1e29 base units (100B) on each chain, and each bridge held the reserve backing other chains' supply, so the released quantities are far larger than market depth. Marking them at the DefiLlama FEG quote (0.00028162 USD on BSC at 1735448339) would give about 56M USD, which could never have been realised. The measured native outflows are 712.031620461321275236 BNB, 73.302005631133881587 ETH (Base) and 96.330488612250354544 ETH (Ethereum). They are valued at the DefiLlama native quotes nearest each withdrawal: 711.8275789195656, 3382.12 and 3381 USD. Unit prices are realisation rates (proceeds / released FEG), not market prices. Attacker-paid Wormhole fees and msg.value are inputs, not loss. FEG tax transfers to fee and dead addresses inside the sale are part of the released quantity. Later relays by other senders (see source-3) registered withdrawals but moved no FEG. realizedAt is the Ethereum withdrawal, the last of the three."
+    "The reset is the SmartBridge deployment, which registered the bridge for FEG in DataReader (bridgeSD) and fixed its relayer; the relayer resolves the bridge through that entry. Later relayer admin calls set fees, gas and peers, which the exploited path does not read. The relayer runs the same code at the same address on Base and Ethereum.",
+    "BSC delivered the first forged message. Later forged messages by 0xb1e2afdb and 0x2218666f registered withdrawals but moved no FEG, so they are not campaign.",
+    "FEG is valued at the native currency its sales drew from FEG pools on each chain (rule 15): the released quantities far exceed market depth, so DefiLlama quotes would overstate the loss about fiftyfold."
+  ],
+  "campaign": [
+    "eip155:8453:0x7bd64979a1da87448a65643e33f1453ce06065533da087a971f1a5c9dd37b77b",
+    "eip155:1:0x039d16382474370361293b2ea11c4b782a343aced0bd4831f996bf160f4365a0",
+    "eip155:56:0x8d57aacd101b585ed5e68f9f5f79bea2082ec03862456615d9175d6c967289e4",
+    "eip155:8453:0x940fd735665d32afe4893c5e6370745206507c55cb900c18cea83f7c0a0dc330",
+    "eip155:1:0xaac5c0465103d01c9546c622dad64ac70f550f32c9f1e05a77e138a580432335",
+    "eip155:8453:0x60fd436dbd0e99c7585b775095048eced56bfc11e18331cfcb0cdad6f9fe7d87",
+    "eip155:56:0x3de4f3584203d7545b252df73a3b7e75db691a2c12467de42028552ca3bbf04f",
+    "eip155:1:0x6c3cf48e9c8b22f60fc2b702b03f93926ee8624639b100fe851b757947e61759"
   ]
 }

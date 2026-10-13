@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "EtherFreakers",
   "name": "EtherFreakers capture pays out before settling the target, transfer hook re-dissipates stale energy",
-  "summary": "In EtherFreakers.attack(), a successful capture sends the target's full energy to the defender and then transfers the NFT; the ERC-721 _beforeTokenTransfer hook recomputes the target's energy from its not-yet-updated balance and dissipates 0.1% of that already-paid energy into the global freakerIndex. The index therefore grows without ETH backing. Attackers minted fresh Freakers, charged them with flash-loaned ETH, looped captures between their own tokens to inflate the index, and discharged more ETH than they put in, draining the contract's 17.87 ETH over two campaigns.",
+  "summary": "EtherFreakers.attack() pays a captured target's energy to the defender before transferring the NFT; the transfer hook then recomputes the target's energy from its stale balance and dissipates 0.1% of it into the reward indexes, unbacked. Attackers looped flash-loan-charged captures between their own Freakers to inflate the index and discharged the excess.",
   "targets": [
     {
       "address": "0x3a275655586a049fe860be867d10cdae2ffc0f33",
@@ -13,27 +13,44 @@
     }
   ],
   "loss": {
-    "usd": 34860.98663842144,
+    "usd": 34744.38,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "3.061115988783684594",
-        "usd": 6063.499709182261
-      },
-      {
-        "symbol": "ETH",
-        "amount": "14.807099274041125251",
-        "usd": 28797.48692923918
+        "amount": "17.868215262824809845",
+        "usd": 34744.38
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x12f96463f686bb0fe08211f3ff0a002e8c3afe68aab9b81243154b6a76033d1e",
+    "eip155:1:0x923da29bb09b7096d91d723d89742748106026b6f687b07fafa1d660f96bf53e",
+    "eip155:1:0xaeae0f30eb098fe31a943425208b82463076eeebd09db3894085ad91255ac4ea",
+    "eip155:1:0xb69589176ca3094f2045eb3b8fd2666b2e05f1feac67d814f587a4bd5ffae9c7",
+    "eip155:1:0x65239c2d6dae8fabe935363ea7133c0da4f0bb905d16a834b684a53fcfc39ef4",
+    "eip155:1:0xf83e5f64aa0f89228bd581b79679a9858e68661c286536c61405ee6040663b53",
+    "eip155:1:0x57916638f190206972a0413c4141c7c30bec2cbbf925582a2e17cc85609532ca",
+    "eip155:1:0x415ca35a52f08959e06566daae10dd47770f7a3419a63fd9fa799dbc4ea24ff3",
+    "eip155:1:0x89e24dbfddcbc566c4b5f539e588bacee9ef72682119892977afa0279abd2942",
+    "eip155:1:0x2612133066a3193b4e3687f13c58643893d491916e787ea49438a26b3e4da59c",
+    "eip155:1:0x2722a5a05150c14270cbf18ed1b551bf9b5844aac73f463423722856be592544",
+    "eip155:1:0x301f243a1fd084bb6b2b835be4a86aed302edaffcab9b1ed2be9a808b0d5b099",
+    "eip155:1:0x7a3bd472dc96e4cde75aab97e27a5403920e183298550963f1d1451dcf5e810d",
+    "eip155:1:0x078af48dbf7f879b623cb8321355c6ba1982781c1a9e9198bbc86fe9c365d205",
+    "eip155:1:0x4f33a45e3633430e32c53863a96dbaa6934abe4a8247f3cbf924cc688b10d2d3",
+    "eip155:1:0xad303fbccb667fbf0dc0cdd4b6dbb0bb93ee9d82b7714221c0718e50d61b63c0",
+    "eip155:1:0xd90490e59a4b25e2d2417b060ae33e4b70172945c9b5779c73c8031b04dd0f42",
+    "eip155:1:0xc66c8f4c75984e90111ece43615c3248d234d9c51b78321d07342b24e155c9a3",
+    "eip155:1:0x3b2e5b621a6ec13b94d4ab5143a0e2619fa330e87d2de037349dc14fe2cbd18a",
+    "eip155:1:0x831c897c3d616aa7c418c1e8239fd79a22116dc4a4460378c74a70967ec406d3",
+    "eip155:1:0xa4da5eedde5a6f9983dda7e6b87306688c2711bf60cb957634dbb4ae4f1a9661",
+    "eip155:1:0x3d20719c590b677789b32c0ca0f1183d530b5ef399770c942a6c403571eaedb7"
+  ],
   "refs": [
-    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-9-mar-15-2026",
-    "eip155:1:0x923da29bb09b7096d91d723d89742748106026b6f687b07fafa1d660f96bf53e"
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-9-mar-15-2026"
   ],
   "notes": [
-    "Direct immutable EtherFreakers runtime (the contract has no owner or admin functions); the ordering flaw exists from deployment.",
-    "Net ETH paid out by the EtherFreakers contract across the 23 successful campaign transactions (3 by 0x7ef9ac48, 20 by 0xbe9ef50f), i.e. discharges minus the attackers' own birth and charge payments into the contract. The total equals the contract's balance drop from 17.876119787873554828 ETH (block 24602559) to 0.007904525048744983 ETH (block 24614227). Valued at WETH prices at each campaign's first transaction; flash loans are excluded.",
-    "38 ordinary 2021 Captured events (blocks 12117639..12344690) also ran the stale-hook dissipation (0.1% of each target's energy) without any looping or extraction; they are treated as benign use, not as earlier exploits. If the dataset instead anchors on the first capture ever (block 12117639, 2021-03-26), the age collapses to about four days."
+    "The 38 Captured events of 2021 also ran the stale-hook dissipation, but between unrelated players without looping or extraction; they are normal gameplay, not earlier exploits. The contract has no owner or admin functions.",
+    "The campaign includes 0xbe9ef50f's discharge-only transactions that withdrew index gains accrued to Freakers its exploit transactions minted. Summed per transaction, the loss equals the contract's balance drop, so the attackers' own births and charges net out as round trips."
   ]
 }
