@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LaunchZone / SwapX",
   "name": "SwapX arbitrary transferFrom on approval holders",
-  "summary": "SwapX exposes selector 0x4f1f05bc, which takes the token owner as a caller-supplied argument and runs transferFrom against it into a pair the caller also chooses, with no check that the owner is the caller. Every wallet that had ever approved SwapX could therefore be drained by anyone, and the attacker swept 68 of them in a single transaction and swapped the proceeds to WBNB.",
+  "summary": "SwapX's swap entry point 0x4f1f05bc takes the token owner as a caller-supplied argument and runs transferFrom on it into a caller-chosen pair without checking that the owner is the caller. Anyone could swap any SwapX approver's balance into pools they had pumped; the attacker swept 59 BUSD approvers at once and copycats drained approvers for years.",
   "targets": [
     {
       "address": "0x6d8981847eb3cc2234179d0f0e72f6b6b2421a01",
@@ -13,24 +13,93 @@
     }
   ],
   "loss": {
-    "usd": 226263.72399502067,
+    "usd": 1430188.39,
     "assets": [
       {
-        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        "symbol": "WBNB",
-        "amount": "739.641476234907877084",
-        "usd": 226263.72399502067
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "808680.12786",
+        "usd": 808680.13
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "351477.010773",
+        "usd": 351477.01
+      },
+      {
+        "token": "0x3b78458981eb7260d1f781cb8be2caac7027dbe2",
+        "symbol": "LZ",
+        "amount": "10448556.355188",
+        "usd": 92851.69
+      },
+      {
+        "token": "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+        "symbol": "ADA",
+        "amount": "109880.757408",
+        "usd": 40140.33
+      },
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "0.984126",
+        "usd": 28413.22
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "18958.694954",
+        "usd": 18958.69
+      },
+      {
+        "token": "0x9fd87aefe02441b123c3c32466cd9db4c578618f",
+        "symbol": "THG",
+        "amount": "242147.627102",
+        "usd": 18691.36
+      },
+      {
+        "token": "0xcfbb1bfa710cb2eba070cc3bec0c35226fea4baf",
+        "symbol": "HEROEGG",
+        "amount": "27502420.2155",
+        "usd": 14725.81
+      },
+      {
+        "token": "0x6cad12b3618a3c7ef1feb6c91fdc3251f58c2a90",
+        "symbol": "NINO",
+        "amount": "3344655.543535",
+        "usd": 12219.93
+      },
+      {
+        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "symbol": "Cake",
+        "amount": "3390.675933",
+        "usd": 10730.24
+      },
+      {
+        "symbol": "137 other tokens",
+        "usd": 33299.98
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/SwapX_exp.sol",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/LaunchZone_exp.sol",
-    "https://blog.verichains.io/p/analyzing-the-lz-token-hack",
-    "eip155:56:0x876944e5537cfec8bca38ae7002d5f3c3f05fe83eff4b691d94d2aeea9f39045"
+    "https://blog.verichains.io/p/analyzing-the-lz-token-hack"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0x6088a520ddcc24072797530768424012b4fe19e4b09de3b48e3b18cfb63b604f both at the deployment block 12168762 and at block 26023088, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "The attacker pulled a long list of approval holders in two transactions and routed each balance straight through a PancakeSwap pair, so the tokens never sat in the attacker’s hands at a markable price. Netting both transactions across the attacker EOA and its exploit contract leaves 739.641476234907877084 WBNB gained and 1,000,000 DND of the attacker’s own token spent, so the realised proceeds are used as the measure rather than a mark on the drained tokens, which were mostly thin BSC assets sold into their own pools. Contemporaneous reporting put the event near USD 1 million on a nominal basis; that figure is not reproducible from the realised flows and is not used. Nothing was recovered."
+    "Campaign and loss come from Approval logs naming SwapX as spender with an owner other than the tx sender (5,389 txs incl. the anchor, none before it; sampled traces show SwapX transferFrom from the owner). Tokens that emit no Approval on transferFrom (e.g. WBNB) are not covered, so this is a lower bound.",
+    "Loss is the owners' net token outflow per tx: stables at par, others at DefiLlama prices near the block; 69 unpriced tokens are excluded. LZ (one 9.9M LZ wallet drained by the attacker in 0xaee8ef10) is valued at that tx's realised 87,861 BUSD rate, as its pool could not absorb it.",
+    "Non-upgradeable contract with no storage read on the exploit path; the runtime is unchanged since deployment."
+  ],
+  "campaign": [
+    "eip155:56:0xaee8ef10ac816834cd7026ec34f35bdde568191fe2fa67724fcf2739e48c3cae",
+    "eip155:56:0x9b721de404ba103702871f514aa7658e827f0013667ed85fc26430675e23284d",
+    {
+      "chainId": 56,
+      "count": 5386,
+      "from": 26024586,
+      "to": 96575314,
+      "selection": "Successful transactions after the anchor, other than those listed, carrying an Approval(owner, spender=0x6d8981847eb3cc2234179d0f0e72f6b6b2421a01) log whose owner is not the transaction sender, i.e. SwapX spent a third party's allowance (Etherscan topic query on Approval with topic2 = SwapX)."
+    }
   ]
 }

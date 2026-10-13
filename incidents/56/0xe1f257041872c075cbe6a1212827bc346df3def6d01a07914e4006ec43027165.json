@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Level Finance",
   "name": "Level Finance LevelReferralControllerV2 claimMultiple duplicate-epoch claimed overwrite",
-  "summary": "LevelReferralControllerV2.claimMultiple() iterates a caller-supplied epoch array without rejecting duplicates and overwrites the claim ledger with an assignment, users[epoch][msg.sender].claimed = reward, where claim() correctly accumulates with +=. Because claimable() returns fullReward - claimed, repeating one epoch makes claimed oscillate between c and fullReward - c and pays out the full epoch reward every two iterations forever. The attacker first earned epoch-13 referral points with self-referred flash-loan swaps, called claim() once to make claimed non-zero, then called claimMultiple() with the same epoch thousands of times per transaction and drained the controller's LVL reward reserve.",
+  "summary": "LevelReferralControllerV2.claimMultiple() accepts duplicate epochs and sets claimed = reward instead of adding to it, so repeating an epoch alternates claimed between c and full-c and re-pays the reward every two iterations. The attacker earned referral points with self-referred swaps, claimed once, then repeated one epoch thousands of times per call.",
   "targets": [
     {
       "address": "0x977087422c008233615b572fbc3f209ed300063a",
@@ -14,19 +14,35 @@
     }
   ],
   "loss": {
-    "usd": 1102113.651694789,
+    "usd": 1102111.83,
     "assets": [
       {
         "token": "0xb64e280e9d1b5dbec4accedb2257a87b400db149",
         "symbol": "LVL",
-        "amount": "214084.756853317598928554",
-        "usd": 1102113.651694789
+        "amount": "214084.40234388487485",
+        "usd": 1102111.83
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/Level_exp.sol",
     "eip155:56:0xcb2c525c588390add11e0ce497761b9aafae5ed9ee02eccc4d4f6d40e4e6a5f4",
+    "eip155:56:0x86cf474a050960233d4ec04ef026eadeb2bb66edc8c32949ea75435802887c93",
+    "eip155:56:0xb199a30ce63857c9d6006aa35ca486edc26dd997ee6b7700ec61513155b6cc8b",
+    "eip155:56:0xa19b8271b0028af573fa25803082f284a7e38a19c0395e3fa03a41f965f6b9dd",
+    "eip155:56:0x5cd967a189ea47c491a288d43127ab12c7d2cdf889c7b511a39ca4fd7df2a28b",
+    "eip155:56:0xea6fa0861dd1e7d44a7906edf94f18450cdd1aa0b7b6d4b64d73bf433d30a0fe",
+    "eip155:56:0x2f4fa55883484cfa9fc3ec6afa26d57ad9ba288497c1f7dabd7066f9f4b02a36",
+    "eip155:56:0xbf9236295c4d39b7247ccd2a48234997a2257c92d73d21286ab3e5c5982fec25",
+    "eip155:56:0xe0acf99d6eb4b0d6776f0e08b7fb322d72264f6d00f95c06896d0dc45e1738ce",
+    "eip155:56:0x98f0d74877df1a3e75b706f6bd0444e524df5679eb5c894f2333da0ea75596c3",
+    "eip155:56:0x52788d46cba1d7127477be90f55d9b3d33f47a6493d1d86b3492c7601f831861"
+  ],
+  "notes": [
+    "Campaign: every claimMultiple() call with a duplicated epoch (all 15 from EOA 0x61bbd8c1 via 0xf08a01d2), found by decoding all calls into the controller after the upgrade; 0xcb2c525c is the attacker's setup claim() of 0.35 LVL.",
+    "The attacker's sale of the LVL moved its price, so the loss is valued at the realised 3,344.10 BNB (DefiLlama BNB 329.57), pro rata without the 0.35 LVL setup claim, not at the LVL spot mark of about USD 1.8 million. The refs list the setup claim and the sale transactions."
+  ],
+  "campaign": [
     "eip155:56:0x6ecc8c6cc80446a3f4a8aee7a1c93337f653d8658b3720c74ed09bf38e26c966",
     "eip155:56:0x4939ec5e86e2a244d508c88e577c43c1056a3276ea9f32912287c9151466d91b",
     "eip155:56:0x390e39da085b420f86486929903cfaa6aee689142eb92210c0941f8c0e1b8f45",
@@ -40,20 +56,6 @@
     "eip155:56:0xc4bcf31396971a59d57299a1b52628aab256382087670e05f956bccf8e0c3e82",
     "eip155:56:0xc46278adc699ce80d2ccb35b8aca5f8607f1026eb08683f4e5cd64cde631a9f0",
     "eip155:56:0x16f6456b7921c3f3a81bf75d15b0ee8f678933a0e692ba96945717b2b0091128",
-    "eip155:56:0xfeeadeb26431473d5f1f44c17401428682b637b48474dba8d030a135be3c412d",
-    "eip155:56:0x86cf474a050960233d4ec04ef026eadeb2bb66edc8c32949ea75435802887c93",
-    "eip155:56:0xb199a30ce63857c9d6006aa35ca486edc26dd997ee6b7700ec61513155b6cc8b",
-    "eip155:56:0xa19b8271b0028af573fa25803082f284a7e38a19c0395e3fa03a41f965f6b9dd",
-    "eip155:56:0x5cd967a189ea47c491a288d43127ab12c7d2cdf889c7b511a39ca4fd7df2a28b",
-    "eip155:56:0xea6fa0861dd1e7d44a7906edf94f18450cdd1aa0b7b6d4b64d73bf433d30a0fe",
-    "eip155:56:0x2f4fa55883484cfa9fc3ec6afa26d57ad9ba288497c1f7dabd7066f9f4b02a36",
-    "eip155:56:0xbf9236295c4d39b7247ccd2a48234997a2257c92d73d21286ab3e5c5982fec25",
-    "eip155:56:0xe0acf99d6eb4b0d6776f0e08b7fb322d72264f6d00f95c06896d0dc45e1738ce",
-    "eip155:56:0x98f0d74877df1a3e75b706f6bd0444e524df5679eb5c894f2333da0ea75596c3",
-    "eip155:56:0x52788d46cba1d7127477be90f55d9b3d33f47a6493d1d86b3492c7601f831861"
-  ],
-  "notes": [
-    "Second and last of exactly two Upgraded events emitted by the proxy between its creation block 25805166 and the exploit block. Log 305 of transaction 0xe0a8e635f4778f6cc935873d8c17a92979eb9adfa77b249dec1d4a15b3e82909 carries 0x9f00fbd6c095d2c542687ed5afb68d9c3fb2f464 in topic 1, and the EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc reads 0xeb3e6e2a30b2c23ac3442fbb25d6fe2fe495e3c3 at block 27450540 and 0x9f00fbd6c095d2c542687ed5afb68d9c3fb2f464 from block 27450541 through block 27835717.",
-    "The LevelReferralController proxy 0x977087422c008233615b572fbc3f209ed300063a paid 214084.756853317598928554 LVL to the attacker contract 0xf08a01d2cace301ae69f07af5fdfb2336da2f629 across the 16 campaign transactions in source-5: 0.354509432724078554 LVL in the two honest claim() calls of 0xcb2c525c and 214084.402343884874850000 LVL in the fifteen duplicate-epoch claimMultiple() transactions. The controller's LVL balance falls from 217433.524803252160217421 at block 27835717 to 2168.819242105662540105 at block 27837770; the 1180.30 LVL difference is unrelated user claims in the same window. Valuation uses realised proceeds, not spot. The attacker forwarded every stolen LVL to 0x70319d1c09e1373fc7b10403c852909e5b20a9d5, which held 0 BNB and 0 LVL before the campaign, was seeded with exactly 1 BNB, sold the entire position through the PancakeSwap SmartRouter in the ten successful transactions of source-6, and ended with 3345.095796628300937646 BNB and 1 wei of LVL at block 27837906. Net realised proceeds are therefore 3344.095796628300937646 BNB (gas paid out of the same balance makes this a slight underestimate), worth USD 1102113.65 at the DefiLlama BNB price of 329.57 in source-7, an effective 5.148 USD per LVL. Marking the same 214084.76 LVL at the DefiLlama LVL spot price of 8.44 (1682946678) or 8.50 (1682963538) would give USD 1.81 million, but the stolen amount is 0.43 percent of the 49838881.9 LVL supply and the sale itself moved that price, so spot marking is not a usable valuation here; the realised figure also matches the contemporaneous USD 1.1 million reporting. About 5.91 LVL of the total (roughly USD 30) was the attacker's nominal epoch-13 entitlement and is not netted out. No recovery or return took place."
+    "eip155:56:0xfeeadeb26431473d5f1f44c17401428682b637b48474dba8d030a135be3c412d"
   ]
 }

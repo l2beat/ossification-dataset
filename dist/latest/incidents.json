@@ -5005,8 +5005,8 @@
     "tx": "0xb846f3aeb9b3027fe138b23bbf41901c155bd6d4b24f08d6b83bd37a975e4e4a",
     "protocol": "LW",
     "name": "LW buyback trigger counted from a spot-balance price",
-    "summary": "LW (GGGTOKEN) increments thanPrice whenever a sell is worth more than 2,500 USDT at getTokenPrice(), a ratio of the pair's USDT and LW balances, and its public receive() spends 3,000 USDT from the market wallet on an LW buyback per unit of thanPrice. The attacker skewed the pair balances with flash-loaned funds so that repeated sells counted as large, then sent BNB to the token to fire the buybacks and sold LW into the USDT they added to the pair.",
-    "lossUsd": 172248.76,
+    "summary": "LW increments thanPrice for every sell worth over 2,500 USDT at a spot balance price, and its public receive() then spends 3,000 USDT of the market wallet on an LW buyback per unit. The attacker made repeated large sells with flash-loaned funds, sent 1 wei BNB to fire the buybacks into the pair, and sold LW into the USDT they added.",
+    "lossUsd": 179534.57,
     "codeAgeSeconds": 766199,
     "exploit": {
       "block": 28133286,
@@ -5024,7 +5024,7 @@
       "index": 94,
       "timestamp": 1683091216
     },
-    "claimsSha256": "b8b3e3c64e224be922680a21b12e71601baffeb56178bf8a1531e892f02bfb32"
+    "claimsSha256": "6d7496422e3d992318833cb46f43e3a19377f888981684bce113c0c89472f8aa"
   },
   {
     "id": "eip155:56:0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
@@ -5799,8 +5799,8 @@
     "tx": "0xe1f257041872c075cbe6a1212827bc346df3def6d01a07914e4006ec43027165",
     "protocol": "Level Finance",
     "name": "Level Finance LevelReferralControllerV2 claimMultiple duplicate-epoch claimed overwrite",
-    "summary": "LevelReferralControllerV2.claimMultiple() iterates a caller-supplied epoch array without rejecting duplicates and overwrites the claim ledger with an assignment, users[epoch][msg.sender].claimed = reward, where claim() correctly accumulates with +=. Because claimable() returns fullReward - claimed, repeating one epoch makes claimed oscillate between c and fullReward - c and pays out the full epoch reward every two iterations forever. The attacker first earned epoch-13 referral points with self-referred flash-loan swaps, called claim() once to make claimed non-zero, then called claimMultiple() with the same epoch thousands of times per transaction and drained the controller's LVL reward reserve.",
-    "lossUsd": 1102113.651694789,
+    "summary": "LevelReferralControllerV2.claimMultiple() accepts duplicate epochs and sets claimed = reward instead of adding to it, so repeating an epoch alternates claimed between c and full-c and re-pays the reward every two iterations. The attacker earned referral points with self-referred swaps, claimed once, then repeated one epoch thousands of times per call.",
+    "lossUsd": 1102111.83,
     "codeAgeSeconds": 1157670,
     "exploit": {
       "block": 27835718,
@@ -5819,7 +5819,7 @@
       "index": 118,
       "timestamp": 1681805771
     },
-    "claimsSha256": "84a8d56613dd23cc8d45cf151ecd928c7c3337697be509f1ab1e1177b500f218"
+    "claimsSha256": "7cbc648289fb03945b8a9bf9c2f0c6db0e28618fcc6eda94d1b1882693f3012b"
   },
   {
     "id": "eip155:1:0xff9b3b2cb09d149762fcffc56ef71362bec1ef6a7d68727155c2d68f395ac1e8",
@@ -6677,8 +6677,8 @@
     "chainId": 56,
     "tx": "0x805d273a63d905d7827d43f6dc051eafdcd0cb69a07c7eb74358c6a5c6255b47",
     "protocol": "LML",
-    "name": "LML staking rewards sized at a stale stored price",
-    "summary": "The LML staking implementation converts USDT-denominated rewards into LML at a stored LML/USDT price that updatePrice() refreshes at most once per 3600 seconds, while the LML paid out is sold at the live pair price with no deviation check. The token's swapBack() refills the reward source by moving LML straight out of the LML/USDT pair and calling sync(). The attacker pumped the pair with flash-loaned USDT, claimed rewards for 11 pre-staked EIP-7702 accounts at the stale price, and sold the LML back into the drained pair.",
+    "name": "LML pair-funded staking rewards claimed against a pumped pair",
+    "summary": "LML.swapBack() refills the reward contract with LML taken out of the LML/USDT pair (then sync()), and staking sizes LML rewards at a stored price that ignores the live pair. The attacker pumped the pair by buying LML to 0xdead, claimed rewards for 11 pre-staked accounts until swapBack emptied the pair's LML, and sold LML back for the USDT.",
     "lossUsd": 1189704.8,
     "codeAgeSeconds": 1872717,
     "exploit": {
@@ -6698,7 +6698,7 @@
       "index": 89,
       "timestamp": 1773116825
     },
-    "claimsSha256": "16949f03d980de8c1cbef08a9bd0467ecb4ed09fc35ddd0aaa04c704d85d27b4"
+    "claimsSha256": "23f75e168fd519d6ae2250eb0f6a3b96026c9d7bb0252abae462f032e9529511"
   },
   {
     "id": "eip155:1:0xe29799cfe4b0e3a54915b6f8619207e69549c9988cf1ff140e688d36ae1a2bdf",
@@ -7528,26 +7528,26 @@
     "tx": "0xa219ab9d57e520e5235b15a8801f4ebac8cc45551be0430ce4e49caea0411d7c",
     "protocol": "LULA",
     "name": "LULA reward recycle confiscates and re-syncs the LULA/USDT pair reserve",
-    "summary": "The LULA token funds its referral reward payouts by confiscating liquidity from its own AMM pair. LULA.recycle(uint256) computes `maxTake = balanceOf[uniswapV2Pair] / 3`, moves `min(amount, maxTake)` LULA from the PancakeSwap LULA/USDT pair 0xf0b36389a12a28be1280c0ec2a4bbc76889d6a96 to the rental contract with an internal `_basicTransfer`, then calls `IUniswapV2Pair.sync()` so the pair adopts the reduced reserve. The pair's constant product is therefore reducible on the token side, at a caller-chosen moment, with no compensating movement on the USDT side, and the rental contract 0x377a015f44c3fdf71060e94648edc9e0316c7f1a exposes it to any account holding reward credit through a permissionless claimTeamReward(). The attacker flash-loaned 197,050,832.75 USDT, bought the entire LULA float out of the pair into the fee-exempt owner address so no buy tax or cooldown was recorded, then drove 41 claimTeamReward/recycle iterations that took the pair's remaining 24,022.132677570768 LULA while its USDT reserve stayed at 197.6M, and finally sold the recycled LULA back into the now token-empty pair, recovering the flash loan plus the pair's whole USDT reserve.",
+    "summary": "LULA.recycle() lets the rental contract move up to a third of the LULA/USDT pair's LULA to itself and sync() the pair, and the rental's claimTeamReward() calls it on every payout. The attacker bought the pair's LULA float into a fee-exempt address with flash-loaned USDT, ran 41 claims that took the pair's remaining LULA, and sold it back for the USDT.",
     "lossUsd": 591659.7510366201,
-    "codeAgeSeconds": 2935753,
+    "codeAgeSeconds": 2934393,
     "exploit": {
       "block": 112655390,
       "index": 49,
       "timestamp": 1785254909
     },
     "target": {
-      "address": "0x377a015f44c3fdf71060e94648edc9e0316c7f1a",
-      "codeHash": "0xcf4e6608ce8313103a4c0cf62f16f2e3f7d61c8146e50e71f9c9a83db3ce260c"
+      "address": "0xf5d7029eb6751d170dcf0bb1c87af6f93d5a2e9a",
+      "codeHash": "0x99366bf8f264505f8f861840792e1d39947be3cc92930adeb70dfcf4beefdb14"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x48b51c79ea25550d76b1550cbf63206f92ecc89dfaef5f4602c9d70e54293b49",
-      "block": 106134806,
-      "index": 82,
-      "timestamp": 1782319156
+      "kind": "config",
+      "tx": "0xba64a190e37718269fc7d66a71cd0fdb01430fdac28e5e1098ff095a3534ada1",
+      "block": 106137827,
+      "index": 51,
+      "timestamp": 1782320516
     },
-    "claimsSha256": "ba6440ef01ff1c1fc8de5962cb19daa3d11bc0adafca6cf4acf85e16e878e486"
+    "claimsSha256": "f2a47004bd5ccd393ec5c64cd087c891bc30c4723887083aa761b9ba1071f9ed"
   },
   {
     "id": "eip155:1:0x456709264a4ef8e254b30681767b90be8e5e1af8d61a1790bc62165499b201cd",
@@ -12797,8 +12797,8 @@
     "tx": "0x3ee23c1585474eaa4f976313cafbc09461abb781d263547c8397788c68a00160",
     "protocol": "LaunchZone / SwapX",
     "name": "SwapX arbitrary transferFrom on approval holders",
-    "summary": "SwapX exposes selector 0x4f1f05bc, which takes the token owner as a caller-supplied argument and runs transferFrom against it into a pair the caller also chooses, with no check that the owner is the caller. Every wallet that had ever approved SwapX could therefore be drained by anyone, and the attacker swept 68 of them in a single transaction and swapped the proceeds to WBNB.",
-    "lossUsd": 226263.72399502067,
+    "summary": "SwapX's swap entry point 0x4f1f05bc takes the token owner as a caller-supplied argument and runs transferFrom on it into a caller-chosen pair without checking that the owner is the caller. Anyone could swap any SwapX approver's balance into pools they had pumped; the attacker swept 59 BUSD approvers at once and copycats drained approvers for years.",
+    "lossUsd": 1430188.39,
     "codeAgeSeconds": 42039723,
     "exploit": {
       "block": 26023089,
@@ -12816,7 +12816,7 @@
       "index": 143,
       "timestamp": 1635439418
     },
-    "claimsSha256": "53032d3e93d41c04b002dd57177075ff637ed654dcd338329e5bcb9a5f3869f5"
+    "claimsSha256": "c2df458244a9e68ccf4e5cc786014cb67aae0fb6b3bc6dba1ecc7f3a56c104e0"
   },
   {
     "id": "eip155:1:0x45739a92c2d99f172a74d8028736a2fd1b507ac6fc134680cd1dccd3c572c600",

@@ -2,13 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LULA",
   "name": "LULA reward recycle confiscates and re-syncs the LULA/USDT pair reserve",
-  "summary": "The LULA token funds its referral reward payouts by confiscating liquidity from its own AMM pair. LULA.recycle(uint256) computes `maxTake = balanceOf[uniswapV2Pair] / 3`, moves `min(amount, maxTake)` LULA from the PancakeSwap LULA/USDT pair 0xf0b36389a12a28be1280c0ec2a4bbc76889d6a96 to the rental contract with an internal `_basicTransfer`, then calls `IUniswapV2Pair.sync()` so the pair adopts the reduced reserve. The pair's constant product is therefore reducible on the token side, at a caller-chosen moment, with no compensating movement on the USDT side, and the rental contract 0x377a015f44c3fdf71060e94648edc9e0316c7f1a exposes it to any account holding reward credit through a permissionless claimTeamReward(). The attacker flash-loaned 197,050,832.75 USDT, bought the entire LULA float out of the pair into the fee-exempt owner address so no buy tax or cooldown was recorded, then drove 41 claimTeamReward/recycle iterations that took the pair's remaining 24,022.132677570768 LULA while its USDT reserve stayed at 197.6M, and finally sold the recycled LULA back into the now token-empty pair, recovering the flash loan plus the pair's whole USDT reserve.",
+  "summary": "LULA.recycle() lets the rental contract move up to a third of the LULA/USDT pair's LULA to itself and sync() the pair, and the rental's claimTeamReward() calls it on every payout. The attacker bought the pair's LULA float into a fee-exempt address with flash-loaned USDT, ran 41 claims that took the pair's remaining LULA, and sold it back for the USDT.",
   "targets": [
     {
       "address": "0xf5d7029eb6751d170dcf0bb1c87af6f93d5a2e9a",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xb1448a89b6b6c64876347aacaf95ebcda9a3309d47142c5cb766b5eb9da4f6de"
+        "kind": "config",
+        "tx": "0xba64a190e37718269fc7d66a71cd0fdb01430fdac28e5e1098ff095a3534ada1",
+        "address": "0xf5d7029eb6751d170dcf0bb1c87af6f93d5a2e9a",
+        "slot": "0xc"
       }
     },
     {
@@ -34,13 +36,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-07/LULA_exp.sol"
   ],
   "notes": [
-    "LULA is a plain Ownable contract with no proxy, no delegatecall and no self-destruct path. Its runtime hashes to 0x99366bf8f264505f8f861840792e1d39947be3cc92930adeb70dfcf4beefdb14 both at the deployment block 106133685 and at block 112655389 immediately before the exploit, so the recycle() implementation is unchanged over the whole interval.",
-    "The rental/reward contract is a non-upgradeable direct deployment whose runtime hashes to 0xcf4e6608ce8313103a4c0cf62f16f2e3f7d61c8146e50e71f9c9a83db3ce260c both at the deployment block 106134806 and at block 112655389 immediately before the exploit. It is the address LULA.rentalContract was fixed to and the only account recycle() accepts.",
-    "Gross depletion of the victim pair 0xf0b36389a12a28be1280c0ec2a4bbc76889d6a96, measured from its own balances: USDT 591841.327760739761309679 at block 112655389 and 181.576724119654205222 at block 112655390, a fall of exactly 591659.751036620107104457 USDT, which the receipt's Transfer logs confirm as 197050774.696543 USDT in and 197642434.447580 USDT out within the single exploit transaction. Attacker-supplied inputs are excluded by construction: the 197,050,832.75 USDT that entered the pair was flash-loaned campaign input and left again in the same transaction. Financing costs are not netted off, so the attacker's own realised profit is smaller: EOA 0x2677806d48325ced7533c54b86ed5e99b129a4ed went from 107.755447197024975180 to 578403.663035258025501958 USDT, a gain of 578295.907588061000526778 USDT, and the 13363.84 USDT difference is flash-loan and swap cost. Not valued: the 7997208.894795931 LULA the pair also lost, because the same transaction left the pair holding 181.58 USDT against 4749.05 LULA, so that quantity had no realisable value at any price and marking it would inflate the loss.",
-    "Not the knot: sibling instance of the same template and failure; target-2 carries the latest age reset and supplies the incident's single observation.",
-    "This target carries the same failureModeId as target-1 because it is the other half of one defect, so curve construction keeps only one observation for the incident and selects the earlier LULA deployment.",
-    "The rental contract's bytecode is not source-verified on BscScan. Its identity, runtime hash, deployment anchor and code-history completeness were reproduced onchain, and its role - a claimTeamReward() reachable by attacker-created contracts that unconditionally tops the payout up by calling LULA.recycle - was established from 41 successful iterations in the anchor call trace rather than from source.",
-    "The seed inventory measured this row against the rental contract 0x377a015f44c3fdf71060e94648edc9e0316c7f1a (deployment timestamp 1782319156). Review keeps that contract as target-2 but the curve observation is selected on the LULA token, whose verified recycle() implementation contains the invariant violation and which was deployed 504 seconds earlier, so the measured age barely moves.",
-    "The victim is the PancakeSwap LULA/USDT pair 0xf0b36389a12a28be1280c0ec2a4bbc76889d6a96 and, through it, its liquidity providers. It is not itself a target: the pair executes standard Uniswap V2 code and its sync() behaves exactly as specified."
+    "LULA's reset is initialize(), which set rentalContract (slot 0xc), the only caller recycle() accepts; it came after both deployments. The rental contract is unverified; its claimTeamReward()->recycle() path is read from the exploit trace.",
+    "Net USDT depletion of the LULA/USDT pair, the only victim; no other transaction drained it. The 7,997,208.89 LULA the pair also lost is not valued: the pair was left with 181.58 USDT against 4,749 LULA."
   ]
 }
