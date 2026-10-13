@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Cyrus Finance",
   "name": "Cyrus Finance CyrusTreasury spot-priced LP withdrawal",
-  "summary": "CyrusTreasury pays every USDT-denominated exit or reward claim through withdrawUSDTFromAny, which sizes the PancakeSwap V3 liquidity to remove from the pool's current slot0 price and then collects both tokens of the removed liquidity to the claimant. The treasury's ETH/USDT position sat out of range as roughly 562k USDT. The attacker flash-borrowed 1,798 ETH, sold it into the pool to move the price into the bottom of the position's range, and exited a Cyrus position owed 1,707.055 USDT; at that price the position showed only about 1,853 USDT, so the treasury removed 92% of its liquidity and sent the attacker 1,289.35 ETH plus 1,707.055 USDT before the attacker bought the ETH price back and repaid the loan.",
+  "summary": "CyrusTreasury paid USDT exits through withdrawUSDTFromAny, which sized the PancakeSwap V3 liquidity to remove from the pool's spot slot0 price and then collected both tokens of the removed liquidity to the claimant. The attacker pushed the ETH/USDT price into the position's range with flash-loaned ETH, exited a small position, received most of the treasury's liquidity, and swapped back.",
   "targets": [
     {
       "address": "0xb042ea7b35826e6e537a63bb9fc9fb06b50ae10b",
@@ -27,7 +27,7 @@
     "eip155:56:0x06df14306ea23a008411364d01a51c46e57869e874ace4afe6499a7984745cd9"
   ],
   "notes": [
-    "The owner EOA's top-level creation installed the immutable CyrusTreasury runtime containing withdrawUSDTFromAny; the address is not a proxy and its runtime hash was unchanged through the exploit. Later owner changes of the active position (tokenIds[0]) only chose which position the defect could drain.",
-    "Victim depletion is the out-of-range USDT backing of the liquidity the attacker's exit removed from PancakeSwap V3 position 6358139 (range ticks 55318 to 64492, where it holds only USDT): 55986950637933606610065 liquidity x (sqrtRatio(64492) - sqrtRatio(55318)) / 2^96 = 517785.322516154202754603 USDT, less the 1707.055 USDT the exit legitimately owed (Exited event data), = 516078.267516154202754603 USDT. The 1289.3536997589956 ETH the position paid out is not valued separately: the position bought it from the attacker's own 1,798-ETH sale in the same transaction with that USDT. The performance-fee leg (47392230286554365003 liquidity, 1.185199890884981 ETH plus 1.445 USDT to the protocol's fee receiver 0x6cd7bbb8a8c0c1b24a449c3ad8f913974de7b009) stayed with the protocol and is excluded. The attacker EOA netted 28.139762187797007 ETH and 454169.2170373848 USDT (about USD 512k at USD 2061.52 per ETH) after swap fees and the 1.0788 ETH flash fee; SlowMist reports USD 516,840. Nothing was recovered."
+    "CyrusTreasury is an immutable deployment; the owner's later setTokenIdByIndex only chose which registered position the defect could drain (loss size), so it is not a reset.",
+    "Loss is the USDT backing of the liquidity the exit removed (the position was out of range, all USDT), less the USDT the exit legitimately owed; the ETH it paid out was bought from the attacker's own sale in the same tx. The protocol's performance-fee leg is excluded."
   ]
 }

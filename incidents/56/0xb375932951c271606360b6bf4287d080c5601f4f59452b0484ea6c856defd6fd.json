@@ -2,24 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "DCF Token",
   "name": "DCF Token sell-side burnPair reserve destruction",
-  "summary": "DCF._transfer gives the sender authority over the liquidity pool's own balance. On any transfer whose destination is pairAddress it computes deadAmount = (amount - 5% fee) / deadCfg from the sender's transfer size and, if the pair still holds more than that, calls burnPair, which executes _burn(pairAddress, deadAmount) and IUniswapV2Pair.sync(). Destroying reserve tokens that belong to the pool's liquidity providers on the strength of a third party's transfer amount violates the invariant that an ERC-20 transfer may only move the sender's own balance, and the same _transfer path then routes the 5% fee through swapExactTokensForTokensSupportingFeeOnTransferTokens with amountOutMin = 0 against the pool it has just repriced. No deadCfg value repairs this: deadCfg is only a divisor, setCfg requires it to be non-zero, and for any divisor d an attacker sizes the transfer at roughly d times the pair's balance to burn the whole reserve, so the deployed code is wrong at every configuration.",
+  "summary": "DCF's sell path burned (amount - 5% fee) / deadCfg tokens from the PancakeSwap pair's own balance and called sync() before crediting the seller. With flash-loaned USDT the attacker bought almost all DCF out of the pair to a buy-restriction-whitelisted address, then sold DCF sized to burn the pair's remainder to dust and swapped it for the pair's USDT.",
   "targets": [
     {
       "address": "0xa7e92345ddf541aa5cf60fee2a0e721c50ca1adb",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x71e7a766a9a8587e1fc4f1112d2646f2255d7562d6eaef1ebd2db3c22cc8e96e"
+        "kind": "config",
+        "tx": "0xbd58b3dcc6d3fe9b2c5d22117f3f7bc9050e6cb032de249f82afbed445cc8ada",
+        "address": "0xa7e92345ddf541aa5cf60fee2a0e721c50ca1adb",
+        "slot": "0xb7fc480e78c88090c15bd80da2d097cf84f4dec8e1de6ca53830eced03389b67"
       }
     }
   ],
   "loss": {
-    "usd": 698634.386264,
+    "usd": 699333.02,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "BSC-USD",
+        "symbol": "USDT",
         "amount": "698634.386264319526727426",
-        "usd": 698634.386264
+        "usd": 699333.02
       }
     ]
   },
@@ -29,7 +31,7 @@
     "https://lunaray.medium.com/dcf-hack-analysis-dbcd3589c6fc"
   ],
   "notes": [
-    "DCF is a plain non-proxy Solidity 0.8.27 contract deployed by a top-level creation from the EOA 0xa1f0254f01809ae58cc8a4e776ce1f2580c3f855; its constructor mints the supply, deploys the LiquidityHelper and creates the PancakeSwap pair. The 14,593-byte runtime hashes to 0x5a1265d17dd177b01a67f042cf26bd866bddbe7c75cec5734a0666f3ef4b89f0 at the creation block, at an intermediate sample, and at the block before the exploit, and to the empty-code hash one block earlier, so deployment is the only executable-code change.",
-    "Exact depletion of the exploited PancakeSwap V2 DCF/BSC-USD pool 0x8487f846d59f8fb4f1285c64086b47e2626c01b6, whose BSC-USD balance fell from 698634.425616096796822251 to 0.039351777270094825 across the single exploit transaction; its DCF reserve went from 4074.442371848803073636 to 78.618712756698854301 and is not valued because DCF has no independent price series once the pool is empty. BSC-USD is taken at par. The attacker's 80,435,691.245080307237888143 BSC-USD of flash-loaned buy pressure is an attacker-supplied input and is netted out. Of the 698,634.386264 taken from the pool, the attacker realised 442,028.607465892649035455 BSC-USD, which is its exploit contract's whole end-of-transaction balance and which it withdrew to its EOA in 0xe8cd91d9135d98988b8ab8197d70d7fd0ece57b79c5149e40fbd4e574b7234a0; 118,575.868323 went to the flash-loan pools as premiums, which METHODOLOGY does not deduct from gross depletion; and 138,029.910475542584895976 was re-deposited by DCF's own fee-and-liquidity path into the sibling DCT/BSC-USD pool 0x5aac7375196e9ea76b1598ed4be19b41fa5ba651, which is not a recovery to the drained pool's liquidity providers. The seed row and the DeFiHackLabs header both report ~442k USD, which is the attacker's realised proceeds rather than victim depletion."
+    "Buys from the pair revert unless sender or recipient is whitelisted; the exploit drained the pair's DCF by buying to 0x16600100b04d17451a03575436b4090f6ff8f404, whitelisted by setWhite after deployment, so that exemption grant is the reset.",
+    "Loss is the pair's net USDT outflow (the attacker's flash-loaned buys net out within the tx); the pair's DCF went to the whitelisted address or was burned and is not valued separately. Flash-loan premiums and the DCF fee path's deposit into the DCT pair are not deducted."
   ]
 }

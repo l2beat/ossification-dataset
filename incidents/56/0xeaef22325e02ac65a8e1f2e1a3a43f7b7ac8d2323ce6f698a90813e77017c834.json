@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "CrowdRingCircle",
   "name": "CrowdRingCircle pair-reserve burn",
-  "summary": "CRC's sell hook burned CRC from the receiving AMM pair before crediting the seller, then called sync() on the reduced balance. Repeated dust sells ratcheted down the recorded CRC reserve, inflated CRC's pool price, and let the attacker drain USDT.",
+  "summary": "CRC's sell hook burned the sold amount from the receiving DEX pair's own balance and called sync() before crediting the seller. With flash-loaned USDT the attacker bought almost all CRC out of the pair (routed to the restriction-exempt owner), then sold CRC equal to the pair's remainder, burning its reserve to dust, and swapped it for the pair's USDT.",
   "targets": [
     {
       "address": "0x8581433150f2c48ff2efe5a22b17c7d405054509",
@@ -15,13 +15,13 @@
     }
   ],
   "loss": {
-    "usd": 209061.63226787103,
+    "usd": 208860.68,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "209061.632267871026055744",
-        "usd": 209061.63226787103
+        "usd": 208860.68
       }
     ]
   },
@@ -29,7 +29,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/CrowdRingCircle_exp.sol"
   ],
   "notes": [
-    "setDexPair(0xd8799a644850c065388c22df4ee0c28472922526, true) changed isDexPair(pair) from false to true, activating the defective burn-and-sync sell path for the CRC/USDT pair. No later DexPairUpdated, sellDestroyToggled, or SellFeeRateUpdated event occurred before exploitation; sellDestroyEnabled and sellFeeRate remained true and 1000.",
-    "The exploit receipt shows the CRC/USDT pair receiving 184,995,877.105807691589020575 USDT and transferring out 185,204,938.738075562615076319 USDT, for exact net victim depletion of 209,061.632267871026055744 USDT. This subtracts the attacker's swap input but does not deduct financing fees; the final 201,359.472267252045095696 USDT transfer to the attacker EOA is net proceeds, not gross loss. USDT is valued at par."
+    "The reset is setDexPair(pair, true), which registered the CRC/USDT pair and so enabled the burn-and-sync sell path the exploit needed; sellDestroyEnabled is a feature gate set at deployment, and the later feeReceiver and exemption changes were not needed.",
+    "Loss is the pair's net USDT outflow; the CRC that left the pair went to the owner or was burned and is not valued separately (unpriced, realised only through the drained USDT). BurnFromPair logs show no other tx collapsing the pair balance, so there is no campaign."
   ]
 }

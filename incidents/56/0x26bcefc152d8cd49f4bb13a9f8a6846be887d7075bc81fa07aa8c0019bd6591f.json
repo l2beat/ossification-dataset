@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "D3x.ai",
   "name": "D3x.ai exchange spot-price manipulation",
-  "summary": "The exchange implementation priced USDT/D3XAT conversions by calling D3XAT.price(), which read the current PancakeSwap reserves through Router.getAmountsOut. It imposed no time-weighting or manipulation bound, so one transaction could buy D3XAT, move the same pool's spot price through transient accounts, and redeem D3XAT against the exchange's USDT inventory at the manipulated quote.",
+  "summary": "The D3x exchange priced USDT/D3XAT conversions with D3XAT.price(), which returned the PancakeSwap spot quote from Router.getAmountsOut with no time-weighting or bound. In one transaction the attacker bought D3XAT from the exchange through fresh helper accounts, pumped the pool's spot price, and redeemed D3XAT against the exchange's USDT at the manipulated quote.",
   "targets": [
     {
       "address": "0xb8ad82c4771daa852ddf00b70ba4be57d22edd99",
@@ -10,6 +10,14 @@
       "reset": {
         "kind": "upgrade",
         "tx": "0x1f39a1f8141f2f632942ded5edb6ee3695b329a5300248030c090a9e075125ab"
+      }
+    },
+    {
+      "address": "0x2cc8b879e3663d8126fe15dadaaa6ca8d964bbbe",
+      "code": "0x1a1a84b45d2feeec1b1726f5c1da7d3fe2f37041",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xbe665a4aa9a09506e47a99b02731b458f52c8426d6a8fbabb39318985cb30b39"
       }
     }
   ],
@@ -31,7 +39,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-08/d3xai_exp.sol"
   ],
   "notes": [
-    "The ninth and last Upgraded(address) event before the incident selected 0x94ddcd7253ac864ec77a2ddc2be4b2418ed17c9d. The ProxyAdmin upgradeAndCall supplied empty initialization calldata. The EIP-1967 implementation slot retains that address at incident-1, and the implementation runtime hash is unchanged from its creation seven blocks before activation through incident-1.",
-    "The exchange proxy and protocol controller 0x13342140a62cb51c052b5a70eb186f40a1725ebf form the victim entity. Two initial exchange buys put 24627.150187372155949310 USDT into the proxy. Nineteen later redemptions send 224790.352174233336041807 USDT to the seller helper and 39668.885677805882830887 USDT to the controller; the next redemption reverts. The controller is the proxy and active-implementation deployer and the sender of the last upgrade, and its archive USDT balance rises by exactly the fee amount and retains it through the bounded window. That internal transfer cancels, leaving 224790.352174233336041807 - 24627.150187372155949310 = 200163.201986861180092497 USDT of external protocol depletion. The proxy's archive balance change independently equals its receipt net of -239832.087664667062923384 USDT. The victim union gains 21680.158448278855196476 D3XAT overall because controller transfer-tax receipts more than offset the proxy's D3XAT decrease, so D3XAT is not a loss component. The reported 190 BNB is downstream realization: the D3XAT/WBNB pair sends 190.553117446131167874 WBNB to the router, which unwraps it; it is not native depletion from the exchange. The 20 million USDT flash principal plus 2000 USDT fee is repaid in full. Nothing was returned to the victim union."
+    "Both the exchange implementation (trusts the quote) and the D3XAT implementation whose price() computes it from pool spot reserves carry the defect; the token proxy's upgrade to that implementation is the later reset. The later rise of a D3XAT storage limit from 10,000 to 20,000 was not needed: each helper bought 9,900.",
+    "The exchange proxy and the protocol controller 0x13342140a62cb51c052b5a70eb186f40a1725ebf (deployer, fee and tax receiver) are one victim, so the redemption fee it received cancels; the loss is the exchange's net USDT outflow to the attacker. D3XAT nets to a gain for the victim and is not a loss component."
   ]
 }
