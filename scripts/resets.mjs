@@ -66,6 +66,19 @@ async function first(lo, hi, test) {
   return lo
 }
 
+const spread = (lo, hi) => unique(Array.from({ length: 8 }, (_, i) => lo + Math.ceil(((hi - lo) * (i + 1)) / 9)))
+
+// Latest block in [lo, hi] from which get() stays at value; sampling catches rollbacks (A -> B -> A).
+// A sample the node cannot serve counts as unchanged.
+async function settled(lo, hi, get, value) {
+  for (;;) {
+    const block = await first(lo, hi, async (at) => (await get(at)) === value)
+    const off = (await Promise.all(spread(block, hi).map(async (at) => (await get(at).catch(() => value)) !== value && at))).filter(Boolean)
+    if (!off.length) return block
+    lo = Math.max(...off) + 1
+  }
+}
+
 async function pool(items, size, fn) {
   const out = []
   let next = 0
@@ -212,7 +225,8 @@ for (const target of record.targets) {
   }
   if (shown.length < upgrades.length)
     console.log(`${upgrades.length - shown.length} earlier DiamondCuts name neither the selector nor the code (not shown)`)
-  const seeds = unique([C, ...shown.map((log) => hexInt(log.blockNumber)), R - 1, R, X - 1])
+  // Evenly spaced seeds catch route changes that were later rolled back without an event.
+  const seeds = unique([C, ...shown.map((log) => hexInt(log.blockNumber)), ...spread(C, X - 1), R - 1, R, X - 1])
     .filter((block) => block >= C && block < X).sort((a, b) => a - b)
   if (C < X) {
     const final = await codeAt(address, X - 1)
@@ -277,8 +291,15 @@ for (const target of record.targets) {
   if (prestate) console.log(`storage read by the exploit: ${slots.length} slots in ${accounts.length} contracts`)
   const changed = (await pool(slots, 8, async ([owner, slot]) => {
     const [old, now] = await Promise.all([slotAt(owner, slot, R), slotAt(owner, slot, X - 1)])
-    if (old === now || R >= X - 1) return
-    const block = await first(R + 1, X - 1, async (at) => (await slotAt(owner, slot, at)) === now)
+    if (R >= X - 1) return
+    const get = (at) => slotAt(owner, slot, at)
+    let from = R + 1
+    if (old === now) {
+      const off = (await Promise.all(spread(R, X - 1).map(async (at) => (await get(at).catch(() => now)) !== now && at))).filter(Boolean)
+      if (!off.length) return
+      from = Math.max(...off) + 1
+    }
+    const block = await settled(from, X - 1, get, now)
     return { block, owner, slot, before: await slotAt(owner, slot, block - 1), now }
   })).filter(Boolean)
   for (const { block, owner, slot, before, now } of changed) {
