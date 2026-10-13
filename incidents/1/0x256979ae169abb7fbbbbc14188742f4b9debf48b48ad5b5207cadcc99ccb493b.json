@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Morpho Blue",
   "name": "Morpho Blue PAXG/USDC oracle decimal misconfiguration",
-  "summary": "The PAXG/USDC market selected a MorphoChainlinkOracleV2 deployed with both token-decimal constructor arguments set to 8, although PAXG has 18 decimals and USDC has 6. Its scale factor was therefore 1e12 too large. The attacker supplied 0.132577813003136114 PAXG as vastly overvalued collateral and borrowed 230,002.486670 USDC without repayment.",
+  "summary": "The PAXG/USDC market selected a MorphoChainlinkOracleV2 deployed with equal base and quote token decimals (8), although PAXG has 18 and USDC 6, so its scale factor priced PAXG 1e12 too high. The attacker supplied a dust amount of PAXG as collateral and borrowed the market's USDC liquidity.",
   "targets": [
     {
       "address": "0xdd1778f71a4a1c6a0efebd8ae9f8848634ce1101",
@@ -31,7 +31,8 @@
     "https://github.com/sanbir/evm-hack-registry/blob/d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6/2024-10-MorphoBlue_exp/sources/Morpho_BBBBBb/src_Morpho.sol"
   ],
   "notes": [
-    "createMarket stored market 0x8eaf7b29f02ba8d8c1d7aeb587403dcb16e2e943e4e2f5f94b0963c2386406c9 with USDC as loan token, PAXG as collateral, and the mis-scaled oracle. The idToMarketParams view changed from five zero words to that tuple and remained unchanged through exploitation.",
-    "The exploit receipt contains one USDC transfer of exactly 230,002.486670 from Morpho Blue to the attacker. The attacker's 0.132577813003136114 PAXG collateral is campaign input rather than victim loss. The borrowed USDC remained as unbacked market debt; no recovery is netted."
+    "The oracle's scale factor is immutable; the market listing in Morpho Blue (createMarket selecting this oracle) is the later change the exploit needed, so it sets the reset.",
+    "The attacker repaid 199,999.99 USDC about six hours later (0x882a8c1d08e90fbf6415da777f649a6640be4e9971ad8b7afe9240ccde092643); recoveries are not netted (rule 14).",
+    "Later borrows in this market by 0x0c51ab15, the address that test-borrowed at market launch and whose debt the vault owner multisig repaid, were the curator's rescue of remaining liquidity, not campaign."
   ]
 }

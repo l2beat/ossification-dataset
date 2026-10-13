@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Moonhacker",
   "name": "MoonHacker vault unauthenticated Aave flash-loan callback",
-  "summary": "MoonHacker.executeOperation, the Aave V3 flash-loan callback of each MoonHacker leverage vault, is declared external with no check that msg.sender is the Aave pool and no check that initiator is the vault, and it takes the money-market address out of the caller-supplied params blob. Any address can therefore call it directly: with SmartOperation.REDEEM and mToken set to the real Moonwell mUSDC market the vault repays its own borrow with USDC the caller pushed in and redeems its entire collateral, and with SmartOperation.SUPPLY and mToken set to an attacker contract whose mint() and borrow() return 0 the vault executes IERC20(token).approve(mToken, amountBorrowed + amountToSupplyOrReedem), handing the caller an allowance over the redeemed balance, which the caller then pulls with transferFrom.",
+  "summary": "MoonHacker vaults' Aave flash-loan callback executeOperation checked neither msg.sender nor initiator and took the market address from caller params. The attacker called it directly: each vault repaid its Moonwell USDC debt with attacker USDC and redeemed its collateral to the attacker, or approved the redeemed USDC to an attacker contract posing as mToken.",
   "targets": [
     {
       "address": "0xd9b45e2c389b6ad55dd3631abc1de6f2d2229847",
@@ -10,16 +10,37 @@
         "kind": "deployment",
         "tx": "0xacc02fff0540e69ed8cfa98575ccf16369ba71b6480dd5b902d14b648be5e54b"
       }
+    },
+    {
+      "address": "0x24592ed1ccf9e5ae235e24a932b378891313fb75",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xe6879e93b277aac167caaa123c8158313452960b55d970e1ba14392fe5256407"
+      }
+    },
+    {
+      "address": "0xce5e0e2bcf40a049a6e148f411a19419d0443607",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xaf763d14e8af9c4add2944ea18a851396b88cb0913565416a28acc8d11d3cf5e"
+      }
+    },
+    {
+      "address": "0x80472c6848015146fdc3d15cdf6dc11ca3cb3513",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xb4cad8ba0a85ea284cadfd6e380658d2abcef7861a627f075c9e1cc02084dcc8"
+      }
     }
   ],
   "loss": {
-    "usd": 319227.013029,
+    "usd": 319227.01,
     "assets": [
       {
-        "token": "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
-        "symbol": "USDC",
-        "amount": "319429.531352",
-        "usd": 319227.013029
+        "token": "0x8e08617b0d66359d73aa11e11017834c29155525",
+        "symbol": "mUSDC",
+        "amount": "84777110.44873517",
+        "usd": 319227.01
       }
     ]
   },
@@ -27,8 +48,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-12/Moonhacker_exp.sol"
   ],
   "notes": [
-    "The vault is a plain non-proxy contract deployed top-level by its owner; the 15,411-byte runtime is byte-identical at the deployment block and at block 129697250, and the contract exposes no upgrade or code-selecting mechanism.",
-    "Single-transaction campaign. From the USDC Transfer logs of the anchor transaction, three of the four vaults held a position: 0xd9b45e2c389b6ad55dd3631abc1de6f2d2229847 received 485,984.781792 USDC to clear its Moonwell borrow and gave up 595,813.435803 USDC of redeemed collateral; 0x24592ed1ccf9e5ae235e24a932b378891313fb75 received 43,831.723102 and gave up 53,721.818789; 0x80472c6848015146fdc3d15cdf6dc11ca3cb3513 received 883,978.188337 and gave up 1,083,688.969991; 0xce5e0e2bcf40a049a6e148f411a19419d0443607 was empty and moved 0. The 1,413,794.693231 USDC used to repay the vaults' debts came from the attacker's 883,917.967954 USDC Aave flash loan recycled across the vaults and is an attacker-supplied campaign input, so it is excluded rather than counted as depletion; the vault owners' destroyed equity is 1,733,224.224583 minus 1,413,794.693231 = 319,429.531352 USDC. The 441.958984 USDC Aave premium is a financing fee and is not deducted: the attacker ended the transaction with 318,987.572368 USDC. No recovery reduced this figure. The attacker swapped the proceeds to 319,206.5985 DAI in the next block and bridged them out through the Across SpokePool 0x6f26bf09b1c792e3228e5467807a900a503c0281 on 2025-01-27, having sent 'whitehat here, please contact me' messages to the three vault owners on 2024-12-24.",
-    "Representative target under the sibling rule: four byte-identical MoonHacker vaults were exploited in the same transaction through the same failure, and this is the one the anchor reaches first. The siblings 0x24592ed1ccf9e5ae235e24a932b378891313fb75, 0xce5e0e2bcf40a049a6e148f411a19419d0443607 and 0x80472c6848015146fdc3d15cdf6dc11ca3cb3513 were deployed 1733965933, 1734307149 and 1734378761, so a sibling-based age would run up to 11.9 days instead of 6.0."
+    "Four byte-identical vaults of different owners ran in the anchor (one empty); all are targets and the youngest sets the age.",
+    "The vaults' redeemed mUSDC collateral is valued net of the Moonwell debt the attacker's flash-loaned USDC repaid: 1,733,224.22 redeemed minus 1,413,794.69 repaid = 319,429.53 USDC at DefiLlama's USDC price.",
+    "Later direct executeOperation calls by 0xc1268f1e in blocks 129705684-5 moved no tokens and are not campaign."
   ]
 }

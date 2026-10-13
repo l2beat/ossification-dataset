@@ -2,47 +2,58 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "NORMIE",
   "name": "NORMIE premarket-flag balance inflation and forced swapback",
-  "summary": "NORMIE's _transfer contains two cooperating defects. _get_premarket_user sets premarket_user[recipient] for any address that receives exactly balanceOf(teamWalletAddress) in a single transfer, so the flag is self-assignable; and for a flagged recipient buying from a market pair, _transfer executes _balances[address(this)] += amount, crediting the token contract the full purchase amount without debiting any account and without changing _totalSupply, so the sum of balances exceeds supply. The same function then sells the contract's balance through swapAndLiquify whenever it exceeds a threshold randomised from block.timestamp and block.difficulty, with no slippage bound and no per-block cap. The attacker flagged their helper by flash-swapping exactly the team wallet's 5,000,000-token balance out of the SushiSwap pair, then shuttled 2,266,628.300256719 NORMIE between the helper and the pair with skim, minting that amount into the contract each round and forcing 51 unbounded swapbacks that dumped 237,150,000 NORMIE into the pair, collapsing the price so the tokens flash-borrowed and sold at the pre-attack price could be repurchased for a fraction of the proceeds. No parameter choice makes this correct: the credit is unbacked at every threshold, and the threshold only sets how often the contract liquidates it.",
+  "summary": "NORMIE's _transfer flagged any recipient of exactly the team wallet's balance as premarket_user, and credited the token contract the full amount, unbacked, whenever the pair sent tokens to a flagged address. The attacker flagged its helper, looped skim() to inflate the contract balance and forced unbounded swapbacks that dumped NORMIE into the pair, then bought back cheaply.",
   "targets": [
     {
       "address": "0x7f12d13b34f5f4f0a9449c16bcd42f0da47af200",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x6758fd5c3bc76140ce82ed4be320aa21d9a979bc80a0fe578962a8e802bf5ebc"
+        "kind": "config",
+        "tx": "0x2b0b9594861d1068ac9c5eb1a7542f73919ea93365761750bd23ba12973c6a16",
+        "address": "0x7f12d13b34f5f4f0a9449c16bcd42f0da47af200",
+        "slot": "0x14"
       }
     }
   ],
   "loss": {
-    "usd": 776078.2709486758,
+    "usd": 2996584.57,
     "assets": [
       {
-        "symbol": "ETH",
-        "amount": "207.080662844423876994",
-        "usd": 776078.2709486758
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "796.987537",
+        "usd": 2996584.57
       }
     ]
   },
+  "campaign": [
+    "eip155:8453:0x1e9f6075576c1ec59fcb4082bce8c86d3e0e2df649c03d2066de46582d300296",
+    "eip155:8453:0x67abe493161eedab6eb936ce2404e5fe5320eca430a402ad3f59762affc7a66e",
+    "eip155:8453:0xa00e72d7fe4ebb125945e00477b9f226f275c4524607ad8c847f2bb067c97ce0",
+    "eip155:8453:0xcc9d85a34c8687d48d70ae7d7ce421cf0ac32993f9327451d1536dfa71e0eed4",
+    "eip155:8453:0xd9e9daff50f441621717fe315c2b57ba242ff12508ec585cd8f3476958dec477",
+    "eip155:8453:0xddecd9d2de332623fa0f830186835b647e7a860ade0810e6b706e13c65bdefc9",
+    "eip155:8453:0xb3cba3560b9011020ebe22c9f9ab5ce5a938e7c6ef4ba4c1ce8034b32db71f16",
+    "eip155:8453:0xf61b750d816b4baa305cc20fc18608d8b8e9c977947ba260d337e0ce668cefa4",
+    "eip155:8453:0xef7e76951989b09742248d37afda3de0bbecd25b12a31f4e576e5123fa81baa5",
+    "eip155:8453:0xbddf2000adb10461bef743f70ef5716c049fc5165aaae9004c52f9b55a0348de",
+    "eip155:8453:0x52c31f4dbfd9ba0a3e5a31c8cb1db31dcb1d7fd8fea7068ad96da97bc8a10a3b",
+    "eip155:8453:0x923b433775126debfde845bd73b4fc8f85ee77e56484f6f533619f0d7aa585ea",
+    "eip155:8453:0xc736467a47b89a3aa1fb09f13e55be9840eab8283cf8680415c8a5c7de85ed15",
+    {
+      "chainId": 8453,
+      "count": 343,
+      "from": 14964404,
+      "to": 15447446,
+      "selection": "transactions not sent by 0xf7f3a556ac21d081f6dba961b6a84e52e37a717d in which the NORMIE/WETH pair 0x24605e0bb933f6ec96e6bbbcea0be8cc880f6e6f emits at least 20 NORMIE Transfer events as sender (the skim loop); each also nets WETH out of the pair"
+    }
+  ],
   "refs": [
     "https://x.com/lookonchain/status/1794680612399542672",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/NORMIE_exp.sol",
-    "eip155:8453:0xf2775363ce0ffbf7d62f18d7e64dc70be2660388f5650cefc69026a770dc881e",
-    "eip155:8453:0x73aff0c898ddd21310c9bf36b8c5c2ce8a0365cc6b44c0407e1808e2b9d0f13f",
-    "eip155:8453:0x5e32dd94706c0dbcaab7c3721bd7949e349c8bc9bb0411aaa8ab5d694d19c57c",
-    "eip155:8453:0xa234b7e4bd5e6a1ac0ba0de623f59dc832f52eb80b000e879afa3e1e07140256",
-    "eip155:8453:0x9799630aa2b8cd018dea26feed3d6a8cae5f9f989917397354e88068e1125e40",
-    "eip155:8453:0x3bfd6e2ef79d9bf843ff76ea555354da931be16f3fdb8641b787482714051452",
-    "eip155:8453:0xd5990d505793d11e552615bf4231966679db2666b58e06fa823ce2b9eaf04732",
-    "eip155:8453:0xe2e2493d6016f4f0a1350852f6c0b35588dea4a0b9d501c35056faeee840748f",
-    "eip155:8453:0xe1283acde3fc33ab8fd7517c0b88aeae222d3219c850bce35e835e0ee327a5a5",
-    "eip155:8453:0x364f38129b4e986317cb45bf87b95705847bf42168be2de7a6284243153a908d",
-    "eip155:8453:0x78e0a7d5fa3437d6db4244771ad0a0ee49f2bc6b9acbe58edb2f312f370f18ed",
-    "eip155:8453:0x6a926bde786016859af4bf69626cb05255947362ac548ca0d0d69209ef7b1580",
-    "eip155:8453:0x4d40ab70a7a7eab54ced5a28c4932c4e498ce6490739ac377e7b41ca271e20c6"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/NORMIE_exp.sol"
   ],
   "notes": [
-    "The token runtime was created by top-level CREATE in this transaction and is byte-identical at block 11486835, at block 14952782 immediately before the exploit, and today; the address holds no EIP-1967 implementation pointer and every exploit frame executes it directly, so the deployment is the only executable-code change.",
-    "Realised native-ETH extraction over the 14-transaction campaign between blocks 14952783 and 14959665. The attack contract 0xef0ba56da26b4ddfef0959c1d0fc7a73a908befc paid its operator 224.980662844423876994 ETH in fourteen internal transfers and was funded by that operator with 17.9 ETH of buy capital, all of which it spent through the SushiSwap router; the contract's balance is zero and its complete internal ledger closes at 242.880662844423876994 ETH in and out, so the net extraction is exactly 207.080662844423876994 ETH. Attacker-supplied capital and gas are excluded; nothing was recovered. Realised proceeds are used rather than any NORMIE mark: the token's price collapsed by roughly 99% inside the anchor transaction as a direct result of the forced selling, so no spot mark on the 237,150,000 NORMIE the contract dumped or the 235,936,669.33411148 NORMIE the pair absorbed would be sellable. A further 100.05140219385335 ETH left the SushiSwap pair to the token's own teamWalletAddress 0xd8056b0f8aa2126a8db6f0b3109fe9127617beb2 through the same forced swapbacks in the anchor transaction; that value accrued to the project's designated fee wallet rather than to the attacker and is deliberately excluded, so this figure is a conservative floor on the liquidity destroyed.",
-    "The premarket_user branch that credits the token contract on a flagged buyer's purchases has no coherent legitimate purpose and may have been planted deliberately by the deployer. It is admitted here as an executed-code defect because the loss was realised by an unrelated third party through permissionless calls, with no privileged transaction in the campaign; the deployer's team wallet nevertheless received 100.05140219385335 ETH of the drained liquidity in the anchor transaction through the contract's normal fee path.",
-    "The seed row's 490,000 USD figure is superseded by the measured 207.080662844423876994 ETH of realised extraction; the seed row's value appears to cover only part of the campaign."
+    "Reset is removeLimitsTx (max-tx 1% to 100% of supply): the anchor moves 11.4M NORMIE between non-exempt addresses, above the original 10M cap, so the raised limit was needed (rule 10).",
+    "Loss is the pair's net WETH outflow summed over every skim-loop transaction, priced per block. It includes the forced-swapback ETH the team wallet received (100.05 in the anchor): LPs lost it whoever received it.",
+    "The attacker's later nonce+1 transactions with no logs only withdrew proceeds; the 14 skim-loop transactions are the campaign, followed by copycat bots in the bundle."
   ]
 }

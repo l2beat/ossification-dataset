@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "NGP",
   "name": "NGP transfer hook drains the pair reserve and syncs",
-  "summary": "On every sell the NGP token’s _update hook moves treasury and reward fees out of the PancakeSwap pair itself, with super._update(mainPair, treasuryAddress, ...) and super._update(mainPair, rewardPoolAddress, ...), and then calls IUniswapV2Pair(mainPair).sync(). Each sell therefore permanently shrinks the pair’s NGP reserve and raises the NGP price. The attacker repeated small sells behind a flash loan until the price was inflated, then sold a large NGP position and took almost the whole USDT reserve.",
+  "summary": "On every sell NGP's _update hook moved the treasury and reward fees out of the PancakeSwap pair's own NGP balance and called sync(), so each sell shrank the pair's NGP reserve and raised the price. Behind a flash loan the attacker repeated sells to inflate the price, then sold a large NGP position for almost all of the pair's USDT.",
   "targets": [
     {
       "address": "0xd2f26200cd524db097cf4ab7cc2e5c38ab6ae5c9",
@@ -27,7 +27,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-09/NGP_exp.sol"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0x0d492f7df46ff3f4cd8962dac3216b3e26f059d1986b6eef19381ce907a6740d both at the deployment block 60396646 and at block 61515894, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "The NGP/USDT PancakeSwap pair 0x20cab54946d070de7cc7228b62f213fccf3ffb1e holds 2212887.451145128834721055 USDT at block 61515894 and 9.156136012843449018 USDT at block 61515895; the difference is the loss to the pair’s liquidity providers, who are left holding NGP. The whole loss is in the one exploit transaction. Of that outflow, 1896191.720695873504350698 USDT reaches 0x8618314270528e245fbbb6fba54e245bb61a8d47 and the remainder goes to the token’s own fee recipients. DefiLlama prices USDT at exactly 1 at the incident timestamp. Nothing was recovered."
+    "Non-upgradeable token; the pair-draining sell hook was in the deployed code. The owner's setFeeRates 0x866ac871 (block 61477070) cut treasury+reward from 70% to 35% and setTradeState re-opened trading; rate changes only scale the loss and trading gates do not count (rule 10).",
+    "The pair's USDT fell from 2,212,887.45 to 9.16 in the anchor; that net outflow is the LPs' loss. The NGP pulled from three holder accounts that approved the attacker contract minutes earlier is the attacker's own input."
   ]
 }
