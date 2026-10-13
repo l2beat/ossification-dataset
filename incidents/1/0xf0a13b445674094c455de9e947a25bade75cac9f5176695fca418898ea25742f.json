@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "DEPUSDT",
-  "name": "DEPUSDT proxy unprotected approval",
-  "summary": "The DEPUSDT vault proxy exposed an approval/authorisation entry point with no access control, so the attacker granted itself an allowance over the vault's USDT and transferred the deposits out.",
+  "name": "DEPUSDT/LEVUSDC approveToken missing access control",
+  "summary": "DEPUSDT and LEVUSDC inherit CurveSwap.approveToken, a public function that approves any token held by the contract to any spender. The attacker had each proxy approve its USDT or USDC to the attack contract and pulled the balances with transferFrom.",
   "targets": [
     {
       "address": "0x7b190a928aa76eece5cb3e0f6b3bdb24fcdd9b4f",
@@ -14,22 +14,31 @@
     }
   ],
   "loss": {
-    "usd": 69961.509697,
+    "usd": 105877.66,
     "assets": [
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "69961.509697",
-        "usd": 69961.509697
+        "usd": 69736.79
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "36142.023929",
+        "usd": 36140.87
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x800a5b3178f680feebb81af69bd3dff791b886d4ce31615e601f2bb1f543bb2e"
+  ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/DEPUSDT_LEVUSDC_exp.sol",
     "https://twitter.com/numencyber/status/1669278694744150016"
   ],
   "notes": [
-    "Constructor-time Upgraded event selected the vulnerable DEPUSDT implementation.",
-    "Exact USDT transferred from the DEPUSDT proxy to the attacker, valued at stablecoin par. The separate LEVUSDC transaction is a separate incident and is excluded."
+    "LEVUSDC (0x2a2b1955, LevErc20 behind its own proxy) carries the identical CurveSwap.approveToken and was drained by the same attack contract six blocks later: one campaign against sibling deployments (rule 4), not a separate incident.",
+    "Copycat approveToken calls (0xfdc86382, 0x949354e0) found nothing left to pull."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "DKP",
   "name": "DKP exchange live-pair valuation",
-  "summary": "The direct DKP exchange valued its DKP inventory from the configured pair's live token balances. A two-receipt campaign caused the exchange to release DKP at a transient balance ratio and then removed canonical USDT from the same pair.",
+  "summary": "The DKP exchange contract (unverified) sizes DKP payouts from the DKP/USDT pair's live token balances. The attacker flash-swapped nearly all USDT out of the pair, called exchange at the depressed DKP price for a large DKP payout, repaid the flash swap and sold the DKP into the pair.",
   "targets": [
     {
       "address": "0x89257a52ad585aacb1137fcc8abbd03a963b9683",
@@ -13,27 +13,22 @@
     }
   ],
   "loss": {
-    "usd": 78459.54914395766,
+    "usd": 79313.2,
     "assets": [
       {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "78459.549143957652842113",
-        "usd": 78459.54914395766
+        "token": "0xd06fa1ba7c80f8e113c2dc669a23a9524775cf19",
+        "symbol": "DKP",
+        "amount": "17029.667053804570251069",
+        "usd": 79313.2
       }
     ]
   },
   "refs": [
     "eip155:56:0x2d31e45dce58572a99c51357164dc5283ff0c02d609250df1e6f4248bd62ee01",
-    "eip155:56:0xa3e5831764e1eb2b4703e969f2cbdc4ac52c95201bbc3375d865968b3e9825c9",
-    "eip155:56:0x4e5b2b6e9f033e696dd90d7ef90ffe1316d5b1fdbd73999a7feace88690bf19f",
-    "eip155:56:0x293a841f33b1de0577d6f8b175c891678280a9d2c123c03cc0dbe43e43d1d666",
-    "eip155:56:0x7ffb031c2420e99dbdf96a6d5b16cced3acf14dfcd2afceb3da90b5c5a0afa7d",
-    "eip155:56:0xbaa37c525fa2f50a46f994cecaa48a16581ba22851d6ca3ddd6d9ebc82d938b4",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-03/DKP_exp.sol"
   ],
   "notes": [
-    "The direct exchange constructor fixed canonical USDT, DKP, pair, invite, fee, setup-revenue and owner addresses. Its getUsdtPrice path reads the pair's live DKP and USDT balanceOf values and exchange uses that result to size the DKP inventory payment. The runtime was absent one block before creation, is unchanged before source-1, and the complete pre-incident call history contains no owner setter or configuration reset.",
-    "The canonical 18-decimal BSC USDT balance of pair 0xbe654 falls from 259,605.445236391899433885 before source-1 to 181,045.896092434246591772 after source-2. Receipt arithmetic agrees: source-1 sends 259,390 USDT to the helper, receives the 259,390 principal plus a 674.414 fee, and source-2 sends 79,233.963143957652842113 USDT to the EOA, for exact pair depletion of 78,559.549143957652842113 USDT. The helper also pays 100 USDT through 0xb24fc to constructor-fixed specifyusdtAddr 0xb6df; that address is the DKP protocol's recurring exchange-revenue and distribution account and retains the amount, so entity-level loss is 78,459.549143957652842113 USDT. DKP moves internally across the harmed entity set: exchange -17,115.243270155346986000, pair +16,178.183701114341738517, DKP token fee inventory +851.483352690228512552, and constructor-fixed connectionAddr +85.576216350776734930. Their one-wei shortfall is the token's integer fee truncation, not attacker-held consideration; helper DKP starts and ends at zero. At the pre-incident block, pair total supply is 97,597.498194969607267275 LP: owner-linked UsdtTokenPool holds 68,040.736000000000010000 (69.7156558911%), constructor-bound lpAddress holds 28,714.702564796886292017 (29.4215559782%), and the other 230 holders jointly hold 842.059630172720965258 (0.8627881305%). The pair inventory therefore represents the complete LP-holder victim set while the exchange, token-fee inventory and fixed revenue recipients conserve internal DKP. Source-3 bounds EOA nonces 131-139: helper creation, 932.745305403783296414-USDT funding, the two incident receipts, downstream approval and disposal of 78,000 USDT, and withdrawal of the helper's remaining 158.331305403783296414 USDT to the EOA. No later DKP or USDT returns to the exchange, pair or protocol recipients occur in the same-day actor/helper scan."
+    "The victim is the exchange's DKP inventory; DKP has no market price, so the DKP the attacker received is valued at the USDT it realised selling it (ref 0x2d31e45d, rule 15). The referral share went to a protocol-funded address and the pair's flash fee is not netted (rule 14).",
+    "No owner setter or configuration change exists between deployment and the exploit."
   ]
 }

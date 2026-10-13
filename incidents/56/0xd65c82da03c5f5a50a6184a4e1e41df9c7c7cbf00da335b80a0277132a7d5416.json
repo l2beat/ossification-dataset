@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "DHC",
   "name": "DHC award contract repeatable claim",
-  "summary": "The DHC award implementation behind proxy 0xe2a047aadbac51b0116af1ce91ebdae4b4202094 pays a claim (selector 0x43609f36) of a fixed 10% of an award's reward from the shared proxy DHC balance without marking the award as spent. A dust re-participation (selector 0xe3db9b54, amount 2 wei) makes the same claimed award claimable again, so anyone who creates and funds one award can claim it repeatedly. The attacker made 333 claims on five self-created awards (328 of them re-claims) and drained the proxy's pooled DHC.",
+  "summary": "The DHC award implementation (unverified) pays a claim (0x43609f36) from the proxy's pooled DHC without marking the award spent, and a dust re-participation (0xe3db9b54) makes the same award claimable again. The attacker funded awards once with flash-bought DHC, re-claimed them hundreds of times and sold the DHC.",
   "targets": [
     {
       "address": "0xe2a047aadbac51b0116af1ce91ebdae4b4202094",
@@ -14,26 +14,25 @@
     }
   ],
   "loss": {
-    "usd": 71851.01670826237,
+    "usd": 71862.25,
     "assets": [
       {
         "token": "0x743f15f4d2481774d970f286f0ebad9c3daed6e9",
         "symbol": "DHC",
         "amount": "568370.746788580565935986",
-        "usd": 71851.01670826237
+        "usd": 71862.25
       }
     ]
   },
-  "refs": [
+  "campaign": [
     "eip155:56:0x037771c05fe48def7d3f249879db97ed69f8ccd4405d0cc820983c4c9664cc51",
-    "eip155:56:0xb4c89845d95fd721e6931dd223e24e8b78a9de8c3b4428251a36d9213e44c496",
-    "eip155:56:0x1edd6a09444006e6bd6c81b62b28941bcc2baa80e7ddba6f43547abeed741185",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/DHC_exp.sol",
-    "eip155:56:0x779f4cb7774ac2240ad36ffac35d106c86500becb65facbca8ee85bc7e84a77d"
+    "eip155:56:0xb4c89845d95fd721e6931dd223e24e8b78a9de8c3b4428251a36d9213e44c496"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/DHC_exp.sol"
   ],
   "notes": [
-    "The twelfth and last pre-exploit Upgraded event (ProxyAdmin 0xdcbcbed0f7d658133f584edce93e24119db5e443 upgrade) selected award implementation 0x5abb3fe2a02e5d4320862944cd3a0b8f6af28ce1, which executed every exploit call.",
-    "Quantity is the award proxy's DHC balanceOf drop across block 120055460 (568371.829157042339390458 at block 120055459 to 1.082368461773454472 after transaction index 5). That equals the proxy's 333 outbound DHC transfers (770986.4460311507701734 DHC) minus the attacker's 333 inbound deposits (202615.699242570204261 DHC), within 23586 wei of reflection rounding, so attacker inputs are excluded. The dump moved the thin DHC/USDT price, so the drained DHC is valued at the attacker's realised USDT: gross sales of 32723.708074671970382493 + 48532.096783683429190177 + 576.0010148635625929 USDT from pair 0x4b92a34aa2beec3fcdffeb5251c1654ee004e5f4 and 19.210835043410999985 USDT from 60 DHC routed through WBNB, less the attacker's own 10000 USDT seed purchase of DHC, equal exactly the 71851.016708262373165555 USDT forwarded to the attacker EOA. The 10000 USDT DODO flash loan was repaid in the same transaction. USDT is valued at par. The figure is net of DHC transfer taxes and referral cuts paid out of the drained DHC, so it is conservative. DefiLlama has no DHC price.",
-    "The award implementation is unverified; the missing spent-award guard is established from the exploit trace and a forked replay, not from source."
+    "DHC has no market price; the drained DHC (net of the attacker's own award deposits) is valued at the USDT the attacker realised selling it, less its seed purchase (rule 15).",
+    "Slot 0x77 (set by 0x779f4cb7 after the upgrade) is not needed: replaying the anchor with it at 0 drains the same. The missing spent-award guard is inferred from the trace; the implementation is unverified."
   ]
 }

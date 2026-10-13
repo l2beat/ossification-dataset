@@ -2,35 +2,39 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "DDCoin",
   "name": "DDCoin Marketplace sellItem pays the seller twice",
-  "summary": "Marketplace.sellItem transfers the sale amount of escrowed USDT to the seller and also calls usdt.approve(seller, amount), so the seller can pull the same amount again with transferFrom. The attacker placed buy orders from helper contracts to gain sell credit, then repeatedly filled the queued buy orders with cheaply bought DD and pulled each sale's USDT a second time.",
+  "summary": "Marketplace.sellItem pays the seller and also approves it for the same USDT amount, so a seller can pull each payout twice. An owner setInviteRadio call that put an address into the invite ratio gave inviters unbounded sell credit; the attacker listed through helpers it invited, sold DD into the queued buy orders and pulled every payout again.",
   "targets": [
     {
       "address": "0xb3a636ac4c271e6cd962cad98eae9cf71f5a49c8",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x847d0a4c41400aada06f3dc93612f09d2b8691a84fb050f039abe3d6a2fa8f49"
+        "kind": "config",
+        "tx": "0x1627de5c21d6ceea7e64c9c70e1cd0b5dec4a9a71fdda684e49828267e4c809a",
+        "address": "0xb3a636ac4c271e6cd962cad98eae9cf71f5a49c8",
+        "slot": "0xe4562a10381dec21b205ed72637e6b1b523bdd0e4d4d50af5cd23dd4500a211"
       }
     }
   ],
   "loss": {
-    "usd": 158100,
+    "usd": 312368.8,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "158100",
-        "usd": 158100
+        "amount": "312200",
+        "usd": 312368.8
       }
     ]
   },
-  "refs": [
+  "campaign": [
     "eip155:56:0x325c657b22c4ffabafd7628bb0e7bf88008adfa23ea69b5286a0d9b018bd83ea",
     "eip155:56:0x9ba6723c2f529f3e5c1d7673da7258f24713330f6f51a6493d64a0f13e7ee75a",
-    "eip155:56:0x0df2eea85a150e5e039b5a8c0d2cfd6b4de59cb476a92238b74f243b03ecc22b",
+    "eip155:56:0x0df2eea85a150e5e039b5a8c0d2cfd6b4de59cb476a92238b74f243b03ecc22b"
+  ],
+  "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/DDCoin_exp.sol"
   ],
   "notes": [
-    "Immutable Marketplace runtime; owner setters only tune prices, limits and fees.",
-    "Only the second, approval-based payout of each sale is counted; the first payout is the designed exchange for DD delivered to the order's buyer. The reported ~$300k is the attacker's total USDT receipt from the Marketplace."
+    "Reset: setInviteRadio(0x180d…, 20000e18) wrote an address into inviteRadio[0]; replaying the anchor with the original 200/100 ratios reverts 'Insufficient credit limit'. Three later setInviteRadio calls only swapped one address-sized ratio for another.",
+    "Loss is the Marketplace's gross USDT depletion net of the attacker's own listItem deposits. Without the broken credit limit the attacker could not fill the buy orders at all, so the first payouts count as well; buyers got DD worth a fraction of it at the pair price."
   ]
 }
