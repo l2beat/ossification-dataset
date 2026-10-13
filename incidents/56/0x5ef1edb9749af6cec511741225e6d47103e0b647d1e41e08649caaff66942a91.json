@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "IPC",
   "name": "IPC sells burn the pair's balance",
-  "summary": "IPC's transfer hook implemented a sell by subtracting destroyNum from the IPC/USDT pair's IPC balance and immediately syncing the lower reserve, rather than charging the seller. Repeated permitted swaps therefore ratcheted down the pair's IPC reserve and let the attacker deplete its USDT side.",
+  "summary": "The IPC token burns a pending destroyNum of IPC straight out of its PancakeSwap pair and calls sync() on every sell, and each sell adds half its size to destroyNum. Inside flash loans the attacker repeatedly flash-swapped IPC out of the pair and sold it back, so each round burned pair-held IPC and lifted the price, then sold into the inflated USDT reserve.",
   "targets": [
     {
       "address": "0xeab0d46682ac707a06aefb0ac72a91a3fd6fe5d1",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 591934.2039530536,
+    "usd": 590115.78,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "591934.203953053577941826",
-        "usd": 591934.2039530536
+        "usd": 590115.78
       }
     ]
   },
@@ -29,7 +29,7 @@
     "https://crypto.training/hacks/2025-01-ipc/"
   ],
   "notes": [
-    "Direct non-upgradeable token deployment. Runtime hash 0x74fb3560e8d552944bc9e3190ea19ff2b120d39484142a94381eaf273b72861c is identical at deployment block 45347025 and pre-exploit block 45561315. Sourcify also has exact creation-bytecode and runtime-bytecode matches, and the verified Token source contains neither a proxy mechanism nor a code-replacement path; deployment is therefore the only code-change anchor.",
-    "Gross pre-recovery loss is the IPC/USDT PancakeSwap pair 0xde3595a72f35d587e96d5c7b6f3e6c02ed2900ab's exact net USDT outflow in the single successful exploit transaction; the attacker EOA receives the same amount. USDT is valued at par. The pair's IPC balance reduction is the defect's mechanism and is not added as a second loss component. A transaction three seconds earlier, cited in technical reproductions as an earlier attempt, failed with no logs or loss and is excluded. No recovery was identified."
+    "Later owner actions (setPool, renouncing ownership) and opening trading do not touch the burn logic; the pair's creation is not a change to the token, so the deployment is the reset.",
+    "The pair was drained in this single transaction; an attempt seconds earlier reverted. The sender paid a builder bribe; no earlier exercise of the burn appears in the pair's history."
   ]
 }

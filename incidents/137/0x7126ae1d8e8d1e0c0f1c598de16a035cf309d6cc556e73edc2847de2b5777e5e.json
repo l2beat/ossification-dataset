@@ -2,42 +2,70 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Huma Finance",
   "name": "Huma credit approval bypass",
-  "summary": "Permissionless requestCredit() created unapproved Requested credit lines, then permissionless refreshAccount() promoted them directly to drawable GoodStanding state without Evaluation Agent approval; a later drawdown emptied three pools.",
+  "summary": "Huma v1 BaseCreditPool.refreshAccount is open to anyone and runs _updateDueInfo on a merely requested credit line; with no due date the fee manager reports one elapsed period, so the line becomes GoodStanding without evaluation-agent approval. The attacker requested oversized lines, refreshed them and drew down each pool's liquidity.",
   "targets": [
     {
       "address": "0x3ebc1f0644a69c565957ef7ceb5aeafe94eb6fce",
       "code": "0x57107d02c2b70e09ad77240dbde7ad77fe91ea1c",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x7d6e0f6256146bc29a483756a50308f75157c62cb544328f07c4daa307da848d"
+        "kind": "config",
+        "tx": "0x1d3f0f956faf47d41886285629a03255ccea089a033980b57ef39bd053751819",
+        "address": "0x3ebc1f0644a69c565957ef7ceb5aeafe94eb6fce",
+        "slot": "0x2"
+      }
+    },
+    {
+      "address": "0x95533e56f397152b0013a39586bc97309e9a00a7",
+      "code": "0x57107d02c2b70e09ad77240dbde7ad77fe91ea1c",
+      "reset": {
+        "kind": "config",
+        "tx": "0x88e136eea5f2200fce478df4d31217081ce3bbfceee88c29bb29db9e0b1eeb6b",
+        "address": "0x95533e56f397152b0013a39586bc97309e9a00a7",
+        "slot": "0x2"
+      }
+    },
+    {
+      "address": "0xe8926adbfadb5da91cd56a7d5acc31aa3fdf47e5",
+      "code": "0x2cffaaf7885530e1c5a9684ebbe397d6f1de48d8",
+      "reset": {
+        "kind": "config",
+        "tx": "0xc30844cb0dcfffdf3fe44f0eb1764b3c1dc9becc5f63904b2ca2ccb90f6968b6",
+        "address": "0xe8926adbfadb5da91cd56a7d5acc31aa3fdf47e5",
+        "slot": "0x2"
       }
     }
   ],
+  "campaign": [
+    "eip155:137:0x7b8d641d76affcc029fd0e0f06ab81ad675b1da21ef79b82e1343016040ba359",
+    "eip155:137:0xc2fe338c8114d908e5229a268e104d9efa2ce183fbabe2013f4b0418ec9ada4a",
+    "eip155:137:0x01773621a52628908aa0910c6322c0306c1e7fa42a2bcc916d8b62df867a703c",
+    "eip155:137:0x5cf9e9805de5e10d0ae1351470045cb78c95130b84957a13e8c0718dade9d485",
+    "eip155:137:0x27aab3d0464746fd57d94236fa1dfa7749ab66a9ac7ecba9f7f6f68d67eac89e"
+  ],
   "loss": {
-    "usd": 101390.301544,
+    "usd": 103565.23,
     "assets": [
       {
         "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
         "symbol": "USDC",
-        "amount": "82315.571143",
-        "usd": 82315.571143
+        "amount": "83855.571143",
+        "usd": 83832.51
       },
       {
         "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         "symbol": "USDC.e",
-        "amount": "19074.730401",
-        "usd": 19074.730401
+        "amount": "19736.730401",
+        "usd": 19732.72
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/HumaCreditApprovalBypass_exp.sol",
-    "eip155:137:0x0adf9953c4e2506ffd4526ceee962a9bb61c573eaef60f669605cca68d0ef5aa",
-    "eip155:137:0x7b8d641d76affcc029fd0e0f06ab81ad675b1da21ef79b82e1343016040ba359",
-    "https://crypto.training/hacks/2026-05-humacreditapprovalbypass/"
+    "https://crypto.training/hacks/2026-05-humacreditapprovalbypass/",
+    "eip155:137:0x0adf9953c4e2506ffd4526ceee962a9bb61c573eaef60f669605cca68d0ef5aa"
   ],
   "notes": [
-    "The proxy's creation transaction emitted its only pre-anchor Upgraded event, selecting implementation 0x57107d02c2b70e09ad77240dbde7ad77fe91ea1c. Its EIP-1967 slot retained that implementation through the anchor, and the implementation runtime hash is unchanged at activation and immediately before the anchor.",
-    "The loss transaction transfers exactly 82,315.571143 native USDC and 19,074.730401 bridged USDC.e from the three pools to the attacker helper, which forwards the same quantities to the attacker EOA. Both assets are valued at par."
+    "The anchor refreshed the attacker's requested lines on all three pools, so each is a target. Each proxy ran its implementation from creation; initialize() later pointed it at its pool config and fee manager, whose getDueInfo supplies the elapsed period, so those pointer writes are the resets.",
+    "Campaign: the attacker's drawdown, and a copycat that repeated request, refresh and drawdown against two further Huma v1 pools. No unapproved drawdown occurred on any of these pools before the anchor (DrawdownMade borrowers all had an earlier CreditApproved)."
   ]
 }

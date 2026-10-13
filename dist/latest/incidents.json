@@ -4098,6 +4098,33 @@
     "claimsSha256": "8a9afd7756534294a7298f7237762649abe62da5cce28676411823aa1850dfb6"
   },
   {
+    "id": "eip155:1:0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
+    "chainId": 1,
+    "tx": "0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
+    "protocol": "Harvest Finance",
+    "name": "Harvest Finance Vault share price from manipulable Curve y-pool mark",
+    "summary": "Harvest's fUSDC and fUSDT vaults priced shares with the strategy's investedUnderlyingBalance, which valued its yCRV through Curve Y pool's spot calc_withdraw_one_coin. With flash loans the attacker skewed the Y pool, deposited at the depressed share price, unwound the swap and withdrew at the restored price, staying inside the 3% arb check, in 30 rounds.",
+    "lossUsd": 33578854.85,
+    "codeAgeSeconds": 474418,
+    "exploit": {
+      "block": 11129474,
+      "index": 0,
+      "timestamp": 1603680838
+    },
+    "target": {
+      "address": "0xd55ada00494d96ce1029c201425249f9dfd216cc",
+      "codeHash": "0xb65dfe370bd43b707edbe6b68f0dcf2bc566fd93554e5cf6b0c13342f416966d"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0x9f8cdb202819a2e888ba8eec48ab1baa07e0b3603ac1ac13c07ef5f9d54dbbf5",
+      "block": 11093722,
+      "index": 136,
+      "timestamp": 1603206420
+    },
+    "claimsSha256": "e0d83998f3f025cc22ef5834faa5d6f52cbbdb8268bcc26077b3262477aad34b"
+  },
+  {
     "id": "eip155:1:0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
     "chainId": 1,
     "tx": "0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
@@ -4509,34 +4536,6 @@
     "claimsSha256": "dc9287b6ffc4c3735c6a26ec72a13ed2de8e1c37dc67954a2c52b06953b155b5"
   },
   {
-    "id": "eip155:1:0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
-    "chainId": 1,
-    "tx": "0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
-    "protocol": "Harvest Finance",
-    "name": "Harvest Finance Vault share price from manipulable Curve y-pool mark",
-    "summary": "The Harvest Vault implementation 0x9b3be0cc5dd26fd0254088d03d8206792715588b, shared by the fUSDC and fUSDT vault proxies, converts between shares and underlying at both ends using underlyingBalanceWithInvestment(), which is underlyingBalanceInVault() plus IStrategy(strategy()).investedUnderlyingBalance(). For the CRVStrategyStableMainnet strategies that number is the strategy's yCRV position marked through IPriceConvertor.yCrvToUnderlying, i.e. the Curve yDAI/yUSDC/yUSDT/yTUSD pool's instantaneous calc_withdraw_one_coin. _deposit therefore mints amount.mul(totalSupply()).div(underlyingBalanceWithInvestment()) and withdraw pays underlyingBalanceWithInvestment().mul(numberOfShares).div(totalSupply) off a quantity any caller can move inside a single transaction by swapping through that pool. The only mitigation is the strategy's depositArbCheck(), which compares the same manipulable mark against curvePriceCheckpoint, a lagged copy of itself refreshed at doHardWork, with a three percent arbTolerance; withdraw() consults no check at all, so no value of arbTolerance makes the deployed code correct and the defect is not a parameter choice. Inside each of thirty transactions the attacker flash-swapped USDC and USDT out of Uniswap V2, pushed the y-pool off balance so the vault's underlying mark fell, deposited to mint shares at the depressed price, restored the pool and withdrew at the recovered price, repeating seventeen rounds against fUSDC and thirteen against fUSDT.",
-    "lossUsd": 33611919.987045,
-    "codeAgeSeconds": 564684,
-    "exploit": {
-      "block": 11129474,
-      "index": 0,
-      "timestamp": 1603680838
-    },
-    "target": {
-      "address": "0xf0358e8c3cd5fa238a29301d0bea3d63a17bedbe",
-      "code": "0x9b3be0cc5dd26fd0254088d03d8206792715588b",
-      "codeHash": "0x4e8057b2768da668363d0d4467b3d6d02b1ef49ef9e580a57c4f6f9d51920608"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xacd0a8e96cd869e0cc7eb5b96c125e665b58275dfdb58edf33792b6cfff78bca",
-      "block": 11086842,
-      "index": 58,
-      "timestamp": 1603116154
-    },
-    "claimsSha256": "cc4413c559633e531405bf6a6c7aba057ba89d082c04cb8b9828e9e35f1af54b"
-  },
-  {
     "id": "eip155:8453:0x0a2957e7a2b45db525143d419137de854a741e7d2f61468b1dc3f83c9c27f9f7",
     "chainId": 8453,
     "tx": "0x0a2957e7a2b45db525143d419137de854a741e7d2f61468b1dc3f83c9c27f9f7",
@@ -4788,8 +4787,8 @@
     "tx": "0x5ef1edb9749af6cec511741225e6d47103e0b647d1e41e08649caaff66942a91",
     "protocol": "IPC",
     "name": "IPC sells burn the pair's balance",
-    "summary": "IPC's transfer hook implemented a sell by subtracting destroyNum from the IPC/USDT pair's IPC balance and immediately syncing the lower reserve, rather than charging the seller. Repeated permitted swaps therefore ratcheted down the pair's IPC reserve and let the attacker deplete its USDT side.",
-    "lossUsd": 591934.2039530536,
+    "summary": "The IPC token burns a pending destroyNum of IPC straight out of its PancakeSwap pair and calls sync() on every sell, and each sell adds half its size to destroyNum. Inside flash loans the attacker repeatedly flash-swapped IPC out of the pair and sold it back, so each round burned pair-held IPC and lifted the price, then sold into the inflated USDT reserve.",
+    "lossUsd": 590115.78,
     "codeAgeSeconds": 642918,
     "exploit": {
       "block": 45561316,
@@ -7386,6 +7385,34 @@
     "claimsSha256": "1b123a5d0c2c65ca2fcf4fe15f615e17832d9b17a8fcec19b08a5189ad93c85d"
   },
   {
+    "id": "eip155:100:0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098",
+    "chainId": 100,
+    "tx": "0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098",
+    "protocol": "Hundred Finance",
+    "name": "Hundred Finance Gnosis ERC-677 transfer-hook reentrancy",
+    "summary": "Hundred's Compound-fork CToken.borrow sends the underlying before recording the debt. On Gnosis the bridged USDC and WBTC are ERC677 tokens that call the recipient's onTokenTransfer, so the attacker re-entered from the hUSDC and hWBTC transfers and borrowed further markets while the comptroller still saw no debt, then left the collateral behind.",
+    "lossUsd": 6008863.61,
+    "codeAgeSeconds": 2722355,
+    "exploit": {
+      "block": 21120320,
+      "index": 0,
+      "timestamp": 1647340120
+    },
+    "target": {
+      "address": "0x243e33aa7f6787154a8e59d3c27a66db3f8818ee",
+      "code": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
+      "codeHash": "0x7437931c483c98fe794b58b5a2fe9be81fbbee9945bf832e53ff2468f815eaae"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x16fce149d09f8bf29c679c3a5fe9bd551c35f5112162fc97333a041375f04afe",
+      "block": 20590421,
+      "index": 16,
+      "timestamp": 1644617765
+    },
+    "claimsSha256": "c26c7c870adb7b0b9222d692c383a0eba1d4f66f8935a0797c4b0b4755040c6c"
+  },
+  {
     "id": "eip155:1:0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c",
     "chainId": 1,
     "tx": "0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c",
@@ -8814,9 +8841,9 @@
     "tx": "0xde903046b5cdf27a5391b771f41e645e9cc670b649f7b87b1524fc4076f45983",
     "protocol": "ImpermaxV3",
     "name": "Impermax V3 permissionless reinvest collateral-value destruction",
-    "summary": "TokenizedUniswapV3Position.reinvest(tokenId, bountyTo) is permissionless and hands the position's collected Uniswap V3 fees to the autocompounder module, which mints them back as liquidity at the pool's unvalidated spot price; the only post-condition is newLiquidity > 0. Impermax values the same position with an independent Chainlink-derived oracle price through getPositionData, so a caller who first pushes the pool price far away from the oracle can burn essentially all of a position's fee value in one call. In the anchor transaction the attacker wash-traded a self-owned position to accrue 388,058.868833 USDC plus 0.26990816645136616 WETH of fees, borrowed the borrowable's entire WETH cash of 201.360672 WETH against a position ImpermaxV3Collateral.canBorrow correctly valued at 60.130663332976091010 WETH plus those fees, then called reinvest with the 0.02% pool pushed to tick -102035 against an oracle tick near -201290. The fees became only 1.1615 WETH of extra oracle-valued liquidity, the position's collateral collapsed to 61.292130049975177013 WETH with realY 0, and the equally permissionless ImpermaxV3Collateral.restructureBadDebt then wrote the fresh debt down to 29.847% through ImpermaxV3Borrowable.restructureDebt, socialising the shortfall onto the borrowable's depositors.",
-    "lossUsd": 206903.699636158,
-    "codeAgeSeconds": 5237440,
+    "summary": "TokenizedUniswapV3Position.reinvest is permissionless and mints collected fees back as liquidity at the pool's unchecked spot price, while Impermax values positions at an oracle price. The attacker wash-traded fees into its own position, borrowed against them, skewed the pool, reinvested to destroy the value and wrote the debt down via restructureBadDebt.",
+    "lossUsd": 303719.44,
+    "codeAgeSeconds": 5237254,
     "exploit": {
       "block": 29437439,
       "index": 2,
@@ -8827,13 +8854,13 @@
       "codeHash": "0x291d0b7fa6526e31c19dba03c5ca0e561bf8c5f217398669284e1e11cdc68ad4"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x7b68b305993dd5f4391872fbcbfc1d1299c907925533bf92cb6bee514efd1adf",
-      "block": 26818719,
-      "index": 118,
-      "timestamp": 1740426785
+      "kind": "config",
+      "tx": "0xc8ff0ba0e8b289d0313e050d56a14a7cb4a6a88e0022a9521152e022cb499df5",
+      "block": 26818812,
+      "index": 83,
+      "timestamp": 1740426971
     },
-    "claimsSha256": "2f219197978511e199e13b9602a780027fd3399e8f949e1027cca236b5f10197"
+    "claimsSha256": "965d89eb912385b86bdc4b9c939193dcb4a79d60c359b5d347d54fb5af57c691"
   },
   {
     "id": "eip155:56:0x380cd298a607d4422edc640b7f5a907ec0792841ee5fc963d265b1189397c905",
@@ -9059,9 +9086,9 @@
     "tx": "0x1a7ee0a7efc70ed7429edef069a1dd001fbff378748d91f17ab1876dc6d10392",
     "protocol": "Hopelend",
     "name": "HopeLend empty-market liquidity index inflation",
-    "summary": "The HopeLend pool is an Aave v3 fork whose liquidity index is computed from the reserve balance without a floor on an empty market. With one wei of hEthWBTC supply outstanding the attacker donated WBTC straight to the hEthWBTC reserve, inflating the index so that the rounding on burn returned far more underlying than had been supplied, and used the resulting collateral to borrow the WETH, USDT and USDC markets out.",
-    "lossUsd": 835550.6256910105,
-    "codeAgeSeconds": 6241020,
+    "summary": "HopeLend, an Aave V3 fork, listed WBTC as collateral with an empty hEthWBTC market. The exploiter deposited a little WBTC, pumped the liquidity index with repeated flash loans whose premium accrues to the few suppliers, borrowed every other reserve against the inflated balance, and withdrew its WBTC through rayDiv rounding that burns fewer shares than owed.",
+    "lossUsd": 872997.75,
+    "codeAgeSeconds": 6240756,
     "exploit": {
       "block": 18377042,
       "index": 0,
@@ -9073,13 +9100,13 @@
       "codeHash": "0xe1da50c5d4bb7ea472f78a8212ca478962dd064f49aa70085b93be8303fbba7c"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x79ed6539033537d054fd7977d00e21918495f22ccaae7ca8823541758ff84ee2",
-      "block": 17861190,
-      "index": 61,
-      "timestamp": 1691388719
+      "kind": "config",
+      "tx": "0x486a3f7a518aefb7cc86e6fc6ef369413d86db238adcb70c5b00eefadce299df",
+      "block": 17861212,
+      "index": 57,
+      "timestamp": 1691388983
     },
-    "claimsSha256": "9efd29f0c2c9817980454c8d7e6db768d3949676eb448650e7ccd460a2323913"
+    "claimsSha256": "bfcbcfb856cd35035cdd232239fa497fb1ceb1f0572520c4b4b993cc9c7d9c1d"
   },
   {
     "id": "eip155:8453:0x8421c96c1cafa451e025c00706599ef82780bdc0db7d17b6263511a420e0cf20",
@@ -10986,8 +11013,8 @@
     "tx": "0xed62bb27bd1058d3d7cc93d55421d6d0001ced8cb4529b02773f5126a4edb08b",
     "protocol": "Internet Token",
     "name": "Internet Token LiquidityUnifier unvalidated V3 pool callback mint",
-    "summary": "LiquidityUnifier.swapV3(token, pool) is permissionless and accepts any contract whose token0()/token1() return the reward token and the caller-chosen token; it never checks a Uniswap factory or registry. It stores the caller-supplied pool in currentPoolV3 and calls its swap(), and uniswapV3SwapCallback then mints INT to currentPoolV3 in an amount the caller controls, guarded only by msg.sender == currentPoolV3. The validateSupply modifier is defeated inside the same call by burning the minted INT through the Convertor and re-minting it after swapV3 returns. Any caller can therefore mint unbacked INT through the TOKEN_MINTER role the unifier holds and sell it into protocol-owned liquidity, breaking the invariant that INT is minted only against a genuine pool swap of the configured swapAmount.",
-    "lossUsd": 15560.723868247225,
+    "summary": "LiquidityUnifier.swapV3 accepts any contract reporting INT and a quote token as a Uniswap V3 pool, and its swap callback mints INT to that pool. The attacker passed its own contract, minted INT in the callback, cycled it through the Convertor so the supply check passed, and dumped INT into the real INT/WETH pool; copycats repeated it.",
+    "lossUsd": 15560.99,
     "codeAgeSeconds": 13049724,
     "exploit": {
       "block": 51593878,
@@ -11005,7 +11032,7 @@
       "index": 29,
       "timestamp": 1776927379
     },
-    "claimsSha256": "198dee3bc266f2c3f2de6f5f769fc65981a330e1723f7460c13093b79691f578"
+    "claimsSha256": "75169f1049d720d650064e4fa9a8105daa52f2463795d9ca6b950ad4444b1ba3"
   },
   {
     "id": "eip155:1:0x927b784148b60d5233e57287671cdf67d38e3e69e5b6d0ecacc7c1aeaa98985b",
@@ -11994,6 +12021,33 @@
     "claimsSha256": "8a1b0a8d235bb8b9337dcf31dbdd1030b5a96d502b9b4a05585985dd1b841fb9"
   },
   {
+    "id": "eip155:1:0xeff151ef58d57d6523874a7b97344fcd1ce3c7c6880cfc26a93da17f82062d59",
+    "chainId": 1,
+    "tx": "0xeff151ef58d57d6523874a7b97344fcd1ce3c7c6880cfc26a93da17f82062d59",
+    "protocol": "Hyperbridge",
+    "name": "Hyperbridge HandlerV1 MMR verifier accepts out-of-range leaves",
+    "summary": "HandlerV1 verifies post requests with an inlined Merkle Mountain Range verifier that ignores leaves not below leafCount. Passing the stored overlay root as the proof, with leafCount 1 and a forged leaf at index 1, validated any request: the TokenGateway released escrow, and copycats minted bridged DOT and drained host fees.",
+    "lossUsd": 1083527.28,
+    "codeAgeSeconds": 25110216,
+    "exploit": {
+      "block": 24868029,
+      "index": 0,
+      "timestamp": 1776049331
+    },
+    "target": {
+      "address": "0x6c84edd2a018b1fe2fc93a56066b5c60da4e6d64",
+      "codeHash": "0x92053326999d2b3618d0fc37726707a5809c1e8743efaa2479c5c75cb6478509"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0xbb58792924970d522b138288e20908fb2cff9b261ea10e18feb35a7a4d6007a1",
+      "block": 22788469,
+      "index": 31,
+      "timestamp": 1750939115
+    },
+    "claimsSha256": "8976c3085791f7cd61b7787cefb482a81aba089f7c4ee87f1b9e1c1c6edab562"
+  },
+  {
     "id": "eip155:1:0x81e9918e248d14d78ff7b697355fd9f456c6d7881486ed14fdfb69db16631154",
     "chainId": 1,
     "tx": "0x81e9918e248d14d78ff7b697355fd9f456c6d7881486ed14fdfb69db16631154",
@@ -12213,34 +12267,6 @@
       "timestamp": 1673364311
     },
     "claimsSha256": "1876fbf5e84cc4a82aeae2520d8fdba447a755231f32e3a3bd7a1f4c6ef2ae5b"
-  },
-  {
-    "id": "eip155:100:0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098",
-    "chainId": 100,
-    "tx": "0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098",
-    "protocol": "Hundred Finance",
-    "name": "Hundred Finance Gnosis ERC-677 transfer-hook reentrancy",
-    "summary": "Hundred’s Compound fork sends the underlying token to the borrower before it writes the new borrow balance. Gnosis bridged tokens are ERC-677, so the transfer hands control back to the borrower, who re-entered borrow() on the same and other markets while the accounting still showed no debt. The markets were drained of USDC, WBTC and WETH in one transaction. This is compound-finance/compound-protocol issue 141.",
-    "lossUsd": 4317363.896745388,
-    "codeAgeSeconds": 27992200,
-    "exploit": {
-      "block": 21120320,
-      "index": 0,
-      "timestamp": 1647340120
-    },
-    "target": {
-      "address": "0x243e33aa7f6787154a8e59d3c27a66db3f8818ee",
-      "code": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
-      "codeHash": "0x7437931c483c98fe794b58b5a2fe9be81fbbee9945bf832e53ff2468f815eaae"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0xd750f99ab2b8b6d1ad3daced76c0377629e5db22458a15833fa81d32b3ffcee4",
-      "block": 15722098,
-      "index": 1,
-      "timestamp": 1619347920
-    },
-    "claimsSha256": "138a5961be694fcd9919eed98ffe247b85bde7dee716e98ed5f6f777c44912b5"
   },
   {
     "id": "eip155:42161:0x6caa65b3fc5c8d4c7104574c3a15cd6208f742f9ada7d81ba027b20473137705",
@@ -12598,33 +12624,6 @@
       "timestamp": 1679476244
     },
     "claimsSha256": "81453f7207748f2bf9bce918d641c9d92e45d0eb0638c464b84f7406b50dbc93"
-  },
-  {
-    "id": "eip155:1:0xeff151ef58d57d6523874a7b97344fcd1ce3c7c6880cfc26a93da17f82062d59",
-    "chainId": 1,
-    "tx": "0xeff151ef58d57d6523874a7b97344fcd1ce3c7c6880cfc26a93da17f82062d59",
-    "protocol": "Hyperbridge",
-    "name": "Hyperbridge HandlerV1 MMR verifier accepts out-of-range leaves",
-    "summary": "HandlerV1.handlePostRequests copies caller-supplied leaf indices into its inlined MerkleMountainRange verifier, which never rejects leaves outside every peak. A proof with leafCount 1 and a forged leaf at index 1 reconstructs the genuine root from the proof node alone, so the unverified request is dispatched to the host. Forged TokenGateway requests released escrowed WETH, MANTA and CERE and reassigned the bridged-DOT admin, whose unlimited mints were dumped into DOT pools; forged HostManager requests withdrew host fee balances on Ethereum, Base, Arbitrum and BNB Chain.",
-    "lossUsd": 1089730.33,
-    "codeAgeSeconds": 33915396,
-    "exploit": {
-      "block": 24868029,
-      "index": 0,
-      "timestamp": 1776049331
-    },
-    "target": {
-      "address": "0x6c84edd2a018b1fe2fc93a56066b5c60da4e6d64",
-      "codeHash": "0x92053326999d2b3618d0fc37726707a5809c1e8743efaa2479c5c75cb6478509"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0x532b7d8944b4524db119ef6d7018637a573dc4063f3d82868ea026083c106899",
-      "block": 22059928,
-      "index": 69,
-      "timestamp": 1742133935
-    },
-    "claimsSha256": "44cecb112df8832a976be40eee6c0a1926aa4ffe46229756950d2a1eede7f440"
   },
   {
     "id": "eip155:1:0x2f44dc1b883522a88f9b0cbbdfabf9ec33884b69dd4326600c3fab7fb2277260",
@@ -13971,6 +13970,34 @@
     "claimsSha256": "eeb88d4b218fb3b8d1127df026747c44ba324584ef17bf7f281e2bce0e6301de"
   },
   {
+    "id": "eip155:137:0x7126ae1d8e8d1e0c0f1c598de16a035cf309d6cc556e73edc2847de2b5777e5e",
+    "chainId": 137,
+    "tx": "0x7126ae1d8e8d1e0c0f1c598de16a035cf309d6cc556e73edc2847de2b5777e5e",
+    "protocol": "Huma Finance",
+    "name": "Huma credit approval bypass",
+    "summary": "Huma v1 BaseCreditPool.refreshAccount is open to anyone and runs _updateDueInfo on a merely requested credit line; with no due date the fee manager reports one elapsed period, so the line becomes GoodStanding without evaluation-agent approval. The attacker requested oversized lines, refreshed them and drew down each pool's liquidity.",
+    "lossUsd": 103565.23,
+    "codeAgeSeconds": 87291468,
+    "exploit": {
+      "block": 86725372,
+      "index": 85,
+      "timestamp": 1778509109
+    },
+    "target": {
+      "address": "0x95533e56f397152b0013a39586bc97309e9a00a7",
+      "code": "0x57107d02c2b70e09ad77240dbde7ad77fe91ea1c",
+      "codeHash": "0x0bdbab48066bd5f42bb6aef5d687bd933a2a2bb804ee929cb4dac67ed6967ba9"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x88e136eea5f2200fce478df4d31217081ce3bbfceee88c29bb29db9e0b1eeb6b",
+      "block": 45929218,
+      "index": 49,
+      "timestamp": 1691217641
+    },
+    "claimsSha256": "16fd7b1ab13bcb0f6335273d1a1bb1abf7a882b5abbfc99a668ba147bbd8202a"
+  },
+  {
     "id": "eip155:56:0x5f4580486f2cc06ab9140ce5e3e04e414e1e584329b64791fda4684e7dde5ec9",
     "chainId": 56,
     "tx": "0x5f4580486f2cc06ab9140ce5e3e04e414e1e584329b64791fda4684e7dde5ec9",
@@ -13997,34 +14024,6 @@
       "timestamp": 1684659470
     },
     "claimsSha256": "271488bf53260cdd17c4334911cfc039807c173f7e71851b3ad87b7e43b833f4"
-  },
-  {
-    "id": "eip155:137:0x7126ae1d8e8d1e0c0f1c598de16a035cf309d6cc556e73edc2847de2b5777e5e",
-    "chainId": 137,
-    "tx": "0x7126ae1d8e8d1e0c0f1c598de16a035cf309d6cc556e73edc2847de2b5777e5e",
-    "protocol": "Huma Finance",
-    "name": "Huma credit approval bypass",
-    "summary": "Permissionless requestCredit() created unapproved Requested credit lines, then permissionless refreshAccount() promoted them directly to drawable GoodStanding state without Evaluation Agent approval; a later drawdown emptied three pools.",
-    "lossUsd": 101390.301544,
-    "codeAgeSeconds": 90358155,
-    "exploit": {
-      "block": 86725372,
-      "index": 85,
-      "timestamp": 1778509109
-    },
-    "target": {
-      "address": "0x3ebc1f0644a69c565957ef7ceb5aeafe94eb6fce",
-      "code": "0x57107d02c2b70e09ad77240dbde7ad77fe91ea1c",
-      "codeHash": "0x0bdbab48066bd5f42bb6aef5d687bd933a2a2bb804ee929cb4dac67ed6967ba9"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0x7d6e0f6256146bc29a483756a50308f75157c62cb544328f07c4daa307da848d",
-      "block": 44526523,
-      "index": 43,
-      "timestamp": 1688150954
-    },
-    "claimsSha256": "bbc1446eba4d7749a68cb723e9fb99acfc4a800bc0ee1907449fa7976f9b95a3"
   },
   {
     "id": "eip155:1:0x9ac08d865feefeb644d34533fe59fbf144e55fa2def302ede1e966a6b8ab025a",

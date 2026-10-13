@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Harvest Finance",
   "name": "Harvest Finance Vault share price from manipulable Curve y-pool mark",
-  "summary": "The Harvest Vault implementation 0x9b3be0cc5dd26fd0254088d03d8206792715588b, shared by the fUSDC and fUSDT vault proxies, converts between shares and underlying at both ends using underlyingBalanceWithInvestment(), which is underlyingBalanceInVault() plus IStrategy(strategy()).investedUnderlyingBalance(). For the CRVStrategyStableMainnet strategies that number is the strategy's yCRV position marked through IPriceConvertor.yCrvToUnderlying, i.e. the Curve yDAI/yUSDC/yUSDT/yTUSD pool's instantaneous calc_withdraw_one_coin. _deposit therefore mints amount.mul(totalSupply()).div(underlyingBalanceWithInvestment()) and withdraw pays underlyingBalanceWithInvestment().mul(numberOfShares).div(totalSupply) off a quantity any caller can move inside a single transaction by swapping through that pool. The only mitigation is the strategy's depositArbCheck(), which compares the same manipulable mark against curvePriceCheckpoint, a lagged copy of itself refreshed at doHardWork, with a three percent arbTolerance; withdraw() consults no check at all, so no value of arbTolerance makes the deployed code correct and the defect is not a parameter choice. Inside each of thirty transactions the attacker flash-swapped USDC and USDT out of Uniswap V2, pushed the y-pool off balance so the vault's underlying mark fell, deposited to mint shares at the depressed price, restored the pool and withdrew at the recovered price, repeating seventeen rounds against fUSDC and thirteen against fUSDT.",
+  "summary": "Harvest's fUSDC and fUSDT vaults priced shares with the strategy's investedUnderlyingBalance, which valued its yCRV through Curve Y pool's spot calc_withdraw_one_coin. With flash loans the attacker skewed the Y pool, deposited at the depressed share price, unwound the swap and withdrew at the restored price, staying inside the 3% arb check, in 30 rounds.",
   "targets": [
     {
       "address": "0xf0358e8c3cd5fa238a29301d0bea3d63a17bedbe",
@@ -11,27 +11,16 @@
         "kind": "deployment",
         "tx": "0xacd0a8e96cd869e0cc7eb5b96c125e665b58275dfdb58edf33792b6cfff78bca"
       }
+    },
+    {
+      "address": "0xd55ada00494d96ce1029c201425249f9dfd216cc",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x9f8cdb202819a2e888ba8eec48ab1baa07e0b3603ac1ac13c07ef5f9d54dbbf5"
+      }
     }
   ],
-  "loss": {
-    "usd": 33611919.987045,
-    "assets": [
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "18636750.636105",
-        "usd": 18636750.636105
-      },
-      {
-        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "symbol": "USDT",
-        "amount": "14975169.350940",
-        "usd": 14975169.35094
-      }
-    ]
-  },
-  "refs": [
-    "eip155:1:0xfe526475768576fcaf283a38bfb97d6589d4bcd84d48d3a9f2ab3935fcc0e9f3",
+  "campaign": [
     "eip155:1:0xa5f39df4ef609ef4a7a09da41da8eec544f991e03094dfb95eb310e241e5bc1a",
     "eip155:1:0x7f7e8e55a231010833261265865aa4bfe90bc292a8ff4e32e93ee29790858e50",
     "eip155:1:0x81b459c1b20db1332d2ec6a659c83992222650dc9f6f381524d77e3b75c885b3",
@@ -60,18 +49,33 @@
     "eip155:1:0xe60b28f063036c9055f1ea92f09e3467d6e02cb902266041c57633ba97b8c90f",
     "eip155:1:0x9ab36df290ab78f52f3e9be8c43a6b1d61ea80ec2f401a09040a02f08fca62ab",
     "eip155:1:0xdc4db0312149bc13607d07ec889ae96a8527866bbf40aedf09183a1c6ea6c4a8",
-    "eip155:1:0x9d093325272701d63fdafb0af2d89c7e23eaf18be1a51c580d9bce89987a2dc1",
-    "eip155:1:0x53fae6f1d6b8a76a666a0bf7f9c724e6006465e544f89f1515b939d8911e8c58",
-    "eip155:1:0x25119cd54a4562aa427d9770af383512f9cb5e8e4d17232ad96b69dc293a3510",
+    "eip155:1:0x9d093325272701d63fdafb0af2d89c7e23eaf18be1a51c580d9bce89987a2dc1"
+  ],
+  "loss": {
+    "usd": 33578854.85,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "18636750.636105",
+        "usd": 18600514.31
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "14975169.35094",
+        "usd": 14978340.54
+      }
+    ]
+  },
+  "refs": [
     "https://medium.com/harvest-finance/harvest-flashloan-economic-attack-post-mortem-3cf900d65217",
     "https://rekt.news/harvest-finance-rekt/",
-    "https://github.com/harvest-finance/harvest/blob/807bb88fa273d6f28d6bc49cd6aaaac7f96f772f/contracts/Vault.sol",
-    "eip155:1:0x7bafa93b78f26adb245446f90d7625da6d980a8f8f1566d99a6dd36b6e10e981"
+    "https://github.com/harvest-finance/harvest/blob/807bb88fa273d6f28d6bc49cd6aaaac7f96f772f/contracts/Vault.sol"
   ],
   "notes": [
-    "The VaultProxy was deployed with implementation 0x9b3be0cc5dd26fd0254088d03d8206792715588b written into the EIP-1967 slot by its constructor. No Upgraded event and no other write to that slot occurred before the exploit, so the proxy deployment is the change that made this artifact the vault's executable code.",
-    "Exact victim depletion, obtained by netting every ERC-20 Transfer log across the thirty-two campaign transactions in source-5: the fUSDC vault 0xf0358e8c3cd5fa238a29301d0bea3d63a17bedbe ends 18,636,750.636105 USDC lighter and the fUSDT vault 0x053c80ea73dc6941f518a68e2fc52ac45bde7c9c ends 14,975,169.350940 USDT lighter. Attacker-supplied inputs are the Uniswap V2 flash swaps, which are repaid inside each transaction and therefore net to zero. Of that depletion the attacker forwarded exactly 13,000,000 USDC and 11,000,000 USDT to 0x3811765a53c3188c24d412daec3f60faad5f119b, which is the 24 million USD figure most reporting quotes, and returned 1,761,898.396474 USDC and 718,914.048541 USDT (2,480,812.44 USD) to the Harvest deployer 0xf00dd244228f51547f0563e60bca65a30fbf5f7f in the same campaign. The remaining roughly 7.1 million USD was consumed by Curve y-pool imbalance fees and Uniswap swap fees and accrued to those pools' other liquidity providers; per methodology neither the financing costs nor the partial return reduces gross victim depletion, so the total is 33,611,919.99 USD, consistent with the 33.8 million USD figure Harvest published. Both stablecoins are valued at par.",
-    "The fUSDT vault 0x053c80ea73dc6941f518a68e2fc52ac45bde7c9c is a code-identical deployment behind the same implementation and is covered by the representative-target rule rather than by a second target; its own drain of 14,975,169.350940 USDT in transactions 0x0fc6d2ca064fc841bc9b1c1fad1fbb97bcea5c9a1b2b66ef837f1227e06519a6 onward is included in the loss.",
-    "The strategy's depositArbCheck() with arbTolerance = 3 percent is the only manipulation guard in the system and it is consulted on deposit only. It is recorded as context: the withdrawal path has no guard at all, so the defect does not reduce to the tolerance parameter."
+    "The vault prices shares off the strategy's investedUnderlyingBalance, so the strategy carries the defect too. setStrategy switched the fUSDC vault to this CRVStrategyStableMainnet after the proxy deployment; the replaced strategy was an identical copy, but a route change counts (rule 9).",
+    "Loss is the net USDC/USDT outflow of the fUSDC and fUSDT vaults per transaction; the Curve y-pool and Uniswap pairs only collected fees. The 2.48M USD the attacker returned to Harvest is a later recovery and is not subtracted.",
+    "The 13 fUSDT rounds hit a code-identical vault behind the same implementation and the sibling USDT strategy; they are campaign, not targets, because the anchor only touched fUSDC."
   ]
 }

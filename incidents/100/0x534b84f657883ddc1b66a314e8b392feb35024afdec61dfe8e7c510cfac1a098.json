@@ -2,37 +2,52 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Hundred Finance",
   "name": "Hundred Finance Gnosis ERC-677 transfer-hook reentrancy",
-  "summary": "Hundred’s Compound fork sends the underlying token to the borrower before it writes the new borrow balance. Gnosis bridged tokens are ERC-677, so the transfer hands control back to the borrower, who re-entered borrow() on the same and other markets while the accounting still showed no debt. The markets were drained of USDC, WBTC and WETH in one transaction. This is compound-finance/compound-protocol issue 141.",
+  "summary": "Hundred's Compound-fork CToken.borrow sends the underlying before recording the debt. On Gnosis the bridged USDC and WBTC are ERC677 tokens that call the recipient's onTokenTransfer, so the attacker re-entered from the hUSDC and hWBTC transfers and borrowed further markets while the comptroller still saw no debt, then left the collateral behind.",
   "targets": [
     {
       "address": "0x243e33aa7f6787154a8e59d3c27a66db3f8818ee",
       "code": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0xd750f99ab2b8b6d1ad3daced76c0377629e5db22458a15833fa81d32b3ffcee4"
+        "kind": "config",
+        "tx": "0x16fce149d09f8bf29c679c3a5fe9bd551c35f5112162fc97333a041375f04afe",
+        "address": "0x0f390559f258eb8591c8e31cf0905e97cf36ace2",
+        "slot": "0xedcb51a2a2064ec512ea66ce7b12a3aa0bcec1f173af072fb43d7dc7e2c14e9e"
+      }
+    },
+    {
+      "address": "0xe4e43864ea18d5e5211352a4b810383460ab7fcc",
+      "code": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x9f20cb07c4102ae7c84f015411d29b284d7db04da29b5706d59278646086ceb3"
       }
     }
   ],
   "loss": {
-    "usd": 4317363.896745388,
+    "usd": 6008863.61,
     "assets": [
       {
         "token": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
         "symbol": "USDC",
         "amount": "3630474.307448",
-        "usd": 3630474.307448
+        "usd": 3631752.94
+      },
+      {
+        "symbol": "XDAI",
+        "amount": "1705455.029647284723520283",
+        "usd": 1690221.08
       },
       {
         "token": "0x8e5bbbb09ed1ebde8674cda39a0c169401db4252",
         "symbol": "WBTC",
         "amount": "16.17030715",
-        "usd": 624309.350286066
+        "usd": 624309.35
       },
       {
         "token": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
         "symbol": "WETH",
         "amount": "24.715930916595319168",
-        "usd": 62580.23901132239
+        "usd": 62580.24
       }
     ]
   },
@@ -41,7 +56,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/HundredFinance_exp.sol"
   ],
   "notes": [
-    "The delegator’s only NewImplementation event, log 2 of its own creation transaction, moved the implementation from the zero address to 0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d. The CErc20Delegator keeps the implementation in storage slot 18, which holds that address continuously from block 15722098 to the exploit block, and no EIP-1967 Upgraded event was ever emitted.",
-    "Components are the market-side balance deltas in the single exploit transaction: the hUSDC market 0x243e33aa7f6787154a8e59d3c27a66db3f8818ee pays out 3630474.307448 USDC, the WBTC market 0xe4e43864ea18d5e5211352a4b810383460ab7fcc pays out 16.17030715 WBTC and the WETH market 0x8e15a22853a0a60a0fbb0d875055a8e66cff0235 pays out 24.715930916595319168 WETH. The attacker EOA keeps all of the WBTC and WETH and 3623974.824826 USDC; the 6499.482622 USDC difference is the fee taken by the flash-loan pool 0xa227c72a4055a9dc949cae24f54535fe890d3663 and still left the protocol. The v1 snapshot carried USD 1,700,000, which is well below the measured amount. Nothing was recovered."
+    "The attacker's helpers posted hUSDC (and hxDAI) as collateral before the re-entrant borrows. hUSDC's collateral factor was 0 until the comptroller set it to 0.9, after its February 2022 implementation upgrade, so that listing as collateral is the latest reset.",
+    "Loss is the net outflow of the four markets in the transaction, including the 1.7M xDAI borrowed from hxDAI inside the re-entry; flash-swapped funds and the attacker's own deposits net out within the transaction. No other multi-market borrow occurred on these markets before or after the anchor."
   ]
 }
