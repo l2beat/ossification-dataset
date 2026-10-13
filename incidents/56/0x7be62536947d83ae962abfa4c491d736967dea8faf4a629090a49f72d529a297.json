@@ -2,34 +2,37 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "DPC",
   "name": "DPCLock claimToken pays DPC at manipulable spot quotes",
-  "summary": "DPCLock.claimToken computes its unlock multiple and the DPC payout from PancakeRouter getAmountsOut spot quotes on the FSP/USDT and FSP/DPC pairs: the FSP pool value and a USDT->FSP->DPC conversion. With flash-loaned USDT, attackers skewed those pairs, locked FSP through swapDPC, and called claimToken for inflated DPC amounts, which they sold back through the pairs. The first attacker did this twice; two copycats repeated it in the next two blocks.",
+  "summary": "DPCLock.claimToken sets its unlock multiple from the FSP balance of the FSP/DPC pair plus Staking's total stake, and converts each locker's USDT entitlement to DPC with PancakeRouter getAmountsOut spot quotes. With flash-loaned USDT attackers skewed the pairs, locked FSP via swapDPC, claimed inflated DPC and sold it back.",
   "targets": [
     {
       "address": "0xc697e28f2fc7b8d6734d8d91cb280e99067ebde3",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x642fc73324a0a6f6f23a9f8e80f7731c17560f9abd59cda25eaf0ed9bdf432d9"
+        "kind": "config",
+        "tx": "0x0feb80e8517d6f67b335f4c64064fd128a0edf4beda8c0264f0d69e77dfe58b1",
+        "address": "0xc697e28f2fc7b8d6734d8d91cb280e99067ebde3",
+        "slot": "0xc"
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xc94143fd6e7e7f05790902d66956adcf39b60bdda1e555f9963d7b1d32188825",
+    "eip155:56:0x7345fa33ee0653a761986106b68a6a4331837835d9912d4f77d2ec016f768435",
+    "eip155:56:0x7740baf89b48c47921887b8a133e82098bb9fe01d95131864ef34ef2c4635a8e",
+    "eip155:56:0xa0eefb03dd3c49191ac312df3fe43be857a8a037e6ee9310ddfb62f1670212b1"
+  ],
   "loss": {
-    "usd": 360186.00418348773,
+    "usd": 359991.23,
     "assets": [
       {
         "token": "0x6f6243b807ecfc2340f175a659a829bdae76b6eb",
         "symbol": "DPC",
         "amount": "3.682898731987098605",
-        "usd": 360186.00418348773
+        "usd": 359991.23
       }
     ]
   },
-  "refs": [
-    "eip155:56:0xc94143fd6e7e7f05790902d66956adcf39b60bdda1e555f9963d7b1d32188825",
-    "eip155:56:0x7345fa33ee0653a761986106b68a6a4331837835d9912d4f77d2ec016f768435",
-    "eip155:56:0xa0eefb03dd3c49191ac312df3fe43be857a8a037e6ee9310ddfb62f1670212b1"
-  ],
   "notes": [
-    "Direct, non-upgradeable DPCLock runtime. The owner's setTokenContract calls (DPC, staking, FSP/DPC pair) and setOldLockData migrations are ordinary wiring and position imports; the spot-quote pricing is in the code from deployment.",
-    "Exact DPC depletion of DPCLock 0xc697e28f2fc7b8d6734d8d91cb280e99067ebde3 over five campaign transactions, valued at the USDT the campaign pulled out of the FSP/USDT pair 0x7c1f8f5d8d000b00a2eaa3c21071dbca18f6825d, where the stolen DPC was sold. DPC has no independent market quote: spot implies about 200,000 USD per DPC against a 23-DPC pool. Flash-loan legs net out within each transaction."
+    "The reset is the owner's setTokenContract(…, 2) repointing _staking from 0x21a01806 to the new Staking 0x34c8ee19: claimToken reads getTotalStakeAmount() and isHolder() from it and swapDPC requires isHolder, so the exploit needed that controller pointer (rule 10).",
+    "DPC has no market quote (spot implied about 200,000 USD per DPC against a 23-DPC pool), so the DPC drained from DPCLock is valued at the USDT the five transactions pulled out of the FSP/USDT pair 0x7c1f8f5d, where the stolen DPC was realised (rule 15)."
   ]
 }

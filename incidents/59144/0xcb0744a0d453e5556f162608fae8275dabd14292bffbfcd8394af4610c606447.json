@@ -1,37 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Denaria",
-  "name": "PerpPair same-actor virtual PnL realization",
-  "summary": "PerpPair let one economic actor provide leveraged virtual liquidity, trade against that same virtual reserve state, and immediately realize the resulting LP PnL as withdrawable Vault collateral. addLiquidity records the LP's virtual balances and debts, trade moves the shared virtual curve, calcPnL marks the actor's combined LP and trader positions against that moved state, and realizePnL credits the positive result to real collateral without an independent realization price, delay, or separation between the LP and trader. The violated invariant is that a participant must not be able to turn a self-created virtual counterparty loss into a claim on scarce vault collateral.",
+  "name": "PerpPair liquidity-matrix rounding and unsafe cast",
+  "summary": "PerpPair's LONG trade path updates the liquidity matrix with divCeil while other paths floor, so repeated trades drift it; getLpLiquidityBalance then casts a slightly negative int256 to uint256 unchecked, wrapping to a huge LP balance. With flash-loaned USDC the attacker added one-sided liquidity, traded, and realised the inflated PnL from the Vault.",
   "targets": [
     {
       "address": "0xb68396dd4230253d27589e2004ac37389836ae17",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x448c0c069bee64e2739dad766b9bb8235e309e675195282ca9c5c6091377ab6e"
+        "kind": "config",
+        "tx": "0xd95991fe7cc651b3367089a02b0c9ed842d6dd6acac437d8c68f646cbaf0e88b",
+        "address": "0x61ce9b51010ba52f701444f0f3d1e563f6ae8d91",
+        "slot": "0x1"
       }
     }
   ],
   "loss": {
-    "usd": 165647.735181,
+    "usd": 165782.95,
     "assets": [
       {
         "token": "0x176211869ca2b568f2a7d4ee941e073a821ee1ff",
         "symbol": "USDC",
         "amount": "165647.735181",
-        "usd": 165647.735181
+        "usd": 165782.95
       }
     ]
   },
   "refs": [
-    "eip155:59144:0x6fec2ca2d4e9a3e9e9ac798021edb488f7bae179491c57fd8dc658020e592a55",
-    "eip155:59144:0x6429795711ae6a0baeff3de8a6a55601b8e25e2d238220f2012aee57664e6dab",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-04/PerpPair_exp.sol",
     "https://blog.verichains.io/p/denaria-finance-exploit-when-divceil"
   ],
   "notes": [
-    "PerpPair is a direct contract. Its runtime is absent one block before creation and byte-identical at creation and immediately before the incident. No proxy or module activation exists, and later parameter changes do not introduce the same-actor virtual-PnL realization path.",
-    "The Vault receives exactly 30,000 + 15,000 + 10,000 + 5,000 = 60,000 USDC and sends 183,283.399597 + 42,364.335584 = 225,647.735181 USDC in the sole successful loss receipt, for gross depletion of 165,647.735181 USDC. Its archive USDC balance falls from 165,647.735882 to 0.000701, exactly the same net change, so no unrelated same-block adjustment is required. The 60,000 USDC is genuine collateral consideration retained by the victim. The external financing source receives 60,030 USDC after supplying 60,000, leaving 165,617.735181 USDC as attacker proceeds; the 30-USDC financing premium explains why proceeds are lower than gross victim loss and is not subtracted again. Later approval and bridge deposits move all proceeds downstream, do not touch the Vault, and are excluded from the exploit-time boundary.",
-    "source-7 attributes the drain to divCeil-versus-floor rounding in perpTrade.sol driving a matrix element negative and an unchecked int256-to-uint256 cast in internalPerpLogic.sol; the summary describes the resulting realizable PnL. Both lie in the same PerpPair runtime, so target and age are unaffected; the failure identity has not been re-reviewed against those lines."
+    "The reset is Vault.initializeParameters, which set Vault.perpPair to this PerpPair 19 blocks after its deployment; Vault.addPnlToCollateral, through which the inflated PnL became withdrawable USDC, accepts only that address. Later fee (feeFrontend) and oracle parameter changes were not needed by the exploit.",
+    "Loss is the Vault's net USDC outflow in the exploit (225,647.74 out less the attacker's 60,000 deposited collateral). No other Vault outflow over its life exceeds about 1,900 USDC, so there is no earlier or follow-up exploit."
   ]
 }
