@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Limit Break Payment Processor",
   "name": "Limit Break Payment Processor V2 forwarded-calldata offset sender spoof",
-  "summary": "Payment Processor V2 copies a forwarded call's trade data from the caller-supplied ABI offset but sizes the copy as if the offset were canonical. Sending offset 0 through a permissionless trusted forwarder shifts the copy, drops the forwarder-appended real sender and lets attacker bytes become the ERC-2771 sender, so the attacker could act as any wallet that had approved Payment Processor: accepting its own zero-price offers for victims' NFTs and making victims buy worthless listings with approved WETH and stablecoins.",
+  "summary": "Payment Processor copied a forwarded call's trade data from the caller-supplied ABI offset but sized it as if canonical, so through a permissionless trusted forwarder attacker bytes became the ERC-2771 sender. Attackers acted as any wallet that had approved it: accepting zero-price offers for victims' NFTs and making victims buy worthless listings with approved tokens.",
   "targets": [
     {
       "address": "0x9a1d00bed7cd04bcda516d721a596eb22aac6834",
@@ -112,17 +112,64 @@
     ]
   },
   "refs": [
-    "eip155:1:0xdd3ab342cfcf979ed67988321e5541589426a80c43d52bc4514ca969c1e7a96b",
-    "eip155:1:0xdb0424783c7fa60ba93feaa48ac267cd3e09111ebc446c626165c7977782d40e",
-    "eip155:33139:0x3e95b04acd7d45478c5e46aa5fa6b352cb153c293c3d62843845c6115327e330",
-    "eip155:1:0xfe776ec0ca4be969f4b50d6f137f4dd9fb2d47606526a2d7f1a4089d197525ba",
     "https://hacked.slowmist.io"
   ],
   "notes": [
-    "Immutable PaymentProcessor V2 runtime contains the fixed 68-byte offset assumption in delegateCallReplaceDomainSeparator; permissionless forwarder registration and collection settings add no causal configuration.",
-    "Exact victim ERC-20 debits from spoofed buy-listing calls on Ethereum, Base, Polygon, Arbitrum (sibling V2 deployments) and ApeChain (PP V3, identical modifier, same actors and forwarder 0xb48d6af77c5e3b99876ea71b38e9c814ba5b1c8e), totalling $1,665,921.59 at DefiLlama prices of each asset's first drain. The stolen NFTs (at least 84612 ERC721 items and 77264 ERC1155 units from 12769 Ethereum wallets, plus the other-chain events counted in source-3) are unvalued, so this amount is a lower bound; SlowMist reports about $2.8M. Scan ends: Ethereum block 26078818, Base 51922870, Polygon 94620091, Arbitrum 509846310, BNB 124606568, OP 157518303, ApeChain 50588304; later drains are not included.",
-    "Stolen NFTs are counted but not valued; loss.usd covers only exactly measured ERC-20 victim debits and is a lower bound.",
-    "Ethereum NFT events with EIP-7702 or contract takers (22894 ERC721, 3177 ERC1155) and other-chain NFT events are classified by taker != transaction sender, not individually traced.",
-    "The campaign was still active at the scan end blocks listed in loss.notes; later drains are excluded."
+    "Immutable PaymentProcessor V2 runtime holds the fixed-offset copy in its delegate-call wrapper; forwarders are permissionless clones and collection settings add no causal configuration. ApeChain's V3 shares the modifier and was hit by the same actors, so it is one campaign.",
+    "loss.usd is the exact ERC-20 debits of victims in spoofed buy-listing txs (re-measured from receipts on every chain). Stolen NFTs (tens of thousands of items) have no market price here and are not valued, so this is a lower bound; SlowMist reports about 2.8M USD.",
+    "Bundles are classified by party != tx sender from event logs, not traced one by one; sampled txs all route through a TrustedForwarder. Scans end at the listed blocks while the campaign was still active; no spoofed sale precedes the anchor on Ethereum since deployment or in the prior week on Base, Polygon and ApeChain."
+  ],
+  "campaign": [
+    "eip155:1:0x8ae79878f33de33a603b6a2ef724c2a399cb735f152dc2a59fd47b2e53bd0827",
+    "eip155:1:0x59732c4ebba88d045f4dfe46a8a3e748575e2b750e5649229c1a5a5a22b675b8",
+    {
+      "chainId": 1,
+      "count": 9076,
+      "from": 26052469,
+      "to": 26078657,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 26078818: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    },
+    {
+      "chainId": 8453,
+      "count": 2810,
+      "from": 51768706,
+      "to": 51916769,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 51922870: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    },
+    {
+      "chainId": 137,
+      "count": 1250,
+      "from": 94414444,
+      "to": 94583085,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 94620091: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    },
+    {
+      "chainId": 33139,
+      "count": 554,
+      "from": 50228927,
+      "to": 50349425,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 50588304: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    },
+    {
+      "chainId": 56,
+      "count": 41,
+      "from": 123990804,
+      "to": 123990960,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 124606568: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    },
+    {
+      "chainId": 42161,
+      "count": 6,
+      "from": 508716316,
+      "to": 509083981,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 509846310: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    },
+    {
+      "chainId": 10,
+      "count": 5,
+      "from": 157415069,
+      "to": 157415072,
+      "selection": "Payment Processor V2 0x9a1d00bed7cd04bcda516d721a596eb22aac6834 and V3 0x9a1d00000000fc540e2000560054812452eb5366 logs from the anchor's timestamp to block 157518303: txs emitting AcceptOfferERC721/ERC1155 at salePrice 0 whose seller, or BuyListingERC721/ERC1155 whose buyer, is neither tx.from nor tx.to; the anchor and listed txs excluded"
+    }
   ]
 }

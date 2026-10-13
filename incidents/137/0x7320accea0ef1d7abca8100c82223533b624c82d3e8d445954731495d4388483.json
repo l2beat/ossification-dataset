@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Libertify",
   "name": "Libertify LibertiVault deposit swap-callback reentrancy",
-  "summary": "LibertiVault.deposit(uint256,address,bytes) snapshots the net asset value with getNavInNumeraire(Rounding.Up) before pulling the caller's assets, then hands control to an untrusted callee: _deposit forwards the caller's raw calldata to the 1inch AggregationRouterV4 through userSwap, and that router calls back into the caller-nominated IAggregationExecutor. Nothing on deposit, _deposit or userSwap holds a reentrancy lock, so the executor reenters deposit. The inner call mints against the vault state it sees, and when the outer call resumes it computes shares = totalSupply().mulDiv(valueDeposited, nav) with totalSupply() read after the inner mint but nav still the stale pre-reentrancy snapshot. The share-price invariant that a mint must be priced against the same NAV whose supply it divides is violated, and the attacker's four nested mints issued 23,397,196.64 shares to itself against a pre-attack totalSupply of 21,062.278834564420093169 before it redeemed them for the vault's reserves. No configured parameter value repairs this: minDeposit, maxDeposit, invariant, entryFee and exitFee only scale the mint, they do not restore the NAV/supply pairing.",
+  "summary": "LibertiVault.deposit priced shares against a NAV read before its 1inch user swap and had no reentrancy guard. The attacker's swap executor re-entered deposit, so outer deposits minted shares against the stale NAV and the inflated supply was redeemed for the vault's reserves. The attacker and two copycats repeated it on the Ethereum vault.",
   "targets": [
     {
       "address": "0x9c80a455ecaca7025a45f5fa3b85fd6a462a447b",
@@ -14,29 +14,46 @@
     }
   ],
   "loss": {
-    "usd": 298620.28,
+    "usd": 478256.19,
     "assets": [
       {
         "token": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
         "symbol": "WETH",
         "amount": "129.399932660161219914",
-        "usd": 243807.59
+        "usd": 243658.78
       },
       {
         "token": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
         "symbol": "USDT",
         "amount": "54812.691331",
-        "usd": 54812.691331
+        "usd": 54799.48
+      },
+      {
+        "chainId": 1,
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "103040.467339",
+        "usd": 103040.47
+      },
+      {
+        "chainId": 1,
+        "symbol": "ETH",
+        "amount": "40.769520880975341568",
+        "usd": 76757.46
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/Libertify_exp.sol",
-    "eip155:137:0x450f6a8e2740ced7c1961631a13f6a0ec9201bdb2f8f36ec64f91675e7717da3",
     "https://twitter.com/Phalcon_xyz/status/1678694679767031809"
   ],
   "notes": [
-    "The vault is an EIP-1167 minimal proxy whose entire 45-byte runtime is 0x363d3d373d3d3d363d73089d9868b58ef37d5804281e106d9b7e71a4d05f5af43d82803e903d91602b57fd5bf3, hardcoding the LibertiVault master 0x089d9868b58ef37d5804281e106d9b7e71a4d05f. The delegate cannot be repointed and the proxy emitted no upgrade event, so the CREATE2 of the clone by the LibertiVaultFactory 0x66430935e26e52a97a1c898d681e8aeb404f3061 is the change that put the defective code into service for this execution context. The master itself was deployed 1,484 seconds earlier, in transaction 0x450f6a8e2740ced7c1961631a13f6a0ec9201bdb2f8f36ec64f91675e7717da3 at block 40785224 index 6, and its runtime is byte-identical from that block through the pre-exploit block.",
-    "Exact victim depletion, measured as the change in the vault 0x9c80a455ecaca7025a45f5fa3b85fd6a462a447b's own token balances across the single exploit transaction: WETH 129.411606107394699466 -> 0.011673447233479552 and USDT 81476.027164 -> 26663.335833. The attacker's two 5,000,000-USDT Aave V2 flash loans and the 0.004 WETH it deposited are attacker-supplied inputs and are netted out; the 9,000 USDT of flash-loan premium it paid is not deducted. WETH and USDT are deep markets on Polygon and the attacker's ~5.56 WETH Uniswap V3 sale did not move them, so a contemporaneous spot mark is used rather than realised proceeds; the DefiLlama WETH quote is the Ethereum WETH series because DefiLlama carries no Polygon WETH series. The seed row and the DeFiHackLabs header both state ~452,000 USD; that figure is not reproducible from the receipt at any contemporaneous price and is not used."
+    "Each vault is an EIP-1167 clone of a LibertiVault master, so the clone's creation is the reset; the later rebalance invariant change is an operational value and any value below 100% enables the swap the exploit needs.",
+    "The Ethereum vault 0x429032a4 (clone of the same template) was drained by the same attacker 17 minutes after the Polygon anchor and by two flash-loan copycats; a scan of all Ethereum sibling clones found no other drain, and the Polygon siblings held only a few shares each at the anchor."
+  ],
+  "campaign": [
+    "eip155:1:0xcb0ad9da33ecabf75df0a24aabf8a4517e4a7c5b1b2f11fee3b6a1ad9299a282",
+    "eip155:1:0x88681b84c39a3682172e0ebff8d8b62dc7aa82ba1115557e7a8e205798cc22f9",
+    "eip155:1:0x05da1448c85ad511b74d2618bdc6463ef571e94d1b4a3df336394ff44818d8c3"
   ]
 }

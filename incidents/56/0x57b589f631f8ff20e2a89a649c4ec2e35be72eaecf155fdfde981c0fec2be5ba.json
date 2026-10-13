@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LocalTrader",
   "name": "LocalTrader price-manager missing access control",
-  "summary": "The LocalTrader price-manager implementation exposed ownership and token-price setters without effective access control. A fresh EOA changed both values, acquired the exchange's LCT inventory for a negligible BNB payment, and exchanged the LCT against the protocol's LCT/WBNB liquidity.",
+  "summary": "The LocalTrader price-manager proxy left storeConstructor unprotected, so anyone could overwrite its feed, admin, owner and LCT price. The attacker took ownership, set the price to 1 wei, bought the exchange's whole LCT inventory for a negligible BNB payment and dumped it into the LCT/WBNB pool.",
   "targets": [
     {
       "address": "0x303554d4d8bd01f18c6fa4a8df3ff57a96071a41",
@@ -14,28 +14,27 @@
     }
   ],
   "loss": {
-    "usd": 118978.37210738067,
+    "usd": 119012.51,
     "assets": [
       {
         "symbol": "BNB",
-        "amount": "379.322744715235189932",
-        "usd": 118978.37210738067
+        "amount": "379.322744715267840729",
+        "usd": 119012.51
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/LocalTrader_exp.sol",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/LocalTrader2_exp.sol",
-    "https://twitter.com/numencyber/status/1661213691893944320",
-    "eip155:56:0xbea605b238c85aabe5edc636219155d8c4879d6b05c48091cf1f7286bd4702ba",
-    "eip155:56:0x49a3038622bf6dc3672b1b7366382a2c513d713e06cb7c91ebb8e256ee300dfb",
-    "eip155:56:0xb50b100f139d5ea71f1bb0187271195cf0ff2d1b714dc001d1cc436bb6643151",
-    "eip155:56:0xf7d558407b6e1259d6bdf27bb9e99d58dced001dd4e782c0dc97eb9e70f2237d",
-    "eip155:56:0x0611accca2dd8a66906601768bf3843a281d6049673573ffc1c440bb2d4acece",
-    "eip155:56:0x042b8dc879fa193acc79f55a02c08f276eaf1c4f7c66a33811fce2a4507cea63"
+    "https://twitter.com/numencyber/status/1661213691893944320"
   ],
   "notes": [
-    "The price-manager proxy was directly created with its EIP-1967 implementation slot selecting 0x312dc37075646c7e0dba21df5bdfe69e76475fdc. The slot and selected 3,367-byte implementation runtime remain unchanged through the pre-incident state, and the proxy emits no canonical pre-incident Upgraded event. Proxy deployment is therefore the latest age reset for the implicated implementation.",
-    "Gross loss uses the LocalTrader exchange 0xce3e12bd77dd54e20a18cb1b94667f3e697bea06 and LCT/WBNB pair 0x64b266cd63ff3239e6491d6c2c58a5b8552c8724 as one victim set. The exchange receives 0.000000000032650797 BNB and sends 32,650,797 LCT; the final swap sends exactly the same LCT into the pair and removes 379.322744715267840729 WBNB. LCT is internal to the victim set and cancels rather than requiring an illiquid-token valuation. Subtracting the linked BNB input gives 379.322744715235189932 BNB of exact underlying depletion. Archive exchange balances reproduce its leg. The final receipt reproduces the pair leg; unrelated transactions in the same block supply 117.026153119475717607 WBNB net, so the pair's archive balance reconciles as 835.992277421314929535 + 117.026153119475717607 - 379.322744715267840729 = 573.695685825522806413 WBNB. The three approval transactions have zero victim flow but remain inside the complete consecutive-nonce campaign. The closest preceding DefiLlama BNB observation is $313.66 at 1684841863, 79 seconds before the anchor. Exact loss is $118,978.37210738067, replacing the seed's rounded $120,445 estimate."
+    "storeConstructor overwrote the feed, admin, owner and price slots in the anchor itself, so earlier admin and price changes on the proxy do not reset the age; the proxy's deployment does.",
+    "The LCT taken from the exchange and dumped into the LCT/WBNB pair is valued at the BNB the dump realised (rule 15): the sale took about 40% of the pair's WBNB, far below LCT's pre-dump mark."
+  ],
+  "campaign": [
+    "eip155:56:0xbea605b238c85aabe5edc636219155d8c4879d6b05c48091cf1f7286bd4702ba",
+    "eip155:56:0x49a3038622bf6dc3672b1b7366382a2c513d713e06cb7c91ebb8e256ee300dfb",
+    "eip155:56:0x042b8dc879fa193acc79f55a02c08f276eaf1c4f7c66a33811fce2a4507cea63"
   ]
 }

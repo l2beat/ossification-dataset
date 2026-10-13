@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Likwid",
   "name": "Likwid MarginPosition leverage-0 borrow reuses an unbooked AMM quote",
-  "summary": "LikwidMarginPosition.addMargin with leverage 0 routes to _executeAddCollateralAndBorrow. That function caps the borrow at SwapMath.getAmountOut(pairReserves, marginAmount), the proceeds of selling the collateral into the pool, divided by minBorrowLevel 1.4 and limited to 20% of real reserves. It never books that sale: unlike _executeAddLeverage it sets no pairDelta, so pairReserves do not move. Every further position is quoted against the same reserves. Any caller can split collateral across many freshly minted positions in one transaction and borrow far more BNB than the collateral could fetch. Attackers bought pool tokens from the same vault, pledged them across 16 to 40 positions per transaction and left the BNB debt unpaid.",
+  "summary": "LikwidMarginPosition's leverage-0 borrow capped each loan at the pool's quote for selling the pledged collateral but never booked that sale, so every new position got the same quote. Attackers bought pool tokens from the vault, pledged them across 16 to 40 fresh positions in one transaction and walked away with more BNB than they paid.",
   "targets": [
     {
       "address": "0x6bec0c1dc4898484b7f094566ddf8bc82ed7abe8",
@@ -13,64 +13,67 @@
     }
   ],
   "loss": {
-    "usd": 26376.79296069903,
+    "usd": 26376.78,
     "assets": [
       {
         "symbol": "BNB",
         "amount": "0.76608941766037576",
-        "usd": 544.9249716287419
+        "usd": 544.92
       },
       {
         "symbol": "BNB",
         "amount": "0.018405891104865925",
-        "usd": 13.084005303728166
+        "usd": 13.08
       },
       {
         "symbol": "BNB",
         "amount": "0.01180563222243664",
-        "usd": 8.401874129016967
+        "usd": 8.4
       },
       {
         "symbol": "BNB",
         "amount": "0.051849390993624924",
-        "usd": 37.02077847917831
+        "usd": 37.02
       },
       {
         "symbol": "BNB",
         "amount": "10.84029063556641496",
-        "usd": 7956.683396471082
+        "usd": 7956.68
       },
       {
         "symbol": "BNB",
         "amount": "0.7006037983802424",
-        "usd": 521.2196909808044
+        "usd": 521.22
       },
       {
         "symbol": "BNB",
         "amount": "22.622426302671491016",
-        "usd": 16885.31811044248
+        "usd": 16885.32
       },
       {
         "symbol": "BNB",
         "amount": "0.547056337323012704",
-        "usd": 410.1401332639961
+        "usd": 410.14
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/Likwid_exp.sol",
-    "eip155:56:0xf851fbc2dfcfbbb3910b05efb222891532c2cbeceb4b81d08b417634b74fc6d0",
-    "eip155:56:0x8cb0ae6b0652b3128b987e21a260b5e4043e966f360131b6aed34bbc01e35ec9",
-    "eip155:56:0x58e6ba4011a648af80e1ceabf76836ae89316be6debd16c106867616d3ecbc37",
     "eip155:56:0x09e73f888a9f571d0aa38fb8c68500b97964f58e8915a18a7c9c2cbc867fdac9",
-    "eip155:56:0x071ee73a5ebc86815dbdc7ac95dbe0fe3a35b76713cf5537df5a7c2f3ec8b944",
-    "eip155:56:0x89be85353ede456422a539ca6d66285d8610b65b9e7a354c1ff08cb355d0e77c",
-    "eip155:56:0x83cbd07d59aedc2f114c351c568d3386ff5bc7caa87d12bc6494e2dc7bf16f4d",
-    "eip155:56:0x272a1e546291660335fcdddef507d7657920c1f6d28ca2cc0d66f39877d54bcb",
     "eip155:56:0x0bc2d59454c54789f6f584c69438f8a2d9f7404723ba4b5402e548283f13442a"
   ],
   "notes": [
-    "Immutable non-proxy LikwidMarginPosition. The borrow-sizing logic and the constructor margin levels (minBorrowLevel 1400000) are fixed at deployment. The only MarginLevelChanged event is at block 122636610, after the campaign, and the only owner transaction before it is a transferOwnership.",
-    "Each component is one exploit cycle's net BNB depletion of LikwidVault 0x065d449ec9d139740343990b7e1cf05fa830e4ba. A cycle is the attacker contract's 8-10 pool buys, its multi-position leverage-0 borrow and any sale of leftover pool tokens back to the vault. The buys are attacker-supplied BNB that bought the collateral from this same vault. Every bought token went back into the vault as collateral or was sold back (net token change 0, within 12 wei), so the buys are subtracted and the net BNB is the only loss. Gross BNB leaving the vault in the eight exploit transactions is 130.870694119056799425 BNB. PoC transaction 0x83cbd07d alone paid 74.310377809898883696 BNB against 55 BNB of prior buys. Cycles in order are A 0x98b9f2df (anchor), B1-B3 0x053d984e, E 0x76ae4040, and G, H (PoC), I 0x90bde1e0. The debt is recorded against attacker positions whose only backing is the pledged tokens, which the attackers abandoned. Excluded because they returned value to the vault: 0x90bde1e0's buy-and-sell round trip without borrowing (122514216-122515310, vault +20.436914341249654115 BNB), and 0x98b9f2df's single-position pump-and-borrow attempts at 121416022 (vault +8.372128916444106395) and 121431431/121432300 (+11.362576729994412261). Later liquidations or recoveries are not netted. BNB is valued at DefiLlama WBNB spot at each exploit transaction's timestamp."
+    "Immutable LikwidMarginPosition; its margin levels are constructor constants and the only MarginLevelChanged event comes after the campaign.",
+    "Each loss row is one cycle's net BNB depletion of LikwidVault: the borrow's BNB less the attacker's own BNB that bought the pledged tokens from the same vault (a round trip, rule 14), plus leftover tokens sold back (refs). Pump attempts that left the vault ahead are excluded; later liquidations are not netted.",
+    "The anchor is the first multi-position borrow: a scan of position mints since deployment finds no earlier transaction minting four or more positions."
+  ],
+  "campaign": [
+    "eip155:56:0xf851fbc2dfcfbbb3910b05efb222891532c2cbeceb4b81d08b417634b74fc6d0",
+    "eip155:56:0x8cb0ae6b0652b3128b987e21a260b5e4043e966f360131b6aed34bbc01e35ec9",
+    "eip155:56:0x58e6ba4011a648af80e1ceabf76836ae89316be6debd16c106867616d3ecbc37",
+    "eip155:56:0x071ee73a5ebc86815dbdc7ac95dbe0fe3a35b76713cf5537df5a7c2f3ec8b944",
+    "eip155:56:0x89be85353ede456422a539ca6d66285d8610b65b9e7a354c1ff08cb355d0e77c",
+    "eip155:56:0x83cbd07d59aedc2f114c351c568d3386ff5bc7caa87d12bc6494e2dc7bf16f4d",
+    "eip155:56:0x272a1e546291660335fcdddef507d7657920c1f6d28ca2cc0d66f39877d54bcb"
   ]
 }

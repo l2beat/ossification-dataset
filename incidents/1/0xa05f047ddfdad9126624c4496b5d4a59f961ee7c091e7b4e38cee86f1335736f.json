@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LeverageSIR",
   "name": "SIR vault uniswapV3SwapCallback caller check on stale transient storage",
-  "summary": "The SIR vault authorises uniswapV3SwapCallback by comparing msg.sender against an address it keeps in EIP-1153 transient storage, and that record is not cleared once the swap it was written for has completed. The attacker created a Uniswap V3 pool against a token of its own, drove one mint through the vault so that its own address ended up in the transient record, and then called Vault.uniswapV3SwapCallback directly three times, once per token, making the vault transfer out its USDC, WBTC and WETH.",
+  "summary": "The SIR vault authorised uniswapV3SwapCallback by checking msg.sender against an address held in transient storage, and mint later reused that slot for the minted amount. The attacker minted an amount equal to a vanity CREATE2 address via its own pool, then called the callback from that address to transfer out the vault's USDC, WBTC and WETH.",
   "targets": [
     {
       "address": "0xb91ae2c8365fd45030aba84a4666c4db074e53e7",
@@ -13,25 +13,25 @@
     }
   ],
   "loss": {
-    "usd": 354472.7596784459,
+    "usd": 354471.18,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "17814.862676",
-        "usd": 17814.862676
+        "usd": 17813.28
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
-        "amount": "1.40852920",
-        "usd": 116569.876592
+        "amount": "1.4085292",
+        "usd": 116569.88
       },
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "119.871037891574186422",
-        "usd": 220088.02041044587
+        "usd": 220088.02
       }
     ]
   },
@@ -39,7 +39,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-03/LeverageSIR_exp.sol"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0x2971ac1f91420fcea858d805fd103c96108db598cac898faa6430ce4df8a913b both at the deployment block 21888482 and at block 22157899, no EIP-1967 or beacon slot is set, and the two DELEGATECALLs the exploit takes go to 0x80f18b12a6dbd515c5ad01a2006abf30c5972158, a link-time constant in the vault’s own runtime that cannot be repointed.",
-    "Components are the vault’s net ERC-20 deltas in the single exploit transaction, and each equals the amount argument of one of the three direct uniswapV3SwapCallback calls. The v1 snapshot carried USD 1,781,486 for this row; that figure is not supported on chain and is about five times the measured loss, which matches the roughly USD 355,000 reported at the time. The attacker EOA sent nine transactions in total; only this one touches the vault, the rest being the exploit-contract creation and the subsequent disposal swaps. Nothing was recovered."
+    "Non-upgradeable vault; its two delegatecalls go to a link-time library constant. Later setBaseFee and tax updates on the vault only change fees and were not needed by the exploit.",
+    "No other transaction called the callback directly; the vault's earlier burns and mints are normal use and the later initialize is unrelated."
   ]
 }

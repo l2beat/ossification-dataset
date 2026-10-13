@@ -48,6 +48,7 @@ const CHAINS = {
   1329: ['sei', '0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7', 'sei-network'],
   5000: ['mantle', '0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8', 'mantle'],
   8453: ['base', '0x4200000000000000000000000000000000000006', 'ethereum', true],
+  33139: ['apechain', '0x48b62137edfa95a428d35c09e44256a739f6b557', 'apecoin'],
   42161: ['arbitrum', '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', 'ethereum'],
   43114: ['avax', '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7', 'avalanche-2', true],
   59144: ['linea', '0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f', 'ethereum', true],

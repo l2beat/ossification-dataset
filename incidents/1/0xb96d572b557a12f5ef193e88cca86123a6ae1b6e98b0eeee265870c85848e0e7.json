@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Lien Finance",
-  "name": "Lien Finance",
-  "summary": "BondMakerCollateralizedEth validated only the aggregate number of exception matches when exchanging bond groups, so repeated exception IDs could bypass per-bond multiset integrity and mint unbacked bonds. GeneralizedDotc and DecentralizedOTC then priced permissionlessly registered, attacker-crafted bond structures without validating their backing or economic shape, letting those bonds pull 542,144.628604 USDC from an LP allowance.",
+  "name": "Lien BondMaker exception-count bond exchange mint",
+  "summary": "BondMakerCollateralizedEth.exchangeEquivalentBonds checked only the total count of exception matches, so groups listing a bond twice let the attacker except every input bond and mint unbacked bonds. Lien's OTC exchanges priced these permissionlessly registered bonds from payoff metadata alone and paid for them from an LP's USDC allowance.",
   "targets": [
     {
       "address": "0xda6fc5625e617bb92f5359921d43321cebc6bef0",
@@ -41,13 +41,18 @@
     }
   ],
   "loss": {
-    "usd": 542144.628604,
+    "usd": 542271.06,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "542144.628604",
-        "usd": 542144.628604
+        "usd": 542083.35
+      },
+      {
+        "symbol": "ETH",
+        "amount": "0.1002",
+        "usd": 187.71
       }
     ]
   },
@@ -56,10 +61,10 @@
     "https://blog.verichains.io/p/lien-finance-hack-analysis"
   ],
   "notes": [
-    "Direct immutable BondMakerCollateralizedEth runtime deployed in this transaction and unchanged through the exploit; the prestate runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction.",
-    "Direct immutable GeneralizedDotc runtime deployed in this transaction and unchanged through the exploit; the prestate runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction.",
-    "Direct immutable DecentralizedOTC runtime deployed in this transaction and unchanged through the exploit; the prestate runtime contains no DELEGATECALL, SELFDESTRUCT, or CREATE2 instruction.",
-    "Exact pre-recovery victim depletion in the anchor receipt. Three USDC Transfer logs move 532,070.026484, 74.602120, and 10,000 USDC from LP 0xa961684a3a654fb2cca8f8991226c0cefc514d80 to the attack orchestrator, totaling 542,144.628604 USDC; a final transfer sweeps that exact amount to the attacker EOA. Stablecoin-par valuation excludes later recoveries and does not count attacker-supplied inputs.",
-    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
+    "The OTC exchanges are listed with the BondMakers as a conjunctive failure (the post-mortem's second gap: pricing unbacked, attacker-registered bonds); all five are immutable, and the latest deployment sets the age.",
+    "A copycat minted unbacked LBT/SBT through the same exception bug and burned them back for collateral ETH from BondMaker 0x843225cf; later exchanges by other accounts minted bonds but extracted nothing."
+  ],
+  "campaign": [
+    "eip155:1:0x61ddb8ff71a7d64a97444cb0f3d13de079464c71c0feb3351c0ca3c5d4834cd9"
   ]
 }

@@ -35,6 +35,7 @@ const PUBLIC_RPC = {
   999: 'https://rpc.hyperliquid.xyz/evm',
   1030: 'https://evm.confluxrpc.com',
   4114: 'https://rpc.mainnet.citrea.xyz',
+  33139: 'https://rpc.apechain.com/http',
   80094: 'https://rpc.berachain.com',
 }
 

@@ -5578,8 +5578,8 @@
     "tx": "0x57b589f631f8ff20e2a89a649c4ec2e35be72eaecf155fdfde981c0fec2be5ba",
     "protocol": "LocalTrader",
     "name": "LocalTrader price-manager missing access control",
-    "summary": "The LocalTrader price-manager implementation exposed ownership and token-price setters without effective access control. A fresh EOA changed both values, acquired the exchange's LCT inventory for a negligible BNB payment, and exchanged the LCT against the protocol's LCT/WBNB liquidity.",
-    "lossUsd": 118978.37210738067,
+    "summary": "The LocalTrader price-manager proxy left storeConstructor unprotected, so anyone could overwrite its feed, admin, owner and LCT price. The attacker took ownership, set the price to 1 wei, bought the exchange's whole LCT inventory for a negligible BNB payment and dumped it into the LCT/WBNB pool.",
+    "lossUsd": 119012.51,
     "codeAgeSeconds": 1042104,
     "exploit": {
       "block": 28460898,
@@ -5598,7 +5598,7 @@
       "index": 79,
       "timestamp": 1683799838
     },
-    "claimsSha256": "ed7261c452b298a362e61dd4c56cbe0414b365751d0184cf1f4e7f10e35b2eea"
+    "claimsSha256": "502f97630cac2d55d89d87cc4dc094053d439437ec73011d9814d9da60ab6c12"
   },
   {
     "id": "eip155:56:0x62dba55054fa628845fecded658ff5b1ec1c5823f1a5e0118601aa455a30eac9",
@@ -7774,8 +7774,8 @@
     "tx": "0xa05f047ddfdad9126624c4496b5d4a59f961ee7c091e7b4e38cee86f1335736f",
     "protocol": "LeverageSIR",
     "name": "SIR vault uniswapV3SwapCallback caller check on stale transient storage",
-    "summary": "The SIR vault authorises uniswapV3SwapCallback by comparing msg.sender against an address it keeps in EIP-1153 transient storage, and that record is not cleared once the swap it was written for has completed. The attacker created a Uniswap V3 pool against a token of its own, drove one mint through the vault so that its own address ended up in the transient record, and then called Vault.uniswapV3SwapCallback directly three times, once per token, making the vault transfer out its USDC, WBTC and WETH.",
-    "lossUsd": 354472.7596784459,
+    "summary": "The SIR vault authorised uniswapV3SwapCallback by checking msg.sender against an address held in transient storage, and mint later reused that slot for the minted amount. The attacker minted an amount equal to a vanity CREATE2 address via its own pool, then called the callback from that address to transfer out the vault's USDC, WBTC and WETH.",
+    "lossUsd": 354471.18,
     "codeAgeSeconds": 3250092,
     "exploit": {
       "block": 22157900,
@@ -7966,8 +7966,8 @@
     "tx": "0x55856d9fda4c5be5193561c7d775e823c3d6e499da44aab9da963daf61c50b0c",
     "protocol": "Little Boy Plus",
     "name": "LBP addLp hashrate credit from flash-inflated pair reserves",
-    "summary": "LBP's add-liquidity mining credit is derived from the live PancakeSwap LBP/USDT pair state inside the same transaction. LBP._settlePendingLpAdd passes the pair's post-mint USDT reserve and LP totalSupply into LBPHashrate.notifyCredit, which mints 2 * userLpDelta * currentRUsdt / currentTotalLp of hashrate, and LBP._stagePending records the credit recipient as whatever address last sent LBP to the pair without excluding the pair itself. The attacker flash-borrowed 41,861,104.64 USDT, swapped 15,000,000 USDT into the pair and then added liquidity with a further 5,790,511.65 USDT, lifting the pair's USDT reserve from 439,363.60 to roughly 21.1 million by settle time, and had 10,737,390.51 hashrate credited to the pair address; the ensuing auto-harvest called LBP.mintReward and minted 115,092.77 fresh LBP straight into the pair's own token balance, an unsynced surplus PancakeSwap accounts as swap input, which the attacker swapped back out for the pair's USDT.",
-    "lossUsd": 377642.5381740995,
+    "summary": "LBP credited add-liquidity hashrate from live pair reserves within the same transaction and allowed the pair itself as recipient. The attacker flash-inflated the LBP/USDT pair's USDT reserve and added liquidity so the pair got a huge credit; the auto-harvest minted unbacked LBP into the pair, which the attacker swapped out for its USDT.",
+    "lossUsd": 392045.32,
     "codeAgeSeconds": 3566267,
     "exploit": {
       "block": 104727184,
@@ -7985,7 +7985,7 @@
       "index": 75,
       "timestamp": 1778119071
     },
-    "claimsSha256": "04a9fe54aa387e688be318b6b48b0ea0924eec85ef8c8162495a8f904644a449"
+    "claimsSha256": "546341e89af5c2bb0e72e5c9c0121b37ab044be4651925a9e75bdbb852546f25"
   },
   {
     "id": "eip155:42161:0xfaf84cabc3e1b0cf1ff1738dace1b2810f42d98baeea17b146ae032f0bdf82d5",
@@ -9973,8 +9973,8 @@
     "tx": "0x7320accea0ef1d7abca8100c82223533b624c82d3e8d445954731495d4388483",
     "protocol": "Libertify",
     "name": "Libertify LibertiVault deposit swap-callback reentrancy",
-    "summary": "LibertiVault.deposit(uint256,address,bytes) snapshots the net asset value with getNavInNumeraire(Rounding.Up) before pulling the caller's assets, then hands control to an untrusted callee: _deposit forwards the caller's raw calldata to the 1inch AggregationRouterV4 through userSwap, and that router calls back into the caller-nominated IAggregationExecutor. Nothing on deposit, _deposit or userSwap holds a reentrancy lock, so the executor reenters deposit. The inner call mints against the vault state it sees, and when the outer call resumes it computes shares = totalSupply().mulDiv(valueDeposited, nav) with totalSupply() read after the inner mint but nav still the stale pre-reentrancy snapshot. The share-price invariant that a mint must be priced against the same NAV whose supply it divides is violated, and the attacker's four nested mints issued 23,397,196.64 shares to itself against a pre-attack totalSupply of 21,062.278834564420093169 before it redeemed them for the vault's reserves. No configured parameter value repairs this: minDeposit, maxDeposit, invariant, entryFee and exitFee only scale the mint, they do not restore the NAV/supply pairing.",
-    "lossUsd": 298620.28,
+    "summary": "LibertiVault.deposit priced shares against a NAV read before its 1inch user swap and had no reentrancy guard. The attacker's swap executor re-entered deposit, so outer deposits minted shares against the stale NAV and the inflated supply was redeemed for the vault's reserves. The attacker and two copycats repeated it on the Ethereum vault.",
+    "lossUsd": 478256.19,
     "codeAgeSeconds": 9236544,
     "exploit": {
       "block": 44941585,
@@ -9993,7 +9993,7 @@
       "index": 31,
       "timestamp": 1679824184
     },
-    "claimsSha256": "94413d187f7b37159d16b41b7de79cd9559a7f16bf5721731556dfc4312a1015"
+    "claimsSha256": "5fe23303689f0443e4772d0298e2ba2e297fc0b7c6620a019eb6def3292573b3"
   },
   {
     "id": "eip155:56:0x04a1f0d1694242515ecb14faa71053901f11a1286cd21c27fe5542f9eeb62356",
@@ -10684,8 +10684,8 @@
     "tx": "0x3e30d1ff965a1024fadb9d112591832e16d9741115140f7c80645e580c968f98",
     "protocol": "Likwid",
     "name": "Likwid MarginPosition leverage-0 borrow reuses an unbooked AMM quote",
-    "summary": "LikwidMarginPosition.addMargin with leverage 0 routes to _executeAddCollateralAndBorrow. That function caps the borrow at SwapMath.getAmountOut(pairReserves, marginAmount), the proceeds of selling the collateral into the pool, divided by minBorrowLevel 1.4 and limited to 20% of real reserves. It never books that sale: unlike _executeAddLeverage it sets no pairDelta, so pairReserves do not move. Every further position is quoted against the same reserves. Any caller can split collateral across many freshly minted positions in one transaction and borrow far more BNB than the collateral could fetch. Attackers bought pool tokens from the same vault, pledged them across 16 to 40 positions per transaction and left the BNB debt unpaid.",
-    "lossUsd": 26376.79296069903,
+    "summary": "LikwidMarginPosition's leverage-0 borrow capped each loan at the pool's quote for selling the pledged collateral but never booked that sale, so every new position got the same quote. Attackers bought pool tokens from the vault, pledged them across 16 to 40 fresh positions in one transaction and walked away with more BNB than they paid.",
+    "lossUsd": 26376.78,
     "codeAgeSeconds": 11545589,
     "exploit": {
       "block": 121181340,
@@ -10703,7 +10703,7 @@
       "index": 68,
       "timestamp": 1777547784
     },
-    "claimsSha256": "b03fb0b1405b636e9963b5e237c49088eb4564e75bd618b58c433637c2f923e2"
+    "claimsSha256": "b1283f748eb2bd6c9da202d4cf185d05ffa9c224de982574c7da7d812f29101d"
   },
   {
     "id": "eip155:1:0xd9b3e229acc755881890394cc76fde0d7b83b1abd4d046b0f69c1fd9fd495ff6",
@@ -13894,7 +13894,7 @@
     "tx": "0x9050e28ed880a960ddaa248373c104e41fa847cde7a3774d003a71c2f74193d3",
     "protocol": "Limit Break Payment Processor",
     "name": "Limit Break Payment Processor V2 forwarded-calldata offset sender spoof",
-    "summary": "Payment Processor V2 copies a forwarded call's trade data from the caller-supplied ABI offset but sizes the copy as if the offset were canonical. Sending offset 0 through a permissionless trusted forwarder shifts the copy, drops the forwarder-appended real sender and lets attacker bytes become the ERC-2771 sender, so the attacker could act as any wallet that had approved Payment Processor: accepting its own zero-price offers for victims' NFTs and making victims buy worthless listings with approved WETH and stablecoins.",
+    "summary": "Payment Processor copied a forwarded call's trade data from the caller-supplied ABI offset but sized it as if canonical, so through a permissionless trusted forwarder attacker bytes became the ERC-2771 sender. Attackers acted as any wallet that had approved it: accepting zero-price offers for victims' NFTs and making victims buy worthless listings with approved tokens.",
     "lossUsd": 1665921.59,
     "codeAgeSeconds": 83353140,
     "exploit": {
@@ -13913,7 +13913,7 @@
       "index": 14,
       "timestamp": 1706902139
     },
-    "claimsSha256": "ac8be6677befff4a6fec1d6950e3412792c315223c2b871bb4234aa601247d60"
+    "claimsSha256": "b4ac0abbe01873ffe9760b98cd35bc21875262afc3241742b6ef397ed4e8843e"
   },
   {
     "id": "eip155:1:0xa245deda8553c6e4c575baff9b50ef35abf4c8f990f8f36897696f896f240e3a",
@@ -14936,27 +14936,27 @@
     "tx": "0x17026faca0b8e4cb7531e4fb277c390eb165e81229628e0192923ad1d90a41da",
     "protocol": "LixirPermitDrain",
     "name": "Lixir forged-permit vault drain",
-    "summary": "Lixir vault-token permit accepted a dummy signature as long as ecrecover returned any nonzero address, so a forged permit granted allowance to drain every holder's shares.",
-    "lossUsd": 12296.03977332945,
-    "codeAgeSeconds": 154604538,
+    "summary": "Lixir vault tokens' permit accepted a signature as long as ecrecover returned any nonzero address, without matching it to the owner. The attacker reused one dummy signature to grant itself allowances over every holder's shares in six Lixir vaults and withdrew the underlying Uniswap V3 liquidity to itself.",
+    "lossUsd": 12284.91,
+    "codeAgeSeconds": 154604515,
     "exploit": {
       "block": 25391316,
       "index": 43,
       "timestamp": 1782350483
     },
     "target": {
-      "address": "0xf4af7ae20eb7334cbdf334eaf850e7db42394839",
+      "address": "0xc870d944dd883f25a1b7b3312bc2449dd5b0267d",
       "code": "0xe5fbef79727d8db175281feaccfa49dcfdc6bcf3",
       "codeHash": "0xc78f821441e234ade31cf3f9317dbd8bfb1ded7d6c22ad60c94a36bf76f02952"
     },
     "reset": {
       "kind": "deployment",
-      "tx": "0xaf53fd0e08e761f922b1601eea9a7eb296b9e7ef7f6211b739de8d1df9903218",
-      "block": 12934170,
-      "index": 63,
-      "timestamp": 1627745945
+      "tx": "0x18158673507a22ef225c2937af4816aff5faed08fd68924c2e920d3d40814287",
+      "block": 12934173,
+      "index": 79,
+      "timestamp": 1627745968
     },
-    "claimsSha256": "d5d8af5868b33292304fd8bd4cd87905fa28a0c3dcb70eedba03c07205db8134"
+    "claimsSha256": "ea879c2891082d477024a6f36518c10f56d5e6336cfbad2e3ddcea14ba807bb1"
   },
   {
     "id": "eip155:56:0x86efdf5b45ee833e696be15bddf0b60f6c449f73a45e39edd4838d9ece316223",
@@ -15155,9 +15155,9 @@
     "chainId": 1,
     "tx": "0xb96d572b557a12f5ef193e88cca86123a6ae1b6e98b0eeee265870c85848e0e7",
     "protocol": "Lien Finance",
-    "name": "Lien Finance",
-    "summary": "BondMakerCollateralizedEth validated only the aggregate number of exception matches when exchanging bond groups, so repeated exception IDs could bypass per-bond multiset integrity and mint unbacked bonds. GeneralizedDotc and DecentralizedOTC then priced permissionlessly registered, attacker-crafted bond structures without validating their backing or economic shape, letting those bonds pull 542,144.628604 USDC from an LP allowance.",
-    "lossUsd": 542144.628604,
+    "name": "Lien BondMaker exception-count bond exchange mint",
+    "summary": "BondMakerCollateralizedEth.exchangeEquivalentBonds checked only the total count of exception matches, so groups listing a bond twice let the attacker except every input bond and mint unbacked bonds. Lien's OTC exchanges priced these permissionlessly registered bonds from payoff metadata alone and paid for them from an LP's USDC allowance.",
+    "lossUsd": 542271.06,
     "codeAgeSeconds": 169305392,
     "exploit": {
       "block": 25599302,
@@ -15175,7 +15175,7 @@
       "index": 32,
       "timestamp": 1615551015
     },
-    "claimsSha256": "238109180924f81b833bee9a9c664883342ef951957f4de22b638fe99f2ae7ae"
+    "claimsSha256": "964eac85d51cae6ce7feea85cc04583ff8bc6c730e8c83a62edad90ab2664eed"
   },
   {
     "id": "eip155:1:0x843c9ea7edf09ea234d99de189c6a6ba9b79d958bbbbdbc56fd477028ea55b90",
