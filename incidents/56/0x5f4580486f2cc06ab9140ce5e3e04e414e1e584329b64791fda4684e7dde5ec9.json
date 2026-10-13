@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Planet Finance",
   "name": "Planet Finance borrow discount treats freshly borrowed principal as accrued interest",
-  "summary": "PlanetDiscountDelegate.changeUserBorrowDiscount treats the growth of a borrower's stored balance since the last snapshot as interest and subtracts a discount share of it from the recorded debt, while GToken.borrowFresh raises the principal without refreshing that snapshot. After staking GAMMA to reach a 5% discount tier and supplying USDT collateral, the attacker alternated gUSDT borrow() with the public updateUserDiscount(). The discount was applied to new principal 76 times, cutting its recorded debt by 10,183.70 USDT before it repaid and redeemed.",
+  "summary": "PlanetDiscountDelegate.changeUserBorrowDiscount treats all growth of a borrower's balance since its last snapshot as interest and forgives a discount share of it, while GToken.borrowFresh raises principal without refreshing that snapshot. Holding a discount tier, the attacker alternated borrow() with the public updateUserDiscount(), cutting its recorded debt.",
   "targets": [
     {
       "address": "0x9de8ca4129d5dd4f540e64c25ac61e55ea429589",
@@ -11,25 +11,97 @@
         "kind": "upgrade",
         "tx": "0x96aa525f47663e4207c50ae8a1bc7bab89864360f6d987f3f5f0f6bf62bd4e86"
       }
+    },
+    {
+      "address": "0x045e2df638ebec29130dd3be61161cba5f00a9c8",
+      "code": "0x2f64203ed5606466783b61e8691784f07c25f0ed",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x19fd3d3b7827960dc24aeadf512a405c2d1c6ea872972388d6abad3cbebfecfc"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:56:0xd530a79a914533feb65a5ee349a58f5df999c208501efd2e5b6ceb2083b9ca8b",
+    "eip155:56:0xe0835bb761805689bf3ee510c5b0950ead03977f3d99ddc1a59c6d23151c0f1f",
+    {
+      "chainId": 56,
+      "count": 172928,
+      "from": 85868111,
+      "to": 127388547,
+      "selection": "transactions emitting BorrowDiscountAccrued (topic0 0xac6fac3e) from PlanetDiscount 0x9de8ca4129d5dd4f540e64c25ac61e55ea429589 with a nonzero discount (third data word), other than the anchor and the two listed txs; scanned to block 127465171"
     }
   ],
   "loss": {
-    "usd": 10183.7,
+    "usd": 137320.67,
     "assets": [
+      {
+        "token": "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+        "symbol": "ADA",
+        "amount": "267743.868118477994513887",
+        "usd": 55191.2
+      },
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "10183.695641529831060689",
-        "usd": 10183.7
+        "amount": "39390.171152390912356733",
+        "usd": 39382.96
+      },
+      {
+        "token": "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
+        "symbol": "XRP",
+        "amount": "7306.099499362172117312",
+        "usd": 9796.3
+      },
+      {
+        "token": "0x1bdd3cf7f79cfb8edbb955f20ad99211551ba275",
+        "symbol": "BNBx",
+        "amount": "13.429729585073417501",
+        "usd": 9571.13
+      },
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "0.089139696036164175",
+        "usd": 6950.55
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "4938.163823845814610117",
+        "usd": 4937.25
+      },
+      {
+        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "symbol": "Cake",
+        "amount": "2762.806683371540857939",
+        "usd": 4496.92
+      },
+      {
+        "token": "0x1ce0c2827e2ef14d5c4f29a091d735a204794041",
+        "symbol": "AVAX",
+        "amount": "462.797880175495785883",
+        "usd": 3968.44
+      },
+      {
+        "token": "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3",
+        "symbol": "DAI",
+        "amount": "1976.704204028962256285",
+        "usd": 1977.09
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "0.442785371046206814",
+        "usd": 1048.83
       }
     ]
   },
   "refs": [
-    "eip155:56:0xdc81137ec898d0873927c79be998071f595ac47cdf08dbd67e911884d78af88a",
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-9-mar-15-2026"
   ],
   "notes": [
-    "PlanetDiscountDelegator._setImplementation emitted NewImplementation(0xd8933477080675edfcfb287b6c97e2a20e826af5, 0x4c9ed6a7...), the second and last implementation change before the exploit; the gUSDT market's own implementation change (0x2f64203e at 28399780) is earlier.",
-    "Net USDT depletion of the gUSDT market 0x045e2df638ebec29130dd3be61161cba5f00a9c8 in the single exploit transaction, which nets the attacker's own collateral supply and repayment and equals the summed discountGiven of the 76 BorrowDiscountAccrued events to within 1e-12 USDT. The attacker received 10,124.78 USDT; the rest went to swap and flash-loan fees."
+    "The discount contract emitted no nonzero BorrowDiscountAccrued between its last upgrade and the anchor; afterwards the attacker repeated it twice and 111 borrower addresses (bots) farmed it across ten markets, still running at the end of the scan.",
+    "Loss is the debt forgiven: the summed discount of every campaign event, in each market's underlying, priced with DefiLlama per 500k-block bucket. For the anchor it equals the gUSDT market's net USDT outflow; bots realise it over several transactions, so per-transaction transfers do not show it."
   ]
 }

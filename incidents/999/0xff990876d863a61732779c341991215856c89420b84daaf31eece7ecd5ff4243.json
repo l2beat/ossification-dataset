@@ -2,24 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Prime Finance",
   "name": "Prime DataStreamConsumer stores stale signed oracle reports",
-  "summary": "Prime's DataStreamConsumer.verifyReport(bytes) is permissionless and, after the Chainlink verifier confirms the DON signature, stores the report's price for its feed without checking that the report's round or timestamp is newer than what is stored. An old but validly signed PRFI report therefore overwrote the live price, inflating PRFI about 52x. The attacker flash-borrowed 100 WHYPE, bought 795,587 PRFI off the thin pool for 26.82 WHYPE, supplied it as collateral at the inflated price and borrowed the lending pool's entire 425.52 WHYPE reserve.",
+  "summary": "Prime's DataStreamConsumer.verifyReport stores any validly signed Chainlink Data Streams report for its feed without checking that it is newer than the stored one, and the adapter chain reading it does no staleness check. Replaying an old PRFI report inflated PRFI's oracle price far above its thin market, so cheap PRFI collateral borrowed the whole WHYPE reserve.",
   "targets": [
     {
       "address": "0x04edbf3904789d80b0c991e0b66577f2208a2be6",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x8e5b96233b9002fc13015c5d3d8a8b9006c9e830b6ee08be4c47f83a7c11a889"
+        "kind": "config",
+        "tx": "0xaf5bdc3a027ac9e1cfa87d3ac56fb4bf4411b8124ef854df2dd498ed43e0c069",
+        "address": "0x8bd82c5f94d2caff3f980f0137f16add71e98dfb",
+        "slot": "0x4bc7f62dc4eee34004d319e2f71509da68f03761a2db4ef292f384ae32d749eb"
       }
     }
   ],
   "loss": {
-    "usd": 33484.198235793214,
+    "usd": 33484.2,
     "assets": [
       {
         "token": "0x5555555555555555555555555555555555555555",
         "symbol": "WHYPE",
         "amount": "425.521620381705945356",
-        "usd": 33484.198235793214
+        "usd": 33484.2
       }
     ]
   },
@@ -27,8 +29,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/PrimeFinance_exp.sol"
   ],
   "notes": [
-    "Direct immutable DataStreamConsumer; the missing freshness check is in the deployed runtime, and the owner's setFeedIdByMiddleware feed registrations only route a feed to a reader and do not create the stale-overwrite condition.",
-    "The lending pool's WHYPE reserve holder aWHYPE 0xcf4642ef89683d0299b59738b1cc3ac0177348ba held 425.521620381705945356 WHYPE before the borrow and 0 after; the attacker's 26.82 WHYPE spent buying the PRFI collateral is its own input and the 100 WHYPE Morpho flash loan is repaid, so gross loss is the reserve drain. Valued at the DefiLlama WHYPE price at the exploit timestamp.",
-    "The lending pool 0xb339448e13e273f6f46e3390e0932ab7ff9f113f consumes this price through the Aave-fork stack; it is the drained victim but holds no defect of its own, so the oracle consumer is the single knot and the pool is described here rather than added as a target."
+    "Reset: the consumer was deployed first, but the exploit also needed PRFI listed as collateral and the AaveOracle source for PRFI pointed at the Data Streams stack; that source assignment (an oracle setting rated HIGH) is the latest such change. Later pool writes only touched reserve factor, liquidation bonus, rate strategy and an unrelated listing.",
+    "Gross loss is the WHYPE reserve drained from aWHYPE 0xcf4642ef; the attacker's own WHYPE spent on PRFI and the repaid flash loan are not victim assets."
   ]
 }

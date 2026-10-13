@@ -131,6 +131,17 @@
     },
     "reason": "VGHSTOracle (deployed block 40442389) was routed into 0VIX by FeedSet 0xa9fe4b49 (block 40645403), but its price reverted until heartbeat 0x1a513b62 (block 40714367) raised the limit from 3,600 to 86,400s; the GHST feed was 6,547s old at the exploit, so per rule 10 that change is the reset. ovGHST was borrow-only, so the summary now says the donation inflated the attacker's vGHST debt for self-liquidation. Loss kept."
   },
+  "eip155:137:0x15764b3d734f0f965278a198e69f4c7c74b7f1e71f0740da635443f839d48809": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": -152,
+      "loss": "within-10"
+    },
+    "reason": "Same anchor, target and loss. The proxy's initialize (0x5cb2f22b, 74 blocks after deployment) set the plx token pointer in slot 0x98 that the reentrancy needs, so it is the reset (-152 s). The ten further reentrant txs by the same EOA (only txs with >2 PLX transfers out of the locker) move from refs to campaign."
+  },
   "eip155:137:0x2e476745f0f546dbe4583359ea6258dfb4fababea08734f676df2e6006e1fdee": {
     "decision": "update",
     "compare": {
@@ -2200,6 +2211,18 @@
     },
     "reason": "Anchor (first reuse of an already-claimed signature), target and deployment reset hold, and the loss ($62,545 vs blind $62,303 at realised ETH) stands. The record had no campaign: 738 further replayed claims (730 by the attacker, 8 by copycat 0x8eadc7cc, blocks 17593116-17593313) are now listed."
   },
+  "eip155:1:0xe2912b8bf34d561983f2ae95f34e33ecc7792a2905a3e317fcc98052bce66431": {
+    "decision": "update",
+    "anchor": "eip155:10:0x6baa6332f9a3ed75e727311d6317fb636844d61d9df5e199f9f68711eb632d6f",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -1954,
+      "loss": "off-10-50"
+    },
+    "reason": "Attacker 0x19066f74 initialised and upgraded the Optimism spoke 0x1e65e485 first (0x6baa6332, OP block 119457379, ts 1714513535), then Arbitrum (0xdac6af56) and Ethereum (the record, 32 min later); no Initialized event on any spoke between the bad upgrades and these txs. Anchor moves to OP with reset the OP upgrade 0x103c7051; loss adds 64,126.67 OP and 99,970.48 ARB to the 479.39 ETH."
+  },
   "eip155:1:0xe29799cfe4b0e3a54915b6f8619207e69549c9988cf1ff140e688d36ae1a2bdf": {
     "decision": "update",
     "compare": {
@@ -2244,6 +2267,17 @@
       "loss": "off-50"
     },
     "reason": "In cohort (router code defect, not MPC). Earlier exploit 0xd07c0f40 (block 14028474, 0x4986e901 via fake anyToken 0xb4f89d6a, 456 WETH over 6 txs, proceeds to Tornado) precedes the record anchor (block 14037237). Full LogAnySwapOut scan of the router since deployment finds 936 fake-token WETH pulls (2861.62 WETH, all with the WETH zero-Deposit permit signature) through block 25882636, plus 25 permit-path pulls on sibling V4 routers (AVAX/Polygon/ETH 0x765277ee/BSC); loss $8.10M vs record $2.27M (445+87+200 WETH aggregate)."
+  },
+  "eip155:1:0xe72d4e7ba9b5af0cf2a8cfb1e30fd9f388df0ab3da79790be842bfbed11087b0": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": -207962,
+      "loss": "within-10"
+    },
+    "reason": "Controller deployment (11109198) is not the latest needed change: converter approval (0x9d25b187), strategies[DAI] (0x11b04de2) and finally the pDAI jar's controller switch to ControllerV4 (0xab4fcdbe, block 11124864, jar slot 0x9) came later, and the exploit's earn() calls and the strategy's funds ran through that pointer. Loss from receipt: 950.8M cDAI redeemed for 19,759,355.61 DAI ($19.79M); no copycats among swapExactJarForJar callers after the anchor."
   },
   "eip155:1:0xe96eb780dedac4271b10112d7ad4f990e16e8929c38947902277f3c9f3c0626b": {
     "decision": "update",
@@ -2434,6 +2468,17 @@
       "loss": "off-50"
     },
     "reason": "Same defect and reset (fUSD on the USDC feed via 0x826e7afd, scFUSD CF 0.85 via 0xc46ebdd6), but 0x7da4f6ea's atomic loop 0xe122f8f4 (block 38120325, May 12) already bought fUSD at ~0.75, supplied it and borrowed DAI above cost, 2 days before 0x3fb9d16b. Ten fresh fUSD suppliers (incl. 0x9a970285 borrowing at 38265903, before the old anchor) form the campaign of 68 borrows until the May 20 feed change. Record netted third-party liquidations (rule 14 forbids) and covered 3 accounts: $2.11M -> $8.74M gross."
+  },
+  "eip155:250:0x5118df23e81603a64c7676dd6b6e4f76a57e4267e67507d34b0b26dd9ee10eac": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -1596,
+      "loss": "within-10"
+    },
+    "reason": "Adapter deployment (97491949) is not the latest needed change: AaveOracle setAssetSources(BOO) followed at 97491979 and the BOO reserve was activated by initReserve (0x95f80266, block 97493443; getConfiguration(BOO) went from inactive to active, LTV 55%) - a market listing the exploit's 1-BOO collateral deposit needed. Loss unchanged (8 reserves drained; bridged SOL listed at 0); the twin adapter 0x2ceca12a added as target; summary and notes condensed."
   },
   "eip155:250:0x7f79934a9c2fb01e3f7af57939746cfdc4b3854ecfff712b84a593e60d8e3754": {
     "decision": "merge-into:eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
@@ -2709,6 +2754,17 @@
       "loss": "within-10"
     },
     "reason": "Single-tx drain confirmed (attacker 0x8a0dfb61 has no other exploit tx); WrapperOracle target and LP-reserve config reset 0xe876e814 stand: the wrapper's beacon route is unchanged since its creation and nothing changed after the reset. loss.mjs reproduces the four cash reserves exactly (USDC 138,491.94, USDC.e 298.08, WETH 0.1534, WBTC 0.00679); only editorial changes: summary/notes to length limits, USD rounded to cents, cross-reference to the separate March 2024 Lava record. Blind was not fully blind (record read before the loss check)."
+  },
+  "eip155:42161:0xbe163f651d23f0c9e4d4a443c0cc163134a31a1c2761b60188adcfd33178f50f": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": 2198,
+      "loss": "within-10"
+    },
+    "reason": "Content kept: my blind reset (first install 0x564df873) was wrong - the implementation was rolled back at 204578244 (0x7d2d4d10) and reinstalled by 0x4d562ddd at 204580992 (impl slot verified per block), as the record says; no earlier or copycat exercise (registerPair scan). Update only condenses the summary (was ~1,200 chars) and notes (4 long notes) to the format limits and drops eip155 refs already covered."
   },
   "eip155:42161:0xc523c6307b025ebd9aef155ba792d1ba18d5d83f97c7a846f267d3d9a3004e8c": {
     "decision": "update",
@@ -3429,6 +3485,18 @@
     },
     "reason": "Separate incident from the April LiquidityMigrationV2 exploit (0xa5b0246f: other contract, other bug). Campaign.mjs over the proxy's life to the fix (18505634) finds only GYM's vault bank 0x82917471 calling depositFromOtherContract besides the attacker; the 48 successful attacker deposits, claims and withdrawals moved from refs into campaign. Loss: loss.mjs pool depletion 40,191,069 GYMNET at the 7,475.42 BNB realised, priced at sale time (287.94)."
   },
+  "eip155:56:0x4635d5c63cc02a960c8a4e552099e825b229d169c931bd3697a9f2e28aec45ff": {
+    "decision": "update",
+    "anchor": "eip155:137:0x3f0c6bb5baa7500b1d8fb3b0bd4b7115f6a64a5169748b8f0da0c563918be981",
+    "compare": {
+      "anchor": "earlier-found",
+      "targets": "different",
+      "reset": "different",
+      "ageDeltaSeconds": -38633648,
+      "loss": "off-10-50"
+    },
+    "reason": "The same attacker 0x190cd736 hit the identical LockedDeal (unchecked getArraySum) on Polygon first (0x3f0c6bb5, block 40358730, 425 s before the BSC record), then Ethereum (0x118a617b) and BSC; anchor moves to Polygon with target 0xd595873a (deployed 2022-10-19). Campaign adds the attacker's 7 other txs, 4 Ethereum copycats and a bundle of 143 BSC copycat/MEV txs; loss 549,370.94 USD across three chains at realised proceeds (record had BSC attacker only, 414,202.76)."
+  },
   "eip155:56:0x48e52a12cb297354a2a1c54cbc897cf3772328e7e71f51c9889bb8c5e533a934": {
     "decision": "update",
     "compare": {
@@ -3560,6 +3628,17 @@
       "loss": "within-10"
     },
     "reason": "Anchor, target and deployment reset are confirmed; the pair held 591,936 USDT one block before and about 2.6 USDT after, with no copycat. The only changes are the loss, now loss.mjs's DefiLlama value instead of par (591,934.20 USDT = 90,115.78), and notes shortened to the protocol's limits."
+  },
+  "eip155:56:0x5f4580486f2cc06ab9140ce5e3e04e414e1e584329b64791fda4684e7dde5ec9": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "same",
+      "ageDeltaSeconds": 0,
+      "loss": "off-50"
+    },
+    "reason": "Anchor, target and reset agree (first nonzero BorrowDiscountAccrued since the 28400159 upgrade). The record had no campaign: the attacker repeated it (0xd530a79a, 0xe0835bb7) and 172,928 further txs by 111 borrowers farmed the same discount bug across ten markets through block 127388547 (Etherscan scan of the event). Loss rises from 10,183.70 to 137,320.67 USD of forgiven debt (ADA 267,744, USDT 39,390, XRP, BNBx, BTCB, USDC, CAKE, AVAX, DAI, ETH). gUSDT impl added as second target."
   },
   "eip155:56:0x62dba55054fa628845fecded658ff5b1ec1c5823f1a5e0118601aa455a30eac9": {
     "decision": "update",
@@ -4865,5 +4944,16 @@
       "loss": "within-10"
     },
     "reason": "Anchor, Router target and upgrade reset 0x73e8e59f (block 13028876) confirmed; the record had no campaign. Tracing all 406 successful txs of the three senders finds 352 where the Router called withdrawCollateral/borrow/transferFrom for a non-attacker account (351 added as campaign); market Borrow/WithdrawCollateral logs to the fix show no other account!=sender action. loss.mjs over them: $1,390,977 priced (incl. a duplicate stHYPE leg) plus unpriced shares, matching the record's $1,419,492.74 within 0.1%; loss kept, refs/notes trimmed."
+  },
+  "eip155:999:0xff990876d863a61732779c341991215856c89420b84daaf31eece7ecd5ff4243": {
+    "decision": "update",
+    "compare": {
+      "anchor": "same",
+      "targets": "same",
+      "reset": "different",
+      "ageDeltaSeconds": -12840,
+      "loss": "within-10"
+    },
+    "reason": "Same anchor, target and loss. Consumer deployment (14210170) is not the latest needed change: the PRFI reserve listing (0xe9a42468, 14222980) and the AaveOracle PRFI source assignment to the Data Streams stack (0xaf5bdc3a, 14223224) followed and the exploit needed both; later pool writes were reserve factor, bonus, rate strategy and an unrelated listing. Attacker's later txs are not exploits; summary and notes condensed."
   }
 }

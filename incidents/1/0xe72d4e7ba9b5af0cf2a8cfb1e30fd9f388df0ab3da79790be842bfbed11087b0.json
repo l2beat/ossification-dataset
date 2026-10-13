@@ -2,24 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Pickle Finance",
   "name": "Pickle Finance ControllerV4 fake-jar swap",
-  "summary": "ControllerV4.swapExactJarForJar validated only approvedJarConverters for the call targets and never checked that _fromJar/_toJar were Pickle jars, so an attacker-deployed fake jar turned the controller into an arbitrary-call proxy that withdrew the real DAI strategy's cDAI.",
+  "summary": "ControllerV4.swapExactJarForJar checked only that call targets were approved converters, never that _fromJar/_toJar were Pickle jars. With fake jars the attacker deleveraged the DAI strategy, re-deposited via pDAI.earn, then had the approved CurveProxyLogic make the controller call strategy.withdraw(cDAI) and deposit the cDAI into a fake jar.",
   "targets": [
     {
       "address": "0x6847259b2b3a4c17e7c43c54409810af48ba5210",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xf19481611fd790f4d15c78618c274d8557447ee8a5e8bb67e1d39b93b3465f32"
+        "kind": "config",
+        "tx": "0xab4fcdbe29a5f02463b7de519f3ba5168e28fc4688614338275ea6b3d6cddb0b",
+        "address": "0x6949bb624e8e8a90f87cd2058139fcd77d2f3f87",
+        "slot": "0x9"
       }
     }
   ],
   "loss": {
-    "usd": 19759355,
+    "usd": 19786251.73,
     "assets": [
       {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "19759355",
-        "usd": 19759355
+        "token": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643",
+        "symbol": "cDAI",
+        "amount": "950818864.82119677",
+        "usd": 19786251.73
       }
     ]
   },
@@ -29,8 +31,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2020-11/Pickle_exp.sol"
   ],
   "notes": [
-    "The missing jar validation in swapExactJarForJar is part of ControllerV4's immutable direct runtime, created by this transaction.",
-    "Pickle reported 19,759,355 DAI drained from the pDAI jar; the reported whole-token amount is valued at stablecoin par.",
-    "The official incident report publishes the drained DAI quantity rounded to a whole token."
+    "Reset: the pDAI jar's controller pointer was switched to ControllerV4 after its deployment, converter approval and DAI strategy registration; the exploit's earn() calls and the strategy's funds ran through that route, so the controller code only governed pDAI from then on.",
+    "The strategy's cDAI is unpriced; it is valued at the DAI the attacker redeemed it for. The pDAI jar's idle DAI was re-deposited into the strategy within the transaction and is part of that cDAI."
   ]
 }

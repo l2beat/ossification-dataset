@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Predy Finance",
   "name": "Predy Finance PredyPool lock settlement credits a supply() as repayment of take()",
-  "summary": "PredyPool settles a trade lock by comparing raw ERC20 balances. TradeLogic.callTradeAfterCallback() runs GlobalDataLibrary.initializeLock(), which snapshots the pool's quote and base token balances, then hands control to the caller's predyTradeAfterCallback, then runs finalizeLock(), whose settle() computes paid = balanceOf(this) - snapshot. PredyPool.take() is guarded only by onlyByLocker and sends any amount to any address without recording a debt, and PredyPool.supply() is reachable from inside that callback because trade() carries no reentrancy guard. The attacker registered its own pair through the permissionless registerPair(), acquired the lock with a zero-size trade(), and inside the callback called take() for the pool's entire WETH and USDC balances and then supply() to put the same tokens back. settle() saw both balances restored and reported paid = 0, so the lock finalised and the empty vault passed PositionCalculator.checkSafe(), while supply() had minted the attacker supply tokens for the whole pool. Two withdraw() calls after the lock closed burned those supply tokens and removed everything. The violated invariant is that a locker's take() must be repaid with assets that create no offsetting claim; a balance delta cannot distinguish repayment from a new deposit that mints its own LP position.",
+  "summary": "PredyPool settles a trade lock by comparing raw token balances around the locker's callback. take() pays the locker without recording a debt and supply() is reachable inside the callback, so the attacker registered a pair, took the pool's WETH and USDC in a zero-size trade, supplied them back to mint itself supply tokens, then withdrew everything.",
   "targets": [
     {
       "address": "0x9215748657319b17fecb2b5d086a3147bfbc8613",
@@ -14,32 +14,27 @@
     }
   ],
   "loss": {
-    "usd": 463890.0417986188,
+    "usd": 463890.04,
     "assets": [
       {
         "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "symbol": "USDC",
         "amount": "219585.737814",
-        "usd": 219537.8681231565
+        "usd": 219537.87
       },
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
         "amount": "83.910994929830029848",
-        "usd": 244352.1736754622
+        "usd": 244352.17
       }
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-05/PredyFinance_exp.sol",
-    "eip155:42161:0x819945df3921a2475f790ef7552c8befbc9c9a0efecec023fbe45564113e74e4",
-    "eip155:42161:0x564df87304685c001058c68d13f4e7125e5e08202f7ebcefbf5d76eb153d9c18",
-    "eip155:42161:0x7d2d4d10b072dbd9f1ac2b70bde27a541a50d2600a01f402cfb0857eda01fa51"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-05/PredyFinance_exp.sol"
   ],
   "notes": [
-    "EIP173Proxy.upgradeTo(0x7b8b944ab2f24c829504a7a6d70fce5298f2147c) by the proxy owner 0x4f071924d66bbc71a5254217893cc7d49938b1c4, emitting ProxyImplementationUpdated(0x1eb565e53b8d9e8d3d66af87d22c0229a7911b21, 0x7b8b944ab2f24c829504a7a6d70fce5298f2147c). It is the last of nine implementation changes before the exploit; the earlier install of the same implementation at block 204572392 was reverted at block 204578244 and does not survive to the exploit.",
-    "Exact victim depletion in the single exploit transaction: PredyPool 0x9215748657319b17fecb2b5d086a3147bfbc8613 holds 219,585.737814 USDC and 83.910994929830029848 WETH at block 211107441 and zero of both at block 211107442. The attacker contract 0xb79714634895f52a4f6a75eceb58c96246370149 is created inside the exploit transaction and holds no USDC or WETH beforehand, so none of the drained amount is attacker-supplied capital; the take() and supply() legs inside the lock net to zero and are not double counted. The pool's USDC balance is still zero at blocks 211200000, 212000000 and 215000000, so no onchain restitution reached the pool. Priced with DefiLlama at the exploit timestamp, 0.999782 for Arbitrum USDC and 2912.04 for WETH, the total is 463,890.04 USD, which reproduces the 464k USD commonly reported.",
-    "Review correction: the seed inventory recorded the last code change as an unlogged EIP-1967 storage write at block 204572392 (1,650,032 s of age). The proxy is an EIP173Proxy that emits ProxyImplementationUpdated on every write, and that implementation was rolled back at block 204578244 and reinstalled at block 204580992, which is the change that survived to the exploit. The corrected age is 1,647,834 s.",
-    "Seed-inventory flag: nonStandardUpgradeArchitecture=true. It is not a non-standard architecture; the migration simply did not know the EIP173Proxy upgrade topic."
+    "Reset: the implementation installed at block 204572392 was rolled back at 204578244 and reinstalled by this upgrade, the change that survived to the exploit; the later storage change before the exploit is the vault counter.",
+    "The pool held exactly these balances one block before and none after; the attacker contract was created in the exploit transaction, so no drained amount is attacker capital."
   ]
 }

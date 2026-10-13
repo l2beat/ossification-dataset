@@ -2,30 +2,20 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "PolyDEX",
   "name": "PolyDEX PLX Locker (vMToken) claimUnlocked ERC777 reentrancy",
-  "summary": "vMToken.claimUnlocked (the fPLX token locker) transfers the claimable PLX before increasing _released. PLX is an ERC777-style token that calls the recipient's tokensReceived hook, so an attacker contract re-entered unlockAll()/claimUnlocked 40 times per transaction and was paid the same vested amount repeatedly. Eleven transactions with growing lock sizes drained 59.6M net PLX from the locker, which the attacker sold for USDC and WETH.",
+  "summary": "vMToken.claimUnlocked transfers the claimable PLX before increasing _released. PLX calls the recipient's ERC1820 tokensReceived hook, so the attacker's contract locked PLX, unlocked and re-entered claimUnlocked 40 times per transaction, being paid the same vested amount each time; eleven transactions with growing locks drained the locker.",
   "targets": [
     {
       "address": "0x28151ba48963019ddb509fbb6d5761f3494b3828",
       "code": "0xac8c06c3b3032af783508fad9107d3165ef3fcb8",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x15809f4ef76cdd6be5d1bc8bc1941eee13bf9ca287a88b66791a3967ab2b27f8"
+        "kind": "config",
+        "tx": "0x5cb2f22b59b435d0af90c74b50fb0040c30beab515fda0a84da48c593e909f57",
+        "address": "0x28151ba48963019ddb509fbb6d5761f3494b3828",
+        "slot": "0x98"
       }
     }
   ],
-  "loss": {
-    "usd": 394168.538146,
-    "assets": [
-      {
-        "token": "0x7a5dc8a09c831251026302c93a778748dd48b4df",
-        "symbol": "PLX",
-        "amount": "59632682.482001077631052782",
-        "usd": 394168.538146
-      }
-    ]
-  },
-  "refs": [
-    "https://polydex.medium.com/plx-locker-smart-contract-incident-post-mortem-75342124a3e8",
+  "campaign": [
     "eip155:137:0x657e11cdacc153fdfad30af3888cb76287f4353cc4981eea97dcbe0630cc0eca",
     "eip155:137:0xc778a7cfb716ccc2d755e511127e2ae8f8e0acc71ca2d3a7d4d6c89b584332ac",
     "eip155:137:0xed5fc6a562d88f13bda32d490c86e21040f24cb597ad5e31b50614a5b48199d0",
@@ -37,8 +27,23 @@
     "eip155:137:0x35636e66c83fe0d0262374e811d183e67ce3b1c7e3e81f3e024d51e2282a8050",
     "eip155:137:0x8552cee977833edba8221cb1259eab07e050aac23b2535e78a5d600d5e7f0073"
   ],
+  "loss": {
+    "usd": 394168.54,
+    "assets": [
+      {
+        "token": "0x7a5dc8a09c831251026302c93a778748dd48b4df",
+        "symbol": "PLX",
+        "amount": "59632682.482001077631052782",
+        "usd": 394168.54
+      }
+    ]
+  },
+  "refs": [
+    "https://polydex.medium.com/plx-locker-smart-contract-incident-post-mortem-75342124a3e8"
+  ],
   "notes": [
-    "The UChildERC20Proxy constructor stored vMToken implementation 0xac8c06c3b3032af783508fad9107d3165ef3fcb8 in the matic.network.proxy.implementation slot (no ProxyUpdated event); the slot and implementation runtime are unchanged until after the exploit (first ProxyUpdated at block 16281056).",
-    "Net PLX depletion of the locker across the eleven reentrant transactions (88,158,559.597 out minus 28,525,877.115 locked in by the attacker contracts). Valued by the attacker's disposal: 25 sales of 59,534,251.04 PLX between blocks 15952778 and 15953416 returned 127,336.874416 USDC.e plus 119.239910666 WETH, swapped for 266,831.663730 USDC.e; total 394,168.538146 USD. The disposal crashed the PLX price, so this is a lower bound; PolyDEX reported about 500,000 USD."
+    "Reset: the proxy's initialize() 74 blocks after deployment set the plx token pointer (slot 0x98, empty in proxy storage until then) and the release schedule the exploit needed; the later fee exclusion for the locker on PLX only sized the transfers.",
+    "PLX is valued at the attacker's disposal (25 sales returning 127,336.87 USDC.e plus 119.24 WETH swapped for 266,831.66 USDC.e), which crashed the price; PolyDEX reported about 500,000 USD.",
+    "Campaign: the only transactions with more than two PLX transfers out of the locker in one transaction are these eleven, all from the attacker EOA."
   ]
 }

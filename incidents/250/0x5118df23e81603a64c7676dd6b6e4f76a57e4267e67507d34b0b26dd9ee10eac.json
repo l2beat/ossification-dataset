@@ -2,60 +2,75 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Polter Finance",
   "name": "Polter Finance BOO price adapter pool-balance ratio",
-  "summary": "The deployed contract that computes the BOO price is the SpookySwap pool adapter at 0x875d564a6a86f6154592b88f7a107a517f00cc17 (and its byte-identical twin 0x2ceca12a53e428d37a62448fc818bf2e15b7e462), which Polter's price feed 0x80663edff11e99e8e0b34cb9c3e1ff32e82a80fe aggregates and the Aave-fork oracle 0x6808b5ce79d44e89883c5393b487c4296abb69fe serves to lending pool 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 through getAssetPrice(address). Its latestRoundData() answer is exactly IERC20(WFTM).balanceOf(pool) * chainlinkFtmUsd / IERC20(BOO).balanceOf(pool), reproduced to the wei in the anchor trace: 1,828,570.941372594816969307 WFTM times 0.75128777 divided by 0.000000000001 BOO equals the reported 137,378,298,483,061,759,618,513,154. It reads the pool's raw ERC-20 balances at call time rather than a time-weighted or cumulative observation, and validates nothing: no TWAP window, no minimum-liquidity floor, no deviation cap against the previous answer, no staleness or sanity bound on the ratio. A SpookySwap flash loan that removes every BOO from pool 0xec7178f4c41f346b2721907f5cf7628e388a7a58 except 1,000,000 wei, leaving its WFTM balance untouched, therefore lifts the adapter's answer from about 1.19 USD to 1.37e19 USD per BOO inside one transaction. The attacker deposited 1.000000000000000000 BOO as collateral at that price and drew every other Polter market to zero. No parameter value makes this code correct: the pool, token and Chainlink feed addresses are configuration, but a raw balance ratio is manipulable under every configuration of them.",
+  "summary": "Polter's BOO price adapters priced BOO as the raw WFTM/BOO token-balance ratio of two SpookySwap pools times the FTM feed, with no TWAP or bounds. The attacker flash-borrowed nearly all BOO out of the pools, inflating BOO's price by ~1e19, deposited 1 BOO as collateral in the newly listed BOO market and borrowed every other reserve.",
   "targets": [
     {
       "address": "0x875d564a6a86f6154592b88f7a107a517f00cc17",
       "reset": {
+        "kind": "config",
+        "tx": "0x95f802668c346e7c65ba03ad4bec61cc70122a9a2b888d0a0a4a5f315ea76600",
+        "address": "0x867faa51b3a437b4e2e699945590ef4f2be2a6d5",
+        "call": "0xc44b11f7000000000000000000000000841fad6eae12c286d1fd18d1d525dffa75c7effe"
+      }
+    },
+    {
+      "address": "0x2ceca12a53e428d37a62448fc818bf2e15b7e462",
+      "reset": {
         "kind": "deployment",
-        "tx": "0xd50cd2b9ca600e8839cccc5d4139cb782d253b6de40346cbd78848abaad34de9"
+        "tx": "0x2096d147838d04abf4f9d509068d9f01c11a67926512cf0a4aadb0df72603933"
       }
     }
   ],
   "loss": {
-    "usd": 8719125.22839623,
+    "usd": 8719125.24,
     "assets": [
       {
         "token": "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
         "symbol": "WFTM",
         "amount": "9134844.118945021990073601",
-        "usd": 6848547.928323104
+        "usd": 6848547.93
       },
       {
         "token": "0xd7028092c830b5c8fce061af2e593413ebbc1fc1",
         "symbol": "sFTMX",
         "amount": "1997342.444872152375623648",
-        "usd": 1723211.188998339
+        "usd": 1723211.19
       },
       {
         "token": "0x2f733095b80a04b38b0d10cc884524a3d09b836a",
         "symbol": "USDC.e",
-        "amount": "56881.017750",
-        "usd": 56868.276402024
+        "amount": "56881.01775",
+        "usd": 56868.28
       },
       {
         "token": "0x695921034f0387eac4e11620ee91b1b15a6a09fe",
         "symbol": "WETH",
         "amount": "10.960867221404812339",
-        "usd": 34600.93681851407
+        "usd": 34600.94
       },
       {
         "token": "0x1b6382dbdea11d97f24495c9a90b7c88469134a4",
         "symbol": "axlUSDC",
         "amount": "26002.496452",
-        "usd": 25993.863623177935
+        "usd": 25993.86
       },
       {
         "token": "0xf1648c50d2863f780c57849d812b4b7686031a3d",
         "symbol": "WBTC",
         "amount": "0.23379639",
-        "usd": 21174.9390423
+        "usd": 21174.94
       },
       {
         "token": "0x82f0b8b456c1a451378467398982d4834b6829c1",
         "symbol": "MIM",
         "amount": "8763.798905510696167658",
-        "usd": 8728.095188769645
+        "usd": 8728.1
+      },
+      {
+        "token": "0xd99021c2a33e4cf243010539c9e9b7c52e0236c1",
+        "symbol": "SOL",
+        "amount": "475.247372561",
+        "usd": 0
       }
     ]
   },
@@ -64,10 +79,8 @@
     "https://twitter.com/Bcpaintball26/status/1857865758551805976"
   ],
   "notes": [
-    "The adapter runtime is immutable: 2,095 bytes with no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT opcode, byte-identical at its deployment block and at the block immediately before the exploit five hours later.",
-    "Components are the exact ERC-20 quantities the eight Borrow events of the anchor transaction moved out of Polter's reserves, read from the receipt: 9,134,844.118945021990073601 WFTM (of which 9,130,844.118945021990073601 reached the attacker EOA and 4,000 went to SpookySwap pool 0xec7178f4c41f346b2721907f5cf7628e388a7a58 as the cost of the manipulation, a financing cost that does not reduce gross depletion), 1,997,342.444872152375623648 sFTMX, 56,881.017750 USDC.e, 10.960867221404812339 WETH, 26,002.496452 axlUSDC, 0.23379639 WBTC and 8,763.798905510696167658 MIM. A further 475.247372561 units of the Multichain-bridged SOL token 0xd99021c2a33e4cf243010539c9e9b7c52e0236c1 were drawn in the same transaction but are excluded from the USD total: DefiLlama publishes no historical or current price for that bridged asset, whose backing did not survive Multichain's 2023 failure, so marking it at the 215.76 USD native SOL price would not be a price it could be sold at. Marking it there would add about 102,539 USD. The attacker's own inputs are not counted: they supplied 601.734430161888206376 BOO net and 1.000000000000000000 BOO of collateral that Polter retains. Published estimates of about 7 million USD are early approximations; this reconstruction from the receipt gives 8.72 million USD excluding the bridged SOL. WBTC's nearest DefiLlama datapoint is stamped 1731780063, 33 seconds after the anchor; its valuation timestamp records the anchor time that was queried.",
-    "Fantom has no Etherscan v2 explorer API, so contract source is unavailable and the root cause rests on the executed call trace, the deployed runtimes, reproduced adapter arithmetic and the DeFiHackLabs reproduction; the deployment anchor was located by eth_getCode binary search plus a per-transaction receipt scan of the deployment block rather than by an explorer creation endpoint.",
-    "The seed inventory measured the Aave-fork lending-pool proxy 0x867faa51b3a437b4e2e699945590ef4f2be2a6d5 and reported a 292-day code age. That proxy and its implementation 0xd47ae558623638f676c1e38dad71b53054f54273 are correct for any sound oracle, so the boundary test places the defect in the price adapter instead and the measured age drops to 18,378 seconds.",
-    "475.247372561 units of the Multichain-bridged SOL token 0xd99021c2a33e4cf243010539c9e9b7c52e0236c1 were also drained but have no evidenced sellable price and are excluded from loss.usd."
+    "Reset: the adapters were deployed and set as BOO's oracle source first; the BOO reserve was only activated (initReserve with its pToken, LTV 55%) 25 minutes later. The exploit needed both, and a market listing is a HIGH config, so the listing sets the age.",
+    "The Multichain-bridged SOL token has no market price (its bridge backing failed in 2023) and is listed at zero; at native SOL's price it would add about 102,539 USD.",
+    "Fantom has no Etherscan v2 API; contracts are unverified, so the mechanism rests on the call trace and pool-balance arithmetic, and deployments were found by getCode binary search."
   ]
 }
