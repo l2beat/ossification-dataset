@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Carson",
   "name": "Carson custom pair sell-side reserve burn",
-  "summary": "The closed-source Carson/USDT pair, after each swap's constant-product check, transfers a factory-configured share of the input token out of its own balance and then syncs. Its factory configured 30% to 0xdead plus 30% to a fee wallet for Carson input, so every sell removed 60% of the sold Carson from reserves and cut k by about 6.7%. The attacker bought Carson with flash-loaned USDT and sold it back in 51 chunks, draining the pair's USDT.",
+  "summary": "The closed-source Carson/USDT pair, after each swap's k check, moved a factory-configured share of the input token out of its own reserve (30% to 0xdead, 30% to a fee wallet for Carson sells) and synced. The attacker bought Carson with flash-loaned USDT and sold it back in 51 chunks, each shrinking the Carson reserve, draining the pair's USDT.",
   "targets": [
     {
       "address": "0xe0a3e0f7e4c789747eb29a212ea915a7a1e1ac69",
@@ -27,14 +27,16 @@
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Carson_exp.sol",
-    "eip155:56:0xcaf6ddc1dcf5ddb69ab8659aeb5525cd28a0bde2356ae1a0054900384c1f78c0",
-    "eip155:56:0x6a94a644856c3aa1db8249b700956379b6b3a18de9b8811566fbd56c89240a01",
-    "eip155:56:0xed52a42b2f45e4dea8d07f70d645931e4f6da65e9ab281cd3dbb9d9d21febb45",
-    "eip155:56:0xcd781fec34b46f8c7372a9fcc7604c210b40442dc4f1a5c274fc3f9283df39ce"
+    "eip155:56:0xcaf6ddc1dcf5ddb69ab8659aeb5525cd28a0bde2356ae1a0054900384c1f78c0"
   ],
   "notes": [
     "Factory owner call 0x3a2980ea(pair, Carson, 0x376bceeae444eebf5e77490eb6d06fe35f2f5305, 0.3e18, 0xdead, 0.3e18) set the pair's Carson-input reserve-removal shares from none to 30% + 30%. The pair reads them via factory 0x918b6c8d(pair, token) on every swap; with zero shares the post-check removal does not occur.",
-    "Net USDT debit of pair 0xe0a3e0f7e4c789747eb29a212ea915a7a1e1ac69 across the four successful attacker calls to 0x9cffc95e742d22c1446a3d22e656bb23835a38ac: USDT sent out of the pair minus the flash-loaned USDT the attacker swapped in. The pair's concurrent loss of 411,566.919752722008226380 Carson (part burned to 0xdead, part to the fee wallet, rest bought back by the attacker and resold) is not valued: the drained pair was that token's market, so its value is endogenous to the USDT reserve counted here. DeFiHackLabs reports ~150K USD.",
+    "Loss is the pair's net USDT debit over the attacker's four calls (flash-loaned USDT swapped in netted out). The pair's Carson outflow is not valued: the drained pair was that token's market. Only these four txs ever made more than one swap on the pair.",
     "Pair, factory and token are closed source; the reserve-removal behaviour is established from execution traces, receipts and factory view calls rather than verified source."
+  ],
+  "campaign": [
+    "eip155:56:0x6a94a644856c3aa1db8249b700956379b6b3a18de9b8811566fbd56c89240a01",
+    "eip155:56:0xed52a42b2f45e4dea8d07f70d645931e4f6da65e9ab281cd3dbb9d9d21febb45",
+    "eip155:56:0xcd781fec34b46f8c7372a9fcc7604c210b40442dc4f1a5c274fc3f9283df39ce"
   ]
 }

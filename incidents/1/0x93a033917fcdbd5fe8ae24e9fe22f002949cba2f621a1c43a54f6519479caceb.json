@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "CIVNFT",
   "name": "CIVNFT unvalidated mint callback",
-  "summary": "CIVNFT accepted an attacker contract as a purported Uniswap V3 pool, then trusted its mint callback and token-address responses. Nine calls used victims' existing allowances to transfer five assets from their wallets to the fake pool.",
+  "summary": "CIVNFT accepted a caller-supplied contract as a Uniswap V3 pool and paid from its uniswapV3MintCallback without checking the caller was a real pool. The attacker's fake pool called the callback with victims encoded as payer and its own token addresses, so CIVNFT transferFrom'd victims' approved tokens to it.",
   "targets": [
     {
       "address": "0xf169bd68ed72b2fdc3c9234833197171aa000580",
@@ -13,26 +13,24 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x845f3c0fa982f35840ede0a445098202512cedabd75106da371029c0c5d0ce75",
+    "eip155:1:0x62e2ad77e4e9a0211a8019a40d7da1d696347afad3acfafdc3fefea46ef950e8",
+    "eip155:1:0x99aad76d0c0b182ebdde3f8e76b25dd24bbd24ed78410cc11bce5c4d81aaddb5",
+    "eip155:1:0xdd358de273b9c7723dd8cf6fdf68d24ef63a6f85bcfc6cfb519e0a149f8eff7d",
+    "eip155:1:0x2d3a2a93557a97632efbf6e59831bb281df0798e76c9a59398ae8b04c8c29115",
+    "eip155:1:0x2ded5aa85183e835f447dd92f535fb2f15647d15becd643f1b36c9876aebd671",
+    "eip155:1:0xbefbbdb7e8332d5a6bb6575013c0433c4b7f9f1386af0c59155b42f6f6f94af1",
+    "eip155:1:0x8c85d0ccd80945a2e4b8ef58d85195f271cc4222e60b58482fdfe194ec6748a4"
+  ],
   "loss": {
-    "usd": 94054.23127511056,
+    "usd": 94046.52,
     "assets": [
-      {
-        "token": "0x37fe0f067fa808ffbdd12891c0858532cfe7361d",
-        "symbol": "CIV",
-        "amount": "869686.365660270889580021",
-        "usd": 16017.29209600222
-      },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "50000",
-        "usd": 50000
-      },
-      {
-        "token": "0xf16e81dce15b08f326220742020379b855b87df9",
-        "symbol": "ICE",
-        "amount": "4389.934344869340025291",
-        "usd": 5443.518587637982
+        "usd": 49994.75
       },
       {
         "token": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
@@ -41,26 +39,29 @@
         "usd": 22170
       },
       {
+        "token": "0x37fe0f067fa808ffbdd12891c0858532cfe7361d",
+        "symbol": "CIV",
+        "amount": "869686.365660270889580021",
+        "usd": 16015.1
+      },
+      {
+        "token": "0xf16e81dce15b08f326220742020379b855b87df9",
+        "symbol": "ICE",
+        "amount": "4389.934344869340025291",
+        "usd": 5443.52
+      },
+      {
         "token": "0x725c263e32c72ddc3a19bea12c5a0479a81ee688",
         "symbol": "BMI",
-        "amount": "65029.578490963093499860",
-        "usd": 423.4205914703589
+        "amount": "65029.57849096309349986",
+        "usd": 423.15
       }
     ]
   },
   "refs": [
-    "eip155:1:0x845f3c0fa982f35840ede0a445098202512cedabd75106da371029c0c5d0ce75",
-    "eip155:1:0x62e2ad77e4e9a0211a8019a40d7da1d696347afad3acfafdc3fefea46ef950e8",
-    "eip155:1:0x99aad76d0c0b182ebdde3f8e76b25dd24bbd24ed78410cc11bce5c4d81aaddb5",
-    "eip155:1:0xdd358de273b9c7723dd8cf6fdf68d24ef63a6f85bcfc6cfb519e0a149f8eff7d",
-    "eip155:1:0x2d3a2a93557a97632efbf6e59831bb281df0798e76c9a59398ae8b04c8c29115",
-    "eip155:1:0x2ded5aa85183e835f447dd92f535fb2f15647d15becd643f1b36c9876aebd671",
-    "eip155:1:0xbefbbdb7e8332d5a6bb6575013c0433c4b7f9f1386af0c59155b42f6f6f94af1",
-    "eip155:1:0x8c85d0ccd80945a2e4b8ef58d85195f271cc4222e60b58482fdfe194ec6748a4",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/CIVNFT_exp.sol"
   ],
   "notes": [
-    "The second and final Upgraded event before the campaign selected implementation 0x78bd317a87d2eab65b666e9402182a949ab4eeb9, whose callback logic all nine exploit transactions executed.",
-    "Exact gross transfers from nine victim wallets to the attacker helper across the nine defect-executing transactions. USDC is valued at par; the other assets use historical DefiLlama observations before the attacker began disposing of them. The seed row's $180,000 estimate is replaced because it is not reproduced by the onchain asset quantities and contemporaneous prices. Later transfers from the helper to the attacker EOA and swaps are movements or disposal of the same stolen assets and are not counted again."
+    "Every other call into the callback path, before and after, was a user minting with its own tokens; the only third-party pulls are the attacker's nine transactions. Market prices are used: the attacker sold the CIV, SHIB, ICE and BMI within minutes at under 10% below them."
   ]
 }

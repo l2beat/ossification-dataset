@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "CashCowCoin",
   "name": "CashCowCoin trading proxy sell() burns CCC from the pair and syncs",
-  "summary": "CashCowCoin's public trading proxy sell() swaps the caller's CCC for WBNB through the CCC/WBNB PancakeSwap pair. It then calls the token's proxy-only function 0xb20a0b6f to burn the CCC that just arrived in the pair to 0xdead, and calls pair.sync(). Each sell therefore takes WBNB while the pair's CCC reserve stays flat. With a Moolah flash loan the attacker bought 8.8M CCC and ran 80 sells, draining the pair's WBNB reserve from 165.49 to 0.018.",
+  "summary": "CashCowCoin's trading proxy sell() swapped the caller's CCC into the CCC/WBNB pair, then had the token burn that CCC from the pair (proxy-only 0xb20a0b6f) and sync, so each sell took WBNB while the CCC reserve stayed flat. With a flash-loaned buy the attacker ran 80 sells and drained the pair's WBNB.",
   "targets": [
     {
       "address": "0xf523224c6171f81c54b93f474ed4c78de91241c7",
@@ -37,11 +37,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-08/CashCowCoin_exp.sol"
   ],
   "notes": [
-    "The fourth Upgraded event installed implementation 0x4287742e, whose sell() calls the token burn and pair.sync(); a fifth Upgraded event at block 118208181 re-selected the same implementation.",
-    "Token owner 0x417ce43e called 0x497b15d1(trading proxy), setting mapping slot 29 [proxy] = 1, the gate of burn function 0xb20a0b6f. With that entry cleared, the burn from the proxy reverts (\"t,a,\").",
-    "WBNB depletion of the CCC/WBNB pair 0x1dbe9458a6840784d5defd62c6b71386100097c0 across the exploit transaction; the attacker's 13,999.89 WBNB donation and flash-loaned buy are returned within the same transaction and cancel out. It equals the attacker's net 165.4719 WBNB. The pair's CCC is not valued because the drained pair was its market.",
-    "Not the latest age reset: the token authorized this proxy for the pair burn in source-5, after this implementation change.",
-    "Implementation and token bytecode are unverified; sell() behaviour is established from the call trace.",
-    "Token bytecode is unverified; the gate slot is identified by storage diff and state-override eth_call."
+    "The token's burn 0xb20a0b6f is gated on mapping slot 29[proxy], set by the owner's 0x497b15d1(proxy) after the implementation upgrade; with it cleared the anchor reverts (\"t,a,\"), so that grant sets the age. The later Upgraded event at 118208181 re-selected the same implementation and changed no route.",
+    "Loss is the pair's WBNB depletion; the attacker's flash-loaned buy returns within the transaction. The pair's CCC is not valued because the drained pair was its market. Only the anchor ever made more than one sell; no copycats.",
+    "Implementation and token bytecode are unverified; behaviour is established from the call trace, storage diff and state-override eth_call."
   ]
 }

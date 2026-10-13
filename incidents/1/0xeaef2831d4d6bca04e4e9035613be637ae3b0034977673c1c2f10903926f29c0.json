@@ -2,47 +2,35 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Brahma",
   "name": "Brahma TOPG zapper unvalidated call",
-  "summary": "The Brahma TOPG zapper executed a caller-supplied swap target and calldata without validation, allowing one transaction to transfer USDC from three accounts that had approved the zapper.",
+  "summary": "The Brahma TOPG Zapper's zapIn called a caller-supplied swapTarget with caller-supplied calldata. The attacker passed its own contract as the input token and USDC.transferFrom calldata, moving USDC from three accounts that had approved the Zapper to itself.",
   "targets": [
     {
       "address": "0xd248b30a3207a766d318c7a87f5cf334a439446d",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x8b24f31f2c3b48e6463b57c5fa871c3ed508b12c2ea2ede077454f2f6f3a48a7"
+        "kind": "config",
+        "tx": "0x4ef932d7f9085eb6cb52b22dbdb0d9ad3f835d823c9a0d03b58b9eede6ec884c",
+        "address": "0xb3da8d6da3ede239ccbf576ca0eaa74d86f0e9d3",
+        "slot": "0x9"
       }
     }
   ],
   "loss": {
-    "usd": 89343.757369,
+    "usd": 89153.94,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "5364.965317",
-        "usd": 5364.965317
-      },
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "4299.130227",
-        "usd": 4299.130227
-      },
-      {
-        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "symbol": "USDC",
-        "amount": "79679.661825",
-        "usd": 79679.661825
+        "amount": "89343.757369",
+        "usd": 89153.94
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/BrahTOPG_exp.sol",
-    "https://medium.com/neptune-mutual/decoding-brahma-brahtopg-smart-contract-vulnerability-7b7c364b79d8",
-    "eip155:1:0xacf7f9bdb9fb13ed36b2b265e796e39adc5b47510af259a73c949c38a617b5d9",
-    "eip155:1:0x4249331dd223230b701331a4ee36ec4bb37032435da51ec53368bc1d224181a0"
+    "https://medium.com/neptune-mutual/decoding-brahma-brahtopg-smart-contract-vulnerability-7b7c364b79d8"
   ],
   "notes": [
-    "The zapper is a direct top-level deployment. Its 5,043-byte runtime is absent one block before deployment and byte-identical at the deployment block and immediately before the incident; all three EIP-1967 implementation, admin, and beacon slots are zero, and the incident trace executes the zapper without delegatecall.",
-    "Gross victim depletion is the exact sum of three USDC transfers in the sole loss receipt: 5,364.965317 from 0x392472c4369d6cdea89e2bddfd8144eecfdc032c, 4,299.130227 from 0x140713bbd82113e104c3a45661134f9764807922, and 79,679.661825 from 0xa19789f57d0e0225a82eeff0fecb9f3776f276a3. Each victim's archive balance moves from that amount to zero. The helper receives and forwards the exact 89,343.757369 USDC, ending with zero, while the attacker moves from zero to the same amount. There are no victim inputs or returns. The attacker's nonce-0 helper deployment has no USDC loss; nonce 1 is the loss receipt; nonce 2 disposes of the already-counted USDC downstream and does not touch the victims or zapper. USDC is valued at par."
+    "zapIn reverts unless vault.zapper() is the Zapper; governance granted it that role (the vault's authorised zapper) after deployment, so the exploitable state dates from that grant (rule 10 role/registry grant), not from the deployment.",
+    "Every earlier zapIn was the user pulling its own funds; none after the anchor. Loss is the three victims' USDC, priced by DefiLlama at block time (USDC traded slightly below par that day)."
   ]
 }

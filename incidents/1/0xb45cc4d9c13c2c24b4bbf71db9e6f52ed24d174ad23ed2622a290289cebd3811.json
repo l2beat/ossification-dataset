@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "BoostHook",
   "name": "BoostHook leveraged longs financed at a manipulable spot price",
-  "summary": "BoostHook is a Uniswap V4 hook whose openLong lends ETH from the protocol's own liquidity bands and swaps collateral plus loan into BOOST. Which bands are borrowable (those entirely above the current tick, i.e. ETH-only) and the price of the leveraged buy both come from the pool's instantaneous slot0 state; the hook keeps TWAP observations but consults them only for liquidations. The attacker flash-borrowed 120 WETH, bought 93,762 BOOST with 100 ETH, which moved the tick down and converted more band liquidity into borrowable ETH, opened nine 5x longs with 2 ETH each that borrowed 72 ETH of band ETH to buy BOOST at the inflated price, then sold its BOOST back into the pool for 140.93 ETH, leaving the positions insolvent.",
+  "summary": "BoostHook's openLong lends ETH from the hook's own Uniswap v4 liquidity bands and spends collateral plus loan on BOOST at the pool's instantaneous price, with caller-set slippage. The attacker bought BOOST, opened 5x longs that pumped the price with band ETH, then sold its BOOST into the pumped pool, leaving the longs insolvent.",
   "targets": [
     {
       "address": "0x3db1ebb71c735980d12422f153987d89f4d7eacc",
@@ -12,20 +12,24 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x5c4f18bc5db59a64b7c5b0bf7457c192d6e3c2e51c007768b0c5553d2f9db6d3",
+    "eip155:1:0xbb8af01e02543a507c730f5b9d4ba00fba63a09dff5fd63620ff16e2c9b8a41b",
+    "eip155:1:0x83b220a51f5e63e72c115d4b2db404d61879f8819417ca25992438e6a7c0ba40",
+    "eip155:1:0xe5a8ee7a87759753aa959f38c82ee8a4a56d6586ef5f64086123196a2d2bf033"
+  ],
   "loss": {
-    "usd": 47683.69,
+    "usd": 68657.42,
     "assets": [
       {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "20.932897159743547",
-        "usd": 47683.69
+        "symbol": "ETH",
+        "amount": "30.150573154829587808",
+        "usd": 68657.42
       }
     ]
   },
   "notes": [
-    "The deterministic CREATE2 deployer 0x4e59b44847b379578588920ca78fbf26c0b4956c created the non-upgradeable BoostHook runtime at its hook-permission address for sender 0x38e5bd272372c2a76f39dd480f3d2f57fe77e166; the runtime hash was unchanged through the exploit and the later owner calls (setStaking, initializePool, seedBands) only initialised and filled bands.",
-    "The loss is the ETH that left the protocol: the attacker's input was 120 WETH flash-borrowed from Morpho 0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb (log 162) and repaid (log 287), and it received 20.932897159743547 WETH net (log 288). callTracer value flows in the anchor agree: the V4 PoolManager 0x000000000004444c5dc75cb358380d2e3de08a90 lost 24.056259757316713 ETH, of which 2.403362597573167 ETH went to the hook and 0.72 ETH to BoostStaking 0x4ae2458e6d087aaa3625d81242f22f0b513bca07 as protocol fees and stayed in the protocol. The 72 ETH of band ETH lent to the nine positions (PositionOpened debt 8 ETH each) was spent inside the pool and is not added again; the positions' residual BOOST is illiquid and not credited. DefiLlama lists USD 187k, which likely counts the band debt; this record keeps the realised extraction. ETH is valued at DefiLlama coingecko:ethereum at 1778610723.",
-    "The loss is the attacker's realised ETH extraction; the reported USD 187k (DefiLlama) is not reproduced and may include the band debt left by the insolvent positions."
+    "Loss is the ETH the pool's bands lost in the PoolManager per transaction. The 1% swap and borrow fees the hook credited to the team fee recipient and BoostStaking are not subtracted (rule 14); BOOST moved from the pool into the hook's position holdings stays in protocol custody and is not counted.",
+    "Campaign: the four later contract txs that buy BOOST, call openLong and sell within one transaction (copycats incl. c0ffeebabe); all earlier openLong calls come straight from EOAs as ordinary trades. Later owner calls only seeded bands and set staking, gates and liquidity, not resets."
   ]
 }
