@@ -2,39 +2,45 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MOBOX",
   "name": "MO Loan borrow burns pair reserves and prices collateral from the manipulated spot",
-  "summary": "Loan.borrow pulls MO collateral, pays USDT valued at the MO/USDT pair's spot reserves, then has the pair burn 90% of the borrowed MO amount from its own reserves and sync, raising the MO spot price; a duration-0 order can be redeemed immediately for full collateral with zero interest. The attacker looped borrow/redeem to ratchet the MO price, then borrowed against the inflated price and sold MO into the depleted pair, draining USDT from the Loan contract and the pair.",
+  "summary": "Loan.borrow priced MO collateral at the MO/USDT pair's spot reserves and then burned 90% of the borrowed amount from the pair's own reserves, while duration-0 orders could be redeemed at once for the full collateral. The attacker looped borrow/redeem to ratchet the MO price, then borrowed USDT and sold MO into the depleted pair.",
   "targets": [
     {
       "address": "0xae7b6514af26bcb2332fea53b8dd57bc13a7838e",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xabd36d08e716df33eb83837cb296c1bb06c83e1fd46e71eacb9275b9e4b2d54d"
+        "kind": "config",
+        "tx": "0x148384a5eab3b0c86a96a009387721ccfcd63636f39e3226f052005df14ca71d",
+        "address": "0x9d8355a8d721e5c79589ac0ab49bc6d3e0ef7c3f",
+        "slot": "0x3c1b5e2e8811b0a0f15644215fe157dd6acfce225fe3cf61f98ec2930342f3ec"
       }
     }
   ],
   "loss": {
-    "usd": 746192.002117,
+    "usd": 746192,
     "assets": [
       {
         "token": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
         "symbol": "USDT",
         "amount": "331860.835974",
-        "usd": 331860.835974
+        "usd": 331860.84
       },
       {
         "token": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
         "symbol": "USDT",
         "amount": "414331.166143",
-        "usd": 414331.166143
+        "usd": 414331.16
       }
     ]
   },
-  "refs": [
+  "notes": [
+    "Reset is the owner granting Loan operator rights on ApproveProxy, the last of four post-deployment grants borrow() needs (MO setWhitelist via MO ownership, factory feeToSetter for pair.setRouter/claim, ApproveProxy.claim); supplyMaxAmount changes only sized the loss.",
+    "Loss is two USDT components at par: net Loan depletion and net MO/USDT pair depletion, both in the last two campaign txs; the earlier borrow/redeem loops only ratcheted the MO price. MO burned from the pair is not valued, and attacker seed funds are not counted."
+  ],
+  "campaign": [
+    "eip155:10:0xb5700b647d13c625b405b57d4429ffc5902aa29a5b4888c3cf93245b279ae02d",
+    "eip155:10:0xbfd5dd87b9f80b377ca8649d95e4c788336c7913498c1063fa8a88fd624cd80e",
+    "eip155:10:0x2fb0cf4cdbca04019c679dfa51ae1d8f34153c2725ddb998f9959ef87dc174dd",
+    "eip155:10:0x7168160b315350063896ef732d8005a4d36ffd0534e0ee3d58e82271b30b9f6a",
     "eip155:10:0x4ec3061724ca9f0b8d400866dd83b92647ad8c943a1c0ae9ae6c9bd1ef789417",
     "eip155:10:0xedad1792eef7dcb6a4bd515d3d42a9cb4bd9f10c0e2979591fc6d25156ce865c"
-  ],
-  "notes": [
-    "Immutable Loan runtime contains the self-referential reserve burn, spot-price valuation and zero-interest immediate redeem; post-deployment owner calls only changed supplyMaxAmount.",
-    "Two USDT components: net Loan contract depletion (331,860.835974) and net MO/USDT pair depletion (414,331.166143) in extraction transactions source-2 and source-6. MO burned from the pair and MO moved between the parties are not valued (the post-exploit MO price collapsed), so the USD figure is a lower bound on LP loss. Attacker seed funds (2,100 USDT into its contract and small USDT additions to the pair in its getReward calls) are not counted as victim loss."
   ]
 }

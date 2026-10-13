@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Makina Finance",
   "name": "Makina DUSD manipulable Curve accounting instruction",
-  "summary": "Makina approved a permissionlessly callable accounting instruction that valued its Curve MIM/3CRV position through the pool's manipulable calc_withdraw_one_coin quote. A MEV searcher flash-manipulated that pool, invoked the approved instruction to inflate Caliber and Machine AUM, and synchronously propagated the false DUSD exchange rate into the DUSD/USDC Curve pool. Two cycles then removed nearly all of that pool's USDC.",
+  "summary": "Makina approved a permissionless accounting instruction that valued the Caliber's Curve MIM/3CRV position with the pool's manipulable calc_withdraw_one_coin quote. A searcher flash-manipulated that pool, ran the instruction to inflate Caliber and Machine AUM, and the inflated DUSD rate let two cycles drain the DUSD/USDC Curve pool's USDC.",
   "targets": [
     {
       "address": "0xd1a1c248b253f1fc60eacd90777b9a63f8c8c1bc",
@@ -32,8 +32,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-01/makina_exp.sol"
   ],
   "notes": [
-    "Makina's Safe scheduled allowed-instruction root 0xbb37df0ffb37a060429c68fd57b4224d3a679ab0adc95b1990898a653e608296 with a 172,800-second timelock. pendingAllowedInstrRoot() changed from zero to that root, and NewAllowedInstrRootScheduled log 706 fixed its effective time at 1768417787. No later pre-exploit schedule or cancellation replaced it. Reconstructing the exploit instruction's leaf and seven-node Merkle proof yields the same root, which accountForPosition accepted four times in the exploit transaction.",
-    "Gross pre-recovery depletion of the DUSD/USDC Curve pool in the anchored transaction. USDC.balanceOf(pool) fell from 5,127,936.124721 at block 24273361 to 18,962.782093 at block 24273362, an exact 5,108,973.342628 USDC. The pool's DUSD token balance was unchanged. This measures victim assets rather than the searcher's smaller proceeds after flash-loan fees, manipulation costs and builder payment; later recoveries do not reduce gross loss.",
-    "The gross loss covers the anchored drain of the DUSD/USDC pool; it excludes later independent trades against the dislocated pool and later recoveries."
+    "Reset is the Safe scheduling allowed-instruction root 0xbb37df0f… behind a 48-hour timelock; the root took effect without a further tx. The exploit's accountForPosition calldata reverts with the previous root (block 24220629) and passes before the exploit, so the instruction entered with this root.",
+    "Loss is the DUSD/USDC pool's USDC depletion in the anchor; its DUSD balance was unchanged. The Machine propagated the inflated AUM but carries no defect of its own; later trades against the drained pool and recoveries are not counted."
   ]
 }

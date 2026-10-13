@@ -2429,6 +2429,33 @@
     "claimsSha256": "9c06af42200de4881108a938df544e5ff8782b3af7ca9c7ccb6721be5a1f86f5"
   },
   {
+    "id": "eip155:59144:0x7ffb4569827ed3acd595270c755195da5c630a1ad999afe6eb9b884ff09d6e5d",
+    "chainId": 59144,
+    "tx": "0x7ffb4569827ed3acd595270c755195da5c630a1ad999afe6eb9b884ff09d6e5d",
+    "protocol": "Malda",
+    "name": "Malda Migrator accepted an attacker-supplied Comptroller",
+    "summary": "Malda's Migrator took the Mendi comptroller from caller calldata and trusted whatever positions its markets reported. The attacker passed a fake comptroller reporting fake positions, so the Migrator minted unbacked mTokens, made the eight Malda markets lend underlying via borrowMigration, and repaid the fake markets, which pulled the tokens.",
+    "lossUsd": 282426.95538,
+    "codeAgeSeconds": 123354,
+    "exploit": {
+      "block": 19512428,
+      "index": 1,
+      "timestamp": 1748631114
+    },
+    "target": {
+      "address": "0xa0dc62a8ee34bcd7c9a08852c980ed78e0cf99c0",
+      "codeHash": "0x86763585b9baf98ab23c0339bcbdf56f8f5aa3b33468571b46d45d52f103fd0c"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x6319b5146f0be889023205a5c433a60c29c50850cb738cbfb1da6cc922529a0f",
+      "block": 19465484,
+      "index": 1,
+      "timestamp": 1748507760
+    },
+    "claimsSha256": "e273071b94260d7939db74b6bab59edbe83495e92fce4e3313950f9627ce79d2"
+  },
+  {
     "id": "eip155:1:0xb3cfbd40752c149761d105890f40d860a4366a819add6f5414db9bc474cc6481",
     "chainId": 1,
     "tx": "0xb3cfbd40752c149761d105890f40d860a4366a819add6f5414db9bc474cc6481",
@@ -2455,33 +2482,6 @@
       "timestamp": 1676482307
     },
     "claimsSha256": "ac873a8b7bb17b26c8ea0565db31cd86be28cd65a1ea523f09f83906f2209e9f"
-  },
-  {
-    "id": "eip155:59144:0x7ffb4569827ed3acd595270c755195da5c630a1ad999afe6eb9b884ff09d6e5d",
-    "chainId": 59144,
-    "tx": "0x7ffb4569827ed3acd595270c755195da5c630a1ad999afe6eb9b884ff09d6e5d",
-    "protocol": "Malda",
-    "name": "Malda Migrator accepted an attacker-supplied Comptroller",
-    "summary": "Migrator.migrateAllPositions(MigrationParams) reads the source lending protocol out of caller-supplied calldata: _collectMendiPositions calls getAssetsIn(msg.sender) on params.mendiComptroller and then trusts every returned market's balanceOfUnderlying, borrowBalanceStored and underlying, with no check that the comptroller is Mendi's or that the markets are real cTokens. The only allow-list in the contract, allowedMarkets, constrains the destination Malda mToken, not the source. An attacker therefore deployed a fake comptroller and fake cToken markets that report a borrow position against real Malda underlyings, so step 3 made the allow-listed Malda markets lend the underlying to the Migrator via borrowMigration, and step 4 approved the fake market for that amount and called repayBorrowBehalf on it, letting the fake market pull the tokens straight out of the Migrator.",
-    "lossUsd": 282426.95538,
-    "codeAgeSeconds": 125233,
-    "exploit": {
-      "block": 19512428,
-      "index": 1,
-      "timestamp": 1748631114
-    },
-    "target": {
-      "address": "0xa0dc62a8ee34bcd7c9a08852c980ed78e0cf99c0",
-      "codeHash": "0x86763585b9baf98ab23c0339bcbdf56f8f5aa3b33468571b46d45d52f103fd0c"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xbdfde43722fc316f888ef04c3f2a0a184f21f2cae1b1cb4e943abf3a27112a8e",
-      "block": 19464693,
-      "index": 4,
-      "timestamp": 1748505881
-    },
-    "claimsSha256": "9ac5f3900792ca34d6541c05f87d302b2fc315a2151614027fc910d618f52604"
   },
   {
     "id": "eip155:56:0xb375932951c271606360b6bf4287d080c5601f4f59452b0484ea6c856defd6fd",
@@ -3308,9 +3308,9 @@
     "tx": "0x23dedff08b399e148874cac20026f4a12cfa5b4824cd1af4650f2c8ef0235266",
     "protocol": "MOBOX",
     "name": "MO Loan borrow burns pair reserves and prices collateral from the manipulated spot",
-    "summary": "Loan.borrow pulls MO collateral, pays USDT valued at the MO/USDT pair's spot reserves, then has the pair burn 90% of the borrowed MO amount from its own reserves and sync, raising the MO spot price; a duration-0 order can be redeemed immediately for full collateral with zero interest. The attacker looped borrow/redeem to ratchet the MO price, then borrowed against the inflated price and sold MO into the depleted pair, draining USDT from the Loan contract and the pair.",
-    "lossUsd": 746192.002117,
-    "codeAgeSeconds": 250904,
+    "summary": "Loan.borrow priced MO collateral at the MO/USDT pair's spot reserves and then burned 90% of the borrowed amount from the pair's own reserves, while duration-0 orders could be redeemed at once for the full collateral. The attacker looped borrow/redeem to ratchet the MO price, then borrowed USDT and sold MO into the depleted pair.",
+    "lossUsd": 746192,
+    "codeAgeSeconds": 250600,
     "exploit": {
       "block": 117395456,
       "index": 5,
@@ -3321,13 +3321,13 @@
       "codeHash": "0x479b827fa80af48c946de75d33c7f8209b20f405a3b6652c9dae74f3f3a582ed"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xabd36d08e716df33eb83837cb296c1bb06c83e1fd46e71eacb9275b9e4b2d54d",
-      "block": 117270004,
-      "index": 13,
-      "timestamp": 1710138785
+      "kind": "config",
+      "tx": "0x148384a5eab3b0c86a96a009387721ccfcd63636f39e3226f052005df14ca71d",
+      "block": 117270156,
+      "index": 5,
+      "timestamp": 1710139089
     },
-    "claimsSha256": "1189a13de1dcd5a64387fc4739fdf682b525c2881f63f01cdcd85e9f4ece9a79"
+    "claimsSha256": "5eca24cc0c97efd6f39d2f62a76df6ed408f350b6e827ef561ae94aed8677c46"
   },
   {
     "id": "eip155:1:0x7fef5323eb51e6ea9e9ee23ecae785a3ae46d30bcb69ec9a736bc4d9a131c417",
@@ -4077,7 +4077,7 @@
     "protocol": "MIC Token",
     "name": "MIC public swapManual()",
     "summary": "MIC's unrestricted swapManual() paid LP fees according only to msg.sender's current LP-token balance and reduced a global fee pool without recording which LP position had already claimed. Transferring the same LP position between addresses therefore allowed repeated claims against the remaining accrued fees.",
-    "lossUsd": 3572.8803705928563,
+    "lossUsd": 8534.6,
     "codeAgeSeconds": 468900,
     "exploit": {
       "block": 34905162,
@@ -4095,7 +4095,7 @@
       "index": 288,
       "timestamp": 1703768054
     },
-    "claimsSha256": "8a9afd7756534294a7298f7237762649abe62da5cce28676411823aa1850dfb6"
+    "claimsSha256": "f7b1bea673d9e58f4c44f411e9514afc5d2884bdcfd0afd4509107d721a2d693"
   },
   {
     "id": "eip155:1:0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
@@ -4731,7 +4731,7 @@
     "tx": "0x569733b8016ef9418f0b6bde8c14224d9e759e79301499908ecbcd956a0651f5",
     "protocol": "Makina Finance",
     "name": "Makina DUSD manipulable Curve accounting instruction",
-    "summary": "Makina approved a permissionlessly callable accounting instruction that valued its Curve MIM/3CRV position through the pool's manipulable calc_withdraw_one_coin quote. A MEV searcher flash-manipulated that pool, invoked the approved instruction to inflate Caliber and Machine AUM, and synchronously propagated the false DUSD exchange rate into the DUSD/USDC Curve pool. Two cycles then removed nearly all of that pool's USDC.",
+    "summary": "Makina approved a permissionless accounting instruction that valued the Caliber's Curve MIM/3CRV position with the pool's manipulable calc_withdraw_one_coin quote. A searcher flash-manipulated that pool, ran the instruction to inflate Caliber and Machine AUM, and the inflated DUSD rate let two cycles drain the DUSD/USDC Curve pool's USDC.",
     "lossUsd": 5108973.342628,
     "codeAgeSeconds": 635448,
     "exploit": {
@@ -5441,10 +5441,10 @@
     "chainId": 56,
     "tx": "0x0776048b1b58064fb31b6513721811e7b44d6bdbe7bf5833158b241ca6756a8f",
     "protocol": "MOKE",
-    "name": "MOKE manipulable spot-price settlement",
-    "summary": "MokeRelease.settle() allowed any EOA to overwrite settledMokePrice with the instantaneous MOKE/WBNB and WBNB/USDT AMM spot price. The attacker distorted the WBNB/USDT reserve ratio, settled the manipulated price, and then claimed 43.86 million MOKE against genuine stored release quotas; claim()'s deviation check compared the live price to the just-manipulated settled price and therefore did not protect the reserve.",
-    "lossUsd": 979262.0613116003,
-    "codeAgeSeconds": 1003445,
+    "name": "MOKE spot-price settlement and LP-dividend sybil claims",
+    "summary": "MokeRelease.settle() let any EOA set settledMokePrice from AMM spot reserves; after dumping WBNB into WBNB/USDT the attacker settled a crashed price and claimed 43.86M MOKE on its quotas. Released MOKE could only go to handlers, so it was fed to MokeLPDividend and claimed back through 65 addresses whose LP records syncUserLP had duplicated.",
+    "lossUsd": 979262.06,
+    "codeAgeSeconds": 1002489,
     "exploit": {
       "block": 113652609,
       "index": 26,
@@ -5455,13 +5455,13 @@
       "codeHash": "0x4abe91cc475b04c64bac7b7d7b783bfc6388884db171cc41aa86665ce2916f9d"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x2b2808c23625b7af17e41ded67aa6daf9d79e40fe3bda619ee3b42d74dc33939",
-      "block": 111423896,
-      "index": 112,
-      "timestamp": 1784700366
+      "kind": "config",
+      "tx": "0x26da3435dcec1e52b42db85174bf5732198b84d54169256c2a5e2c05a658a920",
+      "block": 111426020,
+      "index": 81,
+      "timestamp": 1784701322
     },
-    "claimsSha256": "da951b73b489c75841c1fdf48235378977269bb45eea5cfee78caf7cc410c472"
+    "claimsSha256": "a3f7f679ed6e88f8083f7cfaf13462cee2908d6c0000101bd94effce17c794c1"
   },
   {
     "id": "eip155:1:0xa329b27fbe0f7b7f92060a9e5370fdf03d60e5c4835f09d7234e5bbecf417ccf",
@@ -7144,9 +7144,9 @@
     "tx": "0x35ecf595864400696853c53edf3e3d60096639b6071cadea6076c9c6ceb921c1",
     "protocol": "MEV bot 0xa47b",
     "name": "MEV bot 0xa47b unguarded callback",
-    "summary": "The MEV bot accepted an unauthenticated Balancer flash-loan callback and delegated execution to addresses supplied through callback calldata. The attacker made that path transfer the bot's WETH to attacker-controlled code and used the proceeds in an arbitrage transaction.",
-    "lossUsd": 242359.32527680453,
-    "codeAgeSeconds": 2541184,
+    "summary": "The MEV bot's Balancer receiveFlashLoan callback did not check that the bot had started the loan and executed the swap route encoded in userData. The attacker flash-loaned 1 wei to the bot with a route that sent the bot's WETH through its own swap module into a Uniswap V3 swap paying the attacker, then through a fake pair.",
+    "lossUsd": 242359.33,
+    "codeAgeSeconds": 2541007,
     "exploit": {
       "block": 15741333,
       "index": 1,
@@ -7154,16 +7154,17 @@
     },
     "target": {
       "address": "0x00000000000a47b1298f18cf67de547bbe0d723f",
-      "codeHash": "0x39d1ea2f6ba18431166364920ccbcd6eaea9b37faabd10e550b7f3529095c347"
+      "code": "0x770200a211315a0688c289f437317ea117cb4d23",
+      "codeHash": "0x65bb090194198e5e61a743ef5b25b13849fa8b2c576e6c29b5966782d0e6c4b3"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x51819d7c8ed4df00e5869c63e80955b7f1d13bf2f7435bb0474a08864d73096e",
-      "block": 15532252,
-      "index": 51,
-      "timestamp": 1663148791
+      "kind": "config",
+      "tx": "0xb5ff6f5071dc581e082b14d107caf08b23b849d891faf4e8df165f34bb91055b",
+      "block": 15532262,
+      "index": 77,
+      "timestamp": 1663148968
     },
-    "claimsSha256": "2b6ddad3e67ce73e7d848e145a6303d95ff48f396ad8fc8884d99ea96d065b47"
+    "claimsSha256": "2db39c0c1317c8f0c0e3b8a2058c8eadce9f31e7ab5245980cb24a4e8de8a36b"
   },
   {
     "id": "eip155:56:0x2bb704e0d158594f7373ec6e53dc9da6c6639f269207da8dab883fc3b5bf6694",
@@ -12301,9 +12302,9 @@
     "tx": "0x2881e839d4d562fad5356183e4f6a9d427ba6f475614ce8ef64dbfe557a4a2cc",
     "protocol": "MahaLend",
     "name": "MahaLend",
-    "summary": "Aave-fork empty-market donation inflated index plus rounding error to over-withdraw",
-    "lossUsd": 19749.66174385746,
-    "codeAgeSeconds": 28826796,
+    "summary": "MahaLend, an Aave v3 fork, had an empty USDC reserve. The attacker supplied a dust amount, inflated the liquidity index by repeated flash loans whose premiums accrued to its lone deposit, borrowed ARTH against the inflated collateral and withdrew the USDC through rounding that burned fewer shares than owed.",
+    "lossUsd": 19702.89,
+    "codeAgeSeconds": 28826472,
     "exploit": {
       "block": 18544605,
       "index": 20,
@@ -12315,13 +12316,13 @@
       "codeHash": "0x15efa7eb5624c2c2b003472536190622d77d89910bdbc6f79d6a386a9d93e535"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xdbb69496da0262bda3f276d4bdcbca6e4211a949caa8b0b623e8159e08b8c7f6",
-      "block": 16167084,
-      "index": 12,
-      "timestamp": 1670829443
+      "kind": "config",
+      "tx": "0x99b0c7e7852e9188a41fc12fa47bc3d5947b013c786651e8d6d910bddcd9c373",
+      "block": 16167110,
+      "index": 11,
+      "timestamp": 1670829767
     },
-    "claimsSha256": "21bffcbf4c37b9dcfe1e32d319b296e1d2a8315b5e047641af3f63b9e39416b4"
+    "claimsSha256": "76533e87759ff2497a1b01c3c21484d84ce8fdfb4ead7606dabd37c55058eb98"
   },
   {
     "id": "eip155:1:0x44037ffc0993327176975e08789b71c1058318f48ddeff25890a577d6555b6ba",
@@ -15183,8 +15184,8 @@
     "tx": "0x843c9ea7edf09ea234d99de189c6a6ba9b79d958bbbbdbc56fd477028ea55b90",
     "protocol": "MYX Network sMYX",
     "name": "sMYX dividend token transfer creates unbacked profit-per-share while shrinking recorded supply",
-    "summary": "The unverified 2020 sMYX dividend contract 0x40432844506f3a51c266ecabad2beb23cad27f66 raises its profit-per-share accumulator by the transferred amount divided by total supply on every transfer, without any MYX inflow. Because of a reversed subtraction helper it also lowers the recorded supply by the transferred amount, so each transfer mints a larger unbacked dividend. The attacker flash-borrowed 3 WETH, bought MYX, and took a dominant sMYX position split across two contracts. It then alternated transfers between them with withdraw() calls and exited, draining 6.68M MYX of other holders' deposits.",
-    "lossUsd": 3654.87,
+    "summary": "The 2020 sMYX dividend token raised its profit-per-share on every transfer without any MYX inflow and, through a reversed subtraction, also shrank its recorded supply. The attacker bought a dominant sMYX position split over two contracts and alternated transfers with withdraw() calls, paying out other holders' MYX deposits as dividends.",
+    "lossUsd": 7794.8,
     "codeAgeSeconds": 176880903,
     "exploit": {
       "block": 24731708,
@@ -15202,7 +15203,7 @@
       "index": 27,
       "timestamp": 1597526348
     },
-    "claimsSha256": "dd0ab0d0a4256ac19c3fe9f0f85c7aaf7e640027df2bd22eb064c38ed73cb9e8"
+    "claimsSha256": "60298c03a5515b51e7cd1c7b2c8703817d8973d677a14cdf8de305a2cd032d33"
   },
   {
     "id": "eip155:1:0xe1589a19fe742f0d553889214abade69551fe944acffac014c28cc07b325d60a",

@@ -2,24 +2,27 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MEV bot 0xa47b",
   "name": "MEV bot 0xa47b unguarded callback",
-  "summary": "The MEV bot accepted an unauthenticated Balancer flash-loan callback and delegated execution to addresses supplied through callback calldata. The attacker made that path transfer the bot's WETH to attacker-controlled code and used the proceeds in an arbitrage transaction.",
+  "summary": "The MEV bot's Balancer receiveFlashLoan callback did not check that the bot had started the loan and executed the swap route encoded in userData. The attacker flash-loaned 1 wei to the bot with a route that sent the bot's WETH through its own swap module into a Uniswap V3 swap paying the attacker, then through a fake pair.",
   "targets": [
     {
       "address": "0x00000000000a47b1298f18cf67de547bbe0d723f",
+      "code": "0x770200a211315a0688c289f437317ea117cb4d23",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x51819d7c8ed4df00e5869c63e80955b7f1d13bf2f7435bb0474a08864d73096e"
+        "kind": "config",
+        "tx": "0xb5ff6f5071dc581e082b14d107caf08b23b849d891faf4e8df165f34bb91055b",
+        "address": "0x00000000000a47b1298f18cf67de547bbe0d723f",
+        "slot": "0x4db623e5c4870b62d3fc9b4e8f893a1a77627d75ab45d9ff7e56ba19564af99b"
       }
     }
   ],
   "loss": {
-    "usd": 242359.32527680453,
+    "usd": 242359.33,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "187.745915823040341329",
-        "usd": 242359.32527680453
+        "usd": 242359.33
       }
     ]
   },
@@ -27,7 +30,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/MEVa47b_exp.sol"
   ],
   "notes": [
-    "The bot address was an operator-controlled metamorphic CREATE2 slot. After the previous runtime self-destructed, this transaction recreated the address with the 556-byte runtime later exploited. It was the last of 17 successful creations before the incident, and the runtime remained byte-identical through exploitation.",
-    "The exploit receipt shows 187.745915823040341329 WETH leaving the bot for attacker-controlled helper 0x2d0037e6e417baef5adc0d521dd127e724279bfe. A 1 WETH Balancer flash-loan transfer into the bot and its 1 WETH repayment cancel, leaving the same exact net bot depletion. No recovery is netted."
+    "The bot is a metamorphic CREATE2 proxy with its implementation baked into the runtime; the operator re-created it in 0x51819d7c. Self-destruct had cleared its module registry, and ten blocks later the operator re-registered the swap modules the exploit routed through (0x2d0037e6 moved the WETH), so that registration is the reset.",
+    "Earlier receiveFlashLoan calls since the re-creation were the bot's own flash loans (bot-initiated, entry selector 0x627dd56a); the anchor is the only external one."
   ]
 }

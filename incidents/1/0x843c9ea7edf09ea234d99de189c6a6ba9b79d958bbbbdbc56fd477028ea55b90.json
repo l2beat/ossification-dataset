@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MYX Network sMYX",
   "name": "sMYX dividend token transfer creates unbacked profit-per-share while shrinking recorded supply",
-  "summary": "The unverified 2020 sMYX dividend contract 0x40432844506f3a51c266ecabad2beb23cad27f66 raises its profit-per-share accumulator by the transferred amount divided by total supply on every transfer, without any MYX inflow. Because of a reversed subtraction helper it also lowers the recorded supply by the transferred amount, so each transfer mints a larger unbacked dividend. The attacker flash-borrowed 3 WETH, bought MYX, and took a dominant sMYX position split across two contracts. It then alternated transfers between them with withdraw() calls and exited, draining 6.68M MYX of other holders' deposits.",
+  "summary": "The 2020 sMYX dividend token raised its profit-per-share on every transfer without any MYX inflow and, through a reversed subtraction, also shrank its recorded supply. The attacker bought a dominant sMYX position split over two contracts and alternated transfers with withdraw() calls, paying out other holders' MYX deposits as dividends.",
   "targets": [
     {
       "address": "0x40432844506f3a51c266ecabad2beb23cad27f66",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 3654.87,
+    "usd": 7794.8,
     "assets": [
       {
         "token": "0x2129ff6000b95a973236020bcd2b2006b0d8e019",
         "symbol": "MYX",
-        "amount": "6675293.649539937981898074",
-        "usd": 3654.87
+        "amount": "9751451.367515761253919447",
+        "usd": 7794.8
       }
     ]
   },
@@ -27,8 +27,17 @@
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-23-mar-29-2026"
   ],
   "notes": [
-    "Direct unverified runtime with no DELEGATECALL or SELFDESTRUCT and an empty EIP-1967 slot; its transaction history contains only buy, sell, withdraw, reinvest, transfer and exit calls, so deployment is the only code or configuration change.",
-    "sMYX's net MYX depletion in the exploit transaction, net of the attacker's own buy-in. MYX's transfer tax burned 1,049,377.107 MYX and sent 1,049,377.107 MYX to the MYX contract on the way out, and the remaining 4,576,539.435 MYX were sold into the MYX/WETH pair 0xe5437565cba444f33f40215afecc92e38e2d1ba9, whose net WETH depletion of 1.692074431746939187 is the realised value of the whole drained amount (a lower bound on holders' loss). The 0.009 WETH flash-swap fee is financing and not netted.",
-    "sMYX is unverified; the transfer accounting defect is established from the exploit trace and BlockSec's decompilation-based analysis, not from source."
+    "Campaign: the only txs combining sMYX share transfers with repeated withdraw() dividends since 2020 are the anchor and eight copycats within 250 blocks (four senders); earlier transfer+withdraw txs paid normal dividends. Loss is sMYX's net MYX outflow per tx, net of each buyer's own deposit.",
+    "MYX is valued at DefiLlama's price at the anchor block: the sales took about 1% of the MYX/WETH pair, so rule 15 does not apply; MYX's own transfer tax is not a market discount. sMYX is unverified; the defect is read from the trace and BlockSec's decompilation."
+  ],
+  "campaign": [
+    "eip155:1:0xff5df77d88d8114bed984d3722ca8b397d4c866d5de077471b8597d326fc521f",
+    "eip155:1:0x17b356c92aef2c51133e25e68405d663c7bbbaa0647eed96f6d4c5029f5916e7",
+    "eip155:1:0x2631fecc9b41a12f687a20a543f2b51d148fcc7778b141d1d19e31f221f8953e",
+    "eip155:1:0xcc14aae293e109a134087da0e98fdd1bacc4148e19ec6ed87a74037d4f67d13e",
+    "eip155:1:0x9d0f01b2a336ff4675c0177883d2961476e0f9a5aa7b3a00b5aa70b91814aeb0",
+    "eip155:1:0x8a5c11d1bca3758213bf270efa17bee8ec50d6cba02918b97a4e3822640d6150",
+    "eip155:1:0xb96ab70d51d835b8cc0dab09697a883ba3f57c6f8a95da46c7eab269f088318a",
+    "eip155:1:0x7071e02d11a66b1ed3c669e8a995e3273fc07fbeb53ea361e192d50d2469b0f8"
   ]
 }
