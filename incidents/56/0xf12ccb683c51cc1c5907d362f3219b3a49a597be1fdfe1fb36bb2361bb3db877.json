@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "GDC",
   "name": "GDCToken sell burn exceeds forwarded amount, with reentrant tax-free exit",
-  "summary": "On a taxed GDC sell, swapSellAward forwards only 30% of the sold amount to the pair but _burnSellAgainstPair then burns the full nominal amount out of the pair's reserve and syncs; the sell body runs with swapping = true, and the referral reward is paid mid-body with a raw BNB call, during which transfers into the pair skip the tax branch. Helpers that deposited from their constructors (defeating the extcodesize EOA check) could buy from the pair because the token classifies pair outflows to depositors as liquidity removals. The attacker sold 221.24M GDC to collapse the GDC reserve and, inside the referral callbacks, dumped a pre-bought 1.63B GDC bag tax-free, netting 35.34 WBNB from the GDC/WBNB pair.",
+  "summary": "GDCToken's sell hook forwards 30% of a taxed sell to the pair but burns the full sold amount from the pair's reserve and syncs, and a mid-sell referral BNB callback lets transfers into the pair skip the tax. Constructor-deposit helpers bought GDC; a sell then collapsed the GDC reserve while a pre-bought bag was dumped tax-free at the inflated price.",
   "targets": [
     {
       "address": "0xe3342358e7ccbaebdd1139ad0274c53c5b3ef822",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 25081.366285352247,
+    "usd": 36264.64,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "35.33715149597698649",
-        "usd": 25081.366285352247
+        "amount": "51.09053414403413216",
+        "usd": 36264.64
       }
     ]
   },
@@ -27,7 +27,14 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/GDC_exp.sol"
   ],
   "notes": [
-    "Direct immutable GDCToken; owner parameter changes after deployment (deposit bounds, node levels) do not affect the exploit in replay, and the inviter migration batches are user-state import.",
-    "WBNB the GDC/WBNB pair 0x9cd8d04c30ed78afef7ed00ab1a2a028d476331c paid to the attacker's contracts net of the WBNB they paid into it, less the attacker's 0.2 BNB of helper deposits into GDC; it equals the 35.33715149597698649 WBNB forwarded to the attacker (Moolah flash loan at 0% fee). The pair's total WBNB drop was 38.136252429986871143; the other 2.799 WBNB are GDC's own tax swap-back routed to the company, referral and liquidity paths and are not attributed to the attacker."
+    "Direct immutable GDCToken; later owner changes (deposit bounds, node levels) and the inviter migration batches are not needed by the exploit.",
+    "Campaign: four unaffiliated copycat sells through the same pair burn within 2,400 blocks of the anchor (bots 0x5a4709ad, 0x718a46af, 0x00000000007ea156, 0x41a1d3ec); no earlier sell took more than 0.3 BNB from the pair.",
+    "Loss is the pair's gross WBNB depletion over the anchor and copycats (rule 14), so it includes the tax swap-back the token routed to company, referral and LP paths; the GDC burned from the pair is not valued separately."
+  ],
+  "campaign": [
+    "eip155:56:0x21c4ed1bec10b5c3bfc521c6bdc121c56e33c26f7ebf37d035402df6f7af2e1a",
+    "eip155:56:0xd9c641d41c837a0ad03a8fc60bb2699850f1bd44245ed2cd7b2cfe85a5f0f3e5",
+    "eip155:56:0xc29d038b3c30c9f7a62b9c19c2528ce6d4811529a2faa176db9c14ac3e88936b",
+    "eip155:56:0xe320794e04b8df5ab53aaf3dba10b549e8016cebb218c351672c54f11c60d8e3"
   ]
 }

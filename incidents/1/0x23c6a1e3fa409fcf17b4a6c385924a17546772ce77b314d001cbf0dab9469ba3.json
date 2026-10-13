@@ -2,14 +2,16 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Futureswap",
   "name": "Futureswap governance in-transaction snapshot flash-loan vote",
-  "summary": "Futureswap's Ethereum governance implementation takes the FST voting snapshot inside createProposal - it calls FST.snapshot() in the proposer's own transaction - and accepts votes weighted by balanceOfAt(voter, thatSnapshot) in the same transaction. Because ERC20Snapshot records the balance held at snapshot time, FST borrowed through a Uniswap V2 flash swap counted as voting power and was repaid in the same transaction, clearing the ~10%-of-supply pass threshold that the proposer's own 12,166.89 FST could not. The passed proposal made the governance executor grant the attacker wallet access in the Registry, and the attacker drained the Futureswap Wallet's 79.41 WETH and 315,981.63 USDC. A second actor repeated the same flash vote in January 2026 to take ownership of the executor and drained further Futureswap holdings on Ethereum and, through a cross-chain ownership message, on Avalanche.",
+  "summary": "Futureswap governance snapshots FST in createProposal and weights votes by balanceOfAt at that snapshot in the same tx, so flash-swapped FST counted as votes. The attacker passed a proposal granting itself Registry wallet access and drained the Wallet; a second actor repeated it to seize the executor and drain Ethereum and Avalanche holdings.",
   "targets": [
     {
       "address": "0x0a7f8161605acc552fa38fdb8ee7d8177c9ac22a",
       "code": "0x1b4a6853ad879b3788f22bf2d54902cb1bdf09d7",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x8fe815b21d4b3a7dc3399f47d5356eff7a93fd1d50719c464f32f66fb325600b"
+        "kind": "config",
+        "tx": "0x54c045f083cb78f1aa819d1b737d3cb6d43c5eec92c9d5ae23a1da76c3aa712b",
+        "address": "0x3659ae5f9b009603a4900891aabef828c8350df1",
+        "slot": "0xf"
       }
     }
   ],
@@ -70,6 +72,15 @@
   },
   "refs": [
     "eip155:1:0xe964c778ab1b9d78f700389734ac320c1b3b7ac9d51c6cc0642b24c476fe3aef",
+    "https://blog.verichains.io/p/governance-attack-flashloan-vote",
+    "https://www.cryptopolitan.com/hackers-hit-futureswap-again/"
+  ],
+  "notes": [
+    "Reset is the Registry's votingAddress pointer to the governance executor, set minutes after the governance deployment; the passed proposal could grant wallet access only through it. FST records snapshot balances as designed and its 2022 upgrade left snapshot()/balanceOfAt unchanged, so FST is not a target.",
+    "Campaign covers both actors: 0xcd7c839c's proposal execution and Wallet drains, and 0x81801a4e's proposal-12 flash vote, executor takeover and drains on Ethereum and Avalanche. Its proposals 10, 11 and 13 and the first actor's proposal 9 were never executed and moved nothing.",
+    "Loss counts the USDC that FSDPT was redeemed for (not FSDPT itself) and the FST/WETH pair's WETH taken by selling FST minted through the captured executor; bridge proceeds, fees and FST dilution are excluded. The governance implementation is unverified; the defect is established from traces."
+  ],
+  "campaign": [
     "eip155:1:0x761f0286f2af28cf552bf92c30cae37b137bf5f3bb9b6aa7804704e803d750bd",
     "eip155:1:0xa8c4f887b576437b1f73a535fdd4c5f8129150906ad33879eba24d73fd0ed1a6",
     "eip155:1:0x93b4c05330eafab7c49772e84a74770f3b7bdc208b542389fb0488f97bb858ad",
@@ -104,16 +115,6 @@
     "eip155:43114:0x57f6bc0a63c265ad7dba0606ab4d82b6cec832cddd2c37dbbaaae91f6fb977b6",
     "eip155:43114:0x9e351b82e2564abc66939f98d77a1d8168b8f1900ae538e7d7c263c71a3dd859",
     "eip155:43114:0x8ba1ff9faf14578518248a6d7760bb255e89ba78e0da89a94a3ca357cf86c998",
-    "eip155:43114:0x907e4ba48f32fc37c3e2962875f722a3ecce87dc724027a89151c9db940c2ec8",
-    "https://blog.verichains.io/p/governance-attack-flashloan-vote",
-    "https://www.cryptopolitan.com/hackers-hit-futureswap-again/"
-  ],
-  "notes": [
-    "The TransparentUpgradeableProxy constructor selected governance implementation 0x1b4a6853ad879b3788f22bf2d54902cb1bdf09d7 and initialized it with FST. This is the only pre-exploit Upgraded event; the next one (2026-01-08, to attacker-deployed 0x838a422125ece1bea0e6c2c540041799df1c1c1a) postdates both campaigns' governance votes.",
-    "Gross victim depletion across two merged campaigns of the same flash-vote defect. Campaign 1 (0xcd7c839c..., 2025-12-16, $550,740.77): the Futureswap Wallet 0xd1ed35a3ee043683a1833509de8f2c1a0d8777b7 lost its entire 79.405596790744422188 WETH (unwrapped and forwarded as ETH) and its entire 315,981.629985453558859560 FSDPT, redeemed for 315,981.62972 USDC paid to the attacker. Campaign 2 (0x81801a4e..., 2026-01-10, $52,969.63): Ethereum stETH and WETH from Futureswap holding contracts 0x173181d00c9af20497fe692b7ecbb62aeab801b9 and 0x9fc1c67246f8c047d72760b4d29ef7247026db9a, 0.49991228 ETH from messenger 0xb36ea7b5ec29afc1b05fe22b5420e4faae149caf, 0.524163232103428489 WETH extracted from the FST/WETH Uniswap V2 pair by selling 1e12 FST minted through the captured executor, and Avalanche USDC, WAVAX and JOE from three Futureswap contracts after a cross-chain transferOwnership. Excluded: the 31,826.29 DAI the second attacker received on Ethereum (bridge proceeds of the Avalanche USDC, not additional loss), attacker-paid messaging fees and flash-swap fees, and FST holder dilution. Reports cite about $500k (Verichains, campaign 1) and $830k (Cryptopolitan, basis unstated).",
-    "Campaign 2 holdings contracts on Ethereum and Avalanche are unverified; they are attributed to Futureswap because they honoured transfer calls from the captured executor or governance-owned proxies, not from project documentation.",
-    "The 0.524163232103428489 WETH taken from the FST/WETH pair comes from selling FST minted through the captured executor; it is LP depletion caused by the takeover rather than a Futureswap treasury balance.",
-    "The governance implementation is unverified; the defect is established from execution traces, the proposal struct, bytecode selectors and a fork replay rather than source code.",
-    "FST proxy 0x0e192d382a36de7011f795acc4391cd302003606 (implementation 0x983b8032c76b671c4a1c4cab235c5d32e184516c since 2022-02-11) is not a target: its ERC20Snapshot records balances as designed, and the 2022 upgrade from verified FsToken 0x5264847bd5b5f182254e830e2d63088d50bba90e only replaced burnFromAccount(address,uint256) with burnFst(), leaving snapshot()/balanceOfAt unchanged, so the flash-vote combination existed from the governance deployment."
+    "eip155:43114:0x907e4ba48f32fc37c3e2962875f722a3ecce87dc724027a89151c9db940c2ec8"
   ]
 }

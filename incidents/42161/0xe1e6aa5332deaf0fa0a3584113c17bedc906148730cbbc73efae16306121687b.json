@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Futureswap",
   "name": "Futureswap exchange position asset wraparound",
-  "summary": "The exchange implementation's position accounting behind changePosition(int256,int256,int256) fabricated collateral. Two helper accounts first opened longs of 0.1 and 0.324678582642240534 WETH, exactly cancelling the exchange's -0.424678582642240534 WETH net asset, a third added 0.001 WETH and a fourth opened a 68 WETH short. The first helper's stored long then read back as 324,518,553,658,423,603,970,963,131,354,509 asset units, which is 2^108 minus 3.12e18 - the unsigned image of a small negative asset - with the mirror-image negative written onto the exchange's own pool position. A follow-up changePosition whose deltaAsset was zero settled against that fabricated position and paid the exchange's entire 894,992.852305 USDC.e balance to the attacker. No parameter value makes a position balance wrap, so the defect is in the deployed implementation, not in configuration.",
+  "summary": "The Futureswap exchange implementation's changePosition accounting wrapped a small negative asset balance into a huge positive one: helper accounts opened offsetting positions so one stored long read back as about 2^108 asset units, and a follow-up changePosition settled against that fabricated collateral and paid out the exchange's USDC.e and WETH.",
   "targets": [
     {
       "address": "0xf7ca7384cc6619866749955065f17bedd3ed80bc",
@@ -34,9 +34,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-01/futureswap_exp.sol"
   ],
   "notes": [
-    "Third and last pre-exploit EIP-1967 Upgraded event on the proxy, selecting implementation 0x010659727ad7716c239e206acd3ebee0fdc9e207 in topic1. A full eth_getLogs scan of the upgrade topic from block 1 to the exploit block returns no later event, and the implementation slot still reads this address at block 419829770.",
-    "Exact gross depletion of the exchange proxy 0xf7ca7384cc6619866749955065f17bedd3ed80bc, taken as its balanceOf deltas across the single exploit block: USDC.e 197,436.748947 to 0 and WETH 99.85267275162134 to 32.278351334263576. Balance deltas already net out the 500,000 USDC.e the attacker deposited through the four position openings, so no attacker-supplied input is counted. The attacker EOA realised 394,742.852305 USDC.e, which is this depletion converted through the exchange's own Uniswap V3 hedge less the 250 USDC.e Aave flash-loan premium; the depletion figure is the victim-side measurement and is used here. Both assets are deeply liquid on Arbitrum and were not moved by the attacker's own selling, so a timestamped price is appropriate; the WETH unit price is DefiLlama's observation nearest the anchor, returned with its own sample timestamp 1768033862, and is recorded here at the anchor timestamp; DefiLlama records $395,000 for this incident, which is the attacker's realised USDC leg alone.",
-    "The exchange implementation 0x010659727ad7716c239e206acd3ebee0fdc9e207 has no verified source on Arbiscan. The classification names the executed entry point and the invariant broken, both reproduced from the anchor transaction's events and prestateTracer storage diff, but not the offending source statement.",
-    "The exchange implementation 0x010659727ad7716c239e206acd3ebee0fdc9e207 is not source-verified on Arbiscan, so the defective statement is characterised from execution, event and storage evidence rather than from source."
+    "Implementation 0x01065972 is unverified; the wraparound is characterised from the anchor's events and storage diff, not source. No exchange configuration changed after the 2021 upgrade, so the upgrade sets the age.",
+    "Loss is the exchange's balance depletion in the anchor, which already nets the 500,000 USDC.e the attacker deposited through its positions.",
+    "Later LP-token redemptions by 0x8c4d3d81 (0xe12891b3, 0x7853b8a7, 0xbff4bdd0) burned LP tokens it held and did not use changePosition, so they are not campaign txs. The Ethereum governance flash vote is a separate incident (different contract and defect)."
   ]
 }

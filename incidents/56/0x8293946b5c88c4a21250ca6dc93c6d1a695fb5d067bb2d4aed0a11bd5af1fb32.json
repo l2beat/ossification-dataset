@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "GROKD",
   "name": "GROKD deposit contract unauthenticated updatePool",
-  "summary": "The GROKD LP-staking deposit contract (UUPS proxy 0x31d3231c, implementation 0xec61196d) exposes updatePool(uint256 pid, (startBlock, endBlock, rewardPerBlock)) without any caller check: it only requires pid < pool count and overwrites the pool's reward schedule. After staking 1 LP through the ordinary deposit() one transaction earlier, the attacker contract set pool 0's rewardPerBlock from 0.1875 to 969,437,458 GROKD and called reward() in the same transaction, collecting 1,346,001.9 GROKD, almost the contract's entire GROKD reward balance, which it sold for 157.67 BNB.",
+  "summary": "The GROKD LP-staking contract's implementation exposed updatePool without a caller check, letting anyone overwrite a pool's reward schedule. After staking 1 LP, the attacker raised pool 0's rewardPerBlock to an enormous value and called reward() in the same transaction, collecting almost the contract's whole GROKD reward balance, then sold it.",
   "targets": [
     {
       "address": "0x31d3231cda62c0b7989b488ca747245676a32d81",
@@ -27,14 +27,17 @@
   "refs": [
     "https://x.com/hipalex921/status/1778482890705416323",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/GROKD_exp.sol",
+    "eip155:56:0x383dbb44a91687b2b9bbd8b6779957a198d114f24af662776f384569b84fc549"
+  ],
+  "notes": [
+    "The upgrade to 0xec61196d is the last before the exploit; later pool state changes are user deposits and withdrawals. The 1-LP stake (0x383dbb44) is setup; no other caller took more than about 100 GROKD from the contract.",
+    "GROKD has no market price and the attacker's own sells moved the pair, so the stolen GROKD is valued at the 157.67 BNB the five campaign sells paid the attacker (rule 15); the pair's gross BNB loss in those sells, 168.78 BNB, also includes the token's sell tax."
+  ],
+  "campaign": [
     "eip155:56:0xc19072a138d67056eb21972189753fb6f12b6fb7f5d78e40edc403fc5fa3e320",
     "eip155:56:0xb20a39b83a3af6439bd92122631646bdf85fea51580727db7d1b243a01b79900",
     "eip155:56:0xdc09ec2fe767b372300407413c27fd82d9c6d853f4325385985b8d3ed165505c",
     "eip155:56:0x44b75023c8c9129fe8618957ab8628587e269531e5b8a3416ee9547d35e30fb7",
     "eip155:56:0x2c736d3adaabc2473f5de74b780e66216165ec341a9df2a3f7439f5b2847871c"
-  ],
-  "notes": [
-    "upgradeToAndCall by the proxy admin emitted Upgraded(0xec61196d), the implementation executed by the exploit; it is the sixth and last pre-exploit Upgraded event, and the next one (37622860) is the post-exploit fix.",
-    "Exact victim depletion: GROKD balanceOf(deposit proxy) falls from 1346594.907093285618305585 to 592.991783799382637245 across source-1, equal to the reward() transfer of 1346001.91530948623566834 GROKD to the attack contract. GROKD has no DefiLlama quote and the attacker's own sales moved the GROKD/WBNB pair, so it is valued at realised proceeds: five sells (source-8..source-12, blocks 37622485..37622533) disposed of exactly that amount (4 x 300000 + 146001.91530948623566834 GROKD) and paid the attacker EOA 157.669066410511957157 BNB, valued at the DefiLlama WBNB quote 582.04 at the anchor (source-7). The GROKD transfer tax (3.5% of each sell, swapped by the token contract for its own recipients) is not in the attacker's proceeds, so the realised value is conservative. The attacker's 0.2 BNB LP purchase and 1 LP stake in 0x383dbb44 are attacker inputs and are not subtracted."
   ]
 }

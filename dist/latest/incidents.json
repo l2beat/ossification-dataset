@@ -1836,7 +1836,7 @@
     "tx": "0x8293946b5c88c4a21250ca6dc93c6d1a695fb5d067bb2d4aed0a11bd5af1fb32",
     "protocol": "GROKD",
     "name": "GROKD deposit contract unauthenticated updatePool",
-    "summary": "The GROKD LP-staking deposit contract (UUPS proxy 0x31d3231c, implementation 0xec61196d) exposes updatePool(uint256 pid, (startBlock, endBlock, rewardPerBlock)) without any caller check: it only requires pid < pool count and overwrites the pool's reward schedule. After staking 1 LP through the ordinary deposit() one transaction earlier, the attacker contract set pool 0's rewardPerBlock from 0.1875 to 969,437,458 GROKD and called reward() in the same transaction, collecting 1,346,001.9 GROKD, almost the contract's entire GROKD reward balance, which it sold for 157.67 BNB.",
+    "summary": "The GROKD LP-staking contract's implementation exposed updatePool without a caller check, letting anyone overwrite a pool's reward schedule. After staking 1 LP, the attacker raised pool 0's rewardPerBlock to an enormous value and called reward() in the same transaction, collecting almost the contract's whole GROKD reward balance, then sold it.",
     "lossUsd": 91769.70341357437,
     "codeAgeSeconds": 83566,
     "exploit": {
@@ -1856,7 +1856,7 @@
       "index": 84,
       "timestamp": 1712322502
     },
-    "claimsSha256": "de194e57202683567271fd78afc6c502afacaff32f0d7a9189c622cfa0aaa0a3"
+    "claimsSha256": "82999cf0644e37950f9340a5fc2c0916954852f5888fb3edbfe827152fc2d295"
   },
   {
     "id": "eip155:1:0xcdd93e37ba2991ce02d8ca07bf6563bf5cd5ae801cbbce3dd0babb22e30b2dbe",
@@ -2626,8 +2626,8 @@
     "tx": "0xf12ccb683c51cc1c5907d362f3219b3a49a597be1fdfe1fb36bb2361bb3db877",
     "protocol": "GDC",
     "name": "GDCToken sell burn exceeds forwarded amount, with reentrant tax-free exit",
-    "summary": "On a taxed GDC sell, swapSellAward forwards only 30% of the sold amount to the pair but _burnSellAgainstPair then burns the full nominal amount out of the pair's reserve and syncs; the sell body runs with swapping = true, and the referral reward is paid mid-body with a raw BNB call, during which transfers into the pair skip the tax branch. Helpers that deposited from their constructors (defeating the extcodesize EOA check) could buy from the pair because the token classifies pair outflows to depositors as liquidity removals. The attacker sold 221.24M GDC to collapse the GDC reserve and, inside the referral callbacks, dumped a pre-bought 1.63B GDC bag tax-free, netting 35.34 WBNB from the GDC/WBNB pair.",
-    "lossUsd": 25081.366285352247,
+    "summary": "GDCToken's sell hook forwards 30% of a taxed sell to the pair but burns the full sold amount from the pair's reserve and syncs, and a mid-sell referral BNB callback lets transfers into the pair skip the tax. Constructor-deposit helpers bought GDC; a sell then collapsed the GDC reserve while a pre-bought bag was dumped tax-free at the inflated price.",
+    "lossUsd": 36264.64,
     "codeAgeSeconds": 160501,
     "exploit": {
       "block": 121253214,
@@ -2645,7 +2645,7 @@
       "index": 34,
       "timestamp": 1788965262
     },
-    "claimsSha256": "b2068e44dd24e514c2a7256044a47c43d66640285e13738cb9d591f177d75a4b"
+    "claimsSha256": "a5fe1bbfe5ffacd4ec69f3aca43da2076f8de43ce72a6876ca552fd264a3a14b"
   },
   {
     "id": "eip155:56:0x59ed06fd0d44aec351bed54f57eccec65874da5a25a0aa71e348611710ec05f3",
@@ -3281,7 +3281,7 @@
     "protocol": "Four.meme",
     "name": "Four.meme launchpad liquidity migration into pre-initialized pools",
     "summary": "The launchpad's addLiquidity() migration accepted an existing PancakeSwap V3 pool without checking its initialized price, so attackers pre-created pools at manipulated sqrtPriceX96 values and swapped out the WBNB deposited during migration.",
-    "lossUsd": 227399.3010955574,
+    "lossUsd": 233333.06,
     "codeAgeSeconds": 248856,
     "exploit": {
       "block": 46552826,
@@ -3300,7 +3300,7 @@
       "index": 60,
       "timestamp": 1738991019
     },
-    "claimsSha256": "5084fc4d0337d072bd2a54d48e76c54a0fcea3de0c788a1ee8a0290d7d6abe18"
+    "claimsSha256": "92585e2670b6f4c6257cd8d8c2bc456b826a264bcc2c95953fef6b0461de1aab"
   },
   {
     "id": "eip155:10:0x23dedff08b399e148874cac20026f4a12cfa5b4824cd1af4650f2c8ef0235266",
@@ -4132,7 +4132,7 @@
     "name": "FoxLpBondsPool pre-swap spot pricing over-mints FOX",
     "summary": "stake() prices the entire USDT bond from the FOX/USDT pair before swapping half of that same deposit through the shallow pair. It then mints FOX-denominated bond and referral inventory from the stale pre-swap quote. One financed call minted endogenous FOX and sold it back into the pair, depleting its liquid USDT reserve.",
     "lossUsd": 676520.832271855,
-    "codeAgeSeconds": 490842,
+    "codeAgeSeconds": 478940,
     "exploit": {
       "block": 116169049,
       "index": 1,
@@ -4144,13 +4144,13 @@
       "codeHash": "0xbb8f67076a53831f45ab326619a8874757d4149655673035727489aa2323addc"
     },
     "reset": {
-      "kind": "upgrade",
-      "tx": "0xe6e65f70500d788191a2d34072f52233b519b5d26bc3dc6cda67953824c18b9a",
-      "block": 115078679,
-      "index": 51,
-      "timestamp": 1786345937
+      "kind": "config",
+      "tx": "0x7e514704e8560c0dbeef95827dafbe41517e9b74b3801e6231759c60a8240585",
+      "block": 115105118,
+      "index": 81,
+      "timestamp": 1786357839
     },
-    "claimsSha256": "5ef226d5aff926273359c98b2dc77d56e70b7ee730e769487b80d77ddb79a749"
+    "claimsSha256": "c4b8f3ef8108e67fe4a0f7ab458547a599bc8d1c7ead63ab47c924ba04bbbf18"
   },
   {
     "id": "eip155:56:0xdb9a13bc970b97824e082782e838bdff0b76b30d268f1d66aac507f1d43ff4ed",
@@ -7167,18 +7167,18 @@
     "claimsSha256": "2b6ddad3e67ce73e7d848e145a6303d95ff48f396ad8fc8884d99ea96d065b47"
   },
   {
-    "id": "eip155:56:0xf9b6cc083f6e0e41ce5e5dd65b294abf577ef47c7056d86315e5e53aa662251e",
+    "id": "eip155:56:0x2bb704e0d158594f7373ec6e53dc9da6c6639f269207da8dab883fc3b5bf6694",
     "chainId": 56,
-    "tx": "0xf9b6cc083f6e0e41ce5e5dd65b294abf577ef47c7056d86315e5e53aa662251e",
+    "tx": "0x2bb704e0d158594f7373ec6e53dc9da6c6639f269207da8dab883fc3b5bf6694",
     "protocol": "GDS",
-    "name": "GDS token business-logic flaw",
-    "summary": "GDS transferred liquidity-pair tokens to holders during ordinary transfers without consuming a holder-specific entitlement. The attacker split GDS among 100 helper contracts, repeatedly triggered the transfer path, and redeemed the accumulated pair tokens for USDT.",
-    "lossUsd": 37252.75005312738,
-    "codeAgeSeconds": 2567041,
+    "name": "GDS LP-mining reward paid on current LP balance",
+    "summary": "GDS paid LP-mining rewards for every epoch since an account's lastEpoch in proportion to its LP balance at claim time. The attacker registered dozens of helper contracts holding dust LP, waited for the epoch to roll over, then passed flash-funded LP through each helper so every one claimed the full backlog, and sold the GDS into the pair.",
+    "lossUsd": 189239.66,
+    "codeAgeSeconds": 2570409,
     "exploit": {
-      "block": 24449918,
-      "index": 41,
-      "timestamp": 1672701906
+      "block": 24451036,
+      "index": 75,
+      "timestamp": 1672705274
     },
     "target": {
       "address": "0xc1bb12560468fb255a8e8431bdf883cc4cb3d278",
@@ -7191,7 +7191,7 @@
       "index": 87,
       "timestamp": 1670134865
     },
-    "claimsSha256": "4265009336609e64e120da85427dee636b0179bd1c01a4ba2815a970524dc7c0"
+    "claimsSha256": "ac58f8a934bb528d656917c25991c95bc42ca78e565ddf72c9948f439de45d73"
   },
   {
     "id": "eip155:56:0xd3382252bc204fdc32a6b3add8c639850882b70a798399d6e00a542cdf769040",
@@ -13867,7 +13867,7 @@
     "tx": "0x1f00da742318ad1807b6ea8283bfe22b4a8ab0bc98fe428fbfe443746a4a7353",
     "protocol": "GMX v1",
     "name": "GMX v1 GLP reentrancy short-price manipulation",
-    "summary": "PositionManager.executeDecreaseOrder wraps order execution in enableLeverage/disableLeverage and refunds native ETH to the order account, which can be a contract; the refund re-enters mid-flow while leverage is enabled, letting the attacker open Vault shorts that drive shortsTracker.globalShortAveragePrices far below spot. GlpManager.getAum prices GLP from that reentrancy-manipulable global-short average with no manipulation resistance, so GLP minted before and redeemed after the manipulation over-withdraws the Vault's reserves.",
+    "summary": "GMX v1 PositionManager executed decrease orders with Vault leverage enabled while refunding ETH to the order account, so a contract account could re-enter and open Vault shorts outside the tracker update path, skewing the global short average. GlpManager priced GLP from that average, so GLP redeemed after the skew over-withdrew Vault reserves.",
     "lossUsd": 42213353.028577134,
     "codeAgeSeconds": 82852821,
     "exploit": {
@@ -13886,7 +13886,7 @@
       "index": 1,
       "timestamp": 1669211116
     },
-    "claimsSha256": "b89274abbb1e813621de96f3e61e7c567e9d7b46a539f7e9051d8d0c9f963743"
+    "claimsSha256": "b7f2ddcd57c8f9baedcd870a16f7bc17dac11e1f14e11e5523c0731fad419c7a"
   },
   {
     "id": "eip155:1:0x9050e28ed880a960ddaa248373c104e41fa847cde7a3774d003a71c2f74193d3",
@@ -14550,7 +14550,7 @@
     "tx": "0xe1e6aa5332deaf0fa0a3584113c17bedc906148730cbbc73efae16306121687b",
     "protocol": "Futureswap",
     "name": "Futureswap exchange position asset wraparound",
-    "summary": "The exchange implementation's position accounting behind changePosition(int256,int256,int256) fabricated collateral. Two helper accounts first opened longs of 0.1 and 0.324678582642240534 WETH, exactly cancelling the exchange's -0.424678582642240534 WETH net asset, a third added 0.001 WETH and a fourth opened a 68 WETH short. The first helper's stored long then read back as 324,518,553,658,423,603,970,963,131,354,509 asset units, which is 2^108 minus 3.12e18 - the unsigned image of a small negative asset - with the mirror-image negative written onto the exchange's own pool position. A follow-up changePosition whose deltaAsset was zero settled against that fabricated position and paid the exchange's entire 894,992.852305 USDC.e balance to the attacker. No parameter value makes a position balance wrap, so the defect is in the deployed implementation, not in configuration.",
+    "summary": "The Futureswap exchange implementation's changePosition accounting wrapped a small negative asset balance into a huge positive one: helper accounts opened offsetting positions so one stored long read back as about 2^108 asset units, and a follow-up changePosition settled against that fabricated collateral and paid out the exchange's USDC.e and WETH.",
     "lossUsd": 405995.66700973007,
     "codeAgeSeconds": 128244118,
     "exploit": {
@@ -14632,9 +14632,9 @@
     "tx": "0x23c6a1e3fa409fcf17b4a6c385924a17546772ce77b314d001cbf0dab9469ba3",
     "protocol": "Futureswap",
     "name": "Futureswap governance in-transaction snapshot flash-loan vote",
-    "summary": "Futureswap's Ethereum governance implementation takes the FST voting snapshot inside createProposal - it calls FST.snapshot() in the proposer's own transaction - and accepts votes weighted by balanceOfAt(voter, thatSnapshot) in the same transaction. Because ERC20Snapshot records the balance held at snapshot time, FST borrowed through a Uniswap V2 flash swap counted as voting power and was repaid in the same transaction, clearing the ~10%-of-supply pass threshold that the proposer's own 12,166.89 FST could not. The passed proposal made the governance executor grant the attacker wallet access in the Registry, and the attacker drained the Futureswap Wallet's 79.41 WETH and 315,981.63 USDC. A second actor repeated the same flash vote in January 2026 to take ownership of the executor and drained further Futureswap holdings on Ethereum and, through a cross-chain ownership message, on Avalanche.",
+    "summary": "Futureswap governance snapshots FST in createProposal and weights votes by balanceOfAt at that snapshot in the same tx, so flash-swapped FST counted as votes. The attacker passed a proposal granting itself Registry wallet access and drained the Wallet; a second actor repeated it to seize the executor and drain Ethereum and Avalanche holdings.",
     "lossUsd": 603710.4037453993,
-    "codeAgeSeconds": 132199527,
+    "codeAgeSeconds": 132195193,
     "exploit": {
       "block": 24012462,
       "index": 104,
@@ -14646,13 +14646,13 @@
       "codeHash": "0x76f29619b0a87bffda9c908be19c063600f9c2acb74511ed997739c0a3462f2a"
     },
     "reset": {
-      "kind": "upgrade",
-      "tx": "0x8fe815b21d4b3a7dc3399f47d5356eff7a93fd1d50719c464f32f66fb325600b",
-      "block": 13366312,
-      "index": 39,
-      "timestamp": 1633535276
+      "kind": "config",
+      "tx": "0x54c045f083cb78f1aa819d1b737d3cb6d43c5eec92c9d5ae23a1da76c3aa712b",
+      "block": 13366646,
+      "index": 120,
+      "timestamp": 1633539610
     },
-    "claimsSha256": "b4ebefeee7ead799617b77204bfa536ae5773cfe2c7aeacba0baf6d07ffd7a41"
+    "claimsSha256": "3b36214e3699d18a19578a7423aa453ab8de2d1fb60ff9c92f3b6bf8f5c00777"
   },
   {
     "id": "eip155:56:0xd65c82da03c5f5a50a6184a4e1e41df9c7c7cbf00da335b80a0277132a7d5416",
