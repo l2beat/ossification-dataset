@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Gyroscope",
   "name": "Gyroscope GYD L1 CCIP escrow arbitrary call on message receipt",
-  "summary": "GydL1CCIPEscrow._ccipReceive transfers the bridged amount and then runs recipient.functionCall(data), with recipient and data taken from the L2 bridger's message. The attacker bridged 1 wei GYD from Arbitrum naming the GYD token as recipient and approve(attacker, max) as data. On delivery the escrow approved the attacker, who pulled the escrow's 6.1M GYD. The attacker then sold 0.82M GYD into Balancer pools on Ethereum and, after bridging part of it back out, on five L2s.",
+  "summary": "GydL1CCIPEscrow._ccipReceive sends the bridged GYD to the message's recipient and then runs recipient.functionCall(data) as the escrow. The attacker bridged 1 wei GYD from Arbitrum naming the GYD token as recipient and approve(attacker, max) as data, then pulled the escrow's whole GYD balance and sold part of it on several chains.",
   "targets": [
     {
       "address": "0xa1886c8d748deb3774225593a70c79454b1da8a6",
@@ -59,12 +59,14 @@
       }
     ]
   },
-  "refs": [
-    "eip155:42161:0x51c22898a9b9f519a10b0a0be89b9d51c0248adb80cc0f89e57437e15e6c60c7",
+  "campaign": [
     "eip155:1:0xe03ac744df1910a71fedab58bc6a32ab5afe1cb4fcad94a0e5c8d7edf0d7405c"
   ],
+  "refs": [
+    "eip155:42161:0x51c22898a9b9f519a10b0a0be89b9d51c0248adb80cc0f89e57437e15e6c60c7"
+  ],
   "notes": [
-    "Last pre-exploit UUPS upgrade selected GydL1CCIPEscrow 0x79ec4a44, whose _ccipReceive makes the message-supplied arbitrary call.",
-    "The escrow lost 6,099,337.38 GYD. The USD value is the attacker's realised proceeds from 823,930.68 GYD sold on six chains, because GYD lost its market once those sales drained liquidity (DefiLlama 0.9997 before, 0.7447 after). About 5.27M unsold GYD (4.58M still on Ethereum plus unsold L2 mints) is not valued, so this is a lower bound. The 1.19M GYD re-deposited to mint L2 GYD is attacker routing of stolen funds, not a recovery."
+    "The last UUPS upgrade before the exploit selected GydL1CCIPEscrow 0x79ec4a44, whose _ccipReceive makes the message-supplied call; Arbitrum was registered as a source at the proxy's creation. The Arbitrum send transaction in refs only queued the message and runs no defective code.",
+    "The campaign's transferFrom drained the escrow under the approval the anchor granted. GYD is valued at the attacker's realised proceeds on six chains (rule 15): its sales drained GYD liquidity and about 5.27M GYD stayed unsold, so this is a lower bound. GYD re-bridged to L2s is routing, not a recovery."
   ]
 }

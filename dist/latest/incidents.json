@@ -2978,8 +2978,8 @@
     "tx": "0x452bef398e4b688ae2deb5d6842b955fd54db2b7a92d5d35361ce017eeda95d7",
     "protocol": "GYM Network",
     "name": "GymSinglePool depositFromOtherContract missing access control",
-    "summary": "GymSinglePool.depositFromOtherContract() is external with no caller authorization and its private _autoDeposit() helper never pulls tokens from anyone: it only credits userInfo/user_deposits for the caller-supplied _from address and makes the pool approve itself for the credited amount. Any address could therefore book an arbitrary GYMNET deposit it never funded and then call withdraw(), which transferFrom's the fabricated principal out of the pool's own GYMNET balance.",
-    "lossUsd": 2164822.374548077,
+    "summary": "GymSinglePool.depositFromOtherContract had no caller check and its _autoDeposit credits a staking deposit for any _from address without pulling tokens. From a series of throwaway contracts the attacker booked fake GYMNET deposits, claimed rewards on them and withdrew the fabricated principal out of the pool's real GYMNET, then sold it for BNB.",
+    "lossUsd": 2152456.05,
     "codeAgeSeconds": 204176,
     "exploit": {
       "block": 18498609,
@@ -2998,7 +2998,7 @@
       "index": 70,
       "timestamp": 1654453915
     },
-    "claimsSha256": "704af07bddc39fd8ea84a087faaf13ca50bdd49036ea85f0bfc63cfedcda8655"
+    "claimsSha256": "97673050aedd4406026aaf132e7d1c66315dfe52a607d66367027b07661537e2"
   },
   {
     "id": "eip155:1:0x9c0503217d453905bf30f16317c1ed93292d7494dfe3765aa972d7bdea108a00",
@@ -5635,7 +5635,7 @@
     "tx": "0x19671f5781acc3f5e3a869491a880aa9ee894911f4898a43254fa942d71594ed",
     "protocol": "HB (HERMES)",
     "name": "HB reward claim refills PROOF by pulling HB from the HB/USDT pair",
-    "summary": "A PROOF reward claim (a plain call to the PROOF proxy from a registered wallet) calls MAIN.swapBack, which has HB.swapBack move up to 200,000 HB straight from the HB/USDT pair to PROOF and sync() whenever PROOF's balance is short. The attacker, an EIP-7702-delegated EOA that passes PROOF's msg.sender == tx.origin check inside its own flash-loan batch, bought the pair down to 200,000 HB for a whitelisted wallet, claimed a 612.83 HB reward so the refill took the pair's last 200,000 HB, and sold dust HB into the resulting 0.002 HB reserve for the pair's USDT.",
+    "summary": "A PROOF reward claim makes HERMES.swapBack top PROOF up with up to 200,000 HB taken straight from the HB/USDT pair, then sync it. The attacker flash-borrowed USDT, bought the pair down to 200,000 HB, claimed a reward so the refill took the rest, and sold dust HB into the near-empty reserve for the pair's USDT.",
     "lossUsd": 193947.9928542177,
     "codeAgeSeconds": 1061476,
     "exploit": {
@@ -6212,7 +6212,7 @@
     "tx": "0xa5b0246f2f8d238bb56c0ddb500b04bbe0c30db650e06a41e00b6a0fff11a7e5",
     "protocol": "GYM Network",
     "name": "Gym Network LiquidityMigrationV2 migrate() flaw",
-    "summary": "LiquidityMigrationV2.migrate() removed caller-supplied GYM/WBNB LP, then reused the raw GYM quantity as the desired quantity of a different asset, GYMNET, spending the contract's own GYMNET reserve and minting the resulting GYMNET/WBNB LP directly to the caller. The attacker skewed the GYM pair and constructed LP whose withdrawal outputs matched the GYMNET pair ratio, forcing the migration to deplete 1.166 million treasury GYMNET without any value-equivalence check.",
+    "summary": "LiquidityMigrationV2.migrate removes the caller's GYM v1 LP and re-adds the received v1 token quantity as GYMNET from the migrator's own reserve, with zero slippage bounds and no value check. The attacker flash-loaned WBNB, skewed the v1 pool, minted and migrated LP so the migrator spent its GYMNET into new LP for the attacker, then removed it and sold.",
     "lossUsd": 732336.0088284722,
     "codeAgeSeconds": 1398455,
     "exploit": {
@@ -6597,7 +6597,7 @@
     "tx": "0x12fe79f1de8aed0ba947cec4dce5d33368d649903cb45a5d3e915cc459e751fc",
     "protocol": "Galaxy Fox",
     "name": "Galaxy Fox claim contract unprotected setMerkleRoot",
-    "summary": "The unverified GFOX airdrop/claim contract's setMerkleRoot(bytes32) writes the Merkle root to storage slot 3 without any caller check. The attacker set a root equal to its own leaf and called claim with an empty proof, withdrawing 1.34B GFOX and selling it into the GFOX/WETH Uniswap V2 pair; three copycat transactions by two other actors repeated the same calls within about two hours and emptied the contract.",
+    "summary": "The unverified GFOX claim contract's setMerkleRoot had no caller check. The attacker set a root equal to its own leaf, claimed nearly the whole GFOX balance with an empty proof and sold it into the GFOX/WETH Uniswap V2 pair; two other actors repeated the same calls on the remainder within two hours.",
     "lossUsd": 356689.76,
     "codeAgeSeconds": 1811784,
     "exploit": {
@@ -6616,7 +6616,7 @@
       "index": 114,
       "timestamp": 1713487451
     },
-    "claimsSha256": "4880905dec9fa70788f7450f7c4645aa292805023ed2d751d850b7ea39dfa34d"
+    "claimsSha256": "b5ac9da3cd383daf5e61c8cab376f42e3c1cd65c35be397e0642478aa664f282"
   },
   {
     "id": "eip155:42161:0xcb1a2f5eeb1a767ea5ccbc3665351fadc1af135d12a38c504f8f6eb997e9e603",
@@ -7335,8 +7335,8 @@
     "tx": "0x9a07c203519ff8ad087fd5665779bc1984c01403f500f66c61fa75ec2b29a90a",
     "protocol": "Goledo Finance",
     "name": "Goledo PPI collateral priced from Swappi spot reserves",
-    "summary": "Goledo (Aave v2 fork) listed PPI as 65%-LTV collateral priced by a custom feed that multiplies Pyth CFX/USD by the instantaneous WCFX/PPI reserve ratio of a Swappi pair. A flash-swapped 11M WCFX buy inflated the PPI oracle price 71x inside one transaction, letting 8.67M deposited PPI borrow the pool's xCFX, WCFX, NUT, WBTC, ETH, USDT, USDC and ABC liquidity.",
-    "lossUsd": 3112177.7087677466,
+    "summary": "Goledo, an Aave V2 fork, accepted PPI as 65%-LTV collateral priced by a feed that multiplies Pyth CFX/USD by the live WCFX/PPI reserve ratio of a Swappi pair. The attacker flash-swapped WCFX, bought PPI to inflate that price, deposited the PPI and borrowed every other market's liquidity, then swapped the loot back to CFX.",
+    "lossUsd": 1883857.68,
     "codeAgeSeconds": 2646909,
     "exploit": {
       "block": 88464095,
@@ -12825,7 +12825,7 @@
     "tx": "0x45739a92c2d99f172a74d8028736a2fd1b507ac6fc134680cd1dccd3c572c600",
     "protocol": "Gyroscope",
     "name": "Gyroscope GYD L1 CCIP escrow arbitrary call on message receipt",
-    "summary": "GydL1CCIPEscrow._ccipReceive transfers the bridged amount and then runs recipient.functionCall(data), with recipient and data taken from the L2 bridger's message. The attacker bridged 1 wei GYD from Arbitrum naming the GYD token as recipient and approve(attacker, max) as data. On delivery the escrow approved the attacker, who pulled the escrow's 6.1M GYD. The attacker then sold 0.82M GYD into Balancer pools on Ethereum and, after bridging part of it back out, on five L2s.",
+    "summary": "GydL1CCIPEscrow._ccipReceive sends the bridged GYD to the message's recipient and then runs recipient.functionCall(data) as the escrow. The attacker bridged 1 wei GYD from Arbitrum naming the GYD token as recipient and approve(attacker, max) as data, then pulled the escrow's whole GYD balance and sold part of it on several chains.",
     "lossUsd": 815060.3388724057,
     "codeAgeSeconds": 43124352,
     "exploit": {
@@ -12845,7 +12845,7 @@
       "index": 45,
       "timestamp": 1726680527
     },
-    "claimsSha256": "2817808b7617be7e6ffc3330e721ba5649a6c38ee45bbe2c63c7b28116cdcc4f"
+    "claimsSha256": "88a503fae9f0d89c20bd4b798e3eb8fe9fd176edf1d2f77acaee371cbd6d47d7"
   },
   {
     "id": "eip155:1:0x3cecc3f347edff1d27a0c929f2e7a4c04522afb3a74e24db94684cb6b51b1d65",
@@ -14965,9 +14965,9 @@
     "tx": "0x86efdf5b45ee833e696be15bddf0b60f6c449f73a45e39edd4838d9ece316223",
     "protocol": "Goose Finance",
     "name": "Goose Finance StrategyGooseEgg prices deposits before folding harvested EGG into wantLockedTotal",
-    "summary": "StrategyGooseEgg._deposit mints shares as amount * sharesTotal / wantLockedTotal and only then calls _farm(), which adds the strategy's whole idle EGG balance to wantLockedTotal. _withdraw calls MasterChef.withdraw, which harvests pending EGG rewards into the strategy as idle EGG. With flash-swapped EGG, the attacker ran two VaultChef deposit/withdraw rounds: each withdraw harvested rewards, and the next deposit bought shares at the stale denominator before those rewards were counted. It then sold 2.66M extracted EGG for 13.04 WBNB.",
-    "lossUsd": 8432.83,
-    "codeAgeSeconds": 154830618,
+    "summary": "StrategyGooseEgg._deposit mints shares against wantLockedTotal before _farm() adds the strategy's whole idle EGG balance, including rewards harvested on earlier withdrawals. With flash-swapped EGG the attacker ran VaultChef deposit/withdraw rounds that captured the idle rewards and sold the surplus; 22 later transactions by others repeated it.",
+    "lossUsd": 12154.48,
+    "codeAgeSeconds": 154830606,
     "exploit": {
       "block": 86181136,
       "index": 80,
@@ -14978,13 +14978,13 @@
       "codeHash": "0x3c5bc90fcb368aa33e424f1c579a7675c4ba26dddea0b29fefa67e7d0932be6d"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x4cf6c1f474569342b4b18ffe02675c988359fb77830dff3dc6b60fa092a05d91",
-      "block": 6589644,
-      "index": 86,
-      "timestamp": 1618497133
+      "kind": "config",
+      "tx": "0x30f9e0bc5ad84eed646ec8ce21897a2dd843e22462a970454014b69cd57abd44",
+      "block": 6589648,
+      "index": 83,
+      "timestamp": 1618497145
     },
-    "claimsSha256": "26ea606f136e93fae6936171b3cf8a6593ab2f24cc6ef9622d27eaf0cc6b1fab"
+    "claimsSha256": "663164e130ff5242fa2fee0026b7a485044d0b920fe7eedfdccc8a584eccd8f3"
   },
   {
     "id": "eip155:1:0xb2bb14d61e95e1e3255770a2f1cc68d69052ae4b63adbe9987c8021ccaed14da",
@@ -15074,9 +15074,9 @@
     "tx": "0x3a8bde0a17e04f6a119ae2f28e6b56ac736feb70761e2fa97cac25f816f751c2",
     "protocol": "Goldfinch",
     "name": "Goldfinch legacy Pool unauthenticated collectInterestRepayment",
-    "summary": "Pool.collectInterestRepayment(address from, uint amount) is declared `external whenNotPaused` with no caller restriction, so any address can make the deprecated 2020 Goldfinch Pool call USDC.transferFrom(from, pool, amount) against any account that still holds a standing approval to the Pool, and then credit the pulled amount to sharePrice as `sharePrice += amount * mantissa / totalShares`. The Pool held only 28.05 shares, so the attacker deposited 1,000 USDC to own 99.997% of totalShares, pulled the entire 340,567.004224 USDC USDC balance of legacy depositor 0x526c7665c5dd9cd7102c6d42d407a0d9dc1e431d into the Pool through that function, and redeemed the inflated share price with 37 withdraw(uint256) calls capped by the 10,000 USDC transactionLimit.",
-    "lossUsd": 340567.004224,
-    "codeAgeSeconds": 163658489,
+    "summary": "The deprecated Goldfinch V1 Pool's collectInterestRepayment(from, amount) had no caller check: it pulls USDC from any address that approved the pool and adds it to the share price. The attacker flash-borrowed USDC, bought nearly all pool shares, pulled a stale approver's USDC in and withdrew the inflated shares; a copycat took the rest.",
+    "lossUsd": 350064.69,
+    "codeAgeSeconds": 163658300,
     "exploit": {
       "block": 23924517,
       "index": 344,
@@ -15088,13 +15088,13 @@
       "codeHash": "0xbaf4e3c66f0ef4451be9a96769b71ad7500e2ab94fcee4a658cb70d4f0d27717"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x406f2ebd8e70c2c11e5f3022b311f2d477edbe1a0906e194b0dafe07fcf7890a",
-      "block": 10929405,
-      "index": 95,
-      "timestamp": 1601004714
+      "kind": "config",
+      "tx": "0xb16bd39e08c5f36bc9a64ab444756d07b9829ba9f9e0d83a3566cbcfdaa32303",
+      "block": 10929420,
+      "index": 36,
+      "timestamp": 1601004903
     },
-    "claimsSha256": "9bc766e124c0d4293f659efb4a62267c7c03011cbb480ecad6f36060600584ab"
+    "claimsSha256": "5c13e24179f574e9bad4b20a542e1e9305e46f1f664cf91e073c9e082ad4fc64"
   },
   {
     "id": "eip155:56:0xb107f19af1a8ff90d19cbb40d935f8be5d79f5fb9b497824e4ed28b9e7555fe9",

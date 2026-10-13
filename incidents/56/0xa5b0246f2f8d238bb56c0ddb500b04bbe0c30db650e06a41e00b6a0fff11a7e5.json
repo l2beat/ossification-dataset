@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "GYM Network",
   "name": "Gym Network LiquidityMigrationV2 migrate() flaw",
-  "summary": "LiquidityMigrationV2.migrate() removed caller-supplied GYM/WBNB LP, then reused the raw GYM quantity as the desired quantity of a different asset, GYMNET, spending the contract's own GYMNET reserve and minting the resulting GYMNET/WBNB LP directly to the caller. The attacker skewed the GYM pair and constructed LP whose withdrawal outputs matched the GYMNET pair ratio, forcing the migration to deplete 1.166 million treasury GYMNET without any value-equivalence check.",
+  "summary": "LiquidityMigrationV2.migrate removes the caller's GYM v1 LP and re-adds the received v1 token quantity as GYMNET from the migrator's own reserve, with zero slippage bounds and no value check. The attacker flash-loaned WBNB, skewed the v1 pool, minted and migrated LP so the migrator spent its GYMNET into new LP for the attacker, then removed it and sold.",
   "targets": [
     {
       "address": "0x1befe6f3f0e8edd2d4d15cae97baee01e51ea4a4",
@@ -30,7 +30,7 @@
     "eip155:56:0x8f79a7119292ecd0b5b2fa108b0830ead3d2a7098e649cd428f922ee16422584"
   ],
   "notes": [
-    "Direct LiquidityMigrationV2 creation by 0x86dfe4dd65c962cfce0ed5b60fcf90840b26f7c2. Archival code is absent at block 16336054 and the 2,399-byte runtime hashes to 0x7cb3f60f9ac8a23f133a2764e15f1c0e0d413ee248b7cf3a53732617a7965d11 in the deployment block and immediately before and during the exploit. The verified contract is not a proxy, contains no DELEGATECALL, and has zero EIP-1967 implementation and beacon slots, so deployment is its only executable-code change.",
-    "Exact pre-recovery victim depletion is the LiquidityMigrationV2 GYMNET balance change across the exploit: 1,450,998.605164940945782286 before to 284,261.031699608471293657 after, a loss of 1,166,737.573465332474488629 GYMNET also emitted from the victim in Transfer log 49. The 1,399,999.999999999999999838 GYM left in the migration contract was attacker-supplied campaign input and does not offset gross victim depletion. No earlier transaction in block 16798807 touched the GYMNET/WBNB pair, so its block-16798806 reserves are the exact pre-exploit price state: 7,677,163.643402146827976102 GYMNET and 11,387.586657604004961399 WBNB. Their ratio values the depleted GYMNET at about 1,730.629414932106 WBNB; DefiLlama's incident-time BNB price of $423.1616558171135 gives $732,336.0088284722. The seed row's $561,595 figure instead values the attacker's lower 1,327.140409926955785497 WBNB retained proceeds after repayment and token-transfer fees, so it is not the preferred gross victim-loss boundary."
+    "The migrator is an immutable direct deployment. Its tax exemption on GYMNET (set two minutes later) only spared the migrator's transfer from the sell tax; the exploit works without it, so it changes the loss size, not the reset.",
+    "GYMNET is valued at the pre-exploit GYMNET/WBNB pair ratio: the attacker's sale moved about 15% of the pair's reserve, a slippage the market absorbed, so rule 14's market price applies rather than the lower realised 1,327 BNB. The GYM v1 left in the migrator does not offset."
   ]
 }

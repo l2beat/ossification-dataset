@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "HB (HERMES)",
   "name": "HB reward claim refills PROOF by pulling HB from the HB/USDT pair",
-  "summary": "A PROOF reward claim (a plain call to the PROOF proxy from a registered wallet) calls MAIN.swapBack, which has HB.swapBack move up to 200,000 HB straight from the HB/USDT pair to PROOF and sync() whenever PROOF's balance is short. The attacker, an EIP-7702-delegated EOA that passes PROOF's msg.sender == tx.origin check inside its own flash-loan batch, bought the pair down to 200,000 HB for a whitelisted wallet, claimed a 612.83 HB reward so the refill took the pair's last 200,000 HB, and sold dust HB into the resulting 0.002 HB reserve for the pair's USDT.",
+  "summary": "A PROOF reward claim makes HERMES.swapBack top PROOF up with up to 200,000 HB taken straight from the HB/USDT pair, then sync it. The attacker flash-borrowed USDT, bought the pair down to 200,000 HB, claimed a reward so the refill took the rest, and sold dust HB into the near-empty reserve for the pair's USDT.",
   "targets": [
     {
       "address": "0x5b41af6a9b314ef4d92f6809087740a83d20570a",
@@ -37,9 +37,8 @@
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-6-apr-12-2026"
   ],
   "notes": [
-    "Owner upgradeTo selected the PROOF implementation whose wallet-triggered _claimReward sources rewards through MAIN.swapBack from the pair; it is the last Upgraded event before the exploit and the latest code activation among the executed HB, PROOF and MAIN artifacts.",
-    "Owner upgradeTo selected the HERMES implementation whose swapBack moves HB from the pair to PROOF and syncs; last Upgraded event before the exploit.",
-    "Exact USDT depletion of the HB/USDT pair 0x67a63609cf1c317196724666cc39b2da63545a96 in the single exploit transaction. The 72.1M USDT buy and every later USDT deposit into the pair came from the Moolah WBNB flash loan and Venus borrows, all repaid within the transaction. The 73.6M HB bought for the whitelisted wallet and the 200,000 HB moved to PROOF are the same liquidity and are not added. About 1,510 USDT left in the pair was sold out by various holders over the next 14,000 blocks and is not counted.",
-    "Not the knot: this HB implementation was activated at 88802075, 16 blocks before the PROOF implementation that completed the claim-triggered pull."
+    "PROOF's implementation, activated 16 blocks after HERMES's, completes the claim-triggered pull, so its upgrade sets the age; HERMES's upgrade installed swapBack's pull from the pair and sync. MAIN's last upgrade is earlier.",
+    "Loss is the pair's USDT depletion in the one exploit transaction; the 72.1M USDT buy and later deposits into the pair came from the Moolah flash loan and Venus borrows repaid in the transaction. The HB bought out and moved to PROOF is the same liquidity and is not added.",
+    "The attacker's registration and staking transactions before the anchor are setup; no other transaction drained the pair's USDT."
   ]
 }

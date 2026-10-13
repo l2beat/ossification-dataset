@@ -2,36 +2,40 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Goldfinch",
   "name": "Goldfinch legacy Pool unauthenticated collectInterestRepayment",
-  "summary": "Pool.collectInterestRepayment(address from, uint amount) is declared `external whenNotPaused` with no caller restriction, so any address can make the deprecated 2020 Goldfinch Pool call USDC.transferFrom(from, pool, amount) against any account that still holds a standing approval to the Pool, and then credit the pulled amount to sharePrice as `sharePrice += amount * mantissa / totalShares`. The Pool held only 28.05 shares, so the attacker deposited 1,000 USDC to own 99.997% of totalShares, pulled the entire 340,567.004224 USDC USDC balance of legacy depositor 0x526c7665c5dd9cd7102c6d42d407a0d9dc1e431d into the Pool through that function, and redeemed the inflated share price with 37 withdraw(uint256) calls capped by the 10,000 USDC transactionLimit.",
+  "summary": "The deprecated Goldfinch V1 Pool's collectInterestRepayment(from, amount) had no caller check: it pulls USDC from any address that approved the pool and adds it to the share price. The attacker flash-borrowed USDC, bought nearly all pool shares, pulled a stale approver's USDC in and withdrew the inflated shares; a copycat took the rest.",
   "targets": [
     {
       "address": "0x0689aa2234d06ac0d04cdac874331d287afa4b43",
       "code": "0x7dbe30fde1eca6856806ff14fc456ec6791c73fe",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x406f2ebd8e70c2c11e5f3022b311f2d477edbe1a0906e194b0dafe07fcf7890a"
+        "kind": "config",
+        "tx": "0xb16bd39e08c5f36bc9a64ab444756d07b9829ba9f9e0d83a3566cbcfdaa32303",
+        "address": "0x0689aa2234d06ac0d04cdac874331d287afa4b43",
+        "slot": "0xcf"
       }
     }
   ],
   "loss": {
-    "usd": 340567.004224,
+    "usd": 350064.69,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "340567.004224",
-        "usd": 340567.004224
+        "amount": "350137.004224",
+        "usd": 350064.69
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0xd462ce892166e041f303af47340ae50d22b3cadc55be65cecbfcab8f5d48e149"
+  ],
   "refs": [
     "https://x.com/PeckShieldAlert/status/1995774198564966434",
     "https://www.cryptopolitan.com/goldfinch-finance-user-deltatiger-eth-hacked/",
     "eip155:1:0xe2c2d3b16d493431ae6312e3a7be724b458e4444cebe8860d0370e36b0e49389"
   ],
   "notes": [
-    "The TransparentProxy installed implementation 0x7dbe30fde1eca6856806ff14fc456ec6791c73fe in its creation transaction (ProxyImplementationUpdated 0x0 -> 0x7dbe30fd, log index 256) and never pointed anywhere else before the exploit: its only two later ProxyImplementationUpdated events, at blocks 10948041 and 10953821, both carry previousImplementation == newImplementation == 0x7dbe30fd.",
-    "Exact pre-recovery depletion of the single victim: the ERC-20 Transfer netting of the anchor receipt shows 0x526c7665c5dd9cd7102c6d42d407a0d9dc1e431d at -340,567.004224 USDC, which is the amount argument of the one collectInterestRepayment call. Of that, 330,999.000000 USDC reached the attacker EOA, 9,567.004224 USDC stayed stranded in the deprecated Pool because the attacker's shares ran out, and 1.000000 USDC paid the Uniswap V3 flash fee. The attacker's own 1,000 USDC deposit was flash-borrowed from the USDC/WETH pool 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640 and repaid inside the transaction, so it is not victim loss; the flash fee is not netted off gross depletion. Valued at par.",
-    "The proxy signals implementation changes with a custom ProxyImplementationUpdated event rather than EIP-1967 Upgraded, but it does keep the implementation in the EIP-1967 slot."
+    "Reset is setTotalFundsLimit raising the pool cap from 0, the last setting the exploit needed: deposit() requires poolWithinLimit, so no shares could be bought before it. The two later ProxyImplementationUpdated events re-set the same implementation and change no code.",
+    "Loss is gross per transaction (rule 14): the approver's USDC in the anchor plus the USDC the copycat took from the pool, most of which the anchor had stranded there. The 1,000 and 10,000 USDC deposits were flash-borrowed and withdrawn in the same transactions."
   ]
 }

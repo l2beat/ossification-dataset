@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Galaxy Fox",
   "name": "Galaxy Fox claim contract unprotected setMerkleRoot",
-  "summary": "The unverified GFOX airdrop/claim contract's setMerkleRoot(bytes32) writes the Merkle root to storage slot 3 without any caller check. The attacker set a root equal to its own leaf and called claim with an empty proof, withdrawing 1.34B GFOX and selling it into the GFOX/WETH Uniswap V2 pair; three copycat transactions by two other actors repeated the same calls within about two hours and emptied the contract.",
+  "summary": "The unverified GFOX claim contract's setMerkleRoot had no caller check. The attacker set a root equal to its own leaf, claimed nearly the whole GFOX balance with an empty proof and sold it into the GFOX/WETH Uniswap V2 pair; two other actors repeated the same calls on the remainder within two hours.",
   "targets": [
     {
       "address": "0x11a4a5733237082a6c08772927ce0a2b5f8a86b6",
@@ -23,16 +23,18 @@
       }
     ]
   },
-  "refs": [
-    "https://twitter.com/SlowMist_Team/status/1788757935017079258",
+  "campaign": [
     "eip155:1:0x78774eaee879a966f6f32c767fbd3df1f0ccded68b585f6fda47905c7cc5b011",
     "eip155:1:0x1f9677ef33eee8f344208ae18df4aac79f253def1b34c696f79b7837afb5061e",
-    "eip155:1:0x6a3d91fbd0a865a56c4efa7c540f28adcf7b569df44c9d50e1f86ab51b177405",
+    "eip155:1:0x6a3d91fbd0a865a56c4efa7c540f28adcf7b569df44c9d50e1f86ab51b177405"
+  ],
+  "refs": [
+    "https://twitter.com/SlowMist_Team/status/1788757935017079258",
     "eip155:1:0xfbccd51ed0e51e8f0e9b36396d62dc7e003230972bb9fed6872c5d1bcdf0a958",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/GFOX_exp.sol"
   ],
   "notes": [
-    "Immutable claim runtime has an unguarded setMerkleRoot; owner root updates and funding do not introduce the missing check.",
-    "The claim contract's entire GFOX balance (1,780,453,099.185 GFOX) was taken in four transactions: the anchor (1,335,339,824.38875), copycat bot 0xcc3a5dc003b3a58621745a39f706ef9646d5c481 in source-6 and source-7 (333,834,956.0971875 and 83,458,739.024296875) and 0x14b362d2e38250604f21a334d71c13e2ed478467 in source-8 (27,819,579.674765625, sold in source-9). GFOX is valued by realised proceeds: the GFOX/WETH pair 0x92ee0df7f6b0674cabc9bfc64873786fa7be82d0 paid out 108.744009594558929771 + 5.081096386975926775 + 1.344190519511096579 + 2.329061044327335573 = 117.498357545373288698 WETH for the dumped tokens, valued at the WETH quote at the anchor time (3035.7 USD; all legs within 2h16m). Token transfer tax taken from the stolen GFOX is not counted, so this is a lower bound."
+    "The claim contract is immutable; the owner's periodic setMerkleRoot calls and claim start time are live values the attacker overwrote or did not need, so the deployment is the reset. All other setMerkleRoot callers before the anchor were the owner.",
+    "GFOX is valued at the WETH each claimer realised from the GFOX/WETH pair (rule 15; the first dump crashed the price); the last copycat sold in the referenced follow-up transaction."
   ]
 }

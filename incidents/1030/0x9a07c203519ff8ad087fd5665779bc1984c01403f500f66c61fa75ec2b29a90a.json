@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Goledo Finance",
   "name": "Goledo PPI collateral priced from Swappi spot reserves",
-  "summary": "Goledo (Aave v2 fork) listed PPI as 65%-LTV collateral priced by a custom feed that multiplies Pyth CFX/USD by the instantaneous WCFX/PPI reserve ratio of a Swappi pair. A flash-swapped 11M WCFX buy inflated the PPI oracle price 71x inside one transaction, letting 8.67M deposited PPI borrow the pool's xCFX, WCFX, NUT, WBTC, ETH, USDT, USDC and ABC liquidity.",
+  "summary": "Goledo, an Aave V2 fork, accepted PPI as 65%-LTV collateral priced by a feed that multiplies Pyth CFX/USD by the live WCFX/PPI reserve ratio of a Swappi pair. The attacker flash-swapped WCFX, bought PPI to inflate that price, deposited the PPI and borrowed every other market's liquidity, then swapped the loot back to CFX.",
   "targets": [
     {
       "address": "0x9aeba63d77d25c95dadd057db74741517862f360",
@@ -32,55 +32,55 @@
     }
   ],
   "loss": {
-    "usd": 3112177.7087677466,
+    "usd": 1883857.68,
     "assets": [
       {
         "token": "0x889138644274a7dc602f25a7e7d53ff40e6d0091",
         "symbol": "xCFX",
         "amount": "9560202.822366275844629855",
-        "usd": 2295270.85481063
+        "usd": 1165581.63
       },
       {
         "token": "0x14b2d3bc65e74dae1030eafd8ac30c533c976a9b",
         "symbol": "WCFX",
         "amount": "1706617.500505458673870161",
-        "usd": 365388.5134757192
-      },
-      {
-        "token": "0xfe197e7968807b311d476915db585831b43a7e3b",
-        "symbol": "NUT",
-        "amount": "11181.476535310540113911",
-        "usd": 112485.65394522404
-      },
-      {
-        "token": "0x1f545487c62e5acfea45dcadd9c627361d1616d8",
-        "symbol": "WBTC",
-        "amount": "1.615997534227385163",
-        "usd": 67871.0555603302
-      },
-      {
-        "token": "0xa47f43de2f9623acb395ca4905746496d2014d57",
-        "symbol": "ETH",
-        "amount": "15.343500403720339463",
-        "usd": 34743.668879180295
+        "usd": 365388.51
       },
       {
         "token": "0xfe97e85d13abd9c1c33384e796f10b73905637ce",
         "symbol": "USDT",
         "amount": "99229.658254937175137146",
-        "usd": 99232.63527976161
+        "usd": 99232.64
       },
       {
-        "token": "0x6963efed0ab40f6c3d7bda44a05dcf1437c44372",
-        "symbol": "USDC",
-        "amount": "13942.680270837176642585",
-        "usd": 13942.680270837176
+        "token": "0xfe197e7968807b311d476915db585831b43a7e3b",
+        "symbol": "NUT",
+        "amount": "11181.476535310540113911",
+        "usd": 73921.72
+      },
+      {
+        "token": "0x1f545487c62e5acfea45dcadd9c627361d1616d8",
+        "symbol": "WBTC",
+        "amount": "1.615997534227385163",
+        "usd": 67871.06
       },
       {
         "token": "0x905f2202003453006eaf975699545f2e909079b8",
         "symbol": "ABC",
         "amount": "67715.739860474718672691",
-        "usd": 123242.64654606397
+        "usd": 63175.77
+      },
+      {
+        "token": "0xa47f43de2f9623acb395ca4905746496d2014d57",
+        "symbol": "ETH",
+        "amount": "15.343500403720339463",
+        "usd": 34743.67
+      },
+      {
+        "token": "0x6963efed0ab40f6c3d7bda44a05dcf1437c44372",
+        "symbol": "USDC",
+        "amount": "13942.680270837176642585",
+        "usd": 13942.68
       }
     ]
   },
@@ -90,11 +90,8 @@
     "eip155:1030:0x23a5a68ebbbc94b9813003bc4965ed99d4c7ed7e887b4a229e18006a781da33e"
   ],
   "notes": [
-    "LendingPoolConfigurator.configureReserveAsCollateral(PPI, 6500, 7500, 11000) raised PPI's LTV from 0 to 65%, first letting PPI priced by the spot-reserve feed back borrows. getConfiguration(PPI) across block 86347750 moves from the post-listing word (LTV 0) to LTV 6500/threshold 7500/bonus 11000; the same block's enableBorrowingOnReserve(PPI) (idx 33) and setReserveFactor(PPI) (idx 44) also write this word but are not exercised by the exploit. No later PPI configuration or implementation change precedes the exploit.",
-    "Immutable PPI price feed whose fetchPrice returns Pyth CFX/USD times the live Swappi WCFX/PPI reserve ratio; its pair, token, Pyth and price-id storage are set only in the constructor.",
-    "AaveOracle.setAssetSources([PPI],[0xd79d5c49...]) assigned the spot-reserve feed as PPI's price source; getSourceOfAsset(PPI) moves from zero to the feed across block 86347720. It is the only PPI source assignment before the exploit.",
-    "Exact reserve outflows from the single exploit transaction. A 6,000,000 xCFX deposit made by the attack contract from its own first borrow (onBehalfOf 0xfa6b93b1bfef8bd325d88ffc61d02627505fea86) and re-borrowed in the same transaction is excluded as attacker-supplied input; the attacker's 8.67M PPI collateral left in the pool is not netted. CEX freezes of proceeds do not reduce gross loss. Prices are pre-exploit DefiLlama quotes, consistent with Goledo's own oracle at block 88464094.",
-    "Not the knot: the feed became exploitable collateral pricing only after the later AaveOracle source assignment (block 86347720) and PPI LTV activation (block 86347750, target-1).",
-    "Not the knot: PPI LTV activation at block 86347750 (target-1) is the later causal reset."
+    "The latest change the exploit needed is configureReserveAsCollateral giving PPI a 65% LTV; the feed deployment and AaveOracle source assignment precede it, and the same block's enableBorrowing and reserve-factor writes are not used. Markets listed later only change the loss size.",
+    "xCFX, ABC and NUT are valued at the CFX their sale returned (rule 15): the attacker dumped 52-96% of each Swappi pool's reserve. The other assets use DefiLlama prices. The 6M xCFX deposited and re-borrowed in the same transaction is excluded; the PPI collateral left behind is not netted.",
+    "Conflux eSpace's public RPC serves trace_transaction and historical state but not trace_filter or prestate traces; no earlier or later PPI deposit of comparable size exists, so the campaign is empty."
   ]
 }
