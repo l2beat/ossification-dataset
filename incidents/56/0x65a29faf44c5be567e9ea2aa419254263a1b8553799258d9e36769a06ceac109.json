@@ -2,13 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "OPC",
   "name": "OPC trading helper burns sold tokens out of its pair",
-  "summary": "Every OPC trade goes through the unverified helper 0xa642e668. On a sell (db3f7000 with flag 1), it swaps 95% of the tokens into the OPC/USDT pair, burns 90% of the sold amount from the pair with burnFrom, and calls sync(), so the pair's OPC reserve barely grows while USDT flows out. Its e3bb6e96 liquidity removal also pays the caller the helper's entire OPC balance. The attacker flash-borrowed 10M USDT and bought OPC with the helper as recipient, then swept it out with e3bb6e96. It made 100 helper sells, each burning OPC from the pair, and dumped the rest, taking 112,750 USDT.",
+  "summary": "The unverified OPC helper 0xa642e668 burns 90% of every sold amount from the OPC/USDT pair (burnFrom, sync), so sells drain USDT while the OPC reserve barely grows, and its e3bb6e96 liquidity removal pays the caller the helper's whole balance. The attacker bought OPC with the helper as recipient, swept it out, made 100 helper sells and dumped the rest.",
   "targets": [
     {
       "address": "0xa642e66873111deb830739b90c03fd6981a34332",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xa134092661c9ab193de21c7639c8a510e77a9d8feec8607a8cda78bc518aafcf"
+        "kind": "config",
+        "tx": "0x7889d9a5dcc8b062474263eb735ab41fbf622c564e828ddc8b66ab5f98a27e7f",
+        "address": "0xa642e66873111deb830739b90c03fd6981a34332",
+        "slot": "0xd"
       }
     }
   ],
@@ -27,8 +29,8 @@
     "eip155:56:0x13431dcc646978c3c80931e14d38093a5b3a7b4cecc5c1fad6ce518aab9fde7b"
   ],
   "notes": [
-    "Direct, non-upgradeable helper runtime containing the sell-path pair burn and the balance-sweeping liquidity removal. The owner's four setup calls before the first trade only wire the pair and open trading; they set no erroneous value.",
-    "Exact USDT depletion of the OPC/USDT pair 0xa05548891a30bc92b767ca86817a1cd06288bb9a in the exploit transaction. The attacker's 10M USDT flash liquidity is circular and excluded. The deployer's later owner withdrawal of the remaining 15433 USDT (source-6) is a separate privileged action and is not counted.",
+    "Reset is the owner's 0x43abdb3e(true) on the helper (slot 0xd): replaying the exploit with it at 0 reverts, because addLiquidity then mints LP to the owner and sweeps nothing back, so the attacker gets no LP for the balance-sweeping removal. It is an LP custody rule set after deployment, setPair and setBurnerContract.",
+    "Exact USDT depletion of the OPC/USDT pair 0xa05548891a30bc92b767ca86817a1cd06288bb9a in the exploit transaction. The attacker's 10M USDT flash liquidity is circular and excluded. The deployer's later owner withdrawal of the remaining 15433 USDT is a separate privileged action and is not counted.",
     "Helper, token and pair have no verified source. The pair-burn and balance-sweep logic are established from the exploit trace (call arguments and amounts), not from source text."
   ]
 }

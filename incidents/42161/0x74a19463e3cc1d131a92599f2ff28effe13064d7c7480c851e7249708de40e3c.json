@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Numa",
   "name": "Numa donation-manipulable vault price used as lending oracle",
-  "summary": "NumaVault prices NUMA from its raw rETH balanceOf divided by circulating supply, and NumaPriceOracleNew feeds that spot price to the Numa lending comptroller for both collateral and debt. Within one flash-loaned transaction the attacker built a looped NUMA short against rETH collateral, sold the borrowed NUMA into the vault, donated 150 rETH to the vault to lift the oracle NUMA debt price from 116.94e12 to 161.23e12 wei, then liquidated its own position 26 times to recover its collateral and borrowed rETH against its remaining cNUMA, draining the vault.",
+  "summary": "NumaVault prices NUMA from its raw rETH balance over supply and NumaPriceOracleNew feeds that spot price to the Numa lending comptroller. In one flash-loaned tx the attacker borrowed NUMA against rETH, sold it into the vault, donated rETH to lift the NUMA debt price, self-liquidated 26 times to recover collateral and borrowed vault rETH against leftover cNUMA.",
   "targets": [
     {
       "address": "0xa199d97fad6d1178575bb47667f6b72f83432ee8",
@@ -16,6 +16,15 @@
       "reset": {
         "kind": "deployment",
         "tx": "0x17203c208ab34e555d43a6636b6e239f79adfcc96f9aa8b519303a82b0f4a534"
+      }
+    },
+    {
+      "address": "0x057b326b5f3a0665b891d977e9cdb9e921821bc0",
+      "reset": {
+        "kind": "config",
+        "tx": "0x93354c888451be0d798566a7945b453a3c33a7bea0473937d69191354e7caaaa",
+        "address": "0x057b326b5f3a0665b891d977e9cdb9e921821bc0",
+        "slot": "0x8a3b07bb7a9a00689bb9140cc2611b5fe63f9e17583ce66f88350b0ee037428f"
       }
     }
   ],
@@ -36,9 +45,9 @@
     "https://www.hypernative.io/blog/hypernative-detection-506k-exploit-of-numa-money-on-arbitrum"
   ],
   "notes": [
-    "Stateless immutable NumaPriceOracleNew returns vault.numaToLst / lstToNuma spot prices as the comptroller's collateral and borrow prices; it is the latest-deployed defect-bearing artifact. Launch wiring (_setPriceOracle 39 blocks later, market listing, collateral factors, borrow unpause) sets ordinary non-erroneous values and does not reset age.",
+    "Stateless immutable NumaPriceOracleNew returns vault.numaToLst / lstToNuma spot prices as the comptroller's collateral and borrow prices. NumaComptroller consumes it; its crETH collateral factor (0 to 0.95), which the NUMA borrows against crETH needed, was the last launch-wiring change (after oracle set, listings, cNUMA factor) and sets the age.",
     "Immutable NumaVault runtime reads lstToken.balanceOf(this) in getVaultBalance, so an unaccounted rETH transfer reprices NUMA; it also hosts liquidateNumaBorrower used for the self-liquidations.",
     "NumaVault rETH depletion across the exploit transaction and the attacker's same-session vault sale (source-2), net of attacker-supplied rETH that stayed in the vault (150 rETH donation, 10 rETH buy) and excluding 3.890749723489182171 rETH of protocol fees paid to Numa's own fee/reward Safe. Recipients: attacker 292.969043721660915071 rETH (matches the project's reported 292.96 rETH), Aave rETH flash-loan premium 1.116841928270578525 rETH. cNUMA lenders' 3,626,482.92 NUMA (bad debt) were burned into the vault for this rETH and are not counted again. Later team/partner recapitalisation does not reduce gross loss.",
-    "Price-source half of one failure: deployed at block 310852851, 6837 blocks (1710 s) before the consuming NumaPriceOracleNew (target-1), which carries the knot. VaultManager 0x2b8ceb24761d585bd5bc03172253d8f570e76c47 (aggregates vault.getEthBalance into the price, deployed earlier at block 310852772) is not separately targeted."
+    "Price-source half of one failure: deployed 6837 blocks before NumaPriceOracleNew. VaultManager 0x2b8ceb24761d585bd5bc03172253d8f570e76c47 (aggregates vault.getEthBalance into the price, deployed earlier) is not separately targeted."
   ]
 }

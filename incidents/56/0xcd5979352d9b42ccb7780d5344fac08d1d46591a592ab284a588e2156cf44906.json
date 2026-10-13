@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "OCA",
   "name": "OCA SwapHelper sellOCA recycles the sold OCA out of the OCA/USDC pair",
-  "summary": "The OCA SwapHelper's public sellOCA(amount) sells the caller's OCA into the OCA/USDC PancakeSwap pair with the USDC paid to the caller, then calls OCA.recycle to pull the same OCA amount back out of the pair and sync(), so every sale removes the pair's OCA without USDC coming back in. The attacker obtained OCA untaxed by flash-swapping it directly from the pair, which OCA's liquidity-removal heuristic exempts from its 100% buy tax, then repeated buy/sellOCA cycles to shrink the OCA reserve and sold its remaining OCA for the pair's USDC.",
+  "summary": "SwapHelper.sellOCA sells the caller's OCA into the OCA/USDC pair for USDC, then calls OCA.recycle to pull the same OCA back out of the pair and sync, so sales drain USDC while the OCA reserve shrinks. The attacker bought OCA untaxed by flash-swapping it from the pair (OCA's remove-liquidity heuristic skips the 100% buy tax) and cycled buy/sellOCA.",
   "targets": [
     {
       "address": "0xe0d5ec0f754c442f37fbdf18266053309d5f6f55",
@@ -14,13 +14,15 @@
     {
       "address": "0xe0dafd4592205067299a6ae269f68aa804f95419",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x6095209b6134ad7e0d869af51f31cb0ed1ba24703b7df20ff6d86c3593a463e7"
+        "kind": "config",
+        "tx": "0x13c3ce005df1f2236c2f5cec5966789230ae60ce720f994b01693da41889be15",
+        "address": "0xe0dafd4592205067299a6ae269f68aa804f95419",
+        "slot": "0x9"
       }
     }
   ],
   "loss": {
-    "usd": 424988.7103424184,
+    "usd": 424988.71,
     "assets": [
       {
         "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
@@ -37,13 +39,13 @@
     ]
   },
   "refs": [
-    "eip155:56:0x514141dac28a8a53f90312e94c58476615c2c5ce844d8d37999bdf8a66413d5c",
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
   ],
   "notes": [
-    "Unverified, non-proxy SwapHelper runtime (no DELEGATECALL, CALLCODE or SELFDESTRUCT opcode) whose sellOCA recycles the sold amount from the pair; runtime hash unchanged from creation to the exploit. The owner's later setContractMiningPool calls only redirect the recycled OCA and are not necessary to the reserve depletion.",
-    "Direct immutable OCAToken runtime; _isRemoveLiquidity treats any pair-to-user transfer made while both pair balances are at or below reserves, including an optimistic flash-swap buy, as liquidity removal and skips the 100% buy tax.",
-    "Exact USDC depletion of the OCA/USDC pair 0x5779bf44cd518b05651ae38fcc066247cce21504 in the two exploit transactions: the anchor (all proceeds to the attacker EOA) and a copycat by a different actor 4053 seconds later that took the leftover USDC with the same buy/sellOCA cycle. The 8,704,860.15 USDC Moolah flash loans and every USDC buy leg are attacker inputs returned within each transaction. The pair's OCA loss (977,500.45 OCA in the anchor, recycled to the mining pool and DEAD) is the same liquidity and is not added. Ordinary direct sellOCA sales by holders between the two transactions are not counted.",
-    "Not the knot: the OCAToken deployment (74719018) precedes the SwapHelper deployment (75145050), whose sellOCA recycle is the reserve-depleting defect that completed the exploitable combination."
+    "Two defect-bearing contracts: the SwapHelper (sellOCA recycle) and OCAToken (_isRemoveLiquidity treats an optimistic flash-swap buy as liquidity removal, and recycle lets the helper move pair balance). The token's setSwapHelper grant to this helper, made after both deployments, enabled recycle and sets the age.",
+    "Loss is the pair's USDC depletion in the anchor and a copycat by a different actor; flash loans and buy legs return within each tx. The pair's OCA, recycled to the mining pool and DEAD, is the same liquidity and is not added. Copycat selection: OCA transfers out of the pair to non-fee, non-helper addresses after the helper deployment (Etherscan logs to block 82000000)."
+  ],
+  "campaign": [
+    "eip155:56:0x514141dac28a8a53f90312e94c58476615c2c5ce844d8d37999bdf8a66413d5c"
   ]
 }
