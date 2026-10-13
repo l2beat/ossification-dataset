@@ -2,44 +2,39 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Market.xyz",
   "name": "Market.xyz transient Curve LP collateral price",
-  "summary": "The miMATIC market accepted a Curve/Beefy LP collateral value read while the Curve pool was inside remove_liquidity, allowing loans against a transiently inflated virtual price.",
+  "summary": "Market.xyz priced its Beefy mooCurve stMATIC-MATIC collateral through a Curve LP oracle reading the pool's get_virtual_price with no reentrancy check. While remove_liquidity paid out MATIC, the attacker re-entered, borrowed miMATIC against the inflated collateral value, then self-liquidated after the price normalised.",
   "targets": [
     {
-      "address": "0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943",
-      "code": "0xb6622fe99121bf83df5c172344ed382b894482c5",
+      "address": "0x75a06c8e0e4a8c5b1677a3e5c4e57bfed1c21022",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9"
+        "kind": "config",
+        "tx": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9",
+        "address": "0x627742aafe82eb5129dd33d237ff318ef5f76cbc",
+        "slot": "0xcf824a0ca4cc0c4497a9a1e3fe58f604cb95129aa22c14d060519005f9a0cdbe"
       }
     }
   ],
   "loss": {
-    "usd": 235000,
+    "usd": 241871.04,
     "assets": [
       {
         "token": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
         "symbol": "miMATIC",
-        "amount": "235000",
-        "usd": 235000
+        "amount": "243060.42675570789725591",
+        "usd": 241871.04
       }
     ]
   },
   "refs": [
-    "eip155:137:0xafa01fc8639d7aeca0796243e1a2763d52db9ac7827aae4cdf7738c764e22ff6",
-    "eip155:137:0x3d5727e788bcedebb19bb03c578ba53e779782c6a699447b3018167431192076",
-    "eip155:137:0xe00c6e4ae21ca1b88e183570e69ab0d993c9e169cf1ed4f3a9254b7933a5bdc3",
-    "eip155:137:0x42c85ca0a9be31b55eccbcb0fff2e1212d0e2385286a63cc657112644fa0a16c",
-    "eip155:137:0xdf38646e50c0d753d139f3c05424a6ba291dee484d72746b4d0e22c40be00fc7",
-    "eip155:137:0xc82d6fdf7196a47d32e7ef6027fc8a94ba97262ae02070a49b0829382e4811f2",
-    "eip155:137:0xd7f132322c73f2781bbf10832cd9f72f888d2a6f456e9e22601a51d44c6931b9",
-    "eip155:137:0x03ae2a4f53c24a4aafbab5b939656dfefcefa27298eb06fdc879892680f5fd99",
-    "eip155:137:0x771018d8a59ef5cc3e99eb753ae9d2dcf3f51eefa0e23cd1664100778cc8dc1b",
-    "eip155:137:0x09a352fca6a69e0af6c58c3e8c083abffae1562b9a3b447015b6f9545c0dcc14",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/Market_exp.sol",
     "https://quillaudits.medium.com/decoding-220k-read-only-reentrancy-exploit-quillaudits-30871d728ad5"
   ],
   "notes": [
-    "The CREATE2 proxy's creation receipt emitted its only pre-incident NewImplementation event, selecting 0xb6622fe99121bf83df5c172344ed382b894482c5. Slot 0 retained that implementation through the incident, and the implementation runtime hash is unchanged from activation through the pre-incident block.",
-    "The sole successful loss receipt sends 249,000 and 66,000 miMATIC from market 0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943 and returns 65,000 and 15,000 through two linked self-liquidations: exact depletion is 315,000 - 80,000 = 235,000 miMATIC. Its archive balance falls from 250,027.800262910883221624 to 15,027.800262910883221624, and no other transaction in the block touches that reserve. Seized mmooCurvestMATIC-MATIC-4 collateral-market shares remain with the borrower helpers as consideration; the 95,000-miMATIC in-receipt sale and the EOA's retained 140,000 miMATIC are downstream disposition, not separate losses. The imported $180,000 estimate measured proceeds rather than gross victim depletion."
+    "The defect is the Curve LP oracle 0x75a06c8e reached via the pool's MasterPriceOracle; the cTokens run stock code. The latest change the exploit needed is the comptroller listing of the drained miMATIC market in its creation tx, after the oracle registration and the mooCurve collateral listing.",
+    "Loss is the miMATIC market's net outflow per tx: borrows minus the self-liquidation repayments in the anchor, plus two copycat borrows by 0xe3671a41 repeating the reentrant borrow. Seized collateral shares are the attacker's own deposit and are not victim assets."
+  ],
+  "campaign": [
+    "eip155:137:0x303c770b81d8866693aa341774eaa2cd5dc3a5f1d2ad855b9d6f0c10b5c36d5d",
+    "eip155:137:0x218053540e04de8698fc7e7bf1b59f1dcb655280a09d2e8ee7ee5aaa609369f3"
   ]
 }

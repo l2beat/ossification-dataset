@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Miner (ERC-X)",
   "name": "MINER ERC-X self-transfer balance duplication",
-  "summary": "The MINER ERC-X token's _transfer rejects only the zero address for sender and receiver, and the _update it calls caches uint256 fromBalance = _balances[from] and uint256 toBalance = _balances[to] before writing _balances[from] = fromBalance - value and _balances[to] = toBalance + value. When from == to the second write restores the pre-transfer balance and adds value on top, so a transfer to one's own address is a pure credit of value out of nothing while _totalSupply is unchanged. The attacker's contract looped this self-transfer 2000 times inside a Uniswap V3 swap callback, minting the MINER it owed the pool and paying for 999.999999999999998 MINER of output it never held. No parameter value repairs this: the write order is wrong for every amount.",
+  "summary": "MINER's ERC-X _update cached the sender and recipient balances before writing them, so a transfer to oneself credited the amount out of nothing. Inside a Uniswap V3 swap callback the attacker's contract alternated self-transfers and payments to the pool, settling the swap with MINER it never held; copycats repeated self-transfers and sold.",
   "targets": [
     {
       "address": "0xe77ec1bf3a5c95bfe3be7bdbacfe3ac1c7e454cd",
@@ -13,20 +13,26 @@
     }
   ],
   "loss": {
-    "usd": 464103.5613250894,
+    "usd": 470858.76,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "168.607972696358826905",
-        "usd": 464103.5613250894
+        "amount": "171.646339269426341836",
+        "usd": 470858.76
       }
     ]
   },
   "refs": [
     "https://medium.com/neptune-mutual/analysis-of-the-miner-exploit-cf4dccd48f11",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/Miner_exp.sol",
-    "eip155:1:0x92406300fd4446459b18fc17cdd775808bfc7ed1782bd4c8674a2bbe95610ad9",
+    "eip155:1:0x92406300fd4446459b18fc17cdd775808bfc7ed1782bd4c8674a2bbe95610ad9"
+  ],
+  "notes": [
+    "Self-transfers before the anchor (0x35c84c1e from block 19208453, 0x6d27ce8c, 0xb067b810) inflated small balances that were never sold, so no value left a victim; the anchor is the first that drained the pool.",
+    "Loss is the MINER/WETH pool's net WETH outflow in the attacker's eleven txs and the copycat txs of the bundle; the deployer's liquidity withdrawal and ordinary holders selling into the collapse are excluded. The 0.1 WETH seed purchase is not netted."
+  ],
+  "campaign": [
     "eip155:1:0x4b9de8c56c8919e8598181449a3cc02df40435eb641eaec08ecce12d2342237f",
     "eip155:1:0xfc0b7f6182e6aae54f7fd91054c3913b7894dbc32656d8cc43e04990b9c7d8b5",
     "eip155:1:0xea367cdb0066e88a1ee66c97124616e8aa3181deb0f61215b4dca3fbd526bb8a",
@@ -36,10 +42,13 @@
     "eip155:1:0x5cc93e9d5adec2b432ddf8052ed77a052e07671db36954675d6f55df28bdb8c0",
     "eip155:1:0x0509face343b1d08ca29f5db3111f5c598bd30bd8a065ef80bd5cfa71d2f9544",
     "eip155:1:0x6a4af133b0dada00a446768edac72f00e5150d95e63a54a644af498b115200cd",
-    "eip155:1:0xc799592dbd191922909cf54ffe51f33e45f6cfc0e94cd6484470d78969d374fe"
-  ],
-  "notes": [
-    "The token runtime was created by top-level CREATE in this transaction and is byte-identical at block 19206955, at block 19226599 immediately before the exploit, and today; the address holds no EIP-1967 implementation pointer and the exploit calls it directly, so the deployment is the only executable-code change.",
-    "Exact depletion of the MINER/WETH Uniswap V3 pool 0x732276168b421d4792e743711e1a48172ea574a2, measured by summing every WETH Transfer from that pool to the exploit contract 0xbff51c9c3d50d6168dfef72133f5dbda453ebf29 across the eleven campaign transactions in blocks 19226600 to 19226707: 168607972696358826905 wei, all of which the contract forwarded to the attacker EOA in two withdrawals. The attacker's only campaign input was 0.1 WETH spent 27 minutes earlier in transaction 0xe9d68078bbee1d5a0fa6ff683d59928828d162d2b4502182f82dcc0d894b6d4c buying the 3.572592720467130237 MINER seed at market price; netting it would give 168.507972696358826905 WETH. Realised WETH proceeds are used rather than any MINER mark: the exploit minted MINER without limit and the pool's MINER reserve rose from 20,760.445641193926256214 to 31,070.707215523730649876 while its WETH reserve fell from 292.675662175650830997 to 8.339688812255084036, so no spot mark on the minted tokens would be realisable. The pool's WETH balance fell by 284.335973363395746961 between blocks 19226599 and 19226717, so a further 115.728000667036920056 WETH net left it over the same span through liquidity withdrawals and unrelated holders selling into the collapse; that is market exit rather than value taken by this campaign and is excluded."
+    "eip155:1:0xc799592dbd191922909cf54ffe51f33e45f6cfc0e94cd6484470d78969d374fe",
+    {
+      "chainId": 1,
+      "count": 261,
+      "from": 19226801,
+      "to": 19616118,
+      "selection": "Copycats: txs not sent by 0xea75aec1 emitting a MINER Transfer with from == to, plus later txs by the same senders with net WETH outflow from the MINER/WETH pool 0x73227616"
+    }
   ]
 }

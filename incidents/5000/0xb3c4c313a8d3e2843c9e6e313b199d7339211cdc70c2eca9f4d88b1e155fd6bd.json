@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Minterest",
   "name": "Minterest mUSDY flashLoan exchange-rate reentrancy",
-  "summary": "The mUSDY market runs the ERC-3156 borrower callback while its own cash balance is still reduced by the flash-loaned amount, and the mToken exchange rate is computed from that cash balance. Supplying USDY back inside the callback therefore minted mUSDY at an inflated rate. The attacker repeated the cycle 24 times to build collateral it had not paid for and borrowed the WETH and mETH markets out against it.",
+  "summary": "The Mantle mUSDY market's lendRUSDY lacked the nonReentrant guard of lend(). Inside mUSDY's own flashLoan callback, with the loaned cash out and the exchange rate depressed, the attacker supplied via lendRUSDY to mint excess mUSDY and redeemed, 25 times, then borrowed the WETH and mETH markets against the unbacked collateral.",
   "targets": [
     {
       "address": "0x5edbd8808f48ffc9e6d4c0d6845e0a0b4711fd5c",
@@ -14,19 +14,25 @@
     }
   ],
   "loss": {
-    "usd": 1393165.0049849325,
+    "usd": 1404308.33,
     "assets": [
       {
         "token": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
         "symbol": "WETH",
         "amount": "223.640470785331714615",
-        "usd": 714781.7814864144
+        "usd": 714781.78
       },
       {
         "token": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
         "symbol": "mETH",
         "amount": "204.486893253187905361",
-        "usd": 678383.2234985182
+        "usd": 678383.22
+      },
+      {
+        "token": "0x5be26527e817998a7206475496fde1e68957c5a6",
+        "symbol": "USDY",
+        "amount": "10663.478132229159934288",
+        "usd": 11143.33
       }
     ]
   },
@@ -35,7 +41,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/Minterest_exp.sol"
   ],
   "notes": [
-    "The market emitted exactly two Upgraded events between its creation block 49704565 and the exploit; the second, log 0 of block 57147116, selected 0x4b351368459ccc0024197d24ab7ba278e4c6f510, and the EIP-1967 implementation slot still reads that address at block 66416576.",
-    "Components are the attacker EOA’s net token gain in the single exploit transaction, which is a contract creation whose constructor runs the whole attack. The four later transactions in that EOA’s history only unwrap and swap the proceeds. The borrows backing the collateral were never repaid. DefiLlama observations are 127 and 103 seconds after the incident timestamp. Nothing was recovered."
+    "The upgrade in block 57147116 routed the market to the implementation carrying lendRUSDY; later supervisor changes (linkage root swap, collateral factors 0.4 to 0.8) and the oracle upgrade are not on the reentrancy path or only scale the loss. FlashLoanExecuted shows no other flash loan on mUSDY.",
+    "Loss is the net outflow of the three markets in the single exploit tx: WETH and mETH borrowed and never repaid, plus the USDY the mUSDY market lost to the attacker and its flash lender across the redeem cycles."
   ]
 }

@@ -1211,8 +1211,8 @@
     "tx": "0x3f1973fe56de5ecd59a815d3b14741cf48385903b0ccfe248f7f10c2765061f7",
     "protocol": "Melo Token",
     "name": "Melo unrestricted mint sold into USDT liquidity",
-    "summary": "MEL exposed mint(address,uint256,string) without authorization or supply limits. Callers minted arbitrary balances and sold them into the MEL/USDT pair, depleting its USDT. The initial transaction and later repetitions exercise the same immutable token defect.",
-    "lossUsd": 92338.99436335763,
+    "summary": "MEL's mint(address,uint256,string) had no access control or supply cap. The attacker minted a huge MEL balance and sold it into the MEL/USDT PancakeSwap pair, draining its USDT; later actors repeated the same mint-and-sell.",
+    "lossUsd": 92431.59,
     "codeAgeSeconds": 39591,
     "exploit": {
       "block": 27960446,
@@ -1230,7 +1230,7 @@
       "index": 183,
       "timestamp": 1683298588
     },
-    "claimsSha256": "7c4216e52d9d78526ed880ea28b0c2ce735581098fe2426c7c20a644f930917b"
+    "claimsSha256": "dd207970d9d799a65c448cf14a6b28d8d3443988a93660b09106e0c4b67f825b"
   },
   {
     "id": "eip155:56:0x7be62536947d83ae962abfa4c491d736967dea8faf4a629090a49f72d529a297",
@@ -2129,6 +2129,33 @@
     "claimsSha256": "26d0ddf5b682d39845fdf17076bcd3d0b2f5e875c80a11dd30c6a236d8c125bb"
   },
   {
+    "id": "eip155:56:0xccd12f22629b2c42d2b680362dadbd1b3d89cb4a87a8c9b297766b4974c6ad34",
+    "chainId": 56,
+    "tx": "0xccd12f22629b2c42d2b680362dadbd1b3d89cb4a87a8c9b297766b4974c6ad34",
+    "protocol": "MetaPoint",
+    "name": "MetaPoint user contract unrestricted approve",
+    "summary": "Each MetaPoint per-user deposit wallet exposed a public approve() that granted the caller an unlimited POT allowance. The attacker called it on dozens of wallets per transaction, then transferFrom-drained their POT and sold it into the POT/USDT pair; several copycats repeated the same approve-and-drain on other wallets.",
+    "lossUsd": 1019576.43,
+    "codeAgeSeconds": 99892,
+    "exploit": {
+      "block": 27263530,
+      "index": 27,
+      "timestamp": 1681242593
+    },
+    "target": {
+      "address": "0x472c20cae0e832026c1c96a96f10be0734308bc1",
+      "codeHash": "0x08e4f6d3d509f87b6758fa77e7fb5cc0fd01b92bfce1d5783dbd2848b67fa973"
+    },
+    "reset": {
+      "kind": "deployment",
+      "tx": "0xa35f470c869d4ec94587cdeca97c10d6f8d524ed74432fbbec2acd5c419a2206",
+      "block": 27230569,
+      "index": 81,
+      "timestamp": 1681142701
+    },
+    "claimsSha256": "8fc35101d206f7196b6c58e322c0cef03586cf0ab03d503add512fef43f84cc4"
+  },
+  {
     "id": "eip155:56:0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d",
     "chainId": 56,
     "tx": "0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d",
@@ -2215,8 +2242,8 @@
     "tx": "0xbeea4ff215b15870e22ed0e4d36ccd595974ffd55c3d75dad2230196cc379a52",
     "protocol": "MetaWin (unverified BSC staking)",
     "name": "MetaWin staking USD reward settled at FCN/USDT pair balance spot price",
-    "summary": "The staking contract 0x431abb27dab05f4e7cdeaa18390fe39364197500 accrues each staker a reward denominated in USD and settles it in FCN at a price it derives, inside the paying transaction, from two raw balanceOf reads on the PancakeSwap V2 FCN/BSC-USD pair 0xacb496dd4a8b6b9d1b99d422b8700f6ef932bc10. In the anchor transaction the claim entry point, selector 0xd9574d4c, reads the caller's stored 10e18 USD entitlement from slot 0x9c6375cda627d083cbb712ee89f8748935cee8e2ed0be5ca571a2fdf7ae3eba3, reads BSC-USD.balanceOf(pair) = 0.02 and FCN.balanceOf(pair) = 0.501971077397338362, and pays out 10 / (0.02 / 0.501971077397338362) = 250.985538698669186971 FCN. Those pair balances are what the caller had just set: the same transaction is a PancakeSwap flash swap that removed 512963.341056079475662703 BSC-USD from that exact pair before calling the claim. The invariant violated is that a fixed USD liability may not be settled at an instantaneous, caller-controllable AMM quote; there is no TWAP, no minimum-reserve or deviation guard, no getReserves-versus-balance check and no re-entrancy or flash-loan protection on the read. No parameter value repairs it: the reward rate, the priced pair and the fee split are configuration, and at any non-zero entitlement a claimer who can move the pair's balances within the transaction converts that entitlement into an arbitrary quantity of FCN.",
-    "lossUsd": 502963.341056,
+    "summary": "The unverified staking contract settled USD-denominated rewards in FCN at a spot price computed from raw balanceOf reads on the FCN/USDT PancakeSwap pair. Inside a flash swap that emptied the pair's USDT, the attacker claimed its reward at the collapsed price, received the pool's FCN and repaid the swap with part of it, keeping the USDT.",
+    "lossUsd": 513028.52,
     "codeAgeSeconds": 107995,
     "exploit": {
       "block": 33972131,
@@ -2234,7 +2261,7 @@
       "index": 42,
       "timestamp": 1701321645
     },
-    "claimsSha256": "2dcb709e6de4dbfe0351b841899368e9beb833f3f7b721caec2d812b05cd0912"
+    "claimsSha256": "aee66d5d372d03810e9d2a3ddb997cf71181beadb71b1a46b4d49ac59693504f"
   },
   {
     "id": "eip155:56:0x65a29faf44c5be567e9ea2aa419254263a1b8553799258d9e36769a06ceac109",
@@ -3005,8 +3032,8 @@
     "tx": "0x2a65254b41b42f39331a0bcc9f893518d6b106e80d9a476b8ca3816325f4a150",
     "protocol": "MobiusDAO (MBU)",
     "name": "MBU deposit() price-scale mint inflation",
-    "summary": "The MobiusDAO deposit proxy's deposit(token, amount) values the deposit as amount x oracle token price without dividing out the 18-decimal price scale, then mints value x 1e18 / MBU price, so it mints 1e18 times the correct MBU. A 0.001 WBNB deposit (0.657 USD at the oracle's 656.92 USD/BNB) minted 9731099570720980.659843835099042677 MBU instead of 0.00973 MBU; selling 28,500,000 of them into the MBU/USDT PancakeSwap pair drained 2,157,126 USDT. Copycats repeated the same 0.001 WBNB deposit ten more times.",
-    "lossUsd": 2159570.946792099,
+    "summary": "The MobiusDAO deposit proxy's deposit(token, amount) valued the deposit as amount times the 18-decimal oracle price without dividing out the scale, then minted value/MBU price, minting 1e18 times too much MBU. The attacker deposited 0.001 WBNB and sold the minted MBU into the MBU/USDT pair; copycats repeated the same deposit.",
+    "lossUsd": 2159569.95,
     "codeAgeSeconds": 215397,
     "exploit": {
       "block": 49470430,
@@ -3025,7 +3052,7 @@
       "index": 18,
       "timestamp": 1746733429
     },
-    "claimsSha256": "20332dc3040df5ab9bf43432900bbe2e7a993a643c2e3dc0fca2da01e2ec2c6a"
+    "claimsSha256": "705284b35092ac8c4e37291a086540c65660bc827111f69f161d55bfddca9c75"
   },
   {
     "id": "eip155:56:0xa00def91954ba9f1a1320ef582420d41ca886d417d996362bf3ac3fe2bfb9006",
@@ -3198,8 +3225,8 @@
     "tx": "0x75e3aeb00df69882a1b15d424e5e642650326ca3b923d7fd1922d57c51bc2c78",
     "protocol": "Miner (ERC-X)",
     "name": "MINER ERC-X self-transfer balance duplication",
-    "summary": "The MINER ERC-X token's _transfer rejects only the zero address for sender and receiver, and the _update it calls caches uint256 fromBalance = _balances[from] and uint256 toBalance = _balances[to] before writing _balances[from] = fromBalance - value and _balances[to] = toBalance + value. When from == to the second write restores the pre-transfer balance and adds value on top, so a transfer to one's own address is a pure credit of value out of nothing while _totalSupply is unchanged. The attacker's contract looped this self-transfer 2000 times inside a Uniswap V3 swap callback, minting the MINER it owed the pool and paying for 999.999999999999998 MINER of output it never held. No parameter value repairs this: the write order is wrong for every amount.",
-    "lossUsd": 464103.5613250894,
+    "summary": "MINER's ERC-X _update cached the sender and recipient balances before writing them, so a transfer to oneself credited the amount out of nothing. Inside a Uniswap V3 swap callback the attacker's contract alternated self-transfers and payments to the pool, settling the swap with MINER it never held; copycats repeated self-transfers and sold.",
+    "lossUsd": 470858.76,
     "codeAgeSeconds": 238080,
     "exploit": {
       "block": 19226600,
@@ -3217,7 +3244,7 @@
       "index": 74,
       "timestamp": 1707680423
     },
-    "claimsSha256": "8110375d1a03cdbd8ea5c98aee46360f40f6e04522b51a4ff857232a75ce8cda"
+    "claimsSha256": "ae41db957022cd6c135d40980a25bb40ea6cf44e5da72570a5fcaea36e7460aa"
   },
   {
     "id": "eip155:56:0x54121ed538f27ffee2dbb232f9d9be33e39fdaf34adf993e5e019c00f6afd499",
@@ -5272,33 +5299,6 @@
     "claimsSha256": "69be157a6a4b4832ecffa9052bd05c696f46bde2fe7ae1830b29a8d16fc363dd"
   },
   {
-    "id": "eip155:56:0xccd12f22629b2c42d2b680362dadbd1b3d89cb4a87a8c9b297766b4974c6ad34",
-    "chainId": 56,
-    "tx": "0xccd12f22629b2c42d2b680362dadbd1b3d89cb4a87a8c9b297766b4974c6ad34",
-    "protocol": "MetaPoint",
-    "name": "MetaPoint user contract unrestricted approve",
-    "summary": "Each MetaPoint per-user contract exposes a public approve() that grants the caller an unlimited POT allowance, so an attacker can authorize itself and transferFrom the contract's entire POT balance.",
-    "lossUsd": 823417.7813702623,
-    "codeAgeSeconds": 914214,
-    "exploit": {
-      "block": 27263530,
-      "index": 27,
-      "timestamp": 1681242593
-    },
-    "target": {
-      "address": "0x0f6c39efa4db888ff9f73175dff0129d4b7166cb",
-      "codeHash": "0x08e4f6d3d509f87b6758fa77e7fb5cc0fd01b92bfce1d5783dbd2848b67fa973"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xc3d6da64cbdbe7f7154a461408d319a8e4e7d8315b6d44a43d0dc6d5aeb2b420",
-      "block": 26963008,
-      "index": 30,
-      "timestamp": 1680328379
-    },
-    "claimsSha256": "b17cd50f563fc2ed694da8f420c83ee121f6960fb8c269254639bad0a27800a1"
-  },
-  {
     "id": "eip155:1:0xa109ecf32bb1a3e29c126a7b52f56a02801c1583fe33e7e003465d3e8676784c",
     "chainId": 1,
     "tx": "0xa109ecf32bb1a3e29c126a7b52f56a02801c1583fe33e7e003465d3e8676784c",
@@ -6838,6 +6838,33 @@
     "claimsSha256": "021520e63030f16736de482de95ffb782b53b7e7db68de08b332bec9c5172fd7"
   },
   {
+    "id": "eip155:56:0xfb0257042725b8bce1af0d6416c9b4df6c906bff988887f9881fb2bfc66bbced",
+    "chainId": 56,
+    "tx": "0xfb0257042725b8bce1af0d6416c9b4df6c906bff988887f9881fb2bfc66bbced",
+    "protocol": "MetaDragon",
+    "name": "MetaDragon token-id transfer unrestricted minting",
+    "summary": "P404Token treated any transfer value below 30,001 as an NFT id; sending one to the token contract burned that NFT through the linked collection without an ownership check and minted 9,800 tokens to the caller. A bot first burned one holder's NFT; the main attacker then burned thousands and sold the mints into the MetaDragon/WBNB pair.",
+    "lossUsd": 180827.16,
+    "codeAgeSeconds": 2214117,
+    "exploit": {
+      "block": 39127823,
+      "index": 1,
+      "timestamp": 1716931474
+    },
+    "target": {
+      "address": "0xef1f39d8391cddcaee62b8b383cb992f46a6ce4f",
+      "codeHash": "0xfc2b94720b1c2f587418ef6c7583b8eba920d241cb6e3248dedb5cc5fa59f596"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x42525e94062ededd079f738b7318271e12a4b4e5d6944a83fd313c7e7ddc3512",
+      "block": 38391449,
+      "index": 23,
+      "timestamp": 1714717357
+    },
+    "claimsSha256": "f01399e2de75203008feedd243dc4b0151d5204fb6f439ec32b81e92b14d467a"
+  },
+  {
     "id": "eip155:56:0xa0408770d158af99a10c60474d6433f4c20f3052e54423f4e590321341d4f2a4",
     "chainId": 56,
     "tx": "0xa0408770d158af99a10c60474d6433f4c20f3052e54423f4e590321341d4f2a4",
@@ -6891,33 +6918,6 @@
       "timestamp": 1684584203
     },
     "claimsSha256": "baac53335525867a1a6a389c6dd58fd28be4001e6df637629cde3be5a2a1e3d5"
-  },
-  {
-    "id": "eip155:56:0x3ad998a01ad1f1bbe6dba6a08e658c1749dabfa4a07da20ded3c73bcd6970d20",
-    "chainId": 56,
-    "tx": "0x3ad998a01ad1f1bbe6dba6a08e658c1749dabfa4a07da20ded3c73bcd6970d20",
-    "protocol": "MetaDragon",
-    "name": "MetaDragon token-id transfer unrestricted minting",
-    "summary": "P404Token treated any transfer value below 30,001 as an ERC-721 token ID. When the recipient was the token contract itself, _update skipped ERC-20 balance accounting, called the linked collection's burn without checking that the caller owned the NFT, and minted 9,800 MetaDragon tokens to msg.sender. The attacker repeated this over existing token IDs and sold the unbacked mint into the MetaDragon/WBNB pair in 12 transactions.",
-    "lossUsd": 180797.53580950433,
-    "codeAgeSeconds": 2255095,
-    "exploit": {
-      "block": 39141427,
-      "index": 70,
-      "timestamp": 1716972425
-    },
-    "target": {
-      "address": "0xef1f39d8391cddcaee62b8b383cb992f46a6ce4f",
-      "codeHash": "0xfc2b94720b1c2f587418ef6c7583b8eba920d241cb6e3248dedb5cc5fa59f596"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x5df3bf040b5082dfe31e8be3b07eff3b16f85f30e2e613e55f4a7679cadce3ce",
-      "block": 38391440,
-      "index": 83,
-      "timestamp": 1714717330
-    },
-    "claimsSha256": "69817fba484a4ab069dc70b40835f7d2c3a8974ed40835fb59f6942b0e5f83f8"
   },
   {
     "id": "eip155:1:0x390def749b71f516d8bf4329a4cb07bb3568a3627c25e607556621182a17f1f9",
@@ -7719,8 +7719,8 @@
     "tx": "0xb8efe839da0c89daa763f39f30577dc21937ae351c6f99336a0017e63d387558",
     "protocol": "Market.xyz",
     "name": "Market.xyz transient Curve LP collateral price",
-    "summary": "The miMATIC market accepted a Curve/Beefy LP collateral value read while the Curve pool was inside remove_liquidity, allowing loans against a transiently inflated virtual price.",
-    "lossUsd": 235000,
+    "summary": "Market.xyz priced its Beefy mooCurve stMATIC-MATIC collateral through a Curve LP oracle reading the pool's get_virtual_price with no reentrancy check. While remove_liquidity paid out MATIC, the attacker re-entered, borrowed miMATIC against the inflated collateral value, then self-liquidated after the price normalised.",
+    "lossUsd": 241871.04,
     "codeAgeSeconds": 3242569,
     "exploit": {
       "block": 34716801,
@@ -7728,18 +7728,17 @@
       "timestamp": 1666562948
     },
     "target": {
-      "address": "0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943",
-      "code": "0xb6622fe99121bf83df5c172344ed382b894482c5",
-      "codeHash": "0x8a7477aa5248f09cdb0b1fbf21dba5e50f165d8180f7b33c37eaacacd2d7c0bc"
+      "address": "0x75a06c8e0e4a8c5b1677a3e5c4e57bfed1c21022",
+      "codeHash": "0xac8e1711f10153f9c3f451ef05c6ec44103cc0907ab8c9236fcd1aba85ffd36a"
     },
     "reset": {
-      "kind": "upgrade",
+      "kind": "config",
       "tx": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9",
       "block": 33172698,
       "index": 29,
       "timestamp": 1663320379
     },
-    "claimsSha256": "f46c5185511bfab3fd0eb3243fc32ab0cd62718b6db2f8296545e8fda69df83a"
+    "claimsSha256": "4750620f37ac4e91c31bf14b6f469a2c599b28ea86f5a45b3fcf7d86446fcaa4"
   },
   {
     "id": "eip155:1:0xa05f047ddfdad9126624c4496b5d4a59f961ee7c091e7b4e38cee86f1335736f",
@@ -10822,8 +10821,8 @@
     "tx": "0xb3c4c313a8d3e2843c9e6e313b199d7339211cdc70c2eca9f4d88b1e155fd6bd",
     "protocol": "Minterest",
     "name": "Minterest mUSDY flashLoan exchange-rate reentrancy",
-    "summary": "The mUSDY market runs the ERC-3156 borrower callback while its own cash balance is still reduced by the flash-loaned amount, and the mToken exchange rate is computed from that cash balance. Supplying USDY back inside the callback therefore minted mUSDY at an inflated rate. The attacker repeated the cycle 24 times to build collateral it had not paid for and borrowed the WETH and mETH markets out against it.",
-    "lossUsd": 1393165.0049849325,
+    "summary": "The Mantle mUSDY market's lendRUSDY lacked the nonReentrant guard of lend(). Inside mUSDY's own flashLoan callback, with the loaned cash out and the exchange rate depressed, the attacker supplied via lendRUSDY to mint excess mUSDY and redeemed, 25 times, then borrowed the WETH and mETH markets against the unbacked collateral.",
+    "lossUsd": 1404308.33,
     "codeAgeSeconds": 12342987,
     "exploit": {
       "block": 66416577,

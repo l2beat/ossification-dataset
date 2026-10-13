@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MobiusDAO (MBU)",
   "name": "MBU deposit() price-scale mint inflation",
-  "summary": "The MobiusDAO deposit proxy's deposit(token, amount) values the deposit as amount x oracle token price without dividing out the 18-decimal price scale, then mints value x 1e18 / MBU price, so it mints 1e18 times the correct MBU. A 0.001 WBNB deposit (0.657 USD at the oracle's 656.92 USD/BNB) minted 9731099570720980.659843835099042677 MBU instead of 0.00973 MBU; selling 28,500,000 of them into the MBU/USDT PancakeSwap pair drained 2,157,126 USDT. Copycats repeated the same 0.001 WBNB deposit ten more times.",
+  "summary": "The MobiusDAO deposit proxy's deposit(token, amount) valued the deposit as amount times the 18-decimal oracle price without dividing out the scale, then minted value/MBU price, minting 1e18 times too much MBU. The attacker deposited 0.001 WBNB and sold the minted MBU into the MBU/USDT pair; copycats repeated the same deposit.",
   "targets": [
     {
       "address": "0x95e92b09b89cf31fa9f1eca4109a85f88eb08531",
@@ -14,24 +14,25 @@
     }
   ],
   "loss": {
-    "usd": 2159570.946792099,
+    "usd": 2159569.95,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "2157126.179348943736411799",
-        "usd": 2157126.1793489438
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "2444.767443155482529575",
-        "usd": 2444.7674431554824
+        "amount": "2159570.946792099218941374",
+        "usd": 2159569.95
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-05/MBUToken_exp.sol",
+    "eip155:56:0x6a7ae7d97091c9d254c9d976be7761759dfcd44f187a13fcfd1d1eb3ca46217f"
+  ],
+  "notes": [
+    "Campaign is every deposit(WBNB, 1e15) through the buggy implementation (ten copycats, none before the anchor) plus nine later sales by 0x89f4e21c of MBU it minted in 0x84674f8b. The fix upgrade is the remaining ref.",
+    "Loss is the MBU/USDT pair's net USDT outflow over these txs; unsold bug-minted MBU and pair outflows of unestablished MBU provenance are not counted. The MBU token upgrade two hours before the anchor kept the same mint path and is not on the defect."
+  ],
+  "campaign": [
     "eip155:56:0x4186f01013739099dd643aca61cfef72c88c079a4fd47525b6c4f6b147b84d7f",
     "eip155:56:0x84674f8b0ac41b8870b79e51abc4ea491ebf97f02f57d45241073d7cac364dee",
     "eip155:56:0xc1eb2b4ceac2249874ee75a53f19ee812b41dec4b8e8a0e171552cfafe2efd75",
@@ -50,11 +51,6 @@
     "eip155:56:0x5eb50cd99279c85424c015abf824b2ec619624cbcf5848c47d5784e217801b07",
     "eip155:56:0x71c8f0e2decc883872e3222f0f0629b884cca90144f42945ecfa0f7e0b3e13f2",
     "eip155:56:0x8e54b948dcdeb24d4c1f26196eb5f01a1ac3c19161cc13b358e85a5b91119559",
-    "eip155:56:0x25ba3ef8006daa918eb3f9e6d8e4ef30b19db0dcaf5df9b3145f9099600d5aea",
-    "eip155:56:0x6a7ae7d97091c9d254c9d976be7761759dfcd44f187a13fcfd1d1eb3ca46217f"
-  ],
-  "notes": [
-    "The proxy's first Upgraded event, log 129 of its own ERC1967Proxy creation transaction, selected implementation 0x637d8ce897bb653cb83ba436cdf76bbe158f05b1; the EIP-1967 implementation slot still reads that address at block 49470429. The next Upgraded event (the fix) is at block 49495855, after the campaign.",
-    "Gross USDT depletion of the MBU/USDT PancakeSwap V2 pair 0xb5252fcef718f8629f81f1dfcff869594ad478c6 caused by bug-minted MBU. Component 1 is the anchor transaction (attacker 0xb32a53af96f7735d47f4b76c525bd5eb02b42600). Component 2 merges later actors repeating the same deposit(WBNB, 1e15) path between blocks 49470431 and 49475087: 1809.975661133888705413 USDT drained inside seven later deposit transactions plus 634.791782021593824162 USDT from nine separate Universal Router sells by 0x89f4e21c62e0fb52c8445e842781e77fe333f50d of MBU it minted in 0x84674f8b0ac41b8870b79e51abc4ea491ebf97f02f57d45241073d7cac364dee. The 0.001 WBNB inputs are attacker-supplied and not netted; unsold bug-minted MBU and the 1,000,000 bug-minted MBU that 0xa5eabc3b36dba37593352a00ce8b7720da6fc624 staked and later unstaked are not counted. Small later pair outflows to unrelated addresses (12.01 USDT to 0x0fccab6848d59c45b758dc1c9057e618b157231f and multi-hop swaps via 0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae) have unestablished MBU provenance and are excluded. Nothing was recovered."
+    "eip155:56:0x25ba3ef8006daa918eb3f9e6d8e4ef30b19db0dcaf5df9b3145f9099600d5aea"
   ]
 }
