@@ -1424,18 +1424,18 @@
     "claimsSha256": "53a111dd5028b1e610cb878656a8bcd94cc96053fbd95a74cf3cd2027a81abe1"
   },
   {
-    "id": "eip155:1:0xaa14164b3c0759274b9b430ffa88c56389aa6fd28602f3d8e81fcdd8365eb3cf",
+    "id": "eip155:1:0xc9b2cbc1437bbcd8c328b6d7cdbdae33d7d2a9ef07eca18b4922aac0430991e7",
     "chainId": 1,
-    "tx": "0xaa14164b3c0759274b9b430ffa88c56389aa6fd28602f3d8e81fcdd8365eb3cf",
+    "tx": "0xc9b2cbc1437bbcd8c328b6d7cdbdae33d7d2a9ef07eca18b4922aac0430991e7",
     "protocol": "Juice (JUICE) Staking",
     "name": "Juice JuiceStaking unbounded stake multiplier",
-    "summary": "JuiceStaking.stake accepted an unbounded caller-supplied stakingWeek, and pendingReward multiplied accrued rewards by 9% for every week beyond the first. The attacker opened three positions with stakingWeek 3,000,000,000 and drained the reward balance through harvest.",
-    "lossUsd": 211733.74654325828,
-    "codeAgeSeconds": 47928,
+    "summary": "JuiceStaking.stake() accepted any stakeWeek, and harvest() paid a bonus of pending × (stakeWeek − 1) × 9% with no cap. The attacker staked a little JUICE with stakeWeek 3,000,000,000, then called harvest() to pay out the contract's reward pool and stakers' JUICE as bonus, and sold it for ETH.",
+    "lossUsd": 217664.17,
+    "codeAgeSeconds": 48012,
     "exploit": {
-      "block": 19395637,
-      "index": 34,
-      "timestamp": 1709964335
+      "block": 19395644,
+      "index": 18,
+      "timestamp": 1709964419
     },
     "target": {
       "address": "0x8584ddbd1e28bca4bc6fb96bafe39f850301940e",
@@ -1448,7 +1448,7 @@
       "index": 79,
       "timestamp": 1709916407
     },
-    "claimsSha256": "55d3fe577e7e09b9c6cff29d135067849145d21d412c9140ff3e7b6c251c5fd4"
+    "claimsSha256": "09245842ad0b4a9a741005174a3de2d922714c2c092d89a16ef172bcc113e6f8"
   },
   {
     "id": "eip155:1:0x3503253131644dd9f52802d071de74e456570374d586ddd640159cf6fb9b8ad8",
@@ -2951,8 +2951,8 @@
     "tx": "0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a",
     "protocol": "Jimbos Protocol",
     "name": "JimboController permissionless shift/reset rebalancing",
-    "summary": "JimboController.shift() and JimboController.reset() are public, callable by anyone, and gate only on pair.getActiveId() relative to the stored trigger and anchor bins. Both withdraw the protocol-owned Trader Joe v2 liquidity and redeploy it around whatever active bin the pair happens to be on at that instant, with no price reference, no TWAP, and no bound on how far the active bin may have moved; the only slippage guard in _addLiquidity is a 1% amountXmin/amountYmin on the router's own add, which does not constrain the price the liquidity is placed at. An attacker who flash-borrows WETH, pushes the JIMBO/WETH active bin up, calls shift(), pushes it back down and calls reset() therefore makes the contract redeposit the protocol's WETH into a bin range they control and then buys it out with JIMBO.",
-    "lossUsd": 7395118.603051347,
+    "summary": "JimboController.shift() and reset() were public and redeployed the protocol-owned ETH liquidity of the JIMBO/ETH Trader Joe LB pair around the current active bin, with no price bound. With flash-loaned WETH the attacker moved the active bin, called shift()/reset() so the ETH was placed at the manipulated price, and bought it out with JIMBO.",
+    "lossUsd": 7513575.86,
     "codeAgeSeconds": 194469,
     "exploit": {
       "block": 95144405,
@@ -2970,7 +2970,7 @@
       "index": 1,
       "timestamp": 1685039023
     },
-    "claimsSha256": "a238cad967a230202d185a24f8a754a7c04b39c2796d1c6cef6c0b653836e7ce"
+    "claimsSha256": "1513653ebdc132349eb65c7d25c2a7ff23d484c8b453b64d0c660b18a729c479"
   },
   {
     "id": "eip155:56:0x452bef398e4b688ae2deb5d6842b955fd54db2b7a92d5d35361ce017eeda95d7",
@@ -3416,8 +3416,8 @@
     "tx": "0x26081ccd74296e45ccfb6031cea37a162748e0b81a110f9e657b155ee23f79da",
     "protocol": "LEDS",
     "name": "LEDS chained unguarded deflationary burns collapse the pair reserve",
-    "summary": "The LEDS token implementation exposes several independent burn mechanisms that each remove LEDS from the LEDS/WBNB pair and sync: triggerDailyBurnAndMint, a deferred sell-burn accumulated in stor_18, a to==router burn branch, and the public flush 0x17a06174 which burns the whole accumulated stor_18 from the pair with no access control. Inside flash loans the attacker deposited for LP rewards, chained these burns to reduce the pair's LEDS reserve to 2 wei while its WBNB reserve stayed, then reverse-swapped to drain the WBNB.",
-    "lossUsd": 64219.07063692128,
+    "summary": "The LEDS implementation had several unguarded burns of LEDS from its WBNB pair followed by sync (triggerDailyBurnAndMint, a deferred sell-burn and a public flush). Inside flash loans the attacker made LP deposits, chained the burns to cut the pair's LEDS reserve to dust while its WBNB stayed, then swapped tiny LEDS back for the WBNB.",
+    "lossUsd": 125048.21,
     "codeAgeSeconds": 286082,
     "exploit": {
       "block": 85402544,
@@ -5170,8 +5170,8 @@
     "tx": "0xd58f3ef6414b59f95f55dae1acb3d5d6e626acf5333917c6d43fe422d98ac7d3",
     "protocol": "LAXO_Token",
     "name": "LAXO_Token",
-    "summary": "LAXO's transfer and liquidity accounting reduced the token-side balance of its own LAXO/USDT pair, breaking reserve accounting across a two-transaction campaign and depleting the pair's USDT reserve.",
-    "lossUsd": 334312.0914738223,
+    "summary": "LAXO's sell hook burned the sold amount from its USDT pair and synced before the sale, and buys sent to the fee-excluded PancakeSwap router skipped the buyer quota. With flash-loaned USDT the attacker bought LAXO to the router, swept it out via a dust-pair removeLiquidity, then sold to burn the pair's LAXO and swapped out its USDT.",
+    "lossUsd": 420141.24,
     "codeAgeSeconds": 857363,
     "exploit": {
       "block": 82730141,
@@ -5189,7 +5189,7 @@
       "index": 79,
       "timestamp": 1770917001
     },
-    "claimsSha256": "95ed542e5a48eef689264a91926ae81dfc3caf39398706e0f28ecee27d549203"
+    "claimsSha256": "56b2a4e2c5fda8f5fe6364f33248d8279d361fdf01fd8e6acc075a1eb258d035"
   },
   {
     "id": "eip155:1:0xebaaab69baa3cd2543eb80ecfb8e3ed226b9e5a6f5694891a8adf4edbcbd8107",
@@ -5876,6 +5876,33 @@
       "timestamp": 1661843800
     },
     "claimsSha256": "3be09764e1249515946d62eec497ffc552a6f24c519afe3679487d82810d5c27"
+  },
+  {
+    "id": "eip155:1:0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c",
+    "chainId": 1,
+    "tx": "0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c",
+    "protocol": "Inverse Finance",
+    "name": "Inverse Finance YVCrv3CryptoFeed spot-balance LP valuation",
+    "summary": "YVCrv3CryptoFeed priced Anchor's yvCurve-3Crypto collateral from tricrypto2's live token balances times Chainlink prices over LP supply. With flash-loaned WBTC the attacker minted the collateral, then swapped heavily through tricrypto2 to inflate the balance-sum price about 2.9x and borrowed DOLA against it, leaving the collateral behind.",
+    "lossUsd": 10080763.46,
+    "codeAgeSeconds": 1234244,
+    "exploit": {
+      "block": 14972419,
+      "index": 0,
+      "timestamp": 1655369278
+    },
+    "target": {
+      "address": "0xe8929afd47064efd36a7fb51da3f8c5eb40c4cb4",
+      "codeHash": "0xfed93489b4349406cf934d482239b8c9def162fac0d6f140dcd73207f85c1790"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x8d6f51c088049e089ec4c5a270f7260c1f10aade637726ea839626cda8397b73",
+      "block": 14888250,
+      "index": 50,
+      "timestamp": 1654135034
+    },
+    "claimsSha256": "d46f2097cc9ced9349d983a8f4251fadf76bc8e97d2b517203f6601659fad552"
   },
   {
     "id": "eip155:1:0x7cc7d935d895980cdd905b2a134597fb91004b5d551d6db0fb265e3d9840da22",
@@ -6673,33 +6700,6 @@
       "timestamp": 1773116825
     },
     "claimsSha256": "16949f03d980de8c1cbef08a9bd0467ecb4ed09fc35ddd0aaa04c704d85d27b4"
-  },
-  {
-    "id": "eip155:1:0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c",
-    "chainId": 1,
-    "tx": "0x958236266991bc3fe3b77feaacea120f172c0708ad01c7a715b255f218f9313c",
-    "protocol": "Inverse Finance",
-    "name": "Inverse Finance YVCrv3CryptoFeed spot-balance LP valuation",
-    "summary": "YVCrv3CryptoFeed.latestAnswer(), the price feed the Anchor Oracle used for the anYvCrv3Crypto collateral market, prices the Yearn share as (WBTC.balanceOf(tricrypto2) * BTC/USD + WETH.balanceOf(tricrypto2) * ETH/USD + USDT.balanceOf(tricrypto2) * USDT/USD) * 1e18 / crv3crypto.totalSupply() * vault.pricePerShare(). Every Chainlink component is sound, but the pool composition is read live, so the aggregate is whatever an imbalanced trade leaves in the pool at that instant. The contract even declares an ICurvePool interface whose only member is get_virtual_price(), the manipulation-resistant alternative, and never calls it; CRV3CRYPTO is used solely for address(). In the anchor transaction the attacker flash-borrowed 27,000 WBTC from Aave V2, added 225 WBTC as liquidity for 5,375.596969399930881565 crv3crypto, wrapped it into 4,906.754677503974414310 yvCurve-3Crypto and minted anYvCrv3Crypto, then pushed the remaining 26,775 WBTC through tricrypto2 for 75,403,376.186072 USDT. The feed answer moved from 979.618562315051433272 USD at block 14972418 to 2,831.510989208155228660 USD inside the exploit, a 2.89x inflation, and borrowAllowed let the attacker draw 10,133,949.192393802606886848 DOLA against collateral worth a fraction of it. The violated invariant is that collateral pricing used for borrow authorization must not be atomically manipulable by a market participant. The boundary test finds no parameter: the feed has no owner, no setter and no constructor argument, every address is a hardcoded constant or an inline-initialised literal, so no configured value of the deployed contract would have rejected the manipulated composition.",
-    "lossUsd": 10080763.456915053,
-    "codeAgeSeconds": 1938065,
-    "exploit": {
-      "block": 14972419,
-      "index": 0,
-      "timestamp": 1655369278
-    },
-    "target": {
-      "address": "0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c",
-      "codeHash": "0x898e380441ead5e79f82172f51f2b19a22966bbf0734fea156229e70caea1fa4"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x102076528b11efcd9f43166ba08ede0679ca31209b85b6059f0f032a0013fc0b",
-      "block": 14838300,
-      "index": 104,
-      "timestamp": 1653431213
-    },
-    "claimsSha256": "ae31b9722147d17e5d2d0adebe8339459f3809ae679c2f4900ee5c950c7b9374"
   },
   {
     "id": "eip155:1:0xe29799cfe4b0e3a54915b6f8619207e69549c9988cf1ff140e688d36ae1a2bdf",
@@ -7636,9 +7636,9 @@
     "chainId": 56,
     "tx": "0x1aaf5d1dc3cd07feb5530fbd6aa09d48b02cbd232f78a40c6ce8e12c55927d03",
     "protocol": "KiloEx",
-    "name": "MinimalForwarder unguarded execute on BSC",
-    "summary": "KiloEx's BSC MinimalForwarder exposes a public execute((address,address,uint256,uint256,uint256,bytes),bytes) entry point that relays any request with a valid signature but omits the keeper and approved-router authorization enforced by its other relay entry point. Because the request chooses its own signer and the downstream delegate trusts msg.sender == the forwarder without checking the appended ERC-2771 sender, the attacker used a self-generated signer to reach the privileged price-and-trade path, set artificial prices, and trade against KiloEx's USDT vault.",
-    "lossUsd": 4282438.022370661,
+    "name": "KiloEx MinimalForwarder unguarded execute",
+    "summary": "KiloEx's price feed accepted price updates relayed by its trusted forwarder, whose execute() relayed any request signed by its own sender, so anyone could set oracle prices. The attacker opened a position, pushed crafted prices through the forwarder and closed against the vault on BSC, opBNB, Base and Taiko, and pulled the BSC forwarder's own USDT.",
+    "lossUsd": 7433108.98,
     "codeAgeSeconds": 3079913,
     "exploit": {
       "block": 48358304,
@@ -7657,7 +7657,7 @@
       "index": 117,
       "timestamp": 1741576834
     },
-    "claimsSha256": "697c0ff0ed1ce0dd92d9a41fc5f7a6b22b64c768806b40b7ee9a2e50a0016ad6"
+    "claimsSha256": "becc96cef847306fb80b1bdb5d1ea4d24190cbefbab436d774199b13f04db08e"
   },
   {
     "id": "eip155:1:0xcd7dae143a4c0223349c16237ce4cd7696b1638d116a72755231ede872ab70fc",
@@ -9784,9 +9784,9 @@
     "tx": "0x956e38b8ddb40ba080c8042c685ae52ee5c1b096f1d7f0c4a6c59be3eb4265bd",
     "protocol": "JUDAO",
     "name": "JUDAO sell-hook pair-reserve desynchronization",
-    "summary": "JUDAO's sell hook removed JUDAO from its own PancakeSwap pair for daily mining and burn/tax accounting, synchronized the lower balance as the AMM reserve, and only then completed the seller-to-pair transfer. The attacker triggered this path and used the resulting balance-over-reserve gap as apparent swap input to withdraw excess USDT.",
-    "lossUsd": 464204.862567681,
-    "codeAgeSeconds": 8723275,
+    "summary": "JUDAO's sell hook moved JUDAO out of its own PancakeSwap pair (daily mining and burn), synced the lowered balance as the reserve, and only then completed the seller-to-pair transfer. With a flash loan the attacker bought JUDAO, sold it into the pair to trigger the hook, and used the balance-over-reserve gap as swap input to withdraw excess USDT.",
+    "lossUsd": 464101.77,
+    "codeAgeSeconds": 8723019,
     "exploit": {
       "block": 95070974,
       "index": 1,
@@ -9797,13 +9797,13 @@
       "codeHash": "0xcd64894f2301a9b59339825254c039cac724503063d9ee8e4cb6cab1f8b932ba"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xd5cf67c8fdaa121c783d2ad4f4bdd9cbf49c97e988974c78c1bc279c4066f813",
-      "block": 75703141,
-      "index": 44,
-      "timestamp": 1768611125
+      "kind": "config",
+      "tx": "0x15213162c18027f70306d3db31fec53b272831878c9aac519cf650e99ce0b1a5",
+      "block": 75703708,
+      "index": 68,
+      "timestamp": 1768611381
     },
-    "claimsSha256": "41dda69a80960cea5f826cf5b367f74e5da4b582513abe31f841e7150e6ccbfc"
+    "claimsSha256": "976f1578569de490acf0a1496533e87a52bc3917edc7f11514f7522fbf1e1b78"
   },
   {
     "id": "eip155:43114:0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d",
@@ -10733,6 +10733,34 @@
       "timestamp": 1639529917
     },
     "claimsSha256": "fdd0e60e9d116caee96e127c1a18b171b2ee7a033347292a4c767c5296f43bdc"
+  },
+  {
+    "id": "eip155:1:0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842",
+    "chainId": 1,
+    "tx": "0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842",
+    "protocol": "Inverse Finance",
+    "name": "Inverse Finance Anchor xINV InvFeed Keep3r TWAP manipulation",
+    "summary": "Anchor priced xINV collateral via InvFeed, which read Keep3rV2Oracle.current(): a TWAP from the last observation of the SushiSwap INV/WETH pair, with no minimum window. The attacker pumped INV on Sushi and forced a fresh observation, then a block later minted xINV at the inflated price and borrowed ETH, WBTC, DOLA and YFI from Anchor markets.",
+    "lossUsd": 14841459.15,
+    "codeAgeSeconds": 12046777,
+    "exploit": {
+      "block": 14506359,
+      "index": 24,
+      "timestamp": 1648897449
+    },
+    "target": {
+      "address": "0x4dcf7407ae5c07f8681e1659f626e114a7667339",
+      "code": "0x731b65a993c7a4ff10d304d5204afc51033cda4c",
+      "codeHash": "0xe046f6eb84c9bbc2872756ec016e66d6a29659b540a9e85b1a3b5cbd590bd5b5"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0xfba1751efa55a7994558eaee11c35c26613345c2b783284026054a67a76baa6f",
+      "block": 13610912,
+      "index": 298,
+      "timestamp": 1636850672
+    },
+    "claimsSha256": "f0d8edae16312a312b1b49e0fdd605570034eb0966b3b259d7c83f375c85c7a6"
   },
   {
     "id": "eip155:1:0x1f1aba5bef04b7026ae3cb1cb77987071a8aff9592e785dd99860566ccad83d1",
@@ -12213,33 +12241,6 @@
       "timestamp": 1619347920
     },
     "claimsSha256": "138a5961be694fcd9919eed98ffe247b85bde7dee716e98ed5f6f777c44912b5"
-  },
-  {
-    "id": "eip155:1:0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842",
-    "chainId": 1,
-    "tx": "0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842",
-    "protocol": "Inverse Finance",
-    "name": "Inverse Finance Anchor xINV InvFeed unvalidated Keep3r window",
-    "summary": "InvFeed.latestAnswer(), the price feed Anchor's Oracle used for the xINV collateral market, called Keep3rV2Oracle.current(INV, 1e18, WETH) and discarded the lastUpdatedAgo value that function returns, applying no minimum averaging window, staleness bound or deviation bound. Because Keep3rV2OracleFactory.workForFree() is permissionless, the attacker could pump the SushiSwap INV/WETH pair and force a fresh observation in the same block, so one block later current() averaged 15 seconds of manipulated cumulative price and InvFeed reported INV at 20,926.79 USD instead of 394.23. The violated invariant is that collateral pricing used for borrow authorization must not be atomically manipulable by a market participant; the deployed feed contained no validation capable of enforcing it.",
-    "lossUsd": 14852159.53760307,
-    "codeAgeSeconds": 28128584,
-    "exploit": {
-      "block": 14506359,
-      "index": 24,
-      "timestamp": 1648897449
-    },
-    "target": {
-      "address": "0x210ac53b27f16e20a9aa7d16260f84693390258f",
-      "codeHash": "0xe730dc8c0bf69da72fd2068f4dd1865a4c5e1b7dcd456f5e8577cff19bbe9199"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x49fa7c0c104dd4a907673e1920cc46c9879a96883c8ed5345bdeb7a7d2df5278",
-      "block": 12415560,
-      "index": 176,
-      "timestamp": 1620768865
-    },
-    "claimsSha256": "82289ad2b902ab499cc6a93e742d39215c1caeedb78dbccfb1df4772a751f6d2"
   },
   {
     "id": "eip155:42161:0x6caa65b3fc5c8d4c7104574c3a15cd6208f742f9ada7d81ba027b20473137705",

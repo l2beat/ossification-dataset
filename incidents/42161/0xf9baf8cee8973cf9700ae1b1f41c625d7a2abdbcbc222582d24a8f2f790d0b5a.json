@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Jimbos Protocol",
   "name": "JimboController permissionless shift/reset rebalancing",
-  "summary": "JimboController.shift() and JimboController.reset() are public, callable by anyone, and gate only on pair.getActiveId() relative to the stored trigger and anchor bins. Both withdraw the protocol-owned Trader Joe v2 liquidity and redeploy it around whatever active bin the pair happens to be on at that instant, with no price reference, no TWAP, and no bound on how far the active bin may have moved; the only slippage guard in _addLiquidity is a 1% amountXmin/amountYmin on the router's own add, which does not constrain the price the liquidity is placed at. An attacker who flash-borrows WETH, pushes the JIMBO/WETH active bin up, calls shift(), pushes it back down and calls reset() therefore makes the contract redeposit the protocol's WETH into a bin range they control and then buys it out with JIMBO.",
+  "summary": "JimboController.shift() and reset() were public and redeployed the protocol-owned ETH liquidity of the JIMBO/ETH Trader Joe LB pair around the current active bin, with no price bound. With flash-loaned WETH the attacker moved the active bin, called shift()/reset() so the ETH was placed at the manipulated price, and bought it out with JIMBO.",
   "targets": [
     {
       "address": "0x271944d9d8ca831f7c0dbcb20c4ee482376d6de7",
@@ -13,24 +13,34 @@
     }
   ],
   "loss": {
-    "usd": 7395118.603051347,
+    "usd": 7513575.86,
     "assets": [
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
-        "amount": "4046.421534086982319423",
-        "usd": 7395118.603051347
+        "amount": "4046.421534086982399714",
+        "usd": 7395118.6
+      },
+      {
+        "token": "0xc3813645ad2ea0ac9d4d72d77c3755ac3b819e38",
+        "symbol": "JIMBO",
+        "amount": "11735174.101723864203292378",
+        "usd": 118457.26
       }
     ]
   },
   "refs": [
-    "eip155:42161:0xfda5464e97043a2d0093cbed6d0a64f6a86049f5e9608c014396a7390188670e",
-    "eip155:42161:0x3c6e053faecd331883641c1d23c9d9d37d065e4f9c4086e94a3c34bf8702618a",
-    "eip155:42161:0x44a0f5650a038ab522087c02f734b80e6c748afb207995e757ed67ca037a5eda",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2023-05/Jimbo_exp.sol"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2023-05/Jimbo_exp.sol",
+    "eip155:42161:0x5cd668b4ba1303f6e524f7e61882fd8858f0e26755627da23dead650f15c71a9",
+    "eip155:42161:0xa8bc0301f175d271965ccefeb256e4977cfefe76ef7ee2fe89a70ced2ca6f23d"
   ],
   "notes": [
-    "JimboController is an immutable non-proxy contract deployed in this transaction; its runtime is byte-identical at the deployment block, immediately before the exploit and today.",
-    "Aggregating WETH Transfer logs across the four campaign receipts, the JIMBO/WETH Trader Joe v2 pair 0x16a5d28b20a3fddecdcaf02df4b3935734df1a1f, which held Jimbos' protocol-owned liquidity, loses exactly 4046.421534086982319423 WETH and is the only net loser. Of that, 4026.421534086982376266 WETH ends up in the three attacker contracts (3039.463221773209170351 + 625.999745568426533282 + 360.958566745346672633) and 20.000000000000000000 WETH is the Aave v3 flash-loan premium paid to aWETH 0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8; the premium is a financing fee and does not reduce gross victim depletion. Aave's flash-loan principal is repaid inside each transaction and is not counted. The JIMBO the pair received in exchange is deliberately not credited against the loss: the attacker's own rebalancing and selling set that price, and the token had no independent market. The attacker later swept the WETH to the EOA and bridged it out; no recovery is netted out."
+    "The controller is immutable and its later storage writes are bin ids it updates in normal operation, so its deployment is the reset.",
+    "Loss is the LB pair's net WETH depletion over the four txs plus the JIMBO the pair and controller lost; JIMBO has no market price and is valued at the 64.79 ETH the attacker realised selling it back into the pair (the two sales in refs)."
+  ],
+  "campaign": [
+    "eip155:42161:0xfda5464e97043a2d0093cbed6d0a64f6a86049f5e9608c014396a7390188670e",
+    "eip155:42161:0x3c6e053faecd331883641c1d23c9d9d37d065e4f9c4086e94a3c34bf8702618a",
+    "eip155:42161:0x44a0f5650a038ab522087c02f734b80e6c748afb207995e757ed67ca037a5eda"
   ]
 }

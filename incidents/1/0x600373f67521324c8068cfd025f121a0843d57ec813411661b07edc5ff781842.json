@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Inverse Finance",
-  "name": "Inverse Finance Anchor xINV InvFeed unvalidated Keep3r window",
-  "summary": "InvFeed.latestAnswer(), the price feed Anchor's Oracle used for the xINV collateral market, called Keep3rV2Oracle.current(INV, 1e18, WETH) and discarded the lastUpdatedAgo value that function returns, applying no minimum averaging window, staleness bound or deviation bound. Because Keep3rV2OracleFactory.workForFree() is permissionless, the attacker could pump the SushiSwap INV/WETH pair and force a fresh observation in the same block, so one block later current() averaged 15 seconds of manipulated cumulative price and InvFeed reported INV at 20,926.79 USD instead of 394.23. The violated invariant is that collateral pricing used for borrow authorization must not be atomically manipulable by a market participant; the deployed feed contained no validation capable of enforcing it.",
+  "name": "Inverse Finance Anchor xINV InvFeed Keep3r TWAP manipulation",
+  "summary": "Anchor priced xINV collateral via InvFeed, which read Keep3rV2Oracle.current(): a TWAP from the last observation of the SushiSwap INV/WETH pair, with no minimum window. The attacker pumped INV on Sushi and forced a fresh observation, then a block later minted xINV at the inflated price and borrowed ETH, WBTC, DOLA and YFI from Anchor markets.",
   "targets": [
     {
       "address": "0x210ac53b27f16e20a9aa7d16260f84693390258f",
@@ -10,46 +10,70 @@
         "kind": "deployment",
         "tx": "0x49fa7c0c104dd4a907673e1920cc46c9879a96883c8ed5345bdeb7a7d2df5278"
       }
+    },
+    {
+      "address": "0x39b1df026010b5aea781f90542ee19e900f2db15",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x04e007e29a84aa6e3ceb7c2c908416fe17bb4557bc46d2a5f2fdf3d9df921677"
+      }
+    },
+    {
+      "address": "0xe8929afd47064efd36a7fb51da3f8c5eb40c4cb4",
+      "reset": {
+        "kind": "config",
+        "tx": "0x818707606136f5cafd461cdb995eafa07374808001fc2bb19bf8cc56220e662e",
+        "address": "0xe8929afd47064efd36a7fb51da3f8c5eb40c4cb4",
+        "slot": "0xeb985db8025bca049eb5e3ec1a9bf46044553ce2460dd51db275dafe384a9616"
+      }
+    },
+    {
+      "address": "0x4dcf7407ae5c07f8681e1659f626e114a7667339",
+      "code": "0x731b65a993c7a4ff10d304d5204afc51033cda4c",
+      "reset": {
+        "kind": "config",
+        "tx": "0xfba1751efa55a7994558eaee11c35c26613345c2b783284026054a67a76baa6f",
+        "address": "0x4dcf7407ae5c07f8681e1659f626e114a7667339",
+        "slot": "0x7153918fc92e74b3ad46a27a5b94e0426692277df35a0954825c53c894e9a9bc"
+      }
     }
   ],
   "loss": {
-    "usd": 14852159.53760307,
+    "usd": 14841459.15,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "1588.263719446159096974",
-        "usd": 5545770.782201054
+        "usd": 5536231.19
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
         "amount": "94.03071805",
-        "usd": 4385810.756451738
-      },
-      {
-        "token": "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
-        "symbol": "YFI",
-        "amount": "39.368440899328442",
-        "usd": 925196.3393592236
+        "usd": 4385810.76
       },
       {
         "token": "0x865377367054516e17014ccded1e7d814edc9ce4",
         "symbol": "DOLA",
         "amount": "3999669.029654761043260989",
-        "usd": 3995381.659591053
+        "usd": 3995381.66
+      },
+      {
+        "token": "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+        "symbol": "YFI",
+        "amount": "39.368440899328442",
+        "usd": 924035.54
       }
     ]
   },
   "refs": [
     "eip155:1:0x20a6dcff06a791a7f8be9f423053ce8caee3f9eecc31df32445fc98d4ccd8365",
     "https://www.certik.com/resources/blog/inverse-finance-02-april-2022",
-    "https://medium.com/inverse-finance/inv-price-manipulation-incident-55ea0433f4fc",
-    "eip155:1:0x51d6b0c9369c46e6e2a9a6e83c0d01a26b01a683852187bdff82701d1ab87ed4"
+    "https://medium.com/inverse-finance/inv-price-manipulation-incident-55ea0433f4fc"
   ],
   "notes": [
-    "InvFeed is an immutable contract with no owner, setters, proxy or delegatecall dispatch; its runtime was installed by this top-level creation and is byte-identical at block 14506358.",
-    "The four components are the exact Borrow amounts in the anchor receipt, all credited to the attack contract and forwarded to the attacker in the same transaction. Twenty-four copycat calls to the attack contract's permissionless mint() later in the same block emitted Borrow with amount 0 and added nothing. The 1,746.4378787523042 INV the attacker posted as collateral, worth about 662,938 USD at the unmanipulated DefiLlama INV price, remained with the protocol; it is an attacker-supplied input and is not netted from this gross-assets-lost figure, which would otherwise be about 14.19M USD. The attacker realised 3,979,391.769826477557748974 DAI for the borrowed DOLA in a later Curve swap, so the near-par DOLA valuation is realisable rather than a spot mark. YFI uses the last DefiLlama point at or before the anchor (1648895989); the next point, 5 seconds after the anchor, is 23,471.48 USD and would lower the total by about 1,161 USD. Widely reported figures of 15.6M USD use round contemporaneous prices; this record uses the exact quantities.",
-    "The anchor is the borrow transaction rather than the preceding price-manipulation transaction 0x20a6dcff06a791a7f8be9f423053ce8caee3f9eecc31df32445fc98d4ccd8365, because the manipulation transaction never executes InvFeed; it only pumps the SushiSwap pair and forces a Keep3r observation. The three earlier attacker transactions with the same entry selector, at blocks 14506187, 14506223 and 14506307, succeeded but made no external call, and the earliest attempt to trigger the borrow, 0xc36330a02f146fa3bfeb612083fa5be70f96a223bdb3873715c9c0124987e8c3 at block 14506307, reverted.",
-    "Anchor Oracle.setFeed pointing xINV at this feed is a configuration act and is recorded as context only; the code-age basis is the InvFeed deployment."
+    "InvFeed and the Keep3r oracle predate xINV. The exploit also needed the Oracle's feed pointer for xINV and the comptroller listing xINV with a 60% collateral factor, set by governance nine blocks apart; the later collateral-factor write is the reset (rule 10).",
+    "The anchor is the borrow; the preceding 0x20a6dcff only pumped the Sushi pair and forced the Keep3r observation. About 170 calls to the attack contract's mint() by other EOAs in the next blocks borrowed nothing.",
+    "Loss is the four Borrow amounts; the INV the attacker left as collateral is not netted (rule 14), and xINV's routine INV reward pull from the timelock is not a loss."
   ]
 }

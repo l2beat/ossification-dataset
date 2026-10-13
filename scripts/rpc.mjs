@@ -10,6 +10,7 @@ const RPC_ENV = {
   130: ['UNICHAIN_RPC_URL'],
   137: ['POLYGONPOS_RPC_URL', 'POLYGON_RPC_URL'],
   146: ['SONIC_RPC_URL'],
+  204: ['OPBNB_RPC_URL'],
   250: ['FANTOM_RPC_URL'],
   324: ['ZKSYNC2_RPC_URL', 'ZKSYNC_RPC_URL'],
   999: ['HYPEREVM_RPC_URL'],
@@ -21,6 +22,7 @@ const RPC_ENV = {
   60808: ['BOB_RPC_URL', 'BOBANETWORK_RPC_URL'],
   81457: ['BLAST_RPC_URL'],
   80094: ['BERACHAIN_RPC_URL'],
+  167000: ['TAIKO_RPC_URL'],
   534352: ['SCROLL_RPC_URL'],
 }
 
@@ -28,6 +30,7 @@ const RPC_ENV = {
 const PUBLIC_RPC = {
   30: 'https://public-node.rsk.co',
   250: 'https://rpcapi.fantom.network',
+  204: 'https://opbnb-mainnet-rpc.bnbchain.org',
   369: 'https://rpc.pulsechain.com',
   999: 'https://rpc.hyperliquid.xyz/evm',
   1030: 'https://evm.confluxrpc.com',

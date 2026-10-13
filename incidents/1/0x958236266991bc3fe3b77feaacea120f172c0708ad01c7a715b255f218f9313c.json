@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Inverse Finance",
   "name": "Inverse Finance YVCrv3CryptoFeed spot-balance LP valuation",
-  "summary": "YVCrv3CryptoFeed.latestAnswer(), the price feed the Anchor Oracle used for the anYvCrv3Crypto collateral market, prices the Yearn share as (WBTC.balanceOf(tricrypto2) * BTC/USD + WETH.balanceOf(tricrypto2) * ETH/USD + USDT.balanceOf(tricrypto2) * USDT/USD) * 1e18 / crv3crypto.totalSupply() * vault.pricePerShare(). Every Chainlink component is sound, but the pool composition is read live, so the aggregate is whatever an imbalanced trade leaves in the pool at that instant. The contract even declares an ICurvePool interface whose only member is get_virtual_price(), the manipulation-resistant alternative, and never calls it; CRV3CRYPTO is used solely for address(). In the anchor transaction the attacker flash-borrowed 27,000 WBTC from Aave V2, added 225 WBTC as liquidity for 5,375.596969399930881565 crv3crypto, wrapped it into 4,906.754677503974414310 yvCurve-3Crypto and minted anYvCrv3Crypto, then pushed the remaining 26,775 WBTC through tricrypto2 for 75,403,376.186072 USDT. The feed answer moved from 979.618562315051433272 USD at block 14972418 to 2,831.510989208155228660 USD inside the exploit, a 2.89x inflation, and borrowAllowed let the attacker draw 10,133,949.192393802606886848 DOLA against collateral worth a fraction of it. The violated invariant is that collateral pricing used for borrow authorization must not be atomically manipulable by a market participant. The boundary test finds no parameter: the feed has no owner, no setter and no constructor argument, every address is a hardcoded constant or an inline-initialised literal, so no configured value of the deployed contract would have rejected the manipulated composition.",
+  "summary": "YVCrv3CryptoFeed priced Anchor's yvCurve-3Crypto collateral from tricrypto2's live token balances times Chainlink prices over LP supply. With flash-loaned WBTC the attacker minted the collateral, then swapped heavily through tricrypto2 to inflate the balance-sum price about 2.9x and borrowed DOLA against it, leaving the collateral behind.",
   "targets": [
     {
       "address": "0xe8b3bc58774857732c6c1147bfc9b9e5fb6f427c",
@@ -10,16 +10,25 @@
         "kind": "deployment",
         "tx": "0x102076528b11efcd9f43166ba08ede0679ca31209b85b6059f0f032a0013fc0b"
       }
+    },
+    {
+      "address": "0xe8929afd47064efd36a7fb51da3f8c5eb40c4cb4",
+      "reset": {
+        "kind": "config",
+        "tx": "0x8d6f51c088049e089ec4c5a270f7260c1f10aade637726ea839626cda8397b73",
+        "address": "0xe8929afd47064efd36a7fb51da3f8c5eb40c4cb4",
+        "slot": "0x4225ddda64990c15bb8eb6afe350d020276d266bfb7b2f2e3d219a53b642b808"
+      }
     }
   ],
   "loss": {
-    "usd": 10080763.456915053,
+    "usd": 10080763.46,
     "assets": [
       {
         "token": "0x865377367054516e17014ccded1e7d814edc9ce4",
         "symbol": "DOLA",
         "amount": "10133949.192393802606886848",
-        "usd": 10080763.456915053
+        "usd": 10080763.46
       }
     ]
   },
@@ -29,10 +38,8 @@
     "https://www.certik.com/resources/blog/inverse-finance-incident-analysis"
   ],
   "notes": [
-    "YVCrv3CryptoFeed is an immutable contract with no owner, setter, proxy or delegatecall dispatch; its 1,788-byte runtime was installed by this top-level creation and is byte-identical at block 14972418.",
-    "The component is the exact Borrow amount in the anchor receipt: anDOLA 0x7fcb7dac61ee35b3d4a51117a7c58d53f0a8a670 sent 10,133,949.192393802606886848 DOLA to the attack contract, and the attacker immediately swapped all of it for 9,881,355.040729892287779421 3CRV, so a near-par DOLA mark is realisable rather than a spot mark. Following the treatment used for this protocol's April 2022 record, the 4,906.754677503974414310 yvCurve-3Crypto the attacker posted as collateral is an attacker-supplied input that stayed with the protocol and is not netted from this gross figure; Inverse later liquidated it and reported the resulting net protocol loss as 5.83 million USD in DOLA. The attacker's own realised end-of-transaction proceeds, after the 27,000 WBTC Aave V2 flash loan was repaid with the 27,024.3 WBTC premium, are 53.24446541 WBTC and 99,976.294967 USDT, about 1.259 million USD at the DefiLlama WBTC price of 21,760.665102437866, which is the figure contemporaneous reporting quotes as 1.2 to 1.3 million. Nothing else in the block re-executes the defect: the attacker's only earlier transaction is the attack-contract creation one block before, and the two later calls with selector 0xc7e42b1b merely sweep the proceeds.",
-    "The recorded figure is gross victim depletion, the full DOLA borrow. Inverse subsequently liquidated the attacker's yvCurve-3Crypto collateral and reported a net protocol loss of 5.83 million USD, and the attacker's realised profit was about 1.26 million USD; both are stated in the loss notes so a reviewer can select the measure they want.",
-    "The seed inventory aged this row from the anYvCrv3Crypto market 0x1429a930ec3bcf5aa32ef298ccc5ab09836ef587, deployed 368 seconds before the feed. The market contract applies the oracle answer as written; the defect is in the feed, so the age basis is the feed deployment and the measured age is 1,938,065 rather than the snapshot's 1,938,433 seconds.",
-    "This is Inverse Finance's second Frontier oracle incident. The April 2022 xINV InvFeed incident is a separate record and the two losses are disjoint."
+    "The feed has no setters, but the exploit also needed Anchor's Oracle to point anYvCrv3Crypto at it; that pointer was set with the market listing and 70% collateral factor in one governance tx, the reset (rule 10). The later raise to 80% only sized the loss.",
+    "Loss is the full DOLA borrow; the yvCurve-3Crypto collateral left behind is not netted (rule 14). Inverse's reported net loss and the attacker's ~1.26M profit are other measures. Only one anYvCrv3Crypto Mint ever happened, so there is no campaign.",
+    "Separate incident from the April 2022 xINV InvFeed exploit: a different feed contract and defect."
   ]
 }
