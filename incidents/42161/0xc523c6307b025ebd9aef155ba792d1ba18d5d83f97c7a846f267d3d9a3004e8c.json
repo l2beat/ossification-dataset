@@ -2,93 +2,96 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Lodestar Finance",
   "name": "Lodestar GLPOracle donatable plvGLP exchange rate",
-  "summary": "Lodestar's GLPOracle.getPlutusExchangeRate() prices plvGLP as plvGLP.totalAssets() * 1e18 / plvGLP.totalSupply(), an instantaneous read of an ERC-4626 vault whose totalAssets() is the vault's plsGLP balance. Any transfer of plsGLP into the vault raises the numerator without minting shares, and getPlvGLPPrice() multiplies that ratio by the GLP price with no moving average, deviation bound, or same-block change guard. Within one transaction the attacker donated 5,620,813.918834889782579953 plsGLP into the vault, lifting the rate from 1.079668824382448539 to 1.822433552033092528, and PriceOracleProxyETH.getUnderlyingPrice(lplvGLP) relayed the inflated price to the Compound-fork Comptroller, letting a looped plvGLP position borrow out every other Lodestar market.",
+  "summary": "Lodestar's GLPOracle priced plvGLP collateral from plvGLP's spot totalAssets/totalSupply. The attacker built a looped lplvGLP position, donated GLP to the Plutus vault to inflate the exchange rate, borrowed every market's liquidity against the inflated collateral, and redeemed the borrowed plvGLP at the inflated rate.",
   "targets": [
     {
       "address": "0xba46f854a5b099fcea178c6e7ed047baffece5ac",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x01612ff4a259f54c44e08778beb0ea28312d0b6ac956b3a61a52858656dc2d49"
+        "kind": "config",
+        "tx": "0x0f3ec93874dd3fe6f36b82d96250a7a5bfd4c6c68599a491b00f1be9789e5abb",
+        "address": "0x8f2354f9464514efdae441314b8325e97bf96cdc",
+        "slot": "0x4"
       }
     }
   ],
+  "campaign": [
+    "eip155:42161:0xa9a12d1f415e6180deff030e6e737d86d88c8c4b0f997a8d604f1b82979c1669",
+    "eip155:42161:0xb91ef85fb137605c88bc67b86d51213d281753ca4f16d33dd5dbf4b150c8b871",
+    "eip155:42161:0x752547f7ab7cf4745483c186586f6ae5a426e3c9f83f56376ed60c3cc9f41019"
+  ],
   "loss": {
-    "usd": 7152983.668897387,
+    "usd": 7151920.35,
     "assets": [
       {
         "token": "0x5326e71ff593ecc2cf7acae5fe57582d6e74cff1",
         "symbol": "plvGLP",
         "amount": "3814441.161509835687601554",
-        "usd": 3499796.2294414607
+        "usd": 3499796.23
       },
       {
         "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-        "symbol": "USDC.e",
+        "symbol": "USDC",
         "amount": "1678556.478687",
-        "usd": 1677777.628480889
+        "usd": 1677777.63
       },
       {
         "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
         "symbol": "DAI",
         "amount": "407119.894855655961773024",
-        "usd": 406905.34267106705
+        "usd": 406905.34
       },
       {
         "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
         "symbol": "USDT",
         "amount": "397840.679709",
-        "usd": 397765.2623895206
+        "usd": 397765.26
       },
       {
         "token": "0x17fc002b466eec40dae837fc4be5c67993ddbd6f",
         "symbol": "FRAX",
         "amount": "361326.024023817648655341",
-        "usd": 360152.0757717643
+        "usd": 360152.08
       },
       {
         "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
         "symbol": "WBTC",
         "amount": "12.51988803",
-        "usd": 214519.7678701896
+        "usd": 214519.77
       },
       {
         "token": "0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a",
         "symbol": "MIM",
         "amount": "204660.267753251313632099",
-        "usd": 204122.4205695958
+        "usd": 204419.58
       },
       {
         "symbol": "ETH",
-        "amount": "124.593719452169514630",
-        "usd": 158891.87854296275
+        "amount": "124.59371945216951463",
+        "usd": 158891.88
       },
       {
         "token": "0x539bde0d7dbd336b79148aa742883198bbf60342",
         "symbol": "MAGIC",
         "amount": "280632.870029536866929986",
-        "usd": 156794.07461142272
+        "usd": 155589.41
       },
       {
         "token": "0x6c2c06790b3e3e3c38e12ee22f8183b37a13ee55",
         "symbol": "DPX",
         "amount": "273.368900733130736421",
-        "usd": 76258.98854851416
+        "usd": 76103.17
       }
     ]
   },
+  "notes": [
+    "Target is the GLPOracle; its reset is the comptroller's switch to the PriceOracleProxyETH that routes lplvGLP to it. The previous oracle used identical logic since Nov 2022, but rule 9 counts the pointer change.",
+    "plvGLP borrowed out of lplvGLP is valued at its pre-donation redemption value (exchange rate x GLP price); MIM is unpriced and valued at the USDC the attacker realised.",
+    "Later DPX and MAGIC borrows by other accounts in the same blocks used ordinary collateral (no lplvGLP position) and are not counted."
+  ],
   "refs": [
-    "eip155:42161:0xa9a12d1f415e6180deff030e6e737d86d88c8c4b0f997a8d604f1b82979c1669",
-    "eip155:42161:0xb91ef85fb137605c88bc67b86d51213d281753ca4f16d33dd5dbf4b150c8b871",
-    "eip155:42161:0x752547f7ab7cf4745483c186586f6ae5a426e3c9f83f56376ed60c3cc9f41019",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/Lodestar_exp.sol",
     "https://web.archive.org/web/20221211183722/https://blog.lodestarfinance.io/post-mortem-summary-13f5fe0bb336",
     "https://www.certik.com/resources/blog/TqTyq4vYHl8JzS7zyJye9-lodestar-finance-incident-analysis",
     "https://rekt.news/lodestar-rekt"
-  ],
-  "notes": [
-    "GLPOracle is a plain non-proxy contract with no DELEGATECALL in its runtime. Its runtime is byte-identical at the creation block, at the block before the exploit, and today, so the executed pricing code dates from deployment four days and 14 hours earlier.",
-    "Components are the exact net underlying depletion of Lodestar's Compound-fork markets, summed from the Transfer logs of the four campaign transactions (the anchor plus 0xa9a12d1f, 0xb91ef85f and 0x752547f7, which took the lMAGIC and lDPX markets). Attacker deposits are already netted: in the anchor the lUSDC market pays out 71,775,069.474207 USDC.e against 70,096,512.99552 supplied back by the attacker, and the lplvGLP market pays out 64,845,499.745667204 plvGLP against 61,031,058.58415737 supplied back, leaving the 1,678,556.478687 USDC.e and 3,814,441.161509835687601554 plvGLP recorded here. Every market except lLODE was left at exactly its 10-unit seed dust. Native ETH is the lETH market's balance change from 124.693719452169514630 to 0.1. plvGLP has no DefiLlama observation; it is valued at 0.917512181012688097 USD, the value Lodestar's own GLPOracle.getPlvGLPPrice() returned at block 45121903, i.e. before the donation inflated the rate to 1.548720260621492204. All other assets use DefiLlama historical prices at the anchor timestamp. PlutusDAO later returned about 2.72 million GLP that the attacker had stranded in the plvGLP vault, and 750,000 LODE was distributed to affected wallets; per methodology those recoveries do not reduce gross depletion. Reported figures range from 5.8 to 7 million USD, with CertiK giving about 6.5 million attacker profit and DefiLlama 6.9 million; the reconstruction here is larger mainly because it counts the plvGLP at pre-attack net asset value and includes the later lMAGIC and lDPX drains.",
-    "plvGLP has no third-party historical price. Its 3,814,441.161509835687601554 units are valued at 0.917512181012688097 USD, the pre-donation output of Lodestar's own GLPOracle at block 45121903. plvGLP is a vault share with thin secondary liquidity and a redemption fee, so this is a net-asset-value mark rather than an executable price; it is 49 percent of the incident total.",
-    "The lDPX market lost 414.520343767192446310 DPX between block 45121903 and block 45129430 but only 273.368900733130736421 of that is attributable to a transaction of this campaign; the unattributed remainder is excluded."
   ]
 }

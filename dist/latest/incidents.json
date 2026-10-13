@@ -3885,9 +3885,9 @@
     "tx": "0xc523c6307b025ebd9aef155ba792d1ba18d5d83f97c7a846f267d3d9a3004e8c",
     "protocol": "Lodestar Finance",
     "name": "Lodestar GLPOracle donatable plvGLP exchange rate",
-    "summary": "Lodestar's GLPOracle.getPlutusExchangeRate() prices plvGLP as plvGLP.totalAssets() * 1e18 / plvGLP.totalSupply(), an instantaneous read of an ERC-4626 vault whose totalAssets() is the vault's plsGLP balance. Any transfer of plsGLP into the vault raises the numerator without minting shares, and getPlvGLPPrice() multiplies that ratio by the GLP price with no moving average, deviation bound, or same-block change guard. Within one transaction the attacker donated 5,620,813.918834889782579953 plsGLP into the vault, lifting the rate from 1.079668824382448539 to 1.822433552033092528, and PriceOracleProxyETH.getUnderlyingPrice(lplvGLP) relayed the inflated price to the Compound-fork Comptroller, letting a looped plvGLP position borrow out every other Lodestar market.",
-    "lossUsd": 7152983.668897387,
-    "codeAgeSeconds": 396589,
+    "summary": "Lodestar's GLPOracle priced plvGLP collateral from plvGLP's spot totalAssets/totalSupply. The attacker built a looped lplvGLP position, donated GLP to the Plutus vault to inflate the exchange rate, borrowed every market's liquidity against the inflated collateral, and redeemed the borrowed plvGLP at the inflated rate.",
+    "lossUsd": 7151920.35,
+    "codeAgeSeconds": 392457,
     "exploit": {
       "block": 45121904,
       "index": 1,
@@ -3898,13 +3898,13 @@
       "codeHash": "0x29302c69c519e8bbba1a860091b70944d839f5564d1323cd1e91ffb50e3a5981"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x01612ff4a259f54c44e08778beb0ea28312d0b6ac956b3a61a52858656dc2d49",
-      "block": 43961659,
+      "kind": "config",
+      "tx": "0x0f3ec93874dd3fe6f36b82d96250a7a5bfd4c6c68599a491b00f1be9789e5abb",
+      "block": 43973696,
       "index": 1,
-      "timestamp": 1670294017
+      "timestamp": 1670298149
     },
-    "claimsSha256": "70b9a47c277821f036965e5f3b835704f991d80f199c327e1a69a0696456730e"
+    "claimsSha256": "1897fac42fa4526c0677a2d746536a50ad96f70f1327466fe9f53b1245363ce7"
   },
   {
     "id": "eip155:250:0xca8dd33850e29cf138c8382e17a19e77d7331b57c7a8451648788bbb26a70145",
@@ -5855,8 +5855,8 @@
     "tx": "0xd48758ef48d113b78a09f7b8c7cd663ad79e9965852e872fdfc92234c3e598d2",
     "protocol": "MEV bot 0x64dD59D6",
     "name": "BNB48 private-tx MEV bot pancakeCall access control",
-    "summary": "The bot trusted an unauthenticated swap callback caller, allowing a single transaction to transfer its six-token inventory out of the contract.",
-    "lossUsd": 147449.04614164584,
+    "summary": "The bot's pancakeCall callback trusted any caller as a swap pair. The attacker's fake pair invoked it once per token, and the bot transferred its six-token inventory to the caller.",
+    "lossUsd": 146368.37,
     "codeAgeSeconds": 1230640,
     "exploit": {
       "block": 21297410,
@@ -6513,8 +6513,8 @@
     "tx": "0xbb5b8573d7203e00f8fb9d4839dbeea46a8efd367eac8bed81e4ece2341c3588",
     "protocol": "LpdFi",
     "name": "LpdFi sizes an interest-bearing principal from the LPD spot pair price",
-    "summary": "LpdFi.buy(uint256 uAmount) lets the caller name the USDC principal that will accrue interest and charges for it in LPD at `tokenAmount = uAmount * 1e18 / token.price()`, where Lpd.price() returns the instantaneous reserve ratio of the immutable PancakeSwap LPD/USDC pair 0x85346d31743796f7d00d675629e32783a968f210 with no TWAP, liquidity floor or deviation bound. Interest then accrues from the discrete issue index in getOrder as `interestRate * uAmount * (issue - lastIssue) / BASE`, so crossing an issue boundary credits a whole 0.5 percent period regardless of elapsed time, and claimInterest funds the entitlement through removeLp, which burns protocol-owned Cake-LP with both PancakeRouter minimum outputs set to zero. The attacker swapped 43,714,602.618935976563910532 USDC into the pair to lift Lpd.price() from 0.126899043811789644 to 655.1979230244382 USDC per LPD, called buy(140324732e18) for only 214,171.515306781626633142 LPD, reversed the swap, and one second later, once getIssue() rolled from 18 to 19, claimed 701,623.66 USDC of interest, which removed the protocol's entire Cake-LP position.",
-    "lossUsd": 700535.1421325061,
+    "summary": "LpdFi.buy(uAmount) books an order's USD value from Lpd.price(), the LPD/USDC Pancake pair's spot reserve ratio, and pays 0.5% of it per day in USDC by removing protocol-owned LP. The attacker flash-pumped LPD, bought an order valued at a hugely inflated USD amount just before the daily rollover, dumped, and claimed a day's interest one block later.",
+    "lossUsd": 696888.68,
     "codeAgeSeconds": 1657524,
     "exploit": {
       "block": 113613923,
@@ -6532,7 +6532,7 @@
       "index": 47,
       "timestamp": 1784028875
     },
-    "claimsSha256": "71be3cf15dd856e89134ac42241ec91893d3f9d2992d098d5487f306546f53f4"
+    "claimsSha256": "7a36e894b72bc40bf7fcce57060aca79b445a109faabbc2c508b10d60861de49"
   },
   {
     "id": "eip155:42161:0xb1141785b7b94eb37c39c37f0272744c6e79ca1517529fec3f4af59d4c3c37ef",
@@ -9642,26 +9642,26 @@
     "tx": "0x864c8cfb8c54d3439613e6bd0d81a5ea2c5d0ad25c9af11afd190e5ea4dcfc1f",
     "protocol": "MEV Bot 0xd61492",
     "name": "MEV bot 0xd61492 router unauthenticated command entry",
-    "summary": "The bot's vault 0xd614927a (\"BBVault\") accepts commands only from its router 0x8db0efee. The router's entry 0x0582f20f runs a caller-supplied command program for any caller, including DELEGATECALL to caller-chosen code. An attacker contract called the router and had the vault take flash loans from a fake Aave-style pool it had just deployed. The vault approved that pool for each repayment, and the pool used the allowances to pull the vault's WBTC, WETH, ARB, DAI, USDT and USDC.e to the attacker.",
-    "lossUsd": 847049.1413319997,
-    "codeAgeSeconds": 8146465,
+    "summary": "The bot's vault 0xd614927a executes commands from its whitelisted router 0x8db0efee, whose entry 0x0582f20f runs a caller-supplied command program, including DELEGATECALL to caller-chosen code, for any caller. The attacker had the vault flash-borrow from a fake Aave-style pool, which used the vault's repayment approvals to pull all its tokens.",
+    "lossUsd": 847126.58,
+    "codeAgeSeconds": 8145939,
     "exploit": {
       "block": 117708229,
       "index": 1,
       "timestamp": 1691058324
     },
     "target": {
-      "address": "0x8db0efee6a7622cd9f46a2cf1aedc8505341a1a7",
-      "codeHash": "0x2d9cc8e47bd922dca55b2f3627f3b37b1c6f61bf21da6a3e7602c24fb5bae73d"
+      "address": "0xd614927acfb9744441180c2525faf4cedb70207f",
+      "codeHash": "0x4aca274d81f43e680557e9ad964ccc44462fbfefed5af36d842a7609567d2971"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x92ff39d33af6c8684df95c987b56d21294b206fef791ac34808d96750c50e742",
-      "block": 86059817,
-      "index": 3,
-      "timestamp": 1682911859
+      "kind": "config",
+      "tx": "0x998b1cef493133b6bba84a6906b9027158dab8e154edd1ebb0b1d5b6f7a21eee",
+      "block": 86061856,
+      "index": 1,
+      "timestamp": 1682912385
     },
-    "claimsSha256": "cca0d778d788eea76ae9182f9b90abd7e16987194e805440efacd504c7e97276"
+    "claimsSha256": "c5718e799a64f06094df52130c8c4c299e3b57ab8ccb0004a586d6e69923f5d0"
   },
   {
     "id": "eip155:8453:0x056597f42302ab7f9f5e91c7f84856d3ba73827da7f956645d1f26bdde109ce9",
@@ -11999,7 +11999,7 @@
     "protocol": "MAPProtocol",
     "name": "Butter Bridge retry-message hash collision",
     "summary": "Butter Bridge stored failed-message commitments with abi.encodePacked over adjacent dynamic byte fields. The attacker retried a valid failed message with different field boundaries but the same packed preimage, redirecting execution to MAPO and minting one quadrillion unbacked tokens.",
-    "lossUsd": 111550.49090514675,
+    "lossUsd": 111550.49,
     "codeAgeSeconds": 24761040,
     "exploit": {
       "block": 25137572,
@@ -12018,7 +12018,7 @@
       "index": 134,
       "timestamp": 1754532599
     },
-    "claimsSha256": "8a1b0a8d235bb8b9337dcf31dbdd1030b5a96d502b9b4a05585985dd1b841fb9"
+    "claimsSha256": "656e8dcd3c831962177da9302e56e1ebcaf7c233434e706f381a0debaa685898"
   },
   {
     "id": "eip155:1:0xeff151ef58d57d6523874a7b97344fcd1ce3c7c6880cfc26a93da17f82062d59",
@@ -12576,8 +12576,8 @@
     "tx": "0x3dcb26a1f49eb4d02ca29960b4833bfb2e83d7b5d9591aed1204168944c8c9b3",
     "protocol": "MEV bot 0x8c2d",
     "name": "Asset-harvesting contract 0x19a2 unauthorised payer transferFrom",
-    "summary": "The shared asset-harvesting contract 0x19a23ddaa47396335894229e0439d3d187d89ec9, which MEV bots on BSC hold live BUSDT allowances to, exposes two permissionless entry points. Selector 0xac3994ec records an order under a caller-supplied key and debits only msg.sender, so anyone can designate themselves as that order's privileged executor. Selector 0x1270d364 then reads the payer, recipient, token and amount out of calldata and performs token.transferFrom(payer, recipient, amount) after checking only that msg.sender matches the address stored with the order; nothing binds the payer to the order or requires the payer's consent. An attacker contract deployed 63 seconds earlier registered its own order and used it to move the entire BUSDT balance of bot 0x8c2d4ed92badb9b65f278efb8b440f4bc995ffe7, which had an unlimited allowance outstanding.",
-    "lossUsd": 366058.04020632565,
+    "summary": "The shared asset-harvesting contract 0x19a2, which BSC MEV bots approve, lets anyone register an order with themselves as executor (0xac3994ec) and then executes token.transferFrom(payer, recipient, amount) with payer and amount taken from calldata (0x1270d364). The attacker drained bot 0x8c2d's full BUSDT allowance; copycats drained other approvers.",
+    "lossUsd": 366789.92,
     "codeAgeSeconds": 32414763,
     "exploit": {
       "block": 33435893,
@@ -12595,7 +12595,7 @@
       "index": 106,
       "timestamp": 1667400289
     },
-    "claimsSha256": "1d9f4b7b922c7c64061a8f7388a6747ddf357075f16818bf1296d47e8bc79f75"
+    "claimsSha256": "3a62dd34578938225ecb642a2da705810ebee1af5ab32377af92213538fe6227"
   },
   {
     "id": "eip155:56:0xf78a85eb32a193e3ed2e708803b57ea8ea22a7f25792851e3de2d7945e6d02d5",
@@ -13567,8 +13567,8 @@
     "tx": "0xe96eb780dedac4271b10112d7ad4f990e16e8929c38947902277f3c9f3c0626b",
     "protocol": "LootBot AI",
     "name": "LootBot xLoot staking redeem pays each duplicated NFT id in the input array",
-    "summary": "LootBot Staking.redeem(uint256[] xloots) computes the reward in the view _redeemable by accruing each listed xLoot NFT's ETH per epoch, and only afterwards writes each id's nextRedeem marker. Repeated ids in the array are therefore each paid. The attacker redeemed with a single owned id repeated 10 to 1,984 times in seven direct calls on 2026-04-08. On 2026-04-15 it flash-borrowed 2.1 ETH from Balancer and sent it to the contract to open a new epoch. It then redeemed seven ids repeated about 155 times each, taking 6.21 ETH.",
-    "lossUsd": 15413.21,
+    "summary": "LootBot Staking.redeem(uint256[] xloots) sums each listed xLoot NFT's unclaimed per-epoch ETH and only afterwards marks the ids redeemed, without rejecting repeated ids. The attacker passed one or a few owned ids hundreds of times per call; later it flash-borrowed ETH to open a new epoch and redeemed the duplicated ids again.",
+    "lossUsd": 15317.34,
     "codeAgeSeconds": 72494340,
     "exploit": {
       "block": 24835237,
@@ -13581,13 +13581,13 @@
       "codeHash": "0x785c21acee0942a23ce1539d0a054f9e2a0d1f58e71a99fd10a0661da0c40853"
     },
     "reset": {
-      "kind": "upgrade",
+      "kind": "deployment",
       "tx": "0x6c3614183c22330481fd499a04a65d28d3acb35539fa316eac5607bcd4676076",
       "block": 18834095,
       "index": 135,
       "timestamp": 1703159951
     },
-    "claimsSha256": "b9734fedbec6456bfca6d9e10c2087470259496549314f20056df652c9d143a1"
+    "claimsSha256": "7c30514068bce4631234c947b149349062ad6806794648db827adc61225f6d84"
   },
   {
     "id": "eip155:1:0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
@@ -13705,8 +13705,8 @@
     "tx": "0x674f74b30a3d7bdf15fa60a7c29d96a402ea894a055f624164a8009df98386a0",
     "protocol": "MEV bot 0x0ad8",
     "name": "MEV bot 0x0ad8 unprotected arbitrary call",
-    "summary": "The bot exposed a public entry point that executed caller-supplied calldata with no access control, letting the attacker make it pull 91,638 USDC out of a companion contract that had approved it.",
-    "lossUsd": 91638.112249,
+    "summary": "The bot's public entry 0x090f88ca executed caller-supplied calldata with no access control. The attacker, then copycats, made it call transferFrom on tokens that the operator's wallets had approved to the bot, pulling their USDC, WETH, DAI and renBTC.",
+    "lossUsd": 290779.95,
     "codeAgeSeconds": 79094381,
     "exploit": {
       "block": 15926097,
@@ -13724,7 +13724,7 @@
       "index": 2,
       "timestamp": 1588825530
     },
-    "claimsSha256": "5e88d93d399549d4eae674462c76db632845a8aeaf70be125be89ec60c4eeece"
+    "claimsSha256": "921cfb2250004ff443f086de0c204021000a86c20b2a7ae3ee2b0836b541d793"
   },
   {
     "id": "eip155:137:0x2e476745f0f546dbe4583359ea6258dfb4fababea08734f676df2e6006e1fdee",

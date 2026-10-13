@@ -2,24 +2,33 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LootBot AI",
   "name": "LootBot xLoot staking redeem pays each duplicated NFT id in the input array",
-  "summary": "LootBot Staking.redeem(uint256[] xloots) computes the reward in the view _redeemable by accruing each listed xLoot NFT's ETH per epoch, and only afterwards writes each id's nextRedeem marker. Repeated ids in the array are therefore each paid. The attacker redeemed with a single owned id repeated 10 to 1,984 times in seven direct calls on 2026-04-08. On 2026-04-15 it flash-borrowed 2.1 ETH from Balancer and sent it to the contract to open a new epoch. It then redeemed seven ids repeated about 155 times each, taking 6.21 ETH.",
+  "summary": "LootBot Staking.redeem(uint256[] xloots) sums each listed xLoot NFT's unclaimed per-epoch ETH and only afterwards marks the ids redeemed, without rejecting repeated ids. The attacker passed one or a few owned ids hundreds of times per call; later it flash-borrowed ETH to open a new epoch and redeemed the duplicated ids again.",
   "targets": [
     {
       "address": "0x9d87ff196646a99bddb16876066aa863900118b4",
       "code": "0xf3a3648bb1da9d3aea107da77e6f5ba9cf313127",
       "reset": {
-        "kind": "upgrade",
+        "kind": "deployment",
         "tx": "0x6c3614183c22330481fd499a04a65d28d3acb35539fa316eac5607bcd4676076"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x779ad577138b3b24071c3150bf455136253d1034ac55fa700dbdd9fe9504f667",
+    "eip155:1:0x3cf88c22a1ecb3391410fad3e887d0ae7be0d073e4bcbd7e1d417191548e7a0a",
+    "eip155:1:0x2b4dd3d617396e1824c5c6bffac82f983e3ea5565e678758f68e221b38053afb",
+    "eip155:1:0xe5180327cd77af519da2556920c13fac4b741bee8815975a1e26745309b806c6",
+    "eip155:1:0x56ba09f4989200f1c58e2c3aa7ad6f845f4bb9601fc5924ef1d417f4e81db263",
+    "eip155:1:0x7bb7861fd1efa1c5448ca969ed70ca15a0f64b2d88bb06dc1a7cb171a1a0423f",
+    "eip155:1:0xab19752a450a205ccaca9afb8505e2d8b79593ee2edab1f67bdec27a4f14871f"
+  ],
   "loss": {
-    "usd": 15413.21,
+    "usd": 15317.34,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "2.622144009704757525",
-        "usd": 5934.32
+        "usd": 5838.45
       },
       {
         "symbol": "ETH",
@@ -29,13 +38,12 @@
     ]
   },
   "refs": [
-    "eip155:1:0xab19752a450a205ccaca9afb8505e2d8b79593ee2edab1f67bdec27a4f14871f",
     "eip155:1:0x8fb869bb252c212d31bd4813e60804c9b9446c377fb80f9c2445daabf7d923d6",
     "https://x.com/DefimonAlerts/status/2044709964091187660",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-04/XLootStaking_exp.sol"
   ],
   "notes": [
-    "The TransparentUpgradeableProxy constructor's Upgraded(0xf3a3648b...) is the only Upgraded event before the exploit; the Staking implementation has been active since proxy creation.",
-    "Campaign 1 (2026-04-08, blocks 24835237..24835508, seven direct redeem calls by 0xacdcd2e9): the contract paid 2.625696793184068608 ETH; each call listed one owned id n times, so the payout times (n-1)/n, 2.622144009704757525 ETH, is counted as excess. Campaign 2 (2026-04-15, source-2): contract ETH balance fell by 4.10983297318446132 ETH net of the attacker's own 2.1 ETH epoch deposit; the attack contract's single-copy entitlement for its seven ids, payout/155 = 0.040063438536673944 ETH, is deducted, leaving 4.069769534647787376 ETH. The Balancer flash loan is financing."
+    "Loss counts only the excess over the attacker's rightful single-copy entitlement per xLoot id: payout x (n-1)/n for the April 8 calls, and for the April 15 call the net outflow (after its own 2.1 ETH epoch deposit) minus payout/155.",
+    "Later redeems by other accounts list distinct ids and are ordinary claims."
   ]
 }

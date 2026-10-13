@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MEV Bot 0xd61492",
   "name": "MEV bot 0xd61492 router unauthenticated command entry",
-  "summary": "The bot's vault 0xd614927a (\"BBVault\") accepts commands only from its router 0x8db0efee. The router's entry 0x0582f20f runs a caller-supplied command program for any caller, including DELEGATECALL to caller-chosen code. An attacker contract called the router and had the vault take flash loans from a fake Aave-style pool it had just deployed. The vault approved that pool for each repayment, and the pool used the allowances to pull the vault's WBTC, WETH, ARB, DAI, USDT and USDC.e to the attacker.",
+  "summary": "The bot's vault 0xd614927a executes commands from its whitelisted router 0x8db0efee, whose entry 0x0582f20f runs a caller-supplied command program, including DELEGATECALL to caller-chosen code, for any caller. The attacker had the vault flash-borrow from a fake Aave-style pool, which used the vault's repayment approvals to pull all its tokens.",
   "targets": [
     {
       "address": "0x8db0efee6a7622cd9f46a2cf1aedc8505341a1a7",
@@ -10,52 +10,59 @@
         "kind": "deployment",
         "tx": "0x92ff39d33af6c8684df95c987b56d21294b206fef791ac34808d96750c50e742"
       }
+    },
+    {
+      "address": "0xd614927acfb9744441180c2525faf4cedb70207f",
+      "reset": {
+        "kind": "config",
+        "tx": "0x998b1cef493133b6bba84a6906b9027158dab8e154edd1ebb0b1d5b6f7a21eee",
+        "address": "0xd614927acfb9744441180c2525faf4cedb70207f",
+        "slot": "0x9ac38c13034a2828d0de7ed3dc73318c9522c74c8c6b583b20649d6cfc857898"
+      }
     }
   ],
   "loss": {
-    "usd": 847049.1413319997,
+    "usd": 847126.58,
     "assets": [
       {
-        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
-        "symbol": "WBTC",
-        "amount": "4.54254371",
-        "usd": 132342.46844714
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "285269.131769",
+        "usd": 285218.64
       },
       {
-        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-        "symbol": "WETH",
+        "symbol": "ETH",
         "amount": "117.327292903619526083",
-        "usd": 215091.43298848954
-      },
-      {
-        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
-        "symbol": "ARB",
-        "amount": "46.093283365548135712",
-        "usd": 52.085410203069394
-      },
-      {
-        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
-        "symbol": "DAI",
-        "amount": "4690.988963441431131483",
-        "usd": 4689.473774006239
+        "usd": 215168.87
       },
       {
         "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
         "symbol": "USDT",
         "amount": "209896.002192",
-        "usd": 209655.0415814836
+        "usd": 209655.04
       },
       {
-        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-        "symbol": "USDC.e",
-        "amount": "285269.131767",
-        "usd": 285218.6391306772
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "4.54254371",
+        "usd": 132342.47
+      },
+      {
+        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+        "symbol": "DAI",
+        "amount": "4690.988963441431131483",
+        "usd": 4689.47
+      },
+      {
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "46.093283365548135712",
+        "usd": 52.09
       }
     ]
   },
   "notes": [
-    "Direct, non-upgradeable router runtime. Its 0x0582f20f entry performs no caller check and reads no storage before acting, so it has been open since deployment. The vault 0xd614927a (deployed earlier, block 85716881) trusts the router by design and is not the later reset.",
-    "Exact net depletion of vault 0xd614927acfb9744441180c2525faf4cedb70207f in source-1, equal to the attacker EOA's receipts. The flash-loan legs through the fake pool and router net to zero. WBTC, WETH, DAI and USDT use the contemporaneous Ethereum-mainnet DefiLlama quotes, because DefiLlama has no historical Arbitrum quote for those tokens at this time. The router's 2 base-unit USDC.e debit is omitted as de minimis.",
-    "Router and vault have no verified source. The missing caller check comes from the struct-log trace of the router frame and from a newly created attacker contract's successful call, not from source text."
+    "The vault granted the router its command role (role 2) in 0x998b1cef, nine minutes after the router was deployed. The exploit needed that grant, so it sets the age (rule 10); both contracts are otherwise unchanged and unverified.",
+    "Earlier vault calls come from the operator's other router 0x08bc5144 and pay the operator; they are normal use, not exploits."
   ]
 }

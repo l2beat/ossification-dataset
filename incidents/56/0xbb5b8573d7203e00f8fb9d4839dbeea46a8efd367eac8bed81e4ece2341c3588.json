@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "LpdFi",
   "name": "LpdFi sizes an interest-bearing principal from the LPD spot pair price",
-  "summary": "LpdFi.buy(uint256 uAmount) lets the caller name the USDC principal that will accrue interest and charges for it in LPD at `tokenAmount = uAmount * 1e18 / token.price()`, where Lpd.price() returns the instantaneous reserve ratio of the immutable PancakeSwap LPD/USDC pair 0x85346d31743796f7d00d675629e32783a968f210 with no TWAP, liquidity floor or deviation bound. Interest then accrues from the discrete issue index in getOrder as `interestRate * uAmount * (issue - lastIssue) / BASE`, so crossing an issue boundary credits a whole 0.5 percent period regardless of elapsed time, and claimInterest funds the entitlement through removeLp, which burns protocol-owned Cake-LP with both PancakeRouter minimum outputs set to zero. The attacker swapped 43,714,602.618935976563910532 USDC into the pair to lift Lpd.price() from 0.126899043811789644 to 655.1979230244382 USDC per LPD, called buy(140324732e18) for only 214,171.515306781626633142 LPD, reversed the swap, and one second later, once getIssue() rolled from 18 to 19, claimed 701,623.66 USDC of interest, which removed the protocol's entire Cake-LP position.",
+  "summary": "LpdFi.buy(uAmount) books an order's USD value from Lpd.price(), the LPD/USDC Pancake pair's spot reserve ratio, and pays 0.5% of it per day in USDC by removing protocol-owned LP. The attacker flash-pumped LPD, bought an order valued at a hugely inflated USD amount just before the daily rollover, dumped, and claimed a day's interest one block later.",
   "targets": [
     {
       "address": "0xce6a6e4413d85a136bbac8aae6fb46eaa77f295e",
@@ -19,27 +19,25 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6"
+  ],
   "loss": {
-    "usd": 700535.1421325061,
+    "usd": 696888.68,
     "assets": [
       {
         "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
         "symbol": "USDC",
-        "amount": "700535.142132506110424513",
-        "usd": 700535.1421325061
+        "amount": "697094.149264455465425635",
+        "usd": 696888.68
       }
     ]
   },
   "refs": [
-    "eip155:56:0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-08/LpdFi_exp.sol"
   ],
   "notes": [
-    "LpdFi is a ReentrancyGuard/Ownable contract with no proxy and no delegatecall; every collaborator address it uses is immutable or constant. Its runtime hashes to 0x6b414ca735cc15b26706c3d4d5922316fa3b448d31dfd0429f68d7b5d16a190a both at the deployment block 109932323 and at block 113613922 immediately before the exploit.",
-    "The LPD token is a plain Ownable ERC-20 with no proxy; the pair it prices against is an immutable set in its constructor and the factory and USDC addresses are constants. Its runtime hashes to 0x452a327874dfcf972b11d75a7ff6e19223a68d6f35bf45696c025b09f533ba65 both at the deployment block 108334473 and at block 113613922 immediately before the exploit.",
-    "The fraudulent interest claim burned the whole protocol-owned liquidity position: LpdFi's Cake-LP balance fell from 1678049359669752344366456 to 1 wei between blocks 113613923 and 113613924, and the pair returned 700535.142132506110424513 USDC and 4059427.508747598805052053 LPD to LpdFi. The LPD leg stayed with the contract, so the depletion measured here is the USDC leg, all of which left LpdFi in the same transaction: 693529.790711181049320267 USDC to the attacker's executor 0x7f5ad0a998dcb3f5006f0d152bebc055979ef711 and 7005.351421325061104246 USDC to the contract's configured feeAddress 0x4c0c86041013a3883d9b6331054df7ca9c977242, matching the ClaimInterest event's receivedAmount and feeAmount fields. Attacker-supplied inputs are excluded: the executor was staked with 116495 USDC by EOA 0x5d289266d85ef671561ba3f253fb79327c193f33 and consumed it in the price manipulation, and the flash liquidity used for the 43.7M USDC swap was repaid inside the setup transaction, so the attacker's own realised gain is the smaller 573034.793138448987344168 USDC that the seed row and public write-ups quote, being the EOA's 689529.793138448987344168 USDC terminal balance less its 116495 USDC stake. Not valued: the residual damage to the LPD/USDC pair and to the 4,059,427.5 LPD LpdFi retained, whose pair-implied value collapsed once the protocol's own liquidity was withdrawn.",
-    "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation.",
-    "The seed inventory anchored this row on the claim transaction 0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6 and used the rounded date timestamp 1785686400. Review re-anchors it one block earlier on the setup transaction, which is the first success that executes the defect, so the measured ages are one second longer than the snapshot's.",
-    "The 0.5 percent interest that the claim paid out was credited purely by the issue counter rolling from 18 to 19 one second after the order was opened. That accrual rule lives in LpdFi.getOrder and is covered by target-1's failure identity together with the spot-priced principal."
+    "Anchored on the setup tx that bought the inflated order (the first execution of the defect); the claim one block later, after the daily issue rolled over, is the campaign tx that took the USDC.",
+    "Loss is the pair's net USDC outflow in the claim: the USDC leg of LpdFi's burned Cake-LP minus the USDC the attacker donated to the pair just before, which it took back. The LPD leg stayed with LpdFi."
   ]
 }
