@@ -2,25 +2,65 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "OpenLeverage",
   "name": "OpBorrowing liquidation clears shared LToken debt",
-  "summary": "OPBorrowing and OpenLevV1 shared one LPool debt balance per borrower. During marginTrade(), attacker-controlled 1inch callback data opened a dust-collateral OPBorrowing position under the margin trader's address. OPBorrowing.liquidate() then treated the trader's full margin debt as that position's debt and called repayBorrowEndByOpenLev(), which wrote off the unpaid balance. The attacker closed the now debt-free margin trade in the next transaction.",
+  "summary": "OPBorrowing and OpenLevV1 share one LPool debt per borrower. The attacker opened a margin trade, opened a dust OPBorrowing loan under the same address, and liquidated it: liquidate() took the full shared debt as the loan's and repaid via repayBorrowEndByOpenLev, writing the rest off. The debt-free margin trade was then closed.",
   "targets": [
     {
       "address": "0xf436f8fe7b26d87eb74e5446acec2e8ad4075e47",
       "code": "0xd3150b1242315e16845fe21b536f53a82b6b85a5",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xa2eca75e15264ca9d79a2204cdbe30b7f0baf7b4e2e6dd64a1b785240d9ab884"
+        "kind": "config",
+        "tx": "0x90d2acfb012f4eb5f6e06e95475ca7ee90d7d274e9e9e7fd6761ab53fc843744",
+        "address": "0x912c0462474c933499a6923a6afc6ac1e58b8ce4",
+        "slot": "0x1b"
       }
     }
   ],
   "loss": {
-    "usd": 19696.847618499596,
+    "usd": 285293.42,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "33.112849873074429985",
-        "usd": 19696.847618499596
+        "amount": "155.579851951478749346",
+        "usd": 92503.48
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "57914.825947698920840867",
+        "usd": 57914.83
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "38329.644106006365509169",
+        "usd": 38323.78
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "8.68893804720721335",
+        "usd": 31284.19
+      },
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "0.348309152103225824",
+        "usd": 24561.72
+      },
+      {
+        "chainId": 42161,
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "19782.358463740725099152",
+        "usd": 32443.07
+      },
+      {
+        "chainId": 42161,
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "2.295949068013362995",
+        "usd": 8262.35
       }
     ]
   },
@@ -29,11 +69,23 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/OpenLeverage2_exp.sol",
     "https://github.com/OpenLeverageDev/overcollateralized-borrowing-contracts/blob/6c239910f23e8cdfca07770705848f80289e6511/contracts/OPBorrowing.sol",
     "https://github.com/OpenLeverageDev/openleverage-contracts/blob/225ed25ec1932ba319992f23ffa9795c63ff3a22/contracts/liquidity/LPool.sol",
-    "eip155:56:0x210071108f3e5cd24f49ef4b8bcdc11804984b0c0334e18a9a2cdb4cd5186067"
+    "https://blog.solidityscan.com/openleverage-hack-analysis-22c59c96d0a6"
   ],
   "notes": [
-    "The OPBorrowingDelegator constructor selected implementation 0xd3150b1242315e16845fe21b536f53a82b6b85a5. Storage slot 0 retained that address and no NewImplementation event occurred through the exploit.",
-    "The LPool's transaction-local Borrow event records 33.127662613057717773 WBNB sent for the margin trade. Its later RepayBorrow event records 0.014812739983287788 WBNB repaid, 33.112849873074429985 WBNB of bad debt, and the borrower's debt reset to zero. The bad-debt value is the exact lender depletion net of the attacker's same-transaction repayment; the inherited $234,000 estimate is unsupported by the onchain amount.",
-    "Seed-inventory flag: nonStandardUpgradeArchitecture=true."
+    "Reset is the controller's setOpBorrowing: ControllerV1.repayBorrowAllowed lets only openLev or opBorrowing repay with isEnd, so before slot 0x1b pointed at OPBorrowing its repayBorrowEndByOpenLev call reverted. Later OPBorrowing market-conf edits lowered fees and liquidity caps, which the exploit did not need.",
+    "No OPBorrowing liquidation wrote off LPool debt (RepayBorrow bad debt > 0) before the anchor. The campaign is the attacker's further wipe/payoff cycles on BSC and the same run against OpenLeverage's Arbitrum deployment (OPBorrowing 0xe7779ebb); its no-transfer and failed txs are left out.",
+    "Loss is the debt the wipes wrote off: the LPools' net outflow per tx (OpenLeverage LPools whose controller is 0x912c0462 on BSC, 0xabb0abfa on Arbitrum), i.e. the margin and OPBorrowing loans never repaid."
+  ],
+  "campaign": [
+    "eip155:56:0x210071108f3e5cd24f49ef4b8bcdc11804984b0c0334e18a9a2cdb4cd5186067",
+    "eip155:56:0x73e690d72f6d2cbdbdb23f448e10dacc056c5bf7a090c68979cdef3f3af2e9b0",
+    "eip155:56:0xa6a1e1a55985ed1d10bee405da0fd32e0670a075e35fd4bd990f4c309fae2839",
+    "eip155:56:0xf08b6d36dc6f650c030344b6307ae94528f77a01db11d1284ed966e7e44337d3",
+    "eip155:56:0x0434bf08a63d70b84fad033d38d8b645498016b3931af4d13f6c11e86848876b",
+    "eip155:42161:0x4d532a0b3bc8c22b40bcbea281d993d7086120e4532d8c578f1129a7be7aa75e",
+    "eip155:42161:0x36a4b216867d9eebc4da76932a4e65db1b4ca8a0d32a6d84347cbae244c34b36",
+    "eip155:42161:0x3b0bf8684561bb94439eb3e709a777d4a8f0d2cb41089f67526c8b11720549ab",
+    "eip155:42161:0x99634462f67ca3cad44e4b2bf4369acbce3d0b423b14f03f984d8ad22332dd35",
+    "eip155:42161:0xe396b3224c81800daef6a2d2b0d893ab648f3b56bc2e06b3e71a59d6dedaedad"
   ]
 }

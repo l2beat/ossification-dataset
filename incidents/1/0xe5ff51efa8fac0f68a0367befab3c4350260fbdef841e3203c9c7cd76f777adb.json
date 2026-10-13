@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Opyn",
   "name": "Opyn ETH put double exercise",
-  "summary": "oToken.exercise(uint256,address[]) loops over the caller-supplied vault array and calls _exercise() once per vault, and _exercise() settles the ETH underlying leg with require(msg.value == amtUnderlyingToPay) against the same unchanged msg.value on every iteration while crediting vault.underlying to each vault. One ETH payment therefore exercised the put against several vaults, paying out each vault's USDC collateral, and removeUnderlying() then returned the single ETH payment from the attacker's own vault.",
+  "summary": "oToken.exercise(amount, vaults) looped over the given vaults and checked the unchanged msg.value against each vault's ETH due, so one ETH payment exercised several vaults. Attackers exercised their own vault together with a victim's, received both vaults' USDC collateral, and took the single ETH payment back from their own vault with removeUnderlying().",
   "targets": [
     {
       "address": "0xe3a2c34fa2f59ffa95c4acd1e5663633d45bc3ad",
@@ -13,18 +13,25 @@
     }
   ],
   "loss": {
-    "usd": 371260,
+    "usd": 371177.97,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "371260",
-        "usd": 371260
+        "usd": 371177.97
       }
     ]
   },
   "refs": [
     "https://medium.com/opyn/opyn-eth-put-exploit-post-mortem-1a009e3347a8",
+    "https://peckshield.medium.com/opyn-hacks-root-cause-analysis-c65f3fe249db"
+  ],
+  "notes": [
+    "Campaign: every tx with two or more Exercise events on one ETH-underlying oToken from factory 0xcc5d905b, across all 33 such series since launch; none precede the anchor. Three senders hit the 80 Sep, 00 Aug and 30 Aug puts within six hours.",
+    "Loss is the amtCollateralToPay of the victim vaults (every exercised vault other than the attacker's own), priced per tx by DefiLlama; it matches Opyn's 371,260 USDC. Surplus collateral the attackers left in their own vaults is not netted, and the unbacked ETH credited to victims does not offset."
+  ],
+  "campaign": [
     "eip155:1:0x36811f9a0c0820afad110676dd440c35e513dd3e01ee0ccd665749ede55d1fb6",
     "eip155:1:0xbd5d3f3e65e949c3e57a40177b845356ffd221c800c83a2ff4cfaedd0d8c351b",
     "eip155:1:0xe00e11e7add35f0779b9e773046b617b7c6796b7f35b849f9738ada8f10c9ae5",
@@ -38,9 +45,5 @@
     "eip155:1:0xd06378b73536e7718895069a5219855774d362db47312dc304dfd4b6e39ef000",
     "eip155:1:0x351bcbb182cb11cecb0d50d9f1bf45bd6820b71f7de5ec1ef607518865d43dc2",
     "eip155:1:0x56de6c4bd906ee0c067a332e64966db8b1e866c7965c044163a503de6ee6552a"
-  ],
-  "notes": [
-    "The oToken series was created by CREATE from OptionsFactory 0xcc5d905b9c2c8c9329eb4e25dc086369d6c7777c in this transaction. Its runtime is immutable and hashes identically at the creation block, at block 10590875 immediately before the exploit, and in the anchor transaction prestate.",
-    "Exact gross depletion of third-party vault collateral, summed from the amtCollateralToPay field of every Exercise event whose vaultExercisedFrom is not an attacker helper, across the fourteen defect-executing transactions between blocks 10590876 and 10592517. USDC is valued at par. The victim vaults were credited an equal amount of vault.underlying ETH by the same buggy loop, but that credit is unbacked because each attacker withdrew the single real ETH payment from their own vault with removeUnderlying(), so it does not offset the depletion. oTokens the attackers bought on Uniswap V1 and the collateral of their own vaults are attacker-supplied inputs and are excluded. Opyn's later reimbursement of affected vault owners is a recovery and does not reduce gross depletion. Three independent senders exploited the same defect in the same six-hour window against byte-identical sibling oToken series; they are covered here as one campaign, matching the single 371,260 USDC figure Opyn reported, and no other record claims any part of this loss."
   ]
 }

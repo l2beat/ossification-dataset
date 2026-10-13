@@ -2761,8 +2761,8 @@
     "tx": "0x9afcac8e82180fa5b2f346ca66cf6eb343cd1da5a2cd1b5117eb7eaaebe953b3",
     "protocol": "P719Token",
     "name": "P719 internal AMM mints its swap output and burns its swap input",
-    "summary": "P719 is its own market maker: sending BNB to the token buys, and transferring the token to the token sells. Both legs quote a constant-product price from the token's own two balances, tokenOut = balanceOf(token) * bnbIn / (address(token).balance + bnbIn) and bnbOut = address(token).balance * tokenIn / (balanceOf(token) + tokenIn), but neither leg settles against the reserve it just priced. The buy leg mints 1.55x the quoted output instead of debiting balanceOf(token), paying the quote to the buyer, 10 percent and 5 percent of it to two fee sinks and retaining 40 percent, so the token reserve rises when it should fall. The sell leg takes 95 percent of the incoming tokens as the swap input and then burns exactly that amount, forwarding the remaining 5 percent to the fee sinks, so the token reserve does not rise while the BNB reserve is paid out. The product of the two reserves is therefore not preserved by a swap: over the exploit transaction it collapsed from 4.3015e43 to 1.3229e42, 3.1 percent of its starting value, and 3,440 BNB of buys were redeemed for 3,987.799074208829188341 BNB of sells.",
-    "lossUsd": 327728.3804863038,
+    "summary": "P719 is its own market maker: BNB sent to the token buys and tokens sent to it sell, both priced constant-product from its BNB and token balances. Buys minted 1.55x the quoted output instead of debiting the token reserve and sells burned their input, so the reserves' product fell with every swap; buying through many helpers and then selling drained the BNB reserve.",
+    "lossUsd": 339088.98,
     "codeAgeSeconds": 173999,
     "exploit": {
       "block": 43023423,
@@ -2780,7 +2780,7 @@
       "index": 32,
       "timestamp": 1728476126
     },
-    "claimsSha256": "08ebd5594b55aa9d3e798afd9fa80d6569cf1fe404a179045f311625f2fa7122"
+    "claimsSha256": "2fbf922a06b1177a27220c671ebab4c8998d0edb18d2b08674fa6d76d6ea38cc"
   },
   {
     "id": "eip155:56:0xe4c0ce1b77a4fcd49d29720953454561eb43f27635cc9f7a5e2df9c697347a62",
@@ -3911,8 +3911,8 @@
     "tx": "0xca8dd33850e29cf138c8382e17a19e77d7331b57c7a8451648788bbb26a70145",
     "protocol": "OneRing Finance",
     "name": "OneRing OShare vault share price from spot strategy valuation",
-    "summary": "The OShare vault implementation prices its shares from IStrategyManager.investedBalanceInUSD(), an aggregate mark that each MasterChef strategy derives from the live token balances of the stable pools it farms via getUSDBalanceFromUnderlyingBalance(). depositSafe() reads that mark before pulling the deposit, routes the deposit into the same pools through assetToUnderlying(), and mints shares from the USD figure the strategies report after the pools have moved; withdraw() reads the same mark again and then settles by removing the caller's pro-rata share of the strategies' LP positions. Both legs of a deposit-then-withdraw round trip therefore read a quantity the deposit itself controls inside one transaction. With an 80,000,000 USDC Solidly flash loan the attacker deposited 79,999,997 USDC into a vault whose pre-deposit mark was 4,448,686.168049134972760253 USD on 4,185,979.962653993796224466 shares, was credited an under-reported 44,599,205.960575506514590319 USD and minted 41,965,509.691846094312718922 shares, and then burned them for 47,696,475.292371545217068603 marked USD which settled as 81,534,750.101089 USDC out of the still-imbalanced pools. Boundary test: the mark is read unconditionally in the executed deposit and withdraw paths with no time average, invariant-based valuation or deviation bound, and the only caller-facing guard is the depositor's own _minAmount argument, so no configured value makes the deployed code correct.",
-    "lossUsd": 1534753.101089,
+    "summary": "OneRing's OShare vault priced shares from its strategies' USD marks, which valued Solidly stable-pool LP positions from live pool balances. With an 80M USDC flash loan the attacker called depositSafe, whose investment of the deposit imbalanced those pools and was credited at the pre-move mark, then withdrew its shares at the inflated mark for more USDC.",
+    "lossUsd": 1821620.24,
     "codeAgeSeconds": 402135,
     "exploit": {
       "block": 34041500,
@@ -3931,7 +3931,7 @@
       "index": 0,
       "timestamp": 1647486115
     },
-    "claimsSha256": "6d85294b219a0c2a1fca2a0b99cf868cdee7b3b60cb9b2292bd4a28cf85f69cd"
+    "claimsSha256": "8e6ac6d5871312b9d0003aa51a4efaf0454b4ced974f627a5984edcfea48caea"
   },
   {
     "id": "eip155:1:0x8af9b5fb3e2e3df8659ffb2e0f0c1f4c90d5a80f4f6fccef143b823ce673fb60",
@@ -7447,8 +7447,8 @@
     "tx": "0xe5ff51efa8fac0f68a0367befab3c4350260fbdef841e3203c9c7cd76f777adb",
     "protocol": "Opyn",
     "name": "Opyn ETH put double exercise",
-    "summary": "oToken.exercise(uint256,address[]) loops over the caller-supplied vault array and calls _exercise() once per vault, and _exercise() settles the ETH underlying leg with require(msg.value == amtUnderlyingToPay) against the same unchanged msg.value on every iteration while crediting vault.underlying to each vault. One ETH payment therefore exercised the put against several vaults, paying out each vault's USDC collateral, and removeUnderlying() then returned the single ETH payment from the attacker's own vault.",
-    "lossUsd": 371260,
+    "summary": "oToken.exercise(amount, vaults) looped over the given vaults and checked the unchanged msg.value against each vault's ETH due, so one ETH payment exercised several vaults. Attackers exercised their own vault together with a victim's, received both vaults' USDC collateral, and took the single ETH payment back from their own vault with removeUnderlying().",
+    "lossUsd": 371177.97,
     "codeAgeSeconds": 2797109,
     "exploit": {
       "block": 10590876,
@@ -7466,7 +7466,7 @@
       "index": 79,
       "timestamp": 1593714280
     },
-    "claimsSha256": "a07c3ead96aae273f117682b11d8be013117b7be9ca3416077ca5bf71466f0d5"
+    "claimsSha256": "e3016c4b9fa2222c9d74823081bee8e66e304b7f3c540be39eef71ec2e11b566"
   },
   {
     "id": "eip155:59144:0xcb0744a0d453e5556f162608fae8275dabd14292bffbfcd8394af4610c606447",
@@ -7556,7 +7556,7 @@
     "protocol": "OlympusDao",
     "name": "Olympus BondFixedExpiryTeller unvalidated bond redemption",
     "summary": "BondFixedExpiryTeller.redeem() trusted the caller-supplied bond token's underlying and expiry values without verifying that the token was created by the teller. The attacker supplied a forged bond token, burned its arbitrary balance, and made the teller transfer its real OHM reserves.",
-    "lossUsd": 304066.40870203846,
+    "lossUsd": 304066.41,
     "codeAgeSeconds": 2991756,
     "exploit": {
       "block": 15794364,
@@ -8341,32 +8341,32 @@
     "claimsSha256": "55d795374695bf38067e90f0b32a52c774ad3d633fd6ec914da76f50d9467f9d"
   },
   {
-    "id": "eip155:1:0xa6f63fcb6bec8818864d96a5b1bb19e8bd85ee37b2cc916412e720988440b2aa",
-    "chainId": 1,
-    "tx": "0xa6f63fcb6bec8818864d96a5b1bb19e8bd85ee37b2cc916412e720988440b2aa",
+    "id": "eip155:56:0xfb153c572e304093023b4f9694ef39135b6ed5b2515453173e81ec02df2e2104",
+    "chainId": 56,
+    "tx": "0xfb153c572e304093023b4f9694ef39135b6ed5b2515453173e81ec02df2e2104",
     "protocol": "Orion Protocol",
     "name": "Orion ExchangeWithOrionPool depositAsset reentrancy",
-    "summary": "Exchange.depositAsset() carries no reentrancy guard and credits the caller with the exchange's own token balance delta, while swapThroughOrionPool() settles a caller-supplied token path by crediting the balance delta of the path's output token. The attacker put a fake ERC-20 in the middle of the path whose transfer hook re-entered depositAsset() with flash-loaned USDT, so the same 2.84M USDT was credited twice and withdrawn once.",
-    "lossUsd": 2844766.426324,
-    "codeAgeSeconds": 4395252,
+    "summary": "Orion's exchange credited swapThroughOrionPool callers with the exchange's balance change of the path's output token, and depositAsset had no reentrancy guard. A fake token in the path re-entered depositAsset with flash-loaned USDT mid-swap, so that USDT was credited both as a deposit and as swap output and then withdrawn twice over.",
+    "lossUsd": 3045094.73,
+    "codeAgeSeconds": 4398316,
     "exploit": {
-      "block": 16542148,
-      "index": 1,
-      "timestamp": 1675353395
+      "block": 25322522,
+      "index": 6,
+      "timestamp": 1675352420
     },
     "target": {
-      "address": "0xb5599f568d3f3e6113b286d010d2bca40a7745aa",
-      "code": "0x98a877bb507f19eb43130b688f522a13885cf604",
-      "codeHash": "0x800b51026025b1ceba8629d0c96c3a9e4b39af704d742db0cee6a6d877137746"
+      "address": "0xe9d1d2a27458378dd6c6f0b2c390807aed2217ca",
+      "code": "0x34233e37717451562edd72dc7edc4d0a7128c010",
+      "codeHash": "0xae7398198df83773b4892b8189d05081b64dc9e7b011911879630e6d9d649d2e"
     },
     "reset": {
       "kind": "upgrade",
-      "tx": "0xe27672754583fdc23107d7e67425a88fb23afb8f7d7a2ac653bac03b12e833ef",
-      "block": 16177733,
-      "index": 112,
-      "timestamp": 1670958143
+      "tx": "0x8de105048ccde3ae93393d177e84a6e8e2c1894ac4672ab6e7f43a9c690342ab",
+      "block": 23875169,
+      "index": 153,
+      "timestamp": 1670954104
     },
-    "claimsSha256": "2ffe7f2937b84f34c0d7858b86b6cdaa2de2c61304a240ed6b7e82b96778c3b9"
+    "claimsSha256": "f7949c4c5bdcd2be9c3729e90044285703258709e68dfcea95872d266063c74f"
   },
   {
     "id": "eip155:1:0xb2e3ea72d353da43a2ac9a8f1670fd16463ab370e563b9b5b26119b2601277ce",
@@ -12101,18 +12101,18 @@
     "claimsSha256": "1427b35d5042cb3a8d4c1441d33799ee54735376d22304c8a2a5cb2325ec99de"
   },
   {
-    "id": "eip155:56:0xa578e08c23feec30a1d94c309dff7fee260a03317435966d4e65bad0b4d74bf5",
+    "id": "eip155:56:0x49bed801b9a9432728b1939951acaa8f2e874453d39c7d881a62c2c157aa7613",
     "chainId": 56,
-    "tx": "0xa578e08c23feec30a1d94c309dff7fee260a03317435966d4e65bad0b4d74bf5",
+    "tx": "0x49bed801b9a9432728b1939951acaa8f2e874453d39c7d881a62c2c157aa7613",
     "protocol": "OmniEstate",
     "name": "OmniEstate stale global staking reward",
-    "summary": "The staking pool reuses the prior investment's global reward when an unsupported duration or a stake below 10,000 ORT skips every reward-calculation branch. A new caller can use an unsupported duration to withdraw immediately and mint that stale reward repeatedly.",
-    "lossUsd": 79616.10136844162,
-    "codeAgeSeconds": 25962980,
+    "summary": "StakingPool.invest accepted any end_date: an unlisted value left the caller's unlock time at zero and took the reward from total_percent, a global left by the last large stake. Attackers staked 1 wei with end_date 0, called withdrawAndClaim at once to mint that stale reward in ORT, raised it with their own large stakes, repeated, and sold the ORT for WBNB.",
+    "lossUsd": 78710.45,
+    "codeAgeSeconds": 25963544,
     "exploit": {
-      "block": 24850509,
-      "index": 55,
-      "timestamp": 1673916296
+      "block": 24850697,
+      "index": 168,
+      "timestamp": 1673916860
     },
     "target": {
       "address": "0x6f40a3d0c89cffdc8a1af212a019c220a295e9bb",
@@ -12126,7 +12126,7 @@
       "index": 897,
       "timestamp": 1647953316
     },
-    "claimsSha256": "38a5893b1e3e4a8ed7f9c4c2bb8ecd6fd8059812db417344bf0889eadc6b7d87"
+    "claimsSha256": "1098fd0c13544b6102d0b16a9744900034d1d117d8a536d2e286c8ff0e85b88f"
   },
   {
     "id": "eip155:1:0xa84aa065ce61dbb1eb50ab6ae67fc31a9da50dd2c74eefd561661bfce2f1620c",
@@ -12570,6 +12570,34 @@
     "claimsSha256": "4f8dde8e4447e8c94f38fcb65aa405968bd24036bd4a360dedbe4e28d94fff9a"
   },
   {
+    "id": "eip155:56:0xf78a85eb32a193e3ed2e708803b57ea8ea22a7f25792851e3de2d7945e6d02d5",
+    "chainId": 56,
+    "tx": "0xf78a85eb32a193e3ed2e708803b57ea8ea22a7f25792851e3de2d7945e6d02d5",
+    "protocol": "OpenLeverage",
+    "name": "OpBorrowing liquidation clears shared LToken debt",
+    "summary": "OPBorrowing and OpenLevV1 share one LPool debt per borrower. The attacker opened a margin trade, opened a dust OPBorrowing loan under the same address, and liquidated it: liquidate() took the full shared debt as the loan's and repaid via repayBorrowEndByOpenLev, writing the rest off. The debt-free margin trade was then closed.",
+    "lossUsd": 285293.42,
+    "codeAgeSeconds": 32280246,
+    "exploit": {
+      "block": 37470329,
+      "index": 37,
+      "timestamp": 1711948733
+    },
+    "target": {
+      "address": "0xf436f8fe7b26d87eb74e5446acec2e8ad4075e47",
+      "code": "0xd3150b1242315e16845fe21b536f53a82b6b85a5",
+      "codeHash": "0x510d9af564a4ab562d9d3aae2af3e6b7358858b9d31b89a736ef957ecb51bc5f"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x90d2acfb012f4eb5f6e06e95475ca7ee90d7d274e9e9e7fd6761ab53fc843744",
+      "block": 26744948,
+      "index": 34,
+      "timestamp": 1679668487
+    },
+    "claimsSha256": "a9e0de816f1caa834f3eff646febc23d42083d2611699327f7a9516c2fc6edc2"
+  },
+  {
     "id": "eip155:56:0x3dcb26a1f49eb4d02ca29960b4833bfb2e83d7b5d9591aed1204168944c8c9b3",
     "chainId": 56,
     "tx": "0x3dcb26a1f49eb4d02ca29960b4833bfb2e83d7b5d9591aed1204168944c8c9b3",
@@ -12595,34 +12623,6 @@
       "timestamp": 1667400289
     },
     "claimsSha256": "3a62dd34578938225ecb642a2da705810ebee1af5ab32377af92213538fe6227"
-  },
-  {
-    "id": "eip155:56:0xf78a85eb32a193e3ed2e708803b57ea8ea22a7f25792851e3de2d7945e6d02d5",
-    "chainId": 56,
-    "tx": "0xf78a85eb32a193e3ed2e708803b57ea8ea22a7f25792851e3de2d7945e6d02d5",
-    "protocol": "OpenLeverage",
-    "name": "OpBorrowing liquidation clears shared LToken debt",
-    "summary": "OPBorrowing and OpenLevV1 shared one LPool debt balance per borrower. During marginTrade(), attacker-controlled 1inch callback data opened a dust-collateral OPBorrowing position under the margin trader's address. OPBorrowing.liquidate() then treated the trader's full margin debt as that position's debt and called repayBorrowEndByOpenLev(), which wrote off the unpaid balance. The attacker closed the now debt-free margin trade in the next transaction.",
-    "lossUsd": 19696.847618499596,
-    "codeAgeSeconds": 32472489,
-    "exploit": {
-      "block": 37470329,
-      "index": 37,
-      "timestamp": 1711948733
-    },
-    "target": {
-      "address": "0xf436f8fe7b26d87eb74e5446acec2e8ad4075e47",
-      "code": "0xd3150b1242315e16845fe21b536f53a82b6b85a5",
-      "codeHash": "0x510d9af564a4ab562d9d3aae2af3e6b7358858b9d31b89a736ef957ecb51bc5f"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xa2eca75e15264ca9d79a2204cdbe30b7f0baf7b4e2e6dd64a1b785240d9ab884",
-      "block": 26681424,
-      "index": 18,
-      "timestamp": 1679476244
-    },
-    "claimsSha256": "81453f7207748f2bf9bce918d641c9d92e45d0eb0638c464b84f7406b50dbc93"
   },
   {
     "id": "eip155:1:0x2f44dc1b883522a88f9b0cbbdfabf9ec33884b69dd4326600c3fab7fb2277260",
@@ -15372,9 +15372,9 @@
     "tx": "0x201c7a9b4114c76fcda2b5de5d765505f4c5f7c194dddf505043501de6cbbb1a",
     "protocol": "OrderFactory (unattributed 2017 order platform)",
     "name": "OrderFactory permissionless createOrderForBuyer drains buyer escrow",
-    "summary": "The unverified 2017 order factory's order-creation entry point (selector 0xbde886fc) checks only that the named buyer has an active request (getState(buyer) == 1). Any caller can create an order for any buyer with an attacker-chosen seller. The factory then moves the buyer's whole Account System ETH balance into a new order proxy and records the attacker as seller, and the proxy's seller-gated abort(address) sends that ETH wherever the caller says. From 2017 to 2018 only the platform operator EOA called this entry point. In September 2026 an attacker helper contract drained the platform's dormant buyer balances.",
-    "lossUsd": 61689.57853765249,
-    "codeAgeSeconds": 293655692,
+    "summary": "The 2017 order factory's createOrder entry (0xbde886fc) checked only that the named buyer had an active request, not who called it. Any caller could open an order for any buyer with itself as seller; the factory moved the buyer's whole Account System ETH balance into the order, and the seller-gated abort sent it to the attacker. Dormant buyer balances were drained in 2026.",
+    "lossUsd": 61612.94,
+    "codeAgeSeconds": 293655631,
     "exploit": {
       "block": 25933639,
       "index": 2,
@@ -15385,12 +15385,12 @@
       "codeHash": "0x0a3deb54f84882aa311223bdef20a5bd5ea752165d9a7178e6e943f4e4674465"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x75d427ce6b389e2eca1899860bbde2e52c716d9edaaf23be0b201d55c501de7b",
-      "block": 3734393,
+      "kind": "config",
+      "tx": "0x55645d16c35d91f9883bed95e9543cdf37b56f7d0f796216d8e968143e507c95",
+      "block": 3734397,
       "index": 0,
-      "timestamp": 1495226811
+      "timestamp": 1495226872
     },
-    "claimsSha256": "58a0c3ae67e93bb3f59da4c30f9bed541ffec5936c40aa4d62626fc4abc9ddcf"
+    "claimsSha256": "985a791991c7a003bcea03059be374b64e70ab14b8dcb7723705b1f1a5199206"
   }
 ]
