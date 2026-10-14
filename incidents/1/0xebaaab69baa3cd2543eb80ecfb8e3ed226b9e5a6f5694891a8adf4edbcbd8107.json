@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown batch executor 0x143a737b",
   "name": "Unknown batch executor unauthenticated execute(actions)",
-  "summary": "EOA 0x98289e90 deployed an unverified batch executor and gave it an unlimited yvWETH allowance. Its execute((address,uint256,bytes)[]) runs arbitrary calls for any caller. An attacker's constructor had it transferFrom the owner's entire 384.667 yvWETH balance to itself, withdraw the underlying from the Yearn vault, and send the 429.21 WETH to the attacker.",
+  "summary": "EOA 0x98289e90 deployed an unverified batch executor and gave it an unlimited yvWETH allowance. Its execute((uint8,bytes)[]) (selector 0x49650044) runs arbitrary calls for any caller. An attacker's constructor had it transferFrom the owner's entire 384.667 yvWETH balance to itself, withdraw the underlying from the Yearn vault, and send the 429.21 WETH to the attacker.",
   "targets": [
     {
       "address": "0x143a737bffc6414b61134f513ceed1a64390181a",
@@ -13,19 +13,18 @@
     }
   ],
   "loss": {
-    "usd": 983154.9452411642,
+    "usd": 983154.95,
     "assets": [
       {
         "token": "0xa258c4606ca8206d8aa700ce2143d7db854d168c",
         "symbol": "yvWETH",
         "amount": "384.667252984919210375",
-        "usd": 983154.9452411642
+        "usd": 983154.95
       }
     ]
   },
   "notes": [
-    "Direct, non-upgradeable 3,198-byte runtime created through the deterministic CREATE2 deployer; execute() is open from creation. The owner's later unlimited yvWETH approval only set exposure.",
-    "Exact yvWETH debit from owner 0x98289e90d6fc92a8769bc892d006a2baa7705afe, valued at the vault's pricePerShare() at block 24981716 (1.118358035811806430 WETH per share, 430.1957 WETH) times the DefiLlama WETH price. The attacker's withdraw accepted maxLoss 10000 bps and realised 429.210570004163139885 WETH; the 0.985 WETH shortfall is strategy loss borne by the stolen shares and is included. No attacker input is involved.",
-    "The executor has no verified source; the missing caller authorization is established from the execution trace, in which a contract created by the attacker in the same transaction successfully invoked execute(), rather than from source text."
+    "Direct, non-upgradeable runtime created through the deterministic CREATE2 deployer; execute() is open from creation (no caller check in the trace). The owner's later unlimited yvWETH approval only set exposure.",
+    "The stolen yvWETH is valued at the vault's pricePerShare before the exploit times the WETH price; the attacker's withdraw with 10000 bps maxLoss realised slightly less WETH, a strategy loss borne by the stolen shares."
   ]
 }

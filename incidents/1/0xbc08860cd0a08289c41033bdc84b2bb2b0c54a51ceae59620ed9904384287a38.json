@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unverified router 0x05f0",
   "name": "MEV bot 0x05f0 unprotected swap entry point",
-  "summary": "The MEV bot contract exposed selector 0xf6ebebbb, an internal swap-execution entry point, with no caller check and no output validation. A flash-loan-funded attacker called it directly with pool and amount parameters of their own choosing and moved the contract’s whole USDC, USDT, WETH and WBTC balance out through the pools it was told to trade against.",
+  "summary": "The unverified MEV contract exposed swap entry point 0xf6ebebbb with no caller check: any caller could swap the contract's own balances through a pool and minimum output of its choice, including zero. A flash-loan-funded attacker skewed Curve tricrypto, had the contract dump its USDC, USDT, WBTC and WETH into the skewed pools and unwound; a searcher repeated it a block later.",
   "targets": [
     {
       "address": "0x05f016765c6c601fd05a10dba1abe21a04f924a5",
@@ -13,40 +13,43 @@
     }
   ],
   "loss": {
-    "usd": 2356594.9542150386,
+    "usd": 2577480.63,
     "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "559.326917266898964842",
+        "usd": 1053648.86
+      },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "610000.001612",
-        "usd": 610000.001612
+        "usd": 610000
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "585000.009866",
-        "usd": 585000.009866
-      },
-      {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "559.326917266898964842",
-        "usd": 1053648.860209039
+        "usd": 585585.01
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
-        "amount": "3.05752960",
-        "usd": 107946.082528
+        "amount": "9.29745829",
+        "usd": 328246.76
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x3b208a2d1ea8e2c871bffea57d7ffb35d41fe85ff02746504d9f7c560a3fc821"
+  ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/bot_exp.sol",
     "https://twitter.com/BlockSecTeam/status/1722101942061601052"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0x3fcd64f33e1dad69ad1681df62dfac7f3cc7c82e817f71899ffa07937571f687 both at the deployment block 18370467 and at block 18523343, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "Components are the victim contract’s net ERC-20 balance deltas in the single exploit transaction, which is the first transaction of block 18523344. The attacker’s later transaction to the same exploit contract at block 18537100 does not touch the victim. BlockSec’s contemporaneous alert put the loss near USD 2 million; this exact netting at DefiLlama prices for the incident timestamp is higher. Nothing was recovered."
+    "Non-upgradeable contract, unchanged from deployment. Its per-token output-receiver mapping was cleared at block 18416187, but a replay of the anchor with the old receivers restored still drained the contract at skewed prices, so that change is not a reset.",
+    "Searcher 0xc0ffeebabe repeated the call in the next block, taking 6.24 WBTC net from the contract and keeping the profit, so it is a copycat. Every earlier token flow of the contract is the operator's own trading; the operator swept the remainder at block 18523406."
   ]
 }

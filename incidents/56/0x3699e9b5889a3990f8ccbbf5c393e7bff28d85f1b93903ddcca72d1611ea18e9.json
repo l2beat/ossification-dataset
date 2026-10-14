@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown BSC pool contract 0x20dbf429",
   "name": "Unknown BSC pool poolWithdraw accepts empty signer and signature lists",
-  "summary": "The unverified implementation behind proxy 0x20dbf429 authorizes poolWithdraw(token, amount, to, ..., signers[], deadline, signatures[]) with a multi-signature check that passes when both arrays are empty. From block 83557908 several unrelated callers withdrew the pool's USDT to themselves with empty signer and signature lists until the owner upgraded the implementation at block 83655321.",
+  "summary": "The unverified pool proxy's poolWithdraw(token, amount, to, id, signers, deadline, signatures) never enforced its 3-of-n signer requirement: a call with empty signer and signature arrays passed and sent pooled USDT to any address. The attacker withdrew the pool's USDT; copycats drained it again after each operator refill, and hit two sibling pool proxies.",
   "targets": [
     {
       "address": "0x20dbf42970eb3fabe62615534c4ef15fd4d59596",
@@ -14,43 +14,46 @@
     }
   ],
   "loss": {
-    "usd": 251524.57821822545,
+    "usd": 251605.46,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "71549.966252205818444704",
-        "usd": 71549.96625220582
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "119755.859375",
-        "usd": 119755.859375
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "59991.77",
-        "usd": 59991.77
-      },
-      {
-        "token": "0x55d398326f99059ff775485246999027b3197955",
-        "symbol": "USDT",
-        "amount": "226.982591019622910853",
-        "usd": 226.9825910196229
+        "amount": "251597.840573184019005166",
+        "usd": 251605.46
       }
     ]
   },
-  "refs": [
-    "eip155:56:0x91979f1232f8ceaa6bb109c2ec56ed9595c8165d34e44f16f6ee010d31e8c707",
+  "campaign": [
+    "eip155:56:0x199c8d29926873f33550ab0b17d14fd9a7c5a060f9077518145393944e0b9b1a",
     "eip155:56:0x3d936c59c9d446ee222361acc820be47054aea45f9f5fc92482fe973a596e475",
+    "eip155:56:0x1d9dc43479fecee6ee526ab2d9c781d8c32e34e756107da6de8b0a3c74ecd0f8",
+    "eip155:56:0x5f56fb37bde3b7d16ab72db08fac178e19c6934ec292fb267c5ceed905cb123c",
     "eip155:56:0x0d9e4478567aa33dad3bd7c9a79de5f2afc9c7037c026795aa838f5ab834ca80",
+    "eip155:56:0x5a4b4308b950ae91844bca17c166a6dc105206e490067924d83ee37164dd5d42",
     "eip155:56:0x91f4526052060d7137919a8e2bb3ce6c2169e5a376ab002c4745f69841cfd784",
+    "eip155:56:0x34354463b45824563b8673606180d0bff14356137609d6c3f0b410dedeeba9d6",
+    "eip155:56:0x6095ed1aceff4843982e18452ec04354ebd164262a24170faf32e3fe9ea15966",
+    "eip155:56:0xf868d518370984e73998aa0d182f00dbf17c9d025149fbcb24b434effbccc95f",
+    "eip155:56:0x8b4bc3f18c143239915459547664b66ee57d040c85c494c444279303177220fb",
+    "eip155:56:0xb776942f12447e4da6699aa52296516bcd5ec1996e1b912b8c3523c277fca4d2",
+    "eip155:56:0x1c10c104e35f9d90c90e0bd3688a9b090770ec8c34bb402a48bf651488c263b2",
+    "eip155:56:0x2aa2d0c38791aaf8c6b9b3b1ace512823a443943cd15fa07a4831458865f0d57",
+    "eip155:56:0xcc9900fef9b629ccd93b8dc2e433a1a347263069c39e838838caf37669b951bc",
+    "eip155:56:0xe661b3de32394a94a09f49a05e5395d87f84cd2151ada4584d3a9b40936183ad",
+    "eip155:56:0xfcec90ccc080afd76f5776d228c8c8e4a9ecde2e76193a8111ce1c3c064fbbbb",
+    "eip155:56:0x3beae43790ce3641acec5d2c9a73e4a22b4d159d167ceadf3c176d94614ec5b3",
+    "eip155:56:0x652f84e2cd4449cded6c69563be3ca7f547a355bfdc06172d49bd8e56a3525e5",
+    "eip155:56:0x4e5a49302b99d1df9dba7fb7ffb3977f75439ad560eb055dd398ce08f6987bec",
+    "eip155:56:0xda2cdf2d1ccfc305ebf93ea6c09456b86db8159b5370db1b75e09cbe55aff65b",
+    "eip155:56:0xfe35dd01605e46657361e1be6dec5fe2f72641cf5c9039e5fe051a7604ffbdef",
+    "eip155:56:0xccac86ca8932c5d9ce197322f0378c77a6f35f64742f432159be8bd22940ca43"
+  ],
+  "refs": [
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-23-mar-1-2026"
   ],
   "notes": [
-    "Owner upgradeTo selected the implementation whose poolWithdraw signature check passes with empty arrays; it is the last Upgraded event before the exploit (the next, at 83655321, is the fix).",
-    "Exact USDT debits of pool proxy 0x20dbf42970eb3fabe62615534c4ef15fd4d59596 in all 23 successful poolWithdraw transactions between the first exercise and the fix upgrade, all with empty signer and signature lists. Components: the first actor (0x997a283b via 0x77f2601f); two EIP-7702 EOAs sharing delegate 0xa124d3858ab98f75534ad9a2a2fbd1cb1f678b21 (59,781.25 and 59,974.609375); the BlockSec-cited actor 0xc6e8210e; and 19 small withdrawals by other callers. BlockSec's ~$180K corresponds to the last three large transactions."
+    "Every implementation since the proxy's creation accepted empty arrays (requiredSignatures stayed 3; a simulated poolWithdraw passes at each implementation), so the reset is the last upgradeTo before the exploit per rule 9; the next upgrade, at block 83655321, is the fix.",
+    "Campaign: every later successful unsigned withdrawal from the pool until the fix (the pool's operator refilled it via depositToPool between drains), plus drains of sibling proxies 0x7cec9e05 and 0xefdbbfbe of the same deployer. A zero-amount call is left out."
   ]
 }

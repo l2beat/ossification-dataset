@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown distribution contract 0xf0a105d9",
   "name": "Unknown distribution contract unchecked allocation-sum overflow",
-  "summary": "The unverified Solidity 0.7.6 distribution contract's single-token deposit function 0x317de4f6(token,(recipient,amount)[]) sums allocation amounts without overflow checks, pulls only that sum from the caller, then credits each nonzero recipient its full amount as a claimable balance. The attacker passed a zero-address entry of 2^256-97812920708 and a self entry equal to the contract's USDT balance, paid 1 USDT base unit, and claim() paid out all 97,812.920709 USDT held for unclaimed allocations; a second actor repeated it for the residual USDe.",
+  "summary": "The 0.7.6 distribution contract's deposit 0x317de4f6(token,(recipient,amount)[]) summed allocations without overflow checks, pulled only the sum, then credited each recipient in full. The attacker paired a zero-address entry of 2^256 minus the USDT balance with a self entry of that balance, paid 1 base unit and claim()ed all unclaimed USDT; a copycat took the USDe.",
   "targets": [
     {
       "address": "0xf0a105d93eec8781e15222ad754fcf1264568c97",
@@ -13,28 +13,30 @@
     }
   ],
   "loss": {
-    "usd": 97815.51217693,
+    "usd": 97800.11,
     "assets": [
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "97812.920709",
-        "usd": 97812.920709
+        "usd": 97797.52
       },
       {
         "token": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
         "symbol": "USDe",
         "amount": "2.591467933559023257",
-        "usd": 2.591467933559023
+        "usd": 2.59
       }
     ]
   },
-  "refs": [
-    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-23-mar-29-2026",
+  "campaign": [
     "eip155:1:0xab5febb70193d1505212e34699f592a65bae2a0fd058e4d3e90fa0210096c177"
   ],
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-23-mar-29-2026"
+  ],
   "notes": [
-    "Direct immutable runtime; the unchecked sum in the 0x317de4f6 deposit path exists from deployment and no configuration value bears on it.",
-    "Gross victim depletion equals the contract's entire pre-exploit USDT and USDe balances; the attacker-supplied 1+1 USDT base units and 1 wei USDe paid into 0x317de4f6 are returned inside the claim outflows and are not loss. Stablecoins valued at par; downstream swaps to WETH are excluded. The second campaign (0xc513e4f5..., source-6) happened 696 seconds after the anchor against the same contract."
+    "Direct immutable runtime; the unchecked sum in the 0x317de4f6 deposit path exists from deployment and no configuration value bears on it. Four same-code siblings from the deployer's CreateX batch never held tokens.",
+    "Loss is the contract's whole USDT and USDe balance held for unclaimed allocations; the base units the attackers paid in came back inside their claims and net out."
   ]
 }

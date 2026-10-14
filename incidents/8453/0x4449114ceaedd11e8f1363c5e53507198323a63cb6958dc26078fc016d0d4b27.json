@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown Base MEV bot 0xe143b486",
   "name": "Unknown Base MEV bot unvalidated uniswapV3SwapCallback",
-  "summary": "Bot contract 0xe143b486's uniswapV3SwapCallback(int256,int256,bytes) pays the positive delta by transferFrom from a payer named in the callback data to msg.sender. The token comes from msg.sender.token0(), and nothing checks that the caller is a genuine pool. The operator EOA 0xc0ffee47 had approved the bot for WETH. The attacker's contract, posing as a pool, called the callback 219 times with the operator as payer and pulled 55.42 WETH.",
+  "summary": "The bot's uniswapV3SwapCallback took the token from msg.sender.token0() and paid the owed amount by transferFrom from a payer named in the callback data, without checking that the caller was a genuine pool. The attacker's fake pool called it 219 times naming operator EOA 0xc0ffee47, which had approved the bot, and pulled its WETH; copycats then took more WETH and LINK.",
   "targets": [
     {
       "address": "0xe143b486ab0413df0d6dad2caf6d2f61cac54730",
@@ -13,19 +13,29 @@
     }
   ],
   "loss": {
-    "usd": 218679.91882772677,
+    "usd": 437164.06,
     "assets": [
       {
         "token": "0x4200000000000000000000000000000000000006",
         "symbol": "WETH",
-        "amount": "55.416592335050228928",
-        "usd": 218679.91882772677
+        "amount": "55.514876455905996937",
+        "usd": 219066.61
+      },
+      {
+        "token": "0x88fb150bdc53a65fe94dea0c9ba0a6daf8c6e196",
+        "symbol": "LINK",
+        "amount": "12028.819063111129757137",
+        "usd": 218097.45
       }
     ]
   },
+  "campaign": [
+    "eip155:8453:0x69f52ccad9386f88066a583169b1b81b80ceb41c1d9d6a89fe46600f0db8a0a9",
+    "eip155:8453:0x83da47641680d0cf0a0567e3bcd5961cd30dbd5f34007f0e26e54216ad20b439",
+    "eip155:8453:0x2b53d38605f35484f0afe34190d4ce901efefbe2ee3f200ce4e7a52821021622"
+  ],
   "notes": [
-    "Direct, non-upgradeable bot runtime; its swap callback has lacked caller validation since deployment. The operator's WETH approval only set exposure.",
-    "Exact WETH depletion of operator EOA 0xc0ffee479e4cd49eafba87449225e17c53251226, which approved the bot: 219 transferFrom legs of 0.253043800616667712 WETH, then forwarded to the attacker EOA. Valued at the DefiLlama WETH quote.",
-    "The bot has no verified source. The missing pool check is established from the exploit trace, in which a non-pool contract's callback calls were honored, not from source text."
+    "Direct, non-upgradeable bot runtime whose callback lacked caller validation since deployment; the operator's token approvals only set exposure.",
+    "Campaign and loss from every WETH, LINK and other token outflow of the approving operator EOAs 0xc0ffee47 and 0xbf0e3642 since the bot's deployment: all earlier outflows went to genuine pools or the operators' own trades; copycats 0x083a5afd, 0x83906ebf and 0x6d10b7d5 followed the anchor within hours."
   ]
 }

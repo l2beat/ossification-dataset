@@ -2,32 +2,28 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Utopia",
   "name": "Utopia predictable airdrop balance overwrite",
-  "summary": "Utopia._airdrop overwrites rather than increments a predictably chosen address balance. A crafted pair skim overwrote the pair’s Utopia balance, allowing sync and tiny subsequent sales to drain WBNB reserves.",
+  "summary": "Utopia's per-transfer _airdrop wrote _balances[address(seed | amount)] = 1, an address derived from the transfer amount and parties, overwriting rather than adding. The attacker chose amounts that made the derived address the UTOPIA/WBNB pair, set its token balance to 1, synced the reserve and sold a few tokens for the pair's WBNB, then sold dust into the crushed pair six more times.",
   "targets": [
     {
       "address": "0xb1da08c472567eb0ec19639b1822f578d39f3333",
       "reset": {
-        "kind": "config",
-        "tx": "0xb198ff7de77fdb82225afb16398325cba58bedd563b4b6a16e0cf04fe1a00da3",
-        "address": "0xb1da08c472567eb0ec19639b1822f578d39f3333",
-        "call": "0x553193ca"
+        "kind": "deployment",
+        "tx": "0xb30654eae71a2ed5f06db799a4284cfafb5ae4561a91da0f6516db467ea2df3d"
       }
     }
   ],
   "loss": {
-    "usd": 119958.1171795637,
+    "usd": 119924.73,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "495.735668979104498241",
-        "usd": 119958.1171795637
+        "amount": "495.891696690105230973",
+        "usd": 119924.73
       }
     ]
   },
-  "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/Utopia_exp.sol",
-    "eip155:56:0xe341a8b2bf2f14f7382216c7c90de1df06ac3e4c3316c3ab0f377553bd1b99f5",
+  "campaign": [
     "eip155:56:0x319d192d9be1d670f6fa0d45da9033f611173dfd54f58d540298f934f23293af",
     "eip155:56:0xb907322181e2c39e447cf9912c8696b9d4daba194ac7d9e653fa2b71726e0446",
     "eip155:56:0x63b1dd6859aa4948a7a78eac5e7ba2eeceaac6632dafe54b3dd2c9cd33d053fd",
@@ -35,8 +31,11 @@
     "eip155:56:0xf3004bd0cbe313515f9383f82cc9976f7df5d7ca921e62704e3b6018ce7cdb70",
     "eip155:56:0xec00f15bdb1e43389927e9630b69b3e956fa80a02892c358ca97093c404b6eb6"
   ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/Utopia_exp.sol"
+  ],
   "notes": [
-    "startTrade enables the arbitrary-recipient pair transfer that makes the chosen balance overwrite possible; before activation the !Trade gate permits only liquidity additions to the fixed mainPair.",
-    "WBNB extracted from pair 0xfeef619a56fce9d003e20bf61393d18f62b0b2d5: 492.088605739133158123 in the anchor plus six later payouts totaling 3.657063239971340118, less the attacker’s 0.01 WBNB purchase input. Protocol fee conversions retained as MT for LP rewards are excluded. No separate value is assigned to overwritten or unsold Utopia balances; gas and subsequent transfers do not reduce gross loss. WBNB is valued at the timestamped BNB/USD sample."
+    "startTrade (block 25945528) only opened trading, a pure trading gate the exploit passed through, not a field that created the defect, so the token's deployment is the reset.",
+    "Loss is the pair's WBNB outflow over the anchor and the attacker's six follow-up sells, including the token's own fee swaps those sells triggered; overwritten Utopia balances get no value, and later sales by other holders into the crushed pair are left out."
   ]
 }
