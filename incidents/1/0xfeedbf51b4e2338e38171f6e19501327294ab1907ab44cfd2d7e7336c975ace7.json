@@ -2,30 +2,51 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Raft",
   "name": "Raft InterestRatePositionManager collateral-index inflation with round-up share mint",
-  "summary": "InterestRatePositionManager.liquidate() closes the liquidated position and then calls _updateDebtAndCollateralIndex, which resets the raft collateral token index to collateralToken.balanceOf(address(this)) divided by the remaining share supply. The attacker donated 6,001.45 flash-loaned cbETH to the manager and liquidated the only other cbETH position, leaving 89 shares backing 6,003.44 cbETH, so the stored index became 6.745e19 wei of cbETH per share. ERC20Indexable.mint then mints amount.divUp(storedIndex) shares, so each subsequent 1-wei managePosition collateral deposit rounded up to a full share worth 67.45 cbETH. Repeating the 1-wei deposit inside the same transaction inflated the attacker position's collateral claim far past the manager's real cbETH holdings and let it borrow 6,705,028.47 R against it.",
+  "summary": "InterestRatePositionManager.liquidate resets the cbETH collateral index from the manager's cbETH balance over remaining shares, and ERC20Indexable.mint rounds shares up. The attacker donated flash-loaned cbETH, liquidated the other cbETH position to inflate the index, then made repeated 1-wei deposits each minting a full share, and borrowed unbacked R against it.",
   "targets": [
     {
       "address": "0x9ab6b21cdf116f611110b048987e58894786c244",
       "reset": {
+        "kind": "config",
+        "tx": "0x049fc90324fbb9fdbc28c3aa981297bf1d8551eb01eed18afce00e6248a573b2",
+        "address": "0x9ab6b21cdf116f611110b048987e58894786c244",
+        "slot": "0xfcfeb1adcf72037fa6c2d72d7f450c0c9bf6ffc3e9fb7e1db95c98d05e7be23c"
+      }
+    },
+    {
+      "address": "0xd0db31473caad65428ba301d2174390d11d0c788",
+      "reset": {
         "kind": "deployment",
-        "tx": "0x72be611ae1ade09242d9fc9c950a73d076f6c23514564a7b9ac730400dbaf2c0"
+        "tx": "0x57ae839fc16af5fa9c48ef8cfa914eb24f93dfd6f5e25b9b0e09a8911112087a"
       }
     }
   ],
   "loss": {
-    "usd": 3336330.877371531,
+    "usd": 3624169.32,
     "assets": [
+      {
+        "token": "0x83f20f44975d03b1b09e64809b757c47f942beea",
+        "symbol": "sDAI",
+        "amount": "2009226.625525958210315125",
+        "usd": 2090610.17
+      },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
-        "amount": "3253639.812486511816814441",
-        "usd": 3249904.633981777
+        "amount": "1159396.050215284713094612",
+        "usd": 1158065.06
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "86430.564918",
-        "usd": 86426.2433897541
+        "usd": 86426.24
+      },
+      {
+        "token": "0x183015a9ba6ff60230fdeadc3f43b3d788b13e21",
+        "symbol": "R",
+        "amount": "3322460.970332523577951901",
+        "usd": 289067.85
       }
     ]
   },
@@ -33,7 +54,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-11/Raft_exp.sol"
   ],
   "notes": [
-    "InterestRatePositionManager is a plain non-upgradeable contract deployed directly by EOA 0x603d50bad151da8becf405e51a8c4abc8ba1c95e in transaction 0x72be611ae1ade09242d9fc9c950a73d076f6c23514564a7b9ac730400dbaf2c0 at block 18127534. Its runtime code hash is 0x6cb99346de6e61fd74d21a40459ce84a5c45a564d72ca9bc82aef096332f6ba3 at the deployment block and unchanged at blocks 18200000, 18300000, 18400000, 18500000, 18543400 and 18543485 (exploit block minus one); the account is empty (0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470) at block 18127533. The EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc reads zero at block 18543485, and the exploit trace calls liquidate and managePosition directly on this address with no delegatecall, so the deployment is the only executable-code change.",
-    "Loss is measured as the assets the unbacked R actually pulled out of R liquidity inside the exploit transaction, not as the face value of the 6,701,624.445698 net R the defect minted; R was an undercollateralised stablecoin whose market price collapsed immediately, so par-valuing the mint would overstate what left. In the exploit transaction the attacker swapped 2,100,000 R and 1,200,000 R through Balancer ComposableStablePool 0x20a61b948e33879ce7f23e535cc7baa3bc66c5a9000000000000000000000555 for 2,009,226.625525958210315125 sDAI and 1,159,396.050215284713094612 DAI, redeemed the sDAI for 2,094,243.762271227103719829 DAI (log 383), and swapped 86,567.502077069127313424 R through Uniswap V3 R/USDC pool 0x190ed02adaf1ef8039fcd3f006b42553467d5045 for 86,430.564918 USDC (log 375). The two DAI legs sum to the single 3,253,639.812486511816814441 DAI transfer at log 387. Those stables were then routed to 3,339,766.379985 USDC and 1,575.175928415622483130 WETH, an equivalent view of the same proceeds (1,575.175928 ETH at 2,093.46 USD is 3,297,568 USD). Excluded: the attacker mistakenly sent 1,583.410453811108267443 ETH to the zero address at the end of the same transaction, which is a loss to the attacker and not a recovery for Raft, so it is not netted out; the residual 3,315,056.943449 R the attacker kept was dumped through the same pools over the following weeks for a further 140.324 ETH received by the attacker EOA, which is excluded because it was realised after the incident at post-depeg prices; six earlier ratchet transactions in the same campaign (0xa5233e3b, 0x05d6a951, 0x8c4b1b7b, 0x57ee18b5, 0x28a3afd3, 0xa1378a4d) moved at most 8.54 R and are immaterial. DefiLlama's nearest observations to the incident timestamp are 1699642801 for DAI and 1699642799 for USDC."
+    "The cbETH collateral registration on the manager (collateral token, debt token, price feed, splitter) is a market listing the exploit needed and is the latest change; it ran in the same block as, and after, the rcbETH-c (ERC20Indexable) deployment carrying the round-up mint.",
+    "Unbacked R is valued at what it extracted: the Balancer R pool's sDAI and DAI and the R/USDC pool's USDC in the anchor, plus 140.32 ETH (at about 2,060 USD) the attacker realised selling the remaining R through helper 0x043f64a4 over 167 later transactions.",
+    "The ETH the attacker sent to the zero address is its own loss and is not subtracted."
   ]
 }

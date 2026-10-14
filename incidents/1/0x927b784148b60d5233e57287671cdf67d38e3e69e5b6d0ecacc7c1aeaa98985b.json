@@ -2,15 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ROE Finance",
   "name": "ROE WBTC/USDC LP live-reserve collateral valuation",
-  "summary": "ROE's custom WBTC/USDC LP oracle divided the pair's current externally priced reserves by current LP supply. It applied no time, donation or deviation bound, so a same-receipt reserve donation immediately raised every recursively minted roeLP collateral claim before the USDC borrow check. The violated invariant is that collateral value used to authorize borrowing must not be increased atomically by the borrower through a live reserve balance that is amplified across repeated claims on the same underlying inventory.",
+  "summary": "ROE's WBTC/USDC LP oracle priced LP from the pair's live reserves and supply. The attacker looped LP borrows (debt on its EOA, delegated) and redeposits to build phantom LP collateral, burned the reserve's only LP, donated USDC to the pair and synced, inflating the LP price, then borrowed USDC against the inflated collateral.",
   "targets": [
     {
       "address": "0x849af4b128be3317a694bfd262deff636ab84c1b",
       "reset": {
         "kind": "config",
-        "tx": "0x4a3c37bfab2c5a4cef861dfecc66ecd182bec0816dbaf69536b6de0206479dbd",
-        "address": "0x8a4236f5ef6158546c34bd7bc2908b8106ab1ea1",
-        "call": "0x92bf2be0000000000000000000000000004375dff511095cc5a197a54140a24efef3a416"
+        "tx": "0xe9ef559c9c68663ce7815014d0fce61c36d1db7a781a2e91911c11ab8bb0e247",
+        "address": "0x5f360c6b7b25dfbfa4f10039ea0f7ecfb9b02e60",
+        "call": "0xc44b11f7000000000000000000000000004375dff511095cc5a197a54140a24efef3a416"
       }
     }
   ],
@@ -32,24 +32,12 @@
     ]
   },
   "refs": [
-    "eip155:1:0x470a86e00f9cf0344f503b05cbcc90e04bb922f667cfb99fd31ff99825f626ba",
     "eip155:1:0x5ffa3a0581f851761b84eadd6ba3b1649506cd9d54469b6d51966daa92ada8ba",
-    "eip155:1:0x16f1107261325af45d06c917903906cd8da38a21e1971cc3a2fd7c1419cd2483",
-    "eip155:1:0xbd306af29a3ff3d4a133a753fb4dddf9d0866c770edef58265ad6039ed95139f",
-    "eip155:1:0x2d0ea9dd6432729614acddaab0cc73f15195a49861e9f0cf2fc9c6b30865dadf",
-    "eip155:1:0x359e25fd51c4f7aefd1632ec73b7431770524a2e5a4cd98591c500967b8b73d7",
-    "eip155:1:0x4740e481944f70dd1efcb256b6cb42436d0626c45838cad1774e9a01ca25a530",
-    "eip155:1:0x6fbeb50d92c175d5da38d17588fb8cead7b4905ed57b0d7c9a672f59a761087a",
-    "eip155:1:0x072eca2797eea1b9fbf118889492c97b6aa644e20900974ce529f6c47eab563b",
-    "eip155:1:0x47c91abdaaa69e7d9fbf35374d7407218c0e7fd39ce95f52d3f2700536a93395",
-    "eip155:1:0x23a659612012f1bfe0c136b7f0b92493287a929b6f1fb2423e69f843863a452d",
-    "eip155:1:0xf494a52c739973099d260bf3513f5fcd82f76712254aa9e967b3c276d93d7fb2",
-    "eip155:1:0xbb4c9145da463f4dc91192133af16efdf83c6081cb6307af446c98d26e8c4c8a"
+    "eip155:1:0x16f1107261325af45d06c917903906cd8da38a21e1971cc3a2fd7c1419cd2483"
   ],
   "notes": [
-    "This is the second and last pre-incident AssetSourceUpdated event for the WBTC/USDC LP. It replaces the pair's self-source with this custom LP oracle, making the otherwise immutable direct runtime callable by ROE's borrow-solvency path. No later source update for this asset occurs before the incident.",
-    "Immediately before the receipt, the ROE reserve aToken 0x68b26dcf21180d2a8de5a303f8cc5b14c8d99c4c owns exactly 2,953,841,283 raw UNI-V2 WBTC/USDC LP out of 5,771,992,996 supply. The pair reserves are 578,680,045 WBTC satoshis and 100,949,159,688 USDC micro-units. Integer-floor redemption therefore equals floor(2,953,841,283 * 578,680,045 / 5,771,992,996) = 296,141,905 WBTC satoshis and floor(2,953,841,283 * 100,949,159,688 / 5,771,992,996) = 51,661,149,896 USDC micro-units. Receipt logs 600-605 burn exactly that LP and emit exactly those two quantities; the reserve's LP balance becomes zero. The campaign has 50 borrow principals totalling 147,692,064,150 raw LP, 49 redeposits totalling 144,738,222,867 raw LP, and the final 2,953,841,283-raw burn. At receipt end the EOA has 147,692,064,169 raw variable LP debt and a 5,673,090.338021 roeUSDC claim, while the helper has a 144,738,222,868-raw roeLP claim and 5,673,090.338021 USDC debt. Both underlying reserve balances are zero immediately after the receipt and remain zero through block 25,882,427 while all four claim/debt balances only accrue, so the cross-claims are unbacked bad debt, not collectible consideration. The 5,673,090.338021-USDC Balancer funding, deposit, borrow and repayment cancel exactly. After the burn, 26,024.069170 of the just-received USDC is sent back to the pair and sync() is called; it is recycled victim inventory rather than external attacker consideration. A later same-receipt swap returns 0.66679001 WBTC and 14,345.053375 USDC, leaving the helper with 2.29462904 WBTC and 39,982.134101 USDC proceeds. Those proceeds are not substituted for gross victim depletion. Canonical WBTC reports 8 decimals and Circle USDC reports 6 decimals; DefiLlama's independently preceding observations value them at 17,417.95 USD and par, giving exact products 51,581.8489419475 USD and 51,661.149896 USD.",
-    "The seed's roughly 39,982-USDC figure is downstream proceeds after the burned LP's WBTC/USDC inventory is traded. This review instead measures the reserve's exact gross LP depletion at its immediately preceding underlying entitlement, without double counting pair trades.",
-    "The active ROE lending-pool proxy implementation is execution ancestry. The selected causal artifact is the immutable custom LP oracle whose live reserve mark the pool consumes; its LP-specific mapping activation is later than deployment and therefore resets the observation age."
+    "Reset is enableBorrowingOnReserve for the LP reserve (borrowing bit 0 at the block before, 1 after). The exploit needs LP borrowing for the 50 borrow/redeposit loops; it is later than the oracle's deployment and its AssetSourceUpdated (0x4a3c37bf…) and the LP collateral listing.",
+    "The November 2022 LendingPool implementation upgrade is not a reset: the defect is the oracle's reserve-based price, and the exploit used only standard Aave V2 deposit/borrow paths.",
+    "Loss is the reserve's LP, burned by the attacker, valued at its WBTC and USDC redemption; the cross EOA/helper positions left behind are unbacked bad debt, not consideration."
   ]
 }

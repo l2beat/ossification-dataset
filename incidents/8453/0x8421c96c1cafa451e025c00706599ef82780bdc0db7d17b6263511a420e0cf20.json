@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "RICE",
   "name": "RICE BentoBox-fork vault unauthenticated setMasterContractApproval",
-  "summary": "The unverified BentoBoxV1-fork vault 0xcfe0de4a's setMasterContractApproval(user, masterContract, approved, v, r, s) performs no authorization: it ignores v, r, s and msg.sender, requires only masterContract != 0, and writes masterContractApproved[masterContract][user]. The attacker contract called registerProtocol() to become its own master contract, approved itself for depositor 0x49876a20 with a zero signature, and withdrew that depositor's entire 22,189,176.5 RICE vault balance through the allowed(from) check.",
+  "summary": "The unverified BentoBoxV1-fork vault dropped every authorisation in setMasterContractApproval: it ignores v, r, s and msg.sender. The attacker registered its contract as a master contract, approved it for depositor 0x49876a20 with a zero signature, and withdrew that depositor's RICE through the allowed(from) check.",
   "targets": [
     {
       "address": "0xcfe0de4a50c80b434092f87e106dfa40b71a5563",
@@ -27,7 +27,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-05/RICE_exp.sol"
   ],
   "notes": [
-    "Direct immutable vault runtime contains the unauthenticated setMasterContractApproval; no owner configuration event was ever emitted, and no stored value gates the approval write.",
-    "Exact victim depletion: the vault's LogWithdraw debits depositor 0x49876a20bb86714e98a7e4d0a33d85a4011b3455 of 22189176505973791717313474 RICE base units (18 decimals), its full RICE share, in the single exploit transaction. The attacker sold the whole amount in the same transaction into Uniswap V3 RICE/USDT pool 0xa0213b570dff35a8c826334472e23b9a8a94ef3b for 88232.917196 USDT (log 7), then routed it through USDC to 34.52291421920366 WETH paid to the attacker EOA (log 17). That sale emptied the pool's USDT side, so RICE is valued at realised proceeds: the USDT received times the DefiLlama USDT quote 0.999063 (source-6). A spot mark at DefiLlama's RICE quote (0.077597 USD at 1748103192) would give about 1.72M USD, which the pool's liquidity could not realise. No attacker input is subtracted; no other vault asset was taken."
+    "Immutable direct deployment; no owner configuration gates the approval write, and the vault's only setMasterContractApproval event before the exploit is the attacker's.",
+    "The attacker sold the RICE in the same transaction into the Uniswap V3 RICE/USDT pool, emptying its USDT side, so RICE is valued at the USDT realised (rule 15), not at DefiLlama's spot quote."
   ]
 }

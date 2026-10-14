@@ -2,13 +2,15 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "RWT Token",
   "name": "RWT privileged sell reserve burn",
-  "summary": "The role-authorized RWT sell contract exposed sell() without caller authorization and each call burned tokens from the AMM pair before sync, letting anyone repeatedly inflate the pool price and drain USDT.",
+  "summary": "RWT's trading contract, which holds RWT's burn role and is the only whitelisted route while public trading is off, exposes sell() to anyone; each sell burns RWT from the RWT/USDT pair and syncs. The attacker flash-borrowed USDT, bought RWT, and called sell repeatedly, each burn raising the price its next sell received, draining the pair's USDT.",
   "targets": [
     {
       "address": "0x8812bb5fb89d69d35ac84d2c37b55769395b9f90",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x84ca5b565014f5484f3a4b9bad46fc383fa78f705bae76026e0f4b75b7c5a53c"
+        "kind": "config",
+        "tx": "0x1c8f5f9fc31fd558a71c74d370260f4cdfaa3cdd347bfcde2a34a6551bbff930",
+        "address": "0x8812bb5fb89d69d35ac84d2c37b55769395b9f90",
+        "slot": "0x6"
       }
     }
   ],
@@ -28,9 +30,8 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/RWT_exp.sol"
   ],
   "notes": [
-    "The sell contract is directly deployed. Its 7,420-byte runtime is absent one block before creation and has code hash 0x6ab4f077948f10e304abef2548501dd05dc00b5c80ab7f1c1909cc33a9eaf7c3 at creation and immediately before the incident; the EIP-1967 implementation, admin, and beacon slots are zero. The unprotected sell path is in this unchanged runtime.",
-    "Gross loss is exact net USDT depletion from RWT/USDT PancakePair 0xc1c2ef25372f12ce18d35044446064b720c4aa27 in the single successful incident receipt. The pair receives 371,491.198973571309200329 USDT and sends 530,107.673365310624346545 USDT, losing 158,616.474391739315146216 USDT. Archive balances fall from 158,742.652464146663510787 to 126.178072407348364571 USDT across block 110827952, reproducing the receipt arithmetic exactly. All seven other transactions in the sender's complete nonce history have zero pair-USDT flow and are excluded. USDT is valued at par; financing and downstream proceeds do not reduce gross pair depletion.",
-    "The sell contract is not source-verified on BscScan; its role and vulnerable behavior were established from the deployed runtime's incident execution, cross-read against the commit-pinned technical reproduction and published analysis.",
-    "Replaces the seed's rounded $118,000 proceeds estimate with exact gross victim-pair depletion."
+    "Reset is the owner's switch of the sell contract's staking-pool pointer (slot 6) to 0xc1ba5191. On a fork of the block before the exploit with the previous pool 0x214f9887 restored, the attacker's transaction reverts inside sell() ('Not depositor'); no sell() call succeeded before the switch.",
+    "The sell contract is unverified; its behaviour is read from the exploit trace. Its RWT burn role and whitelist were granted shortly after deployment, earlier than the reset.",
+    "Loss is the pair's net USDT depletion at par; the fee and staking shares the protocol's own addresses received are not netted."
   ]
 }
