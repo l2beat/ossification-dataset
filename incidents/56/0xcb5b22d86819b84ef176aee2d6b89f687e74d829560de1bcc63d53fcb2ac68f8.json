@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SOF",
   "name": "SOF sell hook burns the sold amount from the SOF/USDT pair before the sale",
-  "summary": "SOF._update handles a sale to the SOF/USDT pair by moving 90% of the sold amount from the pair's own balance to DEAD and calling sync() before the seller's tokens arrive. Buys revert unless the recipient is fee-excluded, so the attacker bought 991,223 SOF with flash-loaned USDT for a fee-excluded mining contract, leaving 787.9 SOF in the pair, then sold 875.45 SOF: the hook burned the remaining 787.9 SOF from the pair, and the sale received all of the pair's USDT.",
+  "summary": "SOF._update() handles a sale to the SOF/USDT pair by burning 90% of the sold amount from the pair's own balance and syncing before the seller's tokens arrive. The attacker flash-bought nearly all pair SOF for a fee-exempt mining contract (buys otherwise revert), then sold 875 SOF: the hook burned the rest of the reserve and the sale took all the pair's USDT.",
   "targets": [
     {
       "address": "0xaeb414d0a64dfca14fd41b28efc78f437008df42",
@@ -27,7 +27,7 @@
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-9-feb-15-2026"
   ],
   "notes": [
-    "Direct immutable SOF runtime (no DELEGATECALL or SELFDESTRUCT) whose _update burns 90% of every non-excluded sale from the pair and syncs; the constructor creates the pair and fee-excludes the token itself, which already suffices as a buy recipient, so the later excludeFromFees calls are not necessary to the exploit.",
-    "Exact USDT depletion of the SOF/USDT pair 0x1f3863d274594f25c6203c9272857f0d51b1c010 in the single exploit transaction. The 313,567,718.11 USDT buy leg and the flash loans (fees 22,689.81 USDT to lenders) are attacker inputs or financing and are not netted against gross depletion, so the loss exceeds the attacker's 225,936.43 USDT profit. The 991,223.16 SOF bought for the mining contract and the pair's SOF are the same liquidity and are not added."
+    "Immutable token; the constructor fee-excludes the token itself, which already works as a buy recipient, so the later excludeFromFees calls (mining contract) are not needed and deployment sets the age.",
+    "Loss is the pair's exact USDT depletion; the flash-loaned buy leg and lender fees are financing and not netted, so it exceeds the attacker's profit. The pair never lost comparable USDT in any other transaction."
   ]
 }

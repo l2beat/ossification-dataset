@@ -2,31 +2,32 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "RunWay (BYC)",
   "name": "RunWay token lets anyone burn inflated sell volume from its pair",
-  "summary": "RunWayERC20 (BYC) adds the full amount of every fee-taking transfer into its USDT pair to lpBurnFrequency, even when the tokens are immediately swapped back out. Its public autoBurnLiquidity() then moves lpBurnFrequency tokens from the pair to 0xdead and calls sync(). In the transaction right after the owner's launch(), the attacker bought 698,539 BYC with flash-loaned USDT, sent them back to the pair and recovered them with a second swap, then called autoBurnLiquidity(). That left the pair's BYC reserve near zero, and one sale drained its 119,950.5 USDT.",
+  "summary": "RunWay (BYC) adds each sell's amount to lpBurnFrequency, and its public autoBurnLiquidity() burns that many BYC straight from the BYC/USDT pair and syncs. Backrunning launch(), the attacker flash-borrowed USDT, cycled BYC through the pair to inflate lpBurnFrequency, burned the pair's BYC reserve and sold BYC into the depleted reserve for the pair's USDT.",
   "targets": [
     {
       "address": "0x9a69eb74060e2808344ac35bb5825051b89bbe76",
       "reset": {
-        "kind": "config",
-        "tx": "0xa166bde8e5220d015e17cd77de0c2269756528d55b1eba7875fe66b8806f427f",
-        "address": "0x9a69eb74060e2808344ac35bb5825051b89bbe76",
-        "call": "0x553193ca"
+        "kind": "deployment",
+        "tx": "0x2ac7f20ae967984d367dbbf5e21239d88db6ffb8f30b80bbe16f2c33db300d53"
       }
     }
   ],
   "loss": {
-    "usd": 119950.5,
+    "usd": 133940.1,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "119950.499999999999999998",
-        "usd": 119950.5
+        "amount": "134185.920257718550096184",
+        "usd": 133940.1
       }
     ]
   },
   "notes": [
-    "Owner launch() set startTradeBlock from 0 to 44534603, one transaction before the exploit in the same block. While it was 0, _transfer required a fee-whitelisted party for every pair transfer, so the non-whitelisted, fee-taking transfer that inflates lpBurnFrequency was unreachable. The flawed runtime has been unchanged since deployment.",
-    "Exact USDT depletion of the BYC/USDT PancakeSwap pair 0x2942dfd0bf9e704348cdb16333443025ecbd8639, which fell from 119950.5 USDT to 2 wei in the exploit. Flash-loan principal and fee are circular attacker flows. The attacker netted 105363.04 USDT, of which it swapped 3000 for BNB."
+    "The owner's launch() one transaction earlier only set startTradeBlock, a trading gate: the burn logic and the public autoBurnLiquidity() were in the code from deployment, so the deployment is the reset (rule 10). setPoolAddress shortly after deployment only names the recipient of buy mints.",
+    "Loss is the USDT depletion of the BYC/USDT pair, which fell to dust, plus a copycat's drain of the team's relaunched BYC token (same code, pair 0x3517df15…) a day later. USDT the token kept from fee swaps is protocol custody and is not netted. No other exercise in either pair's USDT history."
+  ],
+  "campaign": [
+    "eip155:56:0x9f7352c7025d01baf8b8614889d2cd40913d9d7f7a38be46dbad650021a34295"
   ]
 }

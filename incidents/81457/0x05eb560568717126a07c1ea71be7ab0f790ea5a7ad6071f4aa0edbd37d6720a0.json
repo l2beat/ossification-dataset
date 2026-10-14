@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SSS",
   "name": "Super Sushi Samurai stale-balance self-transfer inflation",
-  "summary": "The token's custom _update() read the recipient balance before reducing the sender balance. When sender and recipient were equal, its final recipient write overwrote the reduction with the stale balance plus the transfer amount, so every self-transfer minted the transferred amount out of nothing. The first exercise, on 2024-03-17, was a self-transfer of an entire 272,222,222,222.22195 SSS balance whose minted duplicate was sold into the SSS/WETH pair two minutes later; from 2024-03-21 game players, a whitehat that emptied the pair, and two later actors who self-transferred the pair's own balance through skim() repeated it.",
+  "summary": "SSS's custom _update() read the recipient balance before debiting the sender and then wrote it back plus the amount, so every self-transfer minted the amount. The first user self-transferred 272B SSS and sold it into the SSS/WETH pair; four days later a whitehat repeatedly doubled its balance and emptied the pair, and copycats inflated the pair via skim(pair).",
   "targets": [
     {
       "address": "0xdfdcdbc789b56f99b0d0692d14dbc61906d9deed",
@@ -42,18 +42,20 @@
     ]
   },
   "refs": [
-    "eip155:81457:0x80012bf784b83baaf28f5549a9f233cae5f70be7afcd8f594dc757d431ed93c4",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-03/SSS_exp.sol",
-    "eip155:81457:0x62e6b906bb5aafdc57c72cd13e20a18d2de3a4a757cd2f24fde6003ce5c9f2c6",
-    "eip155:81457:0x4281343f5869e1dc03265b2db628f012c98913c9b80c420e10f517ebb317f98a",
-    "eip155:81457:0xe68faf8dd9256feb0a302c5a54ede8d2f6fb5931cadcb66fe12a19942a78b7bf",
-    "eip155:81457:0xbf91109f611f7b4cf57afd2d1ec4b01b7973738626b0020530d2edd0ebcea15f",
-    "eip155:81457:0x77f62f65fbe09132ca34f58d248f8b0115f8b33a543c63a4486f328b83bba779",
-    "eip155:81457:0xbc05967378ddb0df117157e0570652b2a6712daffe8ed6270fc8f483f5ae980f",
-    "eip155:81457:0xac3400e3d536ac23c10fdd2c06e1faf8d5de5b797df8433e9b5ab74b102a4e35",
-    "eip155:81457:0xfed7651cf2dff1eccee3cdbbf5c71cca03c887cb5b3815797a9a74b9f8942a49",
     "https://medium.com/neptune-mutual/how-was-super-sushi-samurai-exploited-e48a96c6dd6a",
+    "eip155:81457:0x4281343f5869e1dc03265b2db628f012c98913c9b80c420e10f517ebb317f98a",
+    "eip155:81457:0xfed7651cf2dff1eccee3cdbbf5c71cca03c887cb5b3815797a9a74b9f8942a49"
+  ],
+  "notes": [
+    "The first seller's 7.6T SSS were mostly genuine allocations collected from 28 wallets; only the WETH its self-minted 272B SSS added to the swap (marginal output at pre-swap reserves) is counted. The whitehat's 0.01 WETH setup buy (ref) is netted; its later return (ref) is a recovery and is not.",
+    "Campaign: every pair WETH withdrawal funded by self-minted SSS (first seller's sale, whitehat mint and cash-out, blackhat skim(pair) drain, seven c0ffeebabe repeats). A scan of all self-transfers to block 1.4M finds no other material sale (other self-transferers' pool withdrawals total under 0.6 WETH).",
+    "Router sells between the game players' first self-transfers and the whitehat drain may carry minted SSS passed on to other wallets; that provenance is not traced, so the loss is a floor."
+  ],
+  "campaign": [
     "eip155:81457:0xd576deeed7619498d71a33eeae6bd22eb08790b7d134ca81e00757ad7d7f8071",
+    "eip155:81457:0x80012bf784b83baaf28f5549a9f233cae5f70be7afcd8f594dc757d431ed93c4",
+    "eip155:81457:0x62e6b906bb5aafdc57c72cd13e20a18d2de3a4a757cd2f24fde6003ce5c9f2c6",
     "eip155:81457:0x57ab8aa4b1acab9b62a0b76d538e9f6b84fe1dc70c7bd0ea043fc1fc9e6c2e1f",
     "eip155:81457:0x33dcc5d8078b1ab89fd44d9ea494f8b52fba5278236505cb803800b859b9b13c",
     "eip155:81457:0x0b5d28e8791d328a98f7ae399f5b81ce23ab1f7629a3845bcc0e101b4c7235f9",
@@ -62,11 +64,5 @@
     "eip155:81457:0x1363a770c157be50f825746d7b9b57c4caa3f23876b4929514e4510f2f684adc",
     "eip155:81457:0x17fe1c186e9464eebd457f1d9ce3985a67157c951291813f0a7aafb81f97b6a9",
     "eip155:81457:0x32b94b83897f2e7d633bd4753aa83514143da1c84dcfe674c501a2f53db87072"
-  ],
-  "notes": [
-    "The stale-balance _update logic is part of the token's immutable direct runtime, deployed in this transaction and unchanged through the exploit.",
-    "Four campaigns against pair 0x92f32553cc465583d432846955198f0ddcbcafa1 (token0 WETH, UniswapV2-style 0.3% fee) are merged. (1) 2024-03-17 first exercise: 0x3dd45687042335a753e69f930ee0a5c3d6d01235 self-transferred its whole 272,222,222,222.22195 SSS balance (anchor), which minted an equal duplicate, then sold its entire 7,621,950,000,000.2146 SSS balance in 0xd576deeed7619498d71a33eeae6bd22eb08790b7d134ca81e00757ad7d7f8071 for 28.384109665566404476 WETH. The component is the WETH attributable to the minted 272,222,222,222.22195 SSS: actual output minus the output the same swap gives for the balance without it (7,202,733,222,222.432797 SSS after the 2% sell tax) at the pre-swap reserves 762.343906020378814326 WETH / 192,568,090,897,129.908987 SSS, i.e. 28.384109665566404476 - 27.406800442796240454 = 0.977309222770164022 WETH; the 997/1000 formula reproduces the actual output to the wei. (2) 2024-03-21 whitehat campaign of 0x6a89a8c67b5066d59bf4d81d59f70c3976facd0a: it first paid 0.010000000000000000 WETH into the SSS/WETH pair, then the cash-out receipt transferred 1,310.040494988573740722 WETH from that pair with zero WETH returned. Gross victim depletion net of the linked input is therefore 1,310.040494988573740722 - 0.010000000000000000 = 1,310.030494988573740722 WETH. The cash-out also delivered 4,954,444,444,444,439 SSS to the pair, exactly matching its same-block archive increase; this unbacked consideration is retained by the victim and is not a second loss component. Other pair activity between the setup purchase and cash-out reduced pair WETH by 109.408357782325449417; it is not attributed to this campaign (see the incident limitation). (3) 2024-03-21 blackhat 0xd0203f15af5ccc7e22966b31ef7a37316b6fab56: one transaction from its freshly created contract 0x71f759457568b9c1e5010d5587bae20dc572e0a5 called pair.skim(pair) 72 times, each a pair-to-pair self-transfer that doubled the pair's SSS balance, and swapped the inflated balance out, netting 40.278322289118611961 WETH out of the pair (1 wei WETH input already deducted). (4) Four seconds later 0xc0ffeebabe5d496b2dde509f9fa189c25cf29671 repeated the same pair-balance route in seven transactions (blocks 1116275-1116297), netting 7.100269482163580044 WETH. The remaining 29.086743612218663948 WETH left the pair at block 1116976 as a liquidity removal by LP 0x2836ca71fd966aa08024869d0c6bb72ab55e93c9 and is not loss. Players who self-transferred from 2024-03-21 13:13 UTC (0x05f43bfe..., 0x82a95827..., 0x9b96c9ac..., 0xa875a98d..., 0x65db5f6b...) moved the inflated SSS into the game contract 0x3028ea87ba570f7e3b4ddb96da94f455fa8f400c or to other wallets and made no net pair WETH withdrawal of their own (0x82a95827 was a net 0.1 WETH buyer); the 129 other transaction senders that first self-transferred after the whitehat drain likewise withdrew no pair WETH. ETH prices: 3,627.08 USD 143 s before campaign 1's sale, 3,526.16 USD for campaign 2 as before, 3,496.9 USD 153 s before campaign 3. The later 1,244.66 WETH whitehat return is recovery and is not netted.",
-    "Router sells by accounts that never self-transferred between 2024-03-21 13:13 UTC and the whitehat drain (pair WETH fell from 1451.38 at block 1110000 to 1339.55 at block 1111438) may include SSS that game players minted by self-transfer and passed on; that provenance is not traced, so the loss is a floor over the four exactly measured campaigns.",
-    "Anchor moved from 0x80012bf784b83baaf28f5549a9f233cae5f70be7afcd8f594dc757d431ed93c4 (the whitehat's first self-transfer, block 1111415) to the earliest successful self-transfer 0x05eb560568717126a07c1ea71be7ab0f790ea5a7ad6071f4aa0edbd37d6720a0 (block 940338), whose minted SSS was sold into the pair; see source-15."
   ]
 }
