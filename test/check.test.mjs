@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { validate } from '../scripts/check.mjs'
+import { checkRecord, validate } from '../scripts/check.mjs'
 
 const schema = JSON.parse(readFileSync(new URL('../schema/incident.schema.json', import.meta.url)))
 const tx = `0x${'ab'.repeat(32)}`
@@ -47,4 +47,19 @@ test('losses below the floor and unknown fields are rejected', () => {
   const extra = record()
   extra.verification = {}
   assert.notDeepEqual(validate(extra, schema), [])
+})
+
+test('loss.usd is the sum of its assets and refs do not repeat campaign transactions', () => {
+  const incident = { path: `incidents/1/${tx}.json`, chainId: 1, tx, record: record() }
+  const errors = () => {
+    const found = []
+    checkRecord(incident, found)
+    return found
+  }
+  assert.deepEqual(errors(), [])
+  incident.record.loss.usd = 6000
+  assert.equal(errors().length, 1)
+  incident.record.loss.usd = 5000
+  incident.record.refs = [`eip155:1:${tx}`]
+  assert.equal(errors().length, 1)
 })

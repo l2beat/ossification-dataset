@@ -54,7 +54,7 @@ export function validate(value, schema, root = schema, at = '$', errors = []) {
   return errors
 }
 
-function checkRecord({ path: file, chainId, tx, record }, errors) {
+export function checkRecord({ path: file, chainId, tx, record }, errors) {
   if (!/^0x[0-9a-f]{64}$/.test(tx) || !Number.isSafeInteger(chainId) || chainId < 1)
     errors.push(`${file}: path must be incidents/<chainId>/<lowercase exploit tx>.json`)
   const targets = (record.targets ?? []).map((target) => `${target.address}/${target.code ?? ''}`)
@@ -62,6 +62,11 @@ function checkRecord({ path: file, chainId, tx, record }, errors) {
   if (record.campaign?.includes(`eip155:${chainId}:${tx}`)) errors.push(`${file}: campaign repeats the exploit transaction`)
   for (const bundle of (record.campaign ?? []).filter((leg) => typeof leg === 'object'))
     if (bundle.from > bundle.to) errors.push(`${file}: campaign bundle ends before it starts`)
+  const legs = new Set([`eip155:${chainId}:${tx}`, ...(record.campaign ?? [])])
+  for (const ref of record.refs ?? []) if (legs.has(ref)) errors.push(`${file}: ref ${ref} repeats the exploit or a campaign transaction`)
+  const sum = (record.loss?.assets ?? []).reduce((total, asset) => total + (asset.usd ?? 0), 0)
+  if (record.loss && Math.abs(sum - record.loss.usd) > Math.max(1, record.loss.usd * 1e-6))
+    errors.push(`${file}: loss.usd ${record.loss.usd} is not the sum of its assets (${sum})`)
 }
 
 function checkResearch(incidentIds, errors) {
