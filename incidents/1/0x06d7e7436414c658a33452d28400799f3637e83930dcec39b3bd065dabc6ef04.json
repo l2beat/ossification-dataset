@@ -1,24 +1,29 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Zoomer",
-  "name": "Zoomer buyback spot-price accounting",
-  "summary": "The buyback contract valued incoming ZOOMER at the current pool spot price, allowing one transaction to exchange attacker-supplied tokens for most of the contract's ETH inventory.",
+  "name": "Zoomer-collateral ETH loans priced at pool spot",
+  "summary": "An unverified ETH lending contract valued whitelisted token collateral at the Uniswap V2 spot reserves. The attacker flash-borrowed WETH, pumped ZOOMER from throwaway contracts, borrowed ETH against ZOOMER at the inflated price, dumped it and left the collateral behind; a second transaction repeated this with another whitelisted token.",
   "targets": [
     {
       "address": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x8b06674a11aa38d6fe98e044919de82fa584e38c6075026d29d0551f0419f0e0"
+        "kind": "config",
+        "tx": "0x32c48b5563ebc0b325e2f7498ad4337534e9c4034e520a7250c17e30e8362aa9",
+        "address": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
+        "slot": "0x950bf29e1e2ae0f2a2839d3076102c0e2d06915fc00aec6b92169825966c80c7"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb69981d437af7b9b705b3eb459df89d69901b5aff1cf2f99673372c873d50daf"
+  ],
   "loss": {
-    "usd": 50195.68301858838,
+    "usd": 61463.65,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "17.148371112617906458",
-        "usd": 50195.68301858838
+        "amount": "20.903156929888126281",
+        "usd": 61463.65
       }
     ]
   },
@@ -26,7 +31,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/Zoomer_exp.sol"
   ],
   "notes": [
-    "The buyback is a directly executed, non-proxy contract whose 17,526-byte runtime is absent before creation and unchanged from deployment through the pre-incident block.",
-    "Within the sole loss receipt, the buyback sends 17.248371112617906458 ETH in five calls and receives five 0.02 ETH inputs, so gross victim depletion net of external input is 17.248371112617906458 - 0.1 = 17.148371112617906458 ETH. Its archive balance falls by exactly the same amount, from 17.300097602045297868 to 0.151726489427391410 ETH. It receives and retains 145,108,836 ZOOMER (four transfers of 30,265,400 plus one of 24,047,236), exactly matching its archive token increase; that attacker-supplied consideration is not a victim asset loss. The 90-second-preceding ETH price is 2,927.14 USD."
+    "The reset is the owner's setWhitelistedToken listing of ZOOMER as collateral: replaying the anchor on a fork with that mapping slot cleared reverts. The contract's selectors (setWhitelistedToken, repayLoan, liq, closeLoan) mark it as a lender, not a buyback.",
+    "Loss nets the 0.02 ETH loan fees the attacker paid in within each transaction; the ZOOMER and Kekec collateral left behind is not subtracted."
   ]
 }

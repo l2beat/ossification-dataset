@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Zoth",
   "name": "Zoth ZeUSD router opened unslippaged USDC deposits",
-  "summary": "Fifty-one minutes before the exploit, a ZeUSD_Router upgrade removed whitelistedOnly from mintWithStable. The router mints ZeUSD equal to the deposited USDC amount, while WMSubVault swaps that USDC into wM on Uniswap V3 with amountOutMinimum 0, and on redemption swaps wM back with the same zero bound. With a flash loan, the attacker bought the wM/USDC 0.01% pool's wM, added its own liquidity at an extreme price, and deposited 330,979 USDC for 7,669 wM, receiving 327,619 ZeUSD. It then burned that ZeUSD after resetting the pool, so the vault sold 330,979 of its pre-existing wM to repay the attacker in USDC.",
+  "summary": "ZeUSD_Router mints ZeUSD equal to deposited USDC while WMSubVault swaps that USDC to wM, and back on redemption, on Uniswap V3 with amountOutMinimum 0. An upgrade dropped the router's whitelist; the attacker then flash-borrowed USDC, skewed the wM/USDC pool, minted ZeUSD cheaply and burned it after resetting the pool, so the vault sold its depositors' wM to pay it.",
   "targets": [
     {
       "address": "0x6283f77db630d6fe69a454ef6cf626e98b117c9b",
@@ -33,9 +33,8 @@
     ]
   },
   "notes": [
-    "The UUPS upgrade to ZeUSD_Router 0xe2574952 dropped whitelistedOnly from mintWithStable. The previous implementation 0x1e53b208 reverted the same deposit with NotWhitelisted(attacker), so this change let anyone mint ZeUSD at face value against the zero-bound subvault swap.",
-    "The last pre-exploit upgrade selected WMSubVaultUpgradeable 0x41d9db45, whose handleDeposit and handleWithdraw swap with amountOutMinimum 0.",
-    "Exact net wM depletion of WMSubVault proxy 0x3854702034855287be0fb4a040580cb89621290b in source-1. The vault also kept a 3,294.916450 USDC residual from its redemption swap, so its net value loss is about 320,008.68 USD. The attacker kept 286,902.019393 USDC. wM (wrapped M, a T-bill-backed USD stablecoin) is valued at par; DefiLlama has no historical quote. The attacker also minted 39,593,862 ZeUSD from a second 40,000,000 USDC deposit that bought 6.40 wM. It burned all of it in 0xe2644468d47e and 0x5266da8b96a0 (blocks 21959608/21959612) without redeeming, so no loss is counted for it.",
-    "Not the knot: the zero-bound swap was reachable only by whitelisted depositors until target-1's later router upgrade opened mintWithStable to the public, so the exploitable combination dates from target-1."
+    "The router upgrade dropped whitelistedOnly from mintWithStable; a fork replay of the anchor with the previous implementation 0x1e53b208 reverts. The sub-vault's zero-bound swaps date from its last pre-exploit upgrade, so the exploitable combination dates from the router upgrade.",
+    "Net wM depletion of the sub-vault, wM (wrapped M, a T-bill-backed USD stablecoin) at par since DefiLlama has no quote; the vault's 3,294.92 USDC residual gain is not netted. The 39,593,862 ZeUSD minted against 6.40 wM was burned by Zoth's admin without redemption, so it adds no loss.",
+    "Out of scope: Zoth's March 21, 2025 loss came from a compromised admin key upgrading a proxy (privileged action), a separate event outside the cohort."
   ]
 }

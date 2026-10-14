@@ -393,7 +393,7 @@
     "tx": "0xc3f70057e261af554c6acf6a372389899f0c2d7d1ebd27311e39525dee88fb39",
     "protocol": "Zoth",
     "name": "Zoth ZeUSD router opened unslippaged USDC deposits",
-    "summary": "Fifty-one minutes before the exploit, a ZeUSD_Router upgrade removed whitelistedOnly from mintWithStable. The router mints ZeUSD equal to the deposited USDC amount, while WMSubVault swaps that USDC into wM on Uniswap V3 with amountOutMinimum 0, and on redemption swaps wM back with the same zero bound. With a flash loan, the attacker bought the wM/USDC 0.01% pool's wM, added its own liquidity at an extreme price, and deposited 330,979 USDC for 7,669 wM, receiving 327,619 ZeUSD. It then burned that ZeUSD after resetting the pool, so the vault sold 330,979 of its pre-existing wM to repay the attacker in USDC.",
+    "summary": "ZeUSD_Router mints ZeUSD equal to deposited USDC while WMSubVault swaps that USDC to wM, and back on redemption, on Uniswap V3 with amountOutMinimum 0. An upgrade dropped the router's whitelist; the attacker then flash-borrowed USDC, skewed the wM/USDC pool, minted ZeUSD cheaply and burned it after resetting the pool, so the vault sold its depositors' wM to pay it.",
     "lossUsd": 323303.593943,
     "codeAgeSeconds": 3084,
     "exploit": {
@@ -1232,6 +1232,33 @@
       "timestamp": 1769574610
     },
     "claimsSha256": "c6636cd5ebf70f7c6e318b37476ec3272a9c8e67cc197f1e2d4597a4669d8b82"
+  },
+  {
+    "id": "eip155:1:0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
+    "chainId": 1,
+    "tx": "0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
+    "protocol": "Zoomer",
+    "name": "Zoomer-collateral ETH loans priced at pool spot",
+    "summary": "An unverified ETH lending contract valued whitelisted token collateral at the Uniswap V2 spot reserves. The attacker flash-borrowed WETH, pumped ZOOMER from throwaway contracts, borrowed ETH against ZOOMER at the inflated price, dumped it and left the collateral behind; a second transaction repeated this with another whitelisted token.",
+    "lossUsd": 61463.65,
+    "codeAgeSeconds": 34068,
+    "exploit": {
+      "block": 19291250,
+      "index": 56,
+      "timestamp": 1708702895
+    },
+    "target": {
+      "address": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
+      "codeHash": "0xe756fd9aa6468e7ead764933d09571d8e10765fec9d889e4e60b0e7e15a40b72"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x32c48b5563ebc0b325e2f7498ad4337534e9c4034e520a7250c17e30e8362aa9",
+      "block": 19288432,
+      "index": 78,
+      "timestamp": 1708668827
+    },
+    "claimsSha256": "802b790080226bc1a709ee18921708dcb15e05d84e18fa06b6133c7594cd4089"
   },
   {
     "id": "eip155:56:0x1c09395848a87069c9d6ddbe5adc6249510aba7a2a83479a74b4280cafb5fb29",
@@ -2405,8 +2432,8 @@
     "tx": "0xf71a96fe83f4c182da0c3011a0541713e966a186a5157fd37ec825a9a99deda6",
     "protocol": "Zora",
     "name": "ZORA community claim allocation to the stateless 0x Settler",
-    "summary": "ZoraTokenCommunityClaim pays each account's allocation to any _claimTo chosen by that account. Its allocation setter wrote a 5,500,777.45 ZORA allocation for 0x's BaseSettler, a stateless router whose execute runs arbitrary actions for any caller. Once claims opened, an attacker's constructor had the Settler call claim(attacker) and received the whole allocation.",
-    "lossUsd": 129092.68523979172,
+    "summary": "ZoraTokenCommunityClaim pays each account's allocation to any _claimTo that account names, and its allocation setter gave ZORA allocations to 0x Settler instances on Base, stateless routers that execute arbitrary actions for any caller. Once claims opened, the attacker had the Settler call claim(attacker), then repeated it for a second Settler instance.",
+    "lossUsd": 141429.19,
     "codeAgeSeconds": 114712,
     "exploit": {
       "block": 29356088,
@@ -2424,7 +2451,7 @@
       "index": 80,
       "timestamp": 1745386811
     },
-    "claimsSha256": "b772e9efeffbaba818f3f61c63624c0076e902ba0bc67eb56d5498049cdbe9ae"
+    "claimsSha256": "6188892ba3af07a337c450dae2cdf86e5392c4b2b25e3783735a93435d637d11"
   },
   {
     "id": "eip155:43114:0x0ab12913f9232b27b0664cd2d50e482ad6aa896aeb811b53081712f42d54c026",
@@ -3137,6 +3164,33 @@
     "claimsSha256": "bade96a0aa7a6b3eebc0aee37382a5fd3de3360014b2f3463a77e8bc146dc23c"
   },
   {
+    "id": "eip155:42161:0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd",
+    "chainId": 42161,
+    "tx": "0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd",
+    "protocol": "dForce",
+    "name": "dForce LPCurveGaugeAggregatorModel read-only reentrancy",
+    "summary": "dForce's new Curve wstETH/ETH vault market priced collateral with LPCurveGaugeAggregatorModel, which reads get_virtual_price with no reentrancy check. The attacker borrowed USX against vault collateral, then, from remove_liquidity's ETH callback with the price distorted, liquidated its own and other users' positions to seize collateral; it repeated this on Optimism.",
+    "lossUsd": 4286188.02,
+    "codeAgeSeconds": 213988,
+    "exploit": {
+      "block": 59527634,
+      "index": 2,
+      "timestamp": 1675984222
+    },
+    "target": {
+      "address": "0xc462ff1063172bac6f6823a17ed181a0586f0fc8",
+      "codeHash": "0xa66317f3046cc6e71b2ff1f84f5cadbbb1038ab652e485c074b0847b565e99b6"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x5450ef49a381d834539233e63b987324341a396e825b3c2e5a87bf7fff7e1e7f",
+      "block": 58781470,
+      "index": 1,
+      "timestamp": 1675770234
+    },
+    "claimsSha256": "cb07128663ca02c7310e5747c55d67982452386c826a3dfdb4da1937300d2f34"
+  },
+  {
     "id": "eip155:56:0x2a65254b41b42f39331a0bcc9f893518d6b106e80d9a476b8ca3816325f4a150",
     "chainId": 56,
     "tx": "0x2a65254b41b42f39331a0bcc9f893518d6b106e80d9a476b8ca3816325f4a150",
@@ -3218,33 +3272,6 @@
       "timestamp": 1708129427
     },
     "claimsSha256": "5e0189337e607ce74af3af5b1fc118802ff875a05068f8ec584da40907334d7c"
-  },
-  {
-    "id": "eip155:42161:0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd",
-    "chainId": 42161,
-    "tx": "0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd",
-    "protocol": "dForce",
-    "name": "dForce LPCurveGaugeAggregatorModel read-only reentrancy",
-    "summary": "LPCurveBaseAggregatorModel._getPrice(), the code behind dForce's wstETHCRV-gauge vault aggregator, prices the collateral as priceOracle.getUnderlyingPrice(pool.coins(0)) * pool.get_virtual_price(). get_virtual_price() is an unguarded external view on the Curve ETH/wstETH pool 0x6eb2dc694eb516b16dc9fbc678c60052bbdd7d80 and returns D * PRECISION / token_supply, so while remove_liquidity() is paying out native ETH through raw_call the LP supply has already been reduced but the balances have not fully settled and the ratio is wrong. The aggregator performs the read with no reentrancy probe, so re-entering from the pool's ETH refund let the attacker have dForce value the vwstETHCRV-gauge collateral at a distorted price, seize a 1,019.577317265394873995 gauge-token position and mint 1,219,437.439363481229905117 USX of unbacked debt in the same transaction.",
-    "lossUsd": 2812370.1394740613,
-    "codeAgeSeconds": 220077,
-    "exploit": {
-      "block": 59527634,
-      "index": 2,
-      "timestamp": 1675984222
-    },
-    "target": {
-      "address": "0x9a0b57024ff206a658e46ffe9f60c7c14cf30b80",
-      "codeHash": "0x750361161bc48c1e68bd25c9e611a11c9c7303cfba9e8187c0806a25fb0fe3f6"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x88fce0d647f91014611d718b014a3f63a070d728361adac985d8d714f3c0179f",
-      "block": 58758631,
-      "index": 1,
-      "timestamp": 1675764145
-    },
-    "claimsSha256": "5a677ba6d2f8eeaad05572d2483d5a2b7b7e535a8a9e16255b11aaf76646d8b7"
   },
   {
     "id": "eip155:1:0x5edb66a4c2ea55bba95d36d27713e3bb1c67c3c4199a8a1759e754c6f25482e5",
@@ -4207,33 +4234,6 @@
     "claimsSha256": "e0d83998f3f025cc22ef5834faa5d6f52cbbdb8268bcc26077b3262477aad34b"
   },
   {
-    "id": "eip155:1:0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
-    "chainId": 1,
-    "tx": "0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
-    "protocol": "Zoomer",
-    "name": "Zoomer buyback spot-price accounting",
-    "summary": "The buyback contract valued incoming ZOOMER at the current pool spot price, allowing one transaction to exchange attacker-supplied tokens for most of the contract's ETH inventory.",
-    "lossUsd": 50195.68301858838,
-    "codeAgeSeconds": 475068,
-    "exploit": {
-      "block": 19291250,
-      "index": 56,
-      "timestamp": 1708702895
-    },
-    "target": {
-      "address": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
-      "codeHash": "0xe756fd9aa6468e7ead764933d09571d8e10765fec9d889e4e60b0e7e15a40b72"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x8b06674a11aa38d6fe98e044919de82fa584e38c6075026d29d0551f0419f0e0",
-      "block": 19252104,
-      "index": 93,
-      "timestamp": 1708227827
-    },
-    "claimsSha256": "cd21302a4c03583f8b8f463fda594102706590a2473e258aa7d4136c5c68bb02"
-  },
-  {
     "id": "eip155:56:0x8e1775cbfd44db29744cc6687ff1822d2c47321de6e94062f789ad6181ad5514",
     "chainId": 56,
     "tx": "0x8e1775cbfd44db29744cc6687ff1822d2c47321de6e94062f789ad6181ad5514",
@@ -4484,7 +4484,7 @@
     "tx": "0x8d33d688def03551cb77b0463f55ae5a670f5ebf3bbb5b8aa0e284c040ae7139",
     "protocol": "dTRINITY",
     "name": "dTRINITY dLEND empty cbBTC reserve liquidity-index inflation",
-    "summary": "dLEND, an Aave v3 fork, listed cbBTC as flash-loanable collateral (LTV 73%) with no supply. The attacker left one scaled share in the empty reserve, donated cbBTC to the aToken and ran 150 flash loans whose premiums, spread over that single share, raised the cbBTC liquidity index from 1e27 to 6.2e33. At that index deposit/withdraw rounding let it keep aToken collateral while withdrawing its cbBTC, and two blocks later it borrowed the entire dUSD reserve against the phantom collateral.",
+    "summary": "dLEND, an Aave v3 fork, listed cbBTC as flash-loanable collateral with no supply. The attacker left one scaled share in the empty reserve and ran 150 flash loans whose premiums inflated its liquidity index; deposit/withdraw rounding then let it keep aToken collateral while withdrawing its cbBTC, and two blocks later it borrowed the dUSD reserve against it.",
     "lossUsd": 257061.26217838988,
     "codeAgeSeconds": 544632,
     "exploit": {
@@ -4504,7 +4504,7 @@
       "index": 29,
       "timestamp": 1773200915
     },
-    "claimsSha256": "1ec4311ed487f36b8765fa570be940bb75691354d597d0be6e6bff3bf05761fb"
+    "claimsSha256": "cc9900b556b5b56a941ae3f8fcd953956dcdf09a36f6abe70b60093e1129286d"
   },
   {
     "id": "eip155:8453:0x6ab5b7b51f780e8c6c5ddaf65e9badb868811a95c1fd64e86435283074d3149e",
@@ -8158,8 +8158,8 @@
     "tx": "0x247f4b3dbde9d8ab95c9766588d80f8dae835129225775ebd05a6dd2c69cd79f",
     "protocol": "ZongZiFa",
     "name": "ZZF burnToHolder pays BNB at a live spot quote",
-    "summary": "ZZF.burnToHolder prices the ZongZi a user burns with uniswapRouter.getAmountsOut against WBNB and has the ZongZi token pay that many BNB from its reward pool into ZZF, from which receiveRewards pays the burner. After flash-loan buys pumped the WBNB/ZongZi pair, the attacker burned ZongZi at the inflated spot quote and withdrew nearly all of the pool's BNB in two transactions.",
-    "lossUsd": 752185.6,
+    "summary": "ZZF.burnToHolder priced burned ZongZi with uniswapRouter.getAmountsOut against WBNB and had the ZongZi token pay that many BNB from its reward pool into ZZF, which receiveRewards paid to the burner. After flash-loan buys pumped the WBNB/ZongZi pair, the attacker burned ZongZi at the inflated spot quote and withdrew nearly all of the pool's BNB.",
+    "lossUsd": 752892.61,
     "codeAgeSeconds": 3984682,
     "exploit": {
       "block": 37272888,
@@ -8177,7 +8177,7 @@
       "index": 96,
       "timestamp": 1707370463
     },
-    "claimsSha256": "6d3d6ea888d28ab92fd1c511419639524e2a1f33b886e4bec76c084eeed10a92"
+    "claimsSha256": "660f3cf2391354e683f5b8a4f2b3b8ac6b389adc08d6a63d0d4d6bfbdbd750d8"
   },
   {
     "id": "eip155:56:0x8dabb60a94e5124462e5f494a25c14bcd52f6f4d1f7c665a249496f4c6c24764",
@@ -9174,9 +9174,9 @@
     "tx": "0x603b2bbe2a7d0877b22531735ff686a7caad866f6c0435c37b7b49e4bfd9a36c",
     "protocol": "bEarn",
     "name": "bEarn BUSD/ibBUSD withdrawal-unit mismatch",
-    "summary": "The BUSD Alpaca strategy's withdraw(address,uint256) passed a BUSD-denominated request to FairLaunch as an ibBUSD amount. Because each ibBUSD was worth more than one BUSD, repeated deposit/emergencyWithdraw cycles withdrew excess BUSD and compounded the attacker's credit.",
-    "lossUsd": 10859319,
-    "codeAgeSeconds": 6487378,
+    "summary": "bEarn's BUSD Alpaca BvaultsStrategy passed a BUSD-denominated withdrawal to FairLaunch and the Alpaca vault as an ibBUSD amount. Each ibBUSD was worth more than one BUSD, so every withdrawal redeemed surplus BUSD that the next deposit counted into wantLockedTotal; flash-funded deposit/emergencyWithdraw loops on the bank pool drained the strategy.",
+    "lossUsd": 12213598.14,
+    "codeAgeSeconds": 6478927,
     "exploit": {
       "block": 7457125,
       "index": 86,
@@ -9187,13 +9187,13 @@
       "codeHash": "0xada77033047849187832a245e0e1f814d255430597cfce06d3a321ebd117e1cd"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xdd4031277401d5eca44cc73e153effaee20a983b5b513cbf517e08cc9a9911db",
-      "block": 5324911,
-      "index": 68,
-      "timestamp": 1614674002
+      "kind": "config",
+      "tx": "0xd800d2a3b3a28bcf543a54e837ca3a62465d58b8a7cb9950326332c966ae8506",
+      "block": 5327728,
+      "index": 38,
+      "timestamp": 1614682453
     },
-    "claimsSha256": "4b9d5ffb5c66ddf98ae236c2fec946b31cbdb3019d749ea163128ca7d085d135"
+    "claimsSha256": "eccd0b25b1bef9db4c4b6fe4086df33392564f598ab646a21ae880e87ff2db41"
   },
   {
     "id": "eip155:4114:0x9ac5df7e93988cd977e4b1b0564f559ec3096db2fe1abdd97e45c348e3074aa1",

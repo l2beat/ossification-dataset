@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "dTRINITY",
   "name": "dTRINITY dLEND empty cbBTC reserve liquidity-index inflation",
-  "summary": "dLEND, an Aave v3 fork, listed cbBTC as flash-loanable collateral (LTV 73%) with no supply. The attacker left one scaled share in the empty reserve, donated cbBTC to the aToken and ran 150 flash loans whose premiums, spread over that single share, raised the cbBTC liquidity index from 1e27 to 6.2e33. At that index deposit/withdraw rounding let it keep aToken collateral while withdrawing its cbBTC, and two blocks later it borrowed the entire dUSD reserve against the phantom collateral.",
+  "summary": "dLEND, an Aave v3 fork, listed cbBTC as flash-loanable collateral with no supply. The attacker left one scaled share in the empty reserve and ran 150 flash loans whose premiums inflated its liquidity index; deposit/withdraw rounding then let it keep aToken collateral while withdrawing its cbBTC, and two blocks later it borrowed the dUSD reserve against it.",
   "targets": [
     {
       "address": "0x504d0eacbf9ea5645a8a9da1b15f3708a5483acc",
@@ -23,6 +23,9 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xbec4c8ae19c44990984fd41dc7dd1c9a22894adccf31ca6b61b5aa084fc33260"
+  ],
   "loss": {
     "usd": 257061.26217838988,
     "assets": [
@@ -35,13 +38,10 @@
     ]
   },
   "refs": [
-    "eip155:1:0xbec4c8ae19c44990984fd41dc7dd1c9a22894adccf31ca6b61b5aa084fc33260",
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-16-mar-22-2026"
   ],
   "notes": [
-    "PoolConfigurator initReserve created the dLEND-cbBTC aToken proxy and initialized it with AToken 0x40caf33c709ae7ba58401bd7c39bc752602579e7 (EIP-1967 slot zero at 24631448, set at 24631449, unchanged at 24676807; its only Upgraded event is post-exploit at 25133312).",
-    "Listing completion for cbBTC: getConfiguration(cbBTC) went from active/decimals-only (LTV 0, flash loans off) to LTV 7300, liquidation threshold 7800, bonus 10750, flash loans enabled, supply cap 8, with no supply seeded. Flash-loan premiums accruing to the empty reserve and its collateral eligibility are both necessary to inflate the index and borrow dUSD against it.",
-    "Exact dUSD depletion of the dLEND dUSD reserve (aToken 0x5cc741931d01cb1adde193222dfb1ad75930fd60) in the profit transaction, borrowed against cbBTC collateral that has no backing and never repaid. The cbBTC reserve held no third-party funds: the index transaction and the profit transaction return all flash-loaned and deposited cbBTC to the attacker, so no cbBTC component is added. dUSD is valued at the DefiLlama quote nearest the profit transaction.",
-    "Not the knot: the aToken's creation at 24631449 precedes the cbBTC collateral and flash-loan configuration at 24631645 that completed the exploitable empty-market condition."
+    "The reset is the cbBTC listing completion: getConfiguration(cbBTC) went from active only to LTV 7300 with flash loans enabled and no supply seeded; both are needed to inflate the index and borrow against it. The aToken's creation and the cbBTC oracle source precede it.",
+    "The index transaction is the anchor because it already ran the defective rounding; the dUSD borrow two blocks later is the profit transaction. Loss is the dUSD it took from the dUSD reserve, never repaid; the cbBTC reserve held no third-party funds."
   ]
 }
