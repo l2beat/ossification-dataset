@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Zeed Finance",
   "name": "Zeed Finance YEED reflection skim drain",
-  "summary": "The YEED token distributes a reflection fee to every holder on each transfer, including the PancakeSwap pairs it trades in, without those pairs resyncing. The attacker cycled skim() between the three YEED pairs so each cycle credited the pairs more YEED than their recorded reserves, then swapped the accumulated YEED out for the pools’ USDT.",
+  "summary": "YEED's sell path credited the full reward fee to each of its three reward pairs (USDT, HO and ZEED) on every transfer into a swap pair, minting balance the pairs never received as reserves. The attacker looped skim() between the three pairs, harvesting the growing excess YEED, and dumped it into other YEED pools for USDT, HO and ZEED, sold for USDT.",
   "targets": [
     {
       "address": "0xe7748fce1d1e2f2fd2dddb5074bd074745dda8ea",
@@ -13,13 +13,25 @@
     }
   ],
   "loss": {
-    "usd": 1042028.465072054,
+    "usd": 1042160.77,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "1042028.465072053755410751",
-        "usd": 1042028.465072054
+        "amount": "187555.556168947981908342",
+        "usd": 187579.37
+      },
+      {
+        "token": "0x41515885251e724233c6ca94530d6dcf3a20dec7",
+        "symbol": "HO",
+        "amount": "35726.463210143526547052",
+        "usd": 142867.1
+      },
+      {
+        "token": "0xb2f53069e1555793481aafe639f8e274f4ec8435",
+        "symbol": "ZEED",
+        "amount": "110787.819458151983863714",
+        "usd": 711714.3
       }
     ]
   },
@@ -28,7 +40,7 @@
     "https://medium.com/@zeedcommunity/the-solution-for-the-yeed-lp-pool-attack-a120c53948cd"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0xf64c5196256edf482152c423137c9cdb493148ac9adad362125732eed0c7e79e both at the deployment block 17102057 and at block 17132514, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "The whole loss is in the single exploit transaction. Three YEED pairs pay out 187555.556168947981908342, 711623.947354811699369548 and 142848.961548294074132861 USDT and the attacker contract 0x05e55d051ac0a5fb744e71704a8fa4ee3b103374 receives exactly their sum. The YEED the attacker was left holding is not counted. Nothing was recovered."
+    "The three reward pairs and their swap-pair flags are set in the constructor; the later activate() call only opened trading. Skim loops between the reward pairs appear in no other transaction.",
+    "Victims are the YEED pools the minted YEED was dumped into: one paid USDT, the others HO and ZEED, which the attacker sold in the same transaction for USDT; HO and ZEED are valued at those realised USDT proceeds (rule 15), since the dumps crashed both markets."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ZKSwap",
   "name": "VerifierExit exit-proof verification always returning true",
-  "summary": "ZKSwap 1.0's VerifierExit implementation 0xd12f4d8329584f36aed67f807f42d9a02beb9534 accepts every exit proof: each verifyExitProof frame in the campaign - one in the anchor, fifteen in the later batch transaction 0x5488f6bb - returns true after exactly 1,496 gas and makes no elliptic-curve precompile call, so no pairing check is performed on the 708-byte proof argument. Once the rollup was in Exodus Mode the ZKSwap L1 contract 0x8eca806aecc86ce90da803b080ca4e3a9b8097ad therefore credited the attacker's forged exits against the frozen state root and released the bridge's balances on withdrawal. The invariant violated is that an exit may only be credited for a balance actually committed in the frozen rollup state.",
+  "summary": "ZKSwap 1.0's exit verifier (VerifierExit behind proxy 0x961369d3) returned true for any exit proof without a pairing check. After forcing Exodus Mode with an unprocessed deposit, the attacker submitted exits with junk proofs, so the L1 contract credited arbitrary balances and paid them out on withdrawal; two other actors repeated it.",
   "targets": [
     {
       "address": "0x961369d347ef7a6896bdd39cbe2b89e3911f521f",
@@ -14,93 +14,214 @@
     }
   ],
   "loss": {
-    "usd": 4867767.042206466,
+    "usd": 4862430.96,
     "assets": [
-      {
-        "symbol": "ETH",
-        "amount": "362.365589999999975424",
-        "usd": 964214.9747750999
-      },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
         "amount": "29.99136703",
-        "usd": 3276346.9084582897
+        "usd": 3277404.59
+      },
+      {
+        "symbol": "ETH",
+        "amount": "362.365589999999975424",
+        "usd": 957920.68
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "275044.680955",
-        "usd": 275044.680955
+        "usd": 275044.68
       },
       {
         "token": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
         "symbol": "AAVE",
         "amount": "608.630632806629553005",
-        "usd": 182522.24047238013
+        "usd": 182860.62
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "86796.815421",
-        "usd": 86784.4034763948
+        "usd": 86786.92
       },
       {
         "token": "0xc7283b66eb1eb5fb86327f08e1b5816b0720212b",
         "symbol": "TRIBE",
-        "amount": "179876.007186616736577400",
-        "usd": 69854.8473909226
+        "amount": "179876.0071866167365774",
+        "usd": 69426.56
       },
       {
         "token": "0x4fabb145d64652a948d72533023f6e7a623c7c53",
         "symbol": "BUSD",
         "amount": "4057.536530714185420722",
-        "usd": 4057.5365307141856
+        "usd": 4056.46
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
         "amount": "2287.347434728617614206",
-        "usd": 2287.347434728618
+        "usd": 2287.64
       },
       {
         "token": "0x75231f58b43240c9718dd58b4967c5114342a86c",
         "symbol": "OKB",
         "amount": "29.298864757291944854",
-        "usd": 1419.5299974907948
+        "usd": 1412.21
       },
       {
         "token": "0xe66747a101bff2dba3697199dcce5b743b454759",
         "symbol": "GT",
         "amount": "82.983669132620166066",
-        "usd": 1307.8226255300938
+        "usd": 1316.12
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "110.930546524979171223",
+        "usd": 907.41
+      },
+      {
+        "token": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+        "symbol": "SHIB",
+        "amount": "64265764.432447382001249536",
+        "usd": 771.83
+      },
+      {
+        "token": "0x000000000000d0151e748d25b766e77efe2a6c83",
+        "symbol": "XDEX",
+        "amount": "70224.397435975059084703",
+        "usd": 560.11
+      },
+      {
+        "token": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+        "symbol": "SNX",
+        "amount": "939.468598663058221",
+        "usd": 547.2
+      },
+      {
+        "token": "0x11eef04c884e24d9b7b4760e7476d06ddf797f36",
+        "symbol": "MX",
+        "amount": "120.585000861735961401",
+        "usd": 289.4
+      },
+      {
+        "token": "0x9be89d2a4cd102d8fecc6bf9da793be995c22541",
+        "symbol": "BBTC",
+        "amount": "0.00171934",
+        "usd": 187.79
+      },
+      {
+        "token": "0x956f47f50a910163d8bf957cf5846d573e7f87ca",
+        "symbol": "FEI",
+        "amount": "177.127430266653821197",
+        "usd": 176.66
+      },
+      {
+        "token": "0x408e41876cccdc0f92210600ef50372656052a38",
+        "symbol": "REN",
+        "amount": "10241.219976616905451346",
+        "usd": 87.11
+      },
+      {
+        "token": "0x3472a5a71965499acd81997a54bba8d852c6e53d",
+        "symbol": "BADGER",
+        "amount": "63.841298245537165599",
+        "usd": 67.03
+      },
+      {
+        "token": "0x3301ee63fb29f863f2333bd4466acb46cd8323e6",
+        "symbol": "AKITA",
+        "amount": "1340322151.70475280499179153",
+        "usd": 65.48
+      },
+      {
+        "token": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "symbol": "MKR",
+        "amount": "0.029102611113896278",
+        "usd": 55.96
+      },
+      {
+        "token": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+        "symbol": "SUSHI",
+        "amount": "83.442512815822933247",
+        "usd": 53.31
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "3.134354910154496757",
+        "usd": 44.01
+      },
+      {
+        "token": "0x111111111117dc0aa78b770fa6a738034120c302",
+        "symbol": "1INCH",
+        "amount": "138.344280284430545808",
+        "usd": 28.6
+      },
+      {
+        "token": "0xbbbbca6a901c926f240b89eacb641d8aec7aeafd",
+        "symbol": "LRC",
+        "amount": "383.139348063169574403",
+        "usd": 28.15
+      },
+      {
+        "token": "0x0000000000095413afc295d19edeb1ad7b71c952",
+        "symbol": "LON",
+        "amount": "27.627626035375488054",
+        "usd": 19.6
+      },
+      {
+        "token": "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+        "symbol": "YFI",
+        "amount": "0.003012513095686357",
+        "usd": 15.84
+      },
+      {
+        "token": "0x6f259637dcd74c767781e37bc6133cd6a68aa161",
+        "symbol": "HT",
+        "amount": "37.620681297697551413",
+        "usd": 8.99
       },
       {
         "token": "0x0a050b994350a774634a84a327bd205ae7a69767",
         "symbol": "gZKS",
-        "amount": "7298643.621817000000000000"
+        "amount": "7298643.621817",
+        "usd": 0
       },
       {
         "token": "0xe4815ae53b124e7263f08dcdbbb757d41ed658c6",
         "symbol": "ZKS",
-        "amount": "3788228.251816875560040202"
+        "amount": "3788228.251816875560040202",
+        "usd": 0
       },
       {
         "token": "0x3103df8f05c4d8af16fd22ae63e406b97fec6938",
         "symbol": "WQTUM",
-        "amount": "4.771185686117227480"
+        "amount": "4.77118568611722748",
+        "usd": 0
       },
       {
-        "symbol": "18 other assets under $1,000 each",
-        "usd": 3926.75
+        "token": "0x0316eb71485b0ab14103307bf65a021042c6d380",
+        "symbol": "HBTC",
+        "amount": "0.00319565223565179",
+        "usd": 0
       }
     ]
   },
   "refs": [
     "https://www.blockaid.io/blog/how-zkswaps-5m-exploit-couldve-been-prevented-with-onchain-monitoring",
-    "https://github.com/l2labs/zkswap-contracts/blob/fa2d8c3541c78b3b54d4ff74bbf2a2a62bad755a/contracts/VerifierExit.sol",
-    "eip155:1:0x5488f6bbfabf7f1ada8e529c23dfc1fd129b4237536e9b5500b47d63f773e054",
+    "https://github.com/l2labs/zkswap-contracts/blob/fa2d8c3541c78b3b54d4ff74bbf2a2a62bad755a/contracts/VerifierExit.sol"
+  ],
+  "notes": [
+    "The verifier proxy has routed to the same implementation since its creation in the 2021 deployment transaction; no upgrade or configuration change touched the exit path before the exploit. The operator's February 2025 block commits are normal operation.",
+    "Campaign: every later transaction that called verifyExitProof (attacker 0x0a652dec, second actor 0x23746176, and 0x383b0191 in May 2026) and every withdrawal realising those exits. The attacker's earlier LP-token mint and deposits only set up Exodus Mode and moved no bridge assets.",
+    "Fabricated tokens the actors deposited and withdrew net to zero and are excluded. gZKS, ZKS, WQTUM and HBTC have no price series and no traceable sale, so they carry quantity at 0 USD and the total is a lower bound."
+  ],
+  "campaign": [
+    "eip155:1:0x3e47cdb53f1d97d7aa2db16b51a0ef4c12ed7b853c85e74cb58d6ea91649a2c9",
     "eip155:1:0x4010b26942306ce81c7303e7479f0399460cd2357b0b5e79e4c99b7427025589",
+    "eip155:1:0x5488f6bbfabf7f1ada8e529c23dfc1fd129b4237536e9b5500b47d63f773e054",
     "eip155:1:0x0e0b847548c21627ba6b0ba3ee7948f72516be78b4d338c196ae86fa8410eb29",
     "eip155:1:0x937d12d7653db5956ed78686c58c2e4f1668fe12505880260667d1bc3a84a3b4",
     "eip155:1:0x4f365483df2205892f00feabd516bbf3d2983be5daceb71c0f03bb7abf662e73",
@@ -127,28 +248,40 @@
     "eip155:1:0x6752a0ffca69bb1c8d3ae17adabe482487b4c49715de44af0fc6796bfe6209d4",
     "eip155:1:0x4a439cf7cf17ba8716ab59db3fe77b11b285ecc26e1a0b776760d79b7ffd8060",
     "eip155:1:0x067b0a35143b4dfe5d2db4e5a13bdc5c8bb1574bcefea5a365cd7d19853ff860",
+    "eip155:1:0x89a6c10cebb58a0812c3897f5a43c3bec76050762fc5afaf1f24cf4b65dc47f1",
     "eip155:1:0x56782e7b7b2c2fbe92bfa39d4fcd99d99477ced821eca3025a5ed8c1d45ab885",
+    "eip155:1:0xc03f8a483799fd4f295c5e69ff10e3da0b616f5d24f0f32694d4661d1653268b",
     "eip155:1:0x0afcbf2fb8a6c6c08ed7a75eaccbf846bba812543b6b41d03360c7d2e66023b9",
+    "eip155:1:0x2082e9dfcc2a46284fd200525c428fff837ff7af28b297d3eff174e7da26e3e6",
     "eip155:1:0x0fc6fe9408b3ec4a8712c3135545e10db037ffaab28f0bbc0c96e46c5ccb5abc",
+    "eip155:1:0xf5295368530600934eee851e2f0466a211a420047de93314462af684da737322",
     "eip155:1:0x1af44684e9698bd52353fce6551704f9a613bca706cb8f354146b5304ff17feb",
+    "eip155:1:0x3ce499ef3e9d41b08a30aff2aa3f7ff0636ec1c77bcb696ee129a59f14bc1265",
     "eip155:1:0xa27b7b3cf3c8a9abc7f40d9acf94bef401165dc9ee78c12ee3af325a8db67e71",
     "eip155:1:0xd46500b94c2b3a2929c8ede61b43f428aeecca81bce036e3a1a98720e8c90d5a",
+    "eip155:1:0x0b600de898826f0b7f565ef467736f3a72472fcd570fbb0488df6af66ea02c45",
     "eip155:1:0x4cb7cc364e81f7f7aa4ee3360cb7ce95f7c07dc3b67b6cb07c6983884eb8cb18",
+    "eip155:1:0xcdf508ca2b950de68009f86a4debaaa5cf5c9e1a2555096c1e6d665c183f912f",
     "eip155:1:0x66d54c5d807ef65f23a39c361ceea4ba16b1f98577ce92f0419e6331b996954b",
+    "eip155:1:0x7804764e04da46d97d9ab7ec91b58a1913d6e50585573cd094b109b36a27519e",
     "eip155:1:0xccd7c4e3ca0e0741c5bcbc0de67cdf6515a7c31a160815dd7f9af1e13395bf30",
+    "eip155:1:0x00cdecad786274b79e5034241a8823921d9175a859bb3b6d35b12e9de4c40e21",
     "eip155:1:0x1e4c1dd335f61a0032e4114d45c1eae1ca2cf356894ee27e84509b6da99c8b38",
+    "eip155:1:0x6c9ff5f01a80f3786ec1a9151e4e85d45f94e1ee500eece4e65c449946a67bb2",
     "eip155:1:0x07e8555db40272273c6c8b387812a4c8df3c85c16197378754aa0cd7d0a8019c",
+    "eip155:1:0x5b0af9a51ac82a4d5934a501b2fbd084c64db690b739a9f13d03f6d893a15923",
     "eip155:1:0x9ee21fe1e5ebbe34659e2ae054963a6134ce72d6f16262607ff0bf6eb959eb2a",
+    "eip155:1:0x660798d113301335d2c31438b2fc7aa5bf5763d7b8f452292301963a5ab943a9",
     "eip155:1:0x5f3894ecef739b5b6274060d18bbf93e1a9099eb77f7d928be274061277e4bf2",
+    "eip155:1:0x2ea54b68ca4fe06bd26f7a6668938e53f1d47125bba3c3b635d8146d4a94637d",
     "eip155:1:0x3d425ddac12f2631e22c0cbcec3bd49c639d2cfb4241ccc06f2c0aefc0ad12e4",
+    "eip155:1:0xbaaa6e74b3bf47370cd85719eb73db7c11dcf34c8caf8c2a6dec323b70ef4cf4",
     "eip155:1:0xfb2ce6b5cee5807c775651cf8443ef6176085bdafefe23ee37edf7f57507dcb7",
+    "eip155:1:0x88d96c3be17f9445f1ffc35afe1148845bb2b423abf01624392acce59d3b2f94",
     "eip155:1:0x4b3d8c83814df1140ec9e3cf1b88a205628e251756def63603e088cbb90f4991",
-    "eip155:1:0xe238fb7cd5a24f1ec6cef3e8a5fa385286a8f563747735ffd274ab83165177ff"
-  ],
-  "notes": [
-    "The proxy constructor selected the defect-bearing VerifierExit implementation; getTarget() returns 0xd12f4d8329584f36aed67f807f42d9a02beb9534 at the creation block and at blocks 15000000, 20000000 and 22881852, the proxy emitted no event in its entire life, and the UpgradeGatekeeper never emitted UpgradeComplete before the exploit.",
-    "Reconstructed from receipts rather than taken from the reported headline. Netting every ERC20 Transfer of the ZKSwap L1 contract 0x8eca806aecc86ce90da803b080ca4e3a9b8097ad between blocks 22882059 and 22885419, plus its single outgoing internal transfer of 362.365589999999975424 ETH in 0x79fbdfad..., gives the 31 components listed. Three fabricated ZKS tokens (0xf0628ce987b7cf5d3687e1a7656fe37b556742de, 0x9017e2c072fea689b0201224f9ec6eccdbf6623b, 0x281e0115d1c613f59f5a90486551d65436e1241d) were deposited into the bridge in the same transactions that drained real assets, 26,000, 16,000 and 100,000,000,000 units respectively; they net exactly to zero and are excluded as attacker-supplied inputs. gZKS and the real ZKS token 0xe4815ae53b124e7263f08dcdbbb757d41ed658c6 are the project's own tokens and have no DefiLlama price series, and the wrapped-QTUM ERC20 has none either; those three carry quantity only, so the USD total is a lower bound on the full depletion. The priced components sum to 4,867,767.04 USD, which corroborates the 5 million USD figure Blockaid reported. Nothing was recovered.",
-    "gZKS, the real ZKS token and the wrapped-QTUM ERC20 have no DefiLlama price series, so their exact quantities carry no USD value and the reported total is a lower bound on the full depletion.",
-    "Re-anchored from 0x5488f6bbfabf7f1ada8e529c23dfc1fd129b4237536e9b5500b47d63f773e054 (block 22882195) to 0xfdb93e00f3b1d24303db7f43eaa5ef50d3fde957ddeec7c0feb8c5497ba11182 (block 22881853), the earliest successful transaction of the campaign that executes VerifierExit.verifyExitProof. The earlier anchor was the first transaction that proved fifteen exits at once; two single-exit proving transactions and the first 10,000 USDT withdrawal preceded it."
+    "eip155:1:0xe238fb7cd5a24f1ec6cef3e8a5fa385286a8f563747735ffd274ab83165177ff",
+    "eip155:1:0x0dc6f54655fc6b6a1fa87a8716bd16ecfea296796c2f3159bc420dffcf6afa3d",
+    "eip155:1:0x59686407fdb75c433401bc0a7cd6c84c805e6b1ac37f542ca82a744d11ade7a5",
+    "eip155:1:0x60a60e6a91ae745fb125ff1f49dab22d80152cf60865150264ae7e55dde951ff"
   ]
 }

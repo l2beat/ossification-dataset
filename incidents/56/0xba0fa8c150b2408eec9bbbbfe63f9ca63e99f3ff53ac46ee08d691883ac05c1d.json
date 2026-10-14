@@ -2,35 +2,39 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "xWin Finance",
   "name": "xWin referral reward paid on subscription notional that is redeemed in the same transaction",
-  "summary": "xWinDefi credits XWIN rewards along two paths that disagree. The subscriber's own reward, in _storeRewardQty, is time weighted: it multiplies the accumulated base by the number of blocks the position has been held, so an instantly redeemed subscription earns nothing. The referral and manager rewards, in _updateReferralReward, are a flat fraction of _tradeParams.amount credited at subscription time with no holding period, and Redeem's _updateRewardBal only unwinds the subscriber's accumulators, never the referral's. The only guard against self dealing is require(msg.sender != _tradeParams.referral), an address-equality test that a second attacker-controlled contract defeats. Subscribing 76,000 flash-loaned BNB while naming a second attacker contract as referral, then redeeming in the same call frame, therefore mints 15,200 XWIN to the attacker for a round-trip cost of about 0.03 BNB in fund slippage, and the loop is repeatable until the protocol's rewardRemaining budget runs out.",
+  "summary": "xWinDefi.Subscribe credits the referrer an XWIN reward proportional to the BNB subscribed, with no lock or net-deposit check, and Redeem returns the principal at once. With flash-loaned BNB the attacker subscribed and redeemed in a loop through its own referral contract, then withdrew the accrued referral rewards and dumped the XWIN.",
   "targets": [
     {
       "address": "0x1bf7fe7568211ecff68b6bc7ccad31ecd8fe8092",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x1f354dcc3912bc79d9a44c83902827ab17e32c39e220ef49fa504cb99ccc1d23"
+        "kind": "config",
+        "tx": "0xd8132b31f7ba0876f68ee78b5a7a2568c0839f44c1ff68627000b6e26be044ad",
+        "address": "0x1bf7fe7568211ecff68b6bc7ccad31ecd8fe8092",
+        "slot": "0x8cb787600411f48f6e6fa0878ca0358d1d21e291c0942d152d8d369fb6102d4c"
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xda1016b24b8982ea27671e3502691c0ca17231e1dbc0dfd00df41f0646217643"
+  ],
   "loss": {
-    "usd": 273622.99806995835,
+    "usd": 311456.96,
     "assets": [
       {
-        "symbol": "BNB",
-        "amount": "886.103172985934134727",
-        "usd": 273622.99806995835
+        "token": "0xd88ca08d8eec1e9e09562213ae83a7853ebb5d28",
+        "symbol": "XWIN",
+        "amount": "607998.621764708016201132",
+        "usd": 311456.96
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-06/xWin_exp.sol",
-    "https://peckshield.medium.com/xwin-finance-incident-root-cause-analysis-71d0820e6bc1",
-    "eip155:56:0xda1016b24b8982ea27671e3502691c0ca17231e1dbc0dfd00df41f0646217643"
+    "https://peckshield.medium.com/xwin-finance-incident-root-cause-analysis-71d0820e6bc1"
   ],
   "notes": [
-    "xWinDefi is a plain Ownable contract with no proxy and no upgrade path. Its 15,407-byte runtime is byte-identical at its creation block 4902105 and at block 8589725, immediately before the exploit, so deployment is the last executable-code change.",
-    "Realised proceeds, not a spot valuation of the stolen governance token. The two-transaction campaign drained 607,998.621764708 XWIN from xWinDefi's reward pool, whose XWIN balance fell from 60,003,368.098 to 59,699,369.230 in the anchor transaction and to 59,395,369.476 in the follow-up 0xda1016b2...7643 fourteen blocks later. That entire quantity was dumped into the PancakeSwap XWIN pair 0xd4a3dcf47887636b19ed1b54aab722bd620e5fb4 inside the same transactions, which collapsed the price: the first round realised 842.512651433088883142 BNB for 303,998.868 XWIN and the second only 43.590521552845251585 BNB for a near-identical 303,999.754 XWIN, so no part of the quantity could have been sold at the pre-exploit price. The components are the attacker EOA 0xb63f0d8b9aa0c4e68d5630f54bfefc6cf2c2ad19's native balance increase in each transaction with its own gas cost added back, 886.103172985934134727 BNB in total. The 76,000 BNB flash loan is attacker-supplied and is repaid inside the transaction. The xWin fund's own slippage cost of roughly 0.03 BNB per subscribe-redeem round trip is an additional loss to fund investors that is not isolated here, so this figure is a lower bound on total protocol damage.",
-    "The seed row's summary blamed the attacker-supplied priceImpactTolerance of 100 percent. That value only makes the fund's internal swaps cheap enough for the loop to be worth running; on its own it moves no value out of the protocol. The value leaves through the referral reward accounting, which is where the target is placed.",
-    "The campaign is two transactions from the same EOA fourteen blocks apart; the second is carried as loss and root-cause evidence."
+    "Subscribe requires isxwinFund for the fund; the attacked xWinFarm fund was listed by addxwinFund after both contracts were deployed, so that listing is the reset. The owner's later doubling of the referral rate only changed the size of each reward.",
+    "The 607,998.62 XWIN taken in the two transactions was dumped into the XWIN/BNB pair inside the same transactions and crashed it, so it is valued at the BNB those sales realised (903.92 + 104.52 BNB). The flash-loan fees and fund slippage the attacker paid are not netted.",
+    "WithdrawReward events over the contract's life show no other claim of this size except the owner's own withdrawal."
   ]
 }

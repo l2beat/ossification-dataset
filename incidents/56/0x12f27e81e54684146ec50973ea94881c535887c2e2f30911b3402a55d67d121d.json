@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "iVest DAO",
   "name": "iVest donation-on-burn double debit",
-  "summary": "Transfers to the zero address trigger the token's _MakeDonation path, which debits the sender's balance a second time; repeatedly sending iVest to the PancakeSwap pair and calling skim/sync shrank the pair's token reserve and let the attacker swap the reserve out for WBNB.",
+  "summary": "The iVest token treats a transfer to the zero address as a burn donation charged to msg.sender, on top of the transfer itself. Skimming the iVest/WBNB pair to address(0) made the pair pay the donation from its own balance, so repeated skim(0) and sync calls burned the pair's iVest reserve and the attacker sold iVest into the pool for its WBNB.",
   "targets": [
     {
       "address": "0x786fcf76dc44b29845f284b81f5680b6c47302c6",
@@ -12,14 +12,23 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xeba52e500394fe8916dd9f6404603f317c7a659392bf599e61a6b5a284fcc0db",
+    "eip155:56:0x072caea6ea3cc0c3c4b3a8287daff04c62ab3af5b280e22edc2d59577b699f2a",
+    "eip155:56:0x053a9e011359e8ccfbccf89572453490279a754eeeae4f9c969a49fa360e4737",
+    "eip155:56:0xc1584aac9592f0f86ebc6225d2a232f797922ee571f1cccc25e22cb6e1a87998",
+    "eip155:56:0xd2bc1731351a06b8e61e13c1727f227085ecec0602f34113632fb7d8b020c631",
+    "eip155:56:0x55ec2719805892d3771d9881cc89473af02347ad06f323b0083ff8f9d3a780c7",
+    "eip155:56:0xdd1388c91d6c43db2c35bf5a36e5bd639fcd62d4b3640dfbf64b17ed041037d9"
+  ],
   "loss": {
-    "usd": 172148.54514558267,
+    "usd": 210226.59,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "338.875088869257198253",
-        "usd": 172148.54514558267
+        "amount": "414.068515032832384848",
+        "usd": 210226.59
       }
     ]
   },
@@ -28,8 +37,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/IvestDao_exp.sol"
   ],
   "notes": [
-    "iVest is a directly deployed token. Its 19,856-byte runtime is absent one block before creation and has code hash 0xe9a24aab772f62ded1a30d505ae07e6f7bbdc98fcfe5de544f5a23025e451036 at deployment and immediately before exploitation; both EIP-1967 code-selection slots are zero. The zero-address donation double debit is in the deployed transfer path and does not depend on later configuration.",
-    "The receipt shows 1,200 WBNB entering PancakeSwap iVest/WBNB pair 0x2607118d363789f841d952f02e359bfa483955f9 and 1,538.875088869257198253 WBNB leaving it, for 338.875088869257198253 WBNB of net depletion; archive pair balances at the surrounding block boundary reproduce that amount. The attacker input is netted out; the 0.6-WBNB flash-loan fee is not deducted from victim depletion. The closest preceding DefiLlama BNB price is $508 at 1723438335.",
-    "Replaces the seed's reported $156,000 estimate with exact victim-pair depletion, consistent with the web lead's rounded $172,000 report."
+    "The zero-address donation path is in the deployed transfer code; the token's later storage changes before the exploit are balances and reflection totals only.",
+    "Loss is the WBNB the iVest/WBNB pair lost per transaction, net of WBNB swapped in within the same transaction, across the anchor and seven later skim(address(0)) copycats from other senders; the iVest burned from the pair is the mechanism, not counted separately."
   ]
 }

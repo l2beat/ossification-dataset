@@ -2,24 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "YYDS",
   "name": "YYDS pair-balance price manipulation",
-  "summary": "consumptionReturnPool.getPriceOfUSDT() converted stored USDT-denominated returns to YYDS using the instantaneous ERC-20 balances of the YYDS/USDT pair, with no TWAP or manipulation protection. During a pair flash swap, the attacker reduced the pair's USDT balance from 1186471.120130432957137499 USDT to 1.2 USDT while its YYDS balance remained 1656.938602269843892480. Integer normalization then produced a price of only 0.000603864734299516 USDT per YYDS. Two attacker-controlled callers used genuine matured return records totalling 1.683 USDT to withdraw 2787.048000000004191719 YYDS and sold it into the same pair. The withdrawal functions do index msg.sender's stored entitlement arrays; the defect is the manipulable pair-balance oracle, not missing entitlement checks.",
+  "summary": "consumptionReturnPool.getPriceOfUSDT() converted USDT-denominated return entitlements to YYDS at the YYDS/USDT pair's instantaneous token balances. Inside a flash swap that took almost all pair USDT, two attacker contracts withdrew their small matured returns at the crushed price, received far more YYDS than owed, and repaid the swap with that YYDS.",
   "targets": [
     {
       "address": "0x970a76aea6a0d531096b566340c0de9b027dd39d",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xce8c0ba1d246ff05b41f314305fe9e293a8078fa9b92ae87e628f81a7000247d"
+        "kind": "config",
+        "tx": "0xbe24f0c6ec57cbe03d5d4d3c9826fa5d6ea0abfacb4f3de534f78426ce86e109",
+        "address": "0x970a76aea6a0d531096b566340c0de9b027dd39d",
+        "slot": "0xb"
       }
     }
   ],
   "loss": {
-    "usd": 742286.2727872116,
+    "usd": 742456.09,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "742286.272787211571244404",
-        "usd": 742286.2727872116
+        "usd": 742456.09
       }
     ]
   },
@@ -28,8 +30,7 @@
     "https://twitter.com/BlockSecTeam/status/1567928377432051713"
   ],
   "notes": [
-    "Direct top-level deployment of the verified consumptionReturnPool runtime by 0x17304f0e5a5b42242f0118715b8c28cfe987373b. The address has no code at block 18075330 and runtime hash 0xddfe3e1d2619c12409543651a0fa9897b81b50dec246feef0f3f0562c56fc9aa at both block 18075331 and immediately before exploitation at block 21157028. The verified source is not a proxy, the runtime performs no DELEGATECALL, and the EIP-1967 implementation and beacon slots are zero.",
-    "The YYDS/USDT pair 0xd5ca448b06f8eb5acc6921502e33912fa3d63b12 starts the exploit with 1186471.120130432957137499 USDT and 1656.938602269843892480 YYDS. Its Swap event records 1186469.920024032957137499 USDT out, then 444183.647236821385893095 USDT and 2787.048000000004191719 YYDS in, leaving 444184.847343221385893095 USDT. The causal net pair loss is therefore exactly 742286.272787211571244404 USDT, and the receipt transfers that exact remainder from the attacker contract to the attacker EOA. USDT is valued at par. The 2787.048000000004191719 YYDS released from consumptionReturnPool is the instrument sold to create this same recorded USDT loss and is not valued again, avoiding double-counting one economic loss. The seed row's USD amount 742286 is a rounded version of the reproduced pair loss.",
-    "The measured loss is the stablecoin removed from the YYDS/USDT pair. The manipulated YYDS reserve payout is not added again because it was immediately sold to cause that same pair loss."
+    "The reset is setManagementAddress on the pool: getPriceOfUSDT reads the USDT, YYDS and pair addresses from that management contract, whose values were set in its constructor just before.",
+    "Loss is the pair's net USDT depletion. The 2,787.048 YYDS the pool released were sold into the same pair to cause it and are not valued again (rule 15). A 2022-09-20 drain via the management contract's setPair is an owner action and not part of this incident."
   ]
 }

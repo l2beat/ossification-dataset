@@ -1,8 +1,8 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "protocol": "vETH",
-  "name": "vETH virtual-liquidity factory unbacked mint",
-  "summary": "The vETH virtual-liquidity factory 0x62f250cf7021e1cf76c765dec8ec623fe173a1b5 exposed a permissionless addVirtualLiquidity(address,address,uint256,uint256) (selector 0x6c0472da) that called VirtualToken.takeLoan to mint up to the 300 ether per-block limit of unbacked vETH straight into a caller-named Uniswap V2 vETH/token pair, pulled only the matching amount of the counter token at the pair's live spot ratio, burned the resulting LP to address(0), and never called repayLoan. Because vETH is redeemable one-for-one for ETH through the whitelisted router, the caller could first push the pair's spot ratio with a flash loan so that 300 vETH required almost no counter token, then sell the counter token back and withdraw more ETH from VirtualToken than had been deposited. No parameter value fixes this: the loan is never repaid at any limit, so the deployed factory code mints an unbacked redeemable claim on every call.",
+  "protocol": "Lambo.win",
+  "name": "Lambo.win vETH factory permissionless virtual liquidity",
+  "summary": "LamboFactory.addVirtualLiquidity was callable by anyone for any token: it takes a vETH loan from VirtualToken, mints it into that token's existing pool and burns the LP. The attacker bought out a pool's token side with flash-loaned vETH, injected the unbacked vETH, sold back for more vETH and cashed it out for the ETH backing VirtualToken.",
   "targets": [
     {
       "address": "0x62f250cf7021e1cf76c765dec8ec623fe173a1b5",
@@ -10,28 +10,46 @@
         "kind": "deployment",
         "tx": "0xbc302176dd0ee791133d959afa2cf527efcdaed03a1f7ef9ace7f1326f14dadc"
       }
+    },
+    {
+      "address": "0x280a8955a11fcd81d72ba1f99d265a48ce39ac2e",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4b79db287776d1709da15e85ec782488e116445e4d42e7af7d87a33446c24cd4",
+        "address": "0x280a8955a11fcd81d72ba1f99d265a48ce39ac2e",
+        "slot": "0x8"
+      }
     }
   ],
+  "campaign": [
+    "eip155:1:0x1ae40f26819da4f10bc7c894a2cc507cdb31c29635d31fa90c8f3f240f0327c0",
+    "eip155:1:0x90db330d9e46609c9d3712b60e64e32e3a4a2f31075674a58dd81181122352f8",
+    "eip155:1:0x49a6d272aee5d0e641c25f315f7596276ca95553caadb06920c50902f0bf3e7f",
+    "eip155:1:0x3b7b74245681350fb688214542630e7481b3805dc5f246cf5fde4fd5c0d50e8d",
+    "eip155:1:0x9750e1905d3b6ef3807aaf4d719168eeb2d4463d62f876229e5e4bb1296478ab",
+    "eip155:1:0x603e7d9ba4d32ac1c2c8dff163303bb83376c95911505448b677445b9f25ad37",
+    "eip155:1:0xaa712001c4a7c69f613c95f933be1beafec9dad9a0910c8e29e5fc36c838ff1e",
+    "eip155:1:0x31ff058a9b5bdd720ed3567064b67a6d8fec0cb90c6c98908c7ac5cb1d7baadb",
+    "eip155:1:0xf3db138c1cf401758b877ba10a1e2140556414bb38d4ddb64e60fd299a9cd352",
+    "eip155:1:0xf4b2c2b9a87473539238d6ceaac535f67abd543d592586018781f2e004d62815"
+  ],
   "loss": {
-    "usd": 451915.0740806462,
+    "usd": 456779.03,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "140.485152666714162156",
-        "usd": 451915.0740806462
+        "amount": "142.181194575088720343",
+        "usd": 456779.03
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-11/vETH_exp.sol",
-    "https://blog.verichains.io/p/veth-incident-with-unknown-mechanism",
-    "eip155:1:0x1ae40f26819da4f10bc7c894a2cc507cdb31c29635d31fa90c8f3f240f0327c0",
-    "eip155:1:0x90db330d9e46609c9d3712b60e64e32e3a4a2f31075674a58dd81181122352f8"
+    "https://blog.verichains.io/p/veth-incident-with-unknown-mechanism"
   ],
   "notes": [
-    "The factory runtime was created by top-level CREATE in this transaction and is byte-identical at block 21056284, at block 21184777 immediately before the exploit, and today; the EIP-1967 implementation slot is zero and no DELEGATECALL leaves the contract in the anchor trace, so the deployment is the only executable-code change.",
-    "Exact victim depletion measured as the native-ETH balance of the VirtualToken backing contract 0x280a8955a11fcd81d72ba1f99d265a48ce39ac2e, which fell from 493.212272163562760008 ETH at block 21184777 to 352.727119496848597852 ETH at block 21184796 with no other account activity in that window: 140.485152666714162156 ETH across the three campaign transactions (132.513467878004258374 + 4.846141416396402693 + 3.125543372313501089). The Balancer flash-loan principal is attacker-supplied and repaid inside each transaction, so it is not loss. The residual token inventory the attacker kept (BIF, Cowbo and BOVIN, plus 0.680685122899160147 leftover vETH) is deliberately not marked: the meme tokens were made illiquid by the attacker's own selling and the whole residue liquidated for about 1.35 ETH in transactions 0xfd6d05e7329526b72fd9ac5e24082fb74c9bc03bd2650a4b783cbbc309fc7a07 and 0x6391004ac335f7fd8e1e0986038ea46b0221a6138e4180019916bff4cd8c4e13, so counting spot marks would overstate the loss. The campaign minted 900 unbacked vETH in total; the 759.5 vETH not withdrawn as ETH remains an unrealised undercollateralisation of the same contract and is excluded from this figure.",
-    "The factory runtime is not source-verified on Etherscan or Sourcify; the behaviour of addVirtualLiquidity was established from the execution trace of the anchor transaction and the verified VirtualToken counterparty source, not from the factory's Solidity.",
-    "VirtualToken 0x280a8955a11fcd81d72ba1f99d265a48ce39ac2e is the drained backing contract and executes the unbacked mint through takeLoan, but its loan primitive is gated by onlyValidFactory and behaves as documented; the missing repayment and the permissionless entry point live in the factory, so the factory carries the single code-age observation."
+    "VirtualToken is a target for its config: the owner Safe cut cashOutFee from 70 bps to 0 before the exploit, and replaying the anchor on a fork with the fee restored reverts because the flash loan cannot be repaid. The factory's validFactories grant came in its deployment block.",
+    "Loss is VirtualToken's net ETH outflow per transaction over the attacker's three transactions and seven copycat transactions from other senders (one via c0ffeebabe); LoanTaken events show no further use of addVirtualLiquidity after them.",
+    "Unrealised: the minted vETH not cashed out and the attacker's leftover meme-token inventory are not counted."
   ]
 }
