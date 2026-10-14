@@ -46,6 +46,7 @@ const CHAINS = {
   999: ['hyperliquid', '0x5555555555555555555555555555555555555555', 'hyperliquid', true],
   1030: ['conflux', '0x14b2d3bc65e74dae1030eafd8ac30c533c976a9b', 'conflux-token'],
   1329: ['sei', '0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7', 'sei-network'],
+  4114: ['citrea', '0x3100000000000000000000000000000000000006', 'bitcoin'],
   5000: ['mantle', '0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8', 'mantle'],
   8453: ['base', '0x4200000000000000000000000000000000000006', 'ethereum', true],
   33139: ['apechain', '0x48b62137edfa95a428d35c09e44256a739f6b557', 'apecoin'],
