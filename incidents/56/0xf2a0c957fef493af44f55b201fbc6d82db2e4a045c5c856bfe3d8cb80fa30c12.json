@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SVT",
   "name": "SVT pool marginal-price quote without an invariant",
-  "summary": "The SVT pool 0x2120f8f305347b6aa5e5dbb347230a8234eb3379 quotes both sides of the market at its instantaneous spot ratio and applies no constant-product or any other invariant to the trade being executed. buy(uint256) (selector 0xd96a094a) takes a 1.5 percent USDT fee and pays out (amount - fee) * 1e18 / price SVT, and sell(uint256) (selector 0xe4849b32) pays out amount * price / 1e18 USDT less a 10 percent fee, where in both cases price = USDT.balanceOf(pool) * 1e18 / SVT.balanceOf(pool) read from the live balances before the transfer. Because the quote ignores the trade's own effect on those balances, a buy moves the ratio without charging for the move, and the SVT just bought redeems immediately at the new, higher ratio. I reproduced all four legs of the anchor transaction to the wei with that formula. The invariant broken is that an automated market maker must price a trade against the reserve curve it will end on, not against the marginal price it starts from. No parameter repairs it: for any fee below 100 percent an attacker sizes the buy so that the ratio distortion exceeds the fees, and as the USDT input approaches the pool's USDT balance the payout approaches the pool's whole SVT inventory.",
+  "summary": "SVT's unverified exchange contract priced buy() and sell() at its live USDT/SVT balance ratio read before the transfer, with no invariant for the trade's own effect. Two flash-loaned USDT buys pushed the ratio up, and selling the SVT back at the inflated quotes returned far more USDT than was paid in; the attacker sold its leftover SVT in two later transactions.",
   "targets": [
     {
       "address": "0x2120f8f305347b6aa5e5dbb347230a8234eb3379",
@@ -12,29 +12,27 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0x0c47965e08d7de8574a67354c3eebacb3c4362318c9d55c92f622df17af30206",
+    "eip155:56:0x14a2983289450a591280b8be4b0bb29f3f72a3e1695001a579570f439ce02f49"
+  ],
   "loss": {
-    "usd": 518869.4759131468,
+    "usd": 518703.17,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "BSC-USD",
         "amount": "518869.475913146788810743",
-        "usd": 518869.4759131468
+        "usd": 518703.17
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-08/SVT_exp.sol",
-    "https://twitter.com/Phalcon_xyz/status/1695285435671392504",
-    "eip155:56:0x0c47965e08d7de8574a67354c3eebacb3c4362318c9d55c92f622df17af30206",
-    "eip155:56:0x14a2983289450a591280b8be4b0bb29f3f72a3e1695001a579570f439ce02f49",
-    "eip155:56:0xa3871dce3ffb232b1d7bf0ed103bd0eefe6ed40cf9e7c5306eebaf8e6a42f845",
-    "eip155:56:0xc2cde749a946f046b9641f6761dbf4a4165bf787c98ab5df4b8eca8f4b687a55",
-    "eip155:56:0x7300c847c2cc29990319c66bd15f5a653d7e56bbfaa97b6ab7ee156e4d60d5c1"
+    "https://twitter.com/Phalcon_xyz/status/1695285435671392504"
   ],
   "notes": [
-    "The pool is a plain non-proxy contract created by a top-level CREATE from the EOA 0xc1deb2d5a76dbe0cb1ff0cdaf34b86d4e4c6bd25, which also deployed the SVT token. Its 9,004-byte runtime hashes to 0x7beae5af6d3b0ea35bff2fbeeda1fb876db365fa1465efefe6e3ffac8febc905 at the creation block 31148273 and at block 31178237 immediately before the exploit, the address is empty at 31148272, the EIP-1967 implementation and beacon slots are both zero at 31178237, and the exploit trace contains no DELEGATECALL out of the pool, so deployment is the only executable-code change.",
-    "Exact BSC-USD depletion of the pool across the three-transaction campaign, taken from the receipts: 1,119,165.577404063032213426 left the pool and 600,296.101490916296932929 of attacker-supplied buy input went in, leaving 518,869.475913146788810743. Of that, 398,848.920802613110227784 is the attacker's realised take, which is exactly the balance its EOA 0x4b44b52ef15f7aab9a0a6cfdfa8d2c5eeeb6d8c3 holds after the campaign having started at zero, and 120,020.555110533678582959 accrued to the pool's own fee wallet 0xf037a9f7e7ee68a011ab3e4fa8667dd350370b04, which is stored in pool slot 1 from deployment and is not attacker-controlled; it is counted because it left the drained pool and is not a recovery to the reserve backing SVT. The DODO flash loan of 600,296.101490916296932929 BSC-USD was repaid in full in each transaction and is not loss. The SVT leg is not separately valued: the pool's SVT inventory is its own token, and the 2,068,867.337245240376360201 SVT the attacker still held after the anchor transaction was sold back into the same pool in the two follow-up transactions for a combined 1,066.459898994375177222 BSC-USD, which is already inside the figure above and shows the residual had no independent value. The seed row's figure of 397,782 is the attacker's take in the anchor transaction alone. A block-boundary check gives 521,020.643056518743156196 BSC-USD in the pool at block 31178237 and 2,153.137734371954345453 at block 31178423; the 2.000600000000000000 difference from the receipt sum is unrelated user trading in the 185 intervening blocks.",
-    "The pool contract is not source-verified on BscScan, so the root cause is established from the executed trace, the pool's storage layout, and an exact wei-level reproduction of its pricing arithmetic rather than from published Solidity."
+    "The exchange is unverified and non-proxy; post-deployment owner calls set slots 3 and 6, which the exploit never read, so deployment is the reset. The deployer's earlier exchange versions used a test token, not real USDT.",
+    "Gross USDT depletion includes the ~120k USDT fee paid to the pool's fee wallet 0xf037a9f7, which left the drained pool. SVT, the protocol's own token, is not valued: the attacker's leftover SVT was sold back into the pool in the campaign and its proceeds are counted."
   ]
 }

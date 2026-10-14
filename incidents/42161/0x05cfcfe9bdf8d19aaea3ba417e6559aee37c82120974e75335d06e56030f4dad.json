@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Sharwa Finance",
   "name": "Sharwa margin Hegic option collateral valued by a Uniswap V3 spot quote",
-  "summary": "Sharwa's HegicModule values a Hegic option NFT held as margin collateral by passing its USDC.e payoff to UniswapModuleWithoutChainlink.getInputPositionValue, which returns the Uniswap V3 Quoter's live quote through the thin USDC.e/USDC 0.05% pool. Inside a Balancer flash loan the attacker pushed 22,000 USDC into that pool, raising an option with a 0.137528 USDC.e payoff to about 21,223 USDC of collateral value (later 36,584), and borrowed USDC, WETH and WBTC from Sharwa's liquidity pools against it.",
+  "summary": "Sharwa's HegicModule valued Hegic option NFTs held as margin collateral by quoting their USDC.e payoff through the Uniswap V3 Quoter on the thin USDC.e/USDC pool. In a flash loan the attacker skewed that pool so an option paying about 0.14 USDC.e counted as over 20,000 USDC of collateral, and borrowed USDC, WETH and WBTC from Sharwa's pools against it.",
   "targets": [
     {
       "address": "0x729cf665c09ef112c607290415a566fffa45826f",
@@ -29,25 +29,25 @@
     }
   ],
   "loss": {
-    "usd": 32866.22041413083,
+    "usd": 32866.23,
     "assets": [
       {
         "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "symbol": "USDC",
         "amount": "15368.657012",
-        "usd": 15368.657012
+        "usd": 15368.66
       },
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
         "amount": "4.515718387038570629",
-        "usd": 10284.29707192778
+        "usd": 10284.3
       },
       {
         "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
         "symbol": "WBTC",
         "amount": "0.09391953",
-        "usd": 7213.266330203045
+        "usd": 7213.27
       }
     ]
   },
@@ -56,10 +56,8 @@
     "eip155:42161:0x4d6680f9c6d5c45657d492a850cca6e5f692c337ac11e7c5b2236c2a5cc03572"
   ],
   "notes": [
-    "Direct UniswapModuleWithoutChainlink runtime whose getInputPositionValue returns quoter.quoteExactInput(path, amountIn); path USDC.e/500/USDC and quoter 0xb27308f9f90d607463bb33ea1bebb41c27ce5ab6 are constructor values and setPath was never called.",
-    "Direct HegicModule runtime whose getOptionValue prices the option payoff with assetExchangerUSDCetoUSDC.getInputPositionValue; the exchanger (target-1) is a constructor value with no setter.",
-    "setAvailebleStrategy(address(0), true) set availebleStrategy[0]. MarginTrading.provideERC721 calls checkStrategy(BASE_TOKEN, token, id) with the token pair reversed, so getStrategy resolves no module and returns address(0); this write is what lets any Hegic option pass the strategy check and enter margin collateral, 9 seconds after the Hegic module mapping (0x4d6680f9c6d5c45657d492a850cca6e5f692c337ac11e7c5b2236c2a5cc03572) was set.",
-    "Gross depletion of Sharwa's USDC, WETH and WBTC liquidity pools by the three borrows in the anchor, left as debt against margin account 19 whose only collateral is Hegic option 16129 with a 0.137528 USDC.e payoff (about 0.14 USDC), which is not netted. Native USDC at par; WETH and WBTC at DefiLlama marks one to two minutes before the block. The attacker EOA received 32,850.892483 USDC after swapping the borrowed WETH and WBTC to USDC and repaying the 22,000 USDC Balancer loan; the attacker's round trip left the USDC.e/USDC pool about 18.69 USDC richer. No later borrow occurred on MarginTrading.",
-    "Not the knot: its deployment precedes the ModularSwapRouter strategy-whitelist write that first admitted Hegic option collateral (target-3)."
+    "Reset: MarginTrading.provideERC721 calls checkStrategy with the token pair reversed, so getStrategy returns address(0); setAvailebleStrategy(address(0), true), 9 seconds after the Hegic module route was set, is what admits any Hegic option as collateral.",
+    "The quoter path and exchanger are constructor values with no later setter calls. This redeployment's flaw differs from the October 2025 swap-solvency exploit of Sharwa's earlier contracts; the attacker's second attempt reverted.",
+    "Gross depletion of the USDC, WETH and WBTC pools by the three borrows, left as debt against an account holding only the 0.14 USDC.e option. WETH and WBTC at DefiLlama prices."
   ]
 }

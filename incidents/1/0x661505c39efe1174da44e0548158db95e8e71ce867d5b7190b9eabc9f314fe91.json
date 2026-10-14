@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Scroll Network (SCROLL) token",
   "name": "Scroll Network token unchecked router transfer underflow",
-  "summary": "SCROLL's transfer(address,uint256) blocks ordinary holder-to-holder transfers with a bare \"Err\" revert but exempts the Uniswap UniversalRouter, and on that exempt path it debits the sender without any balance-sufficiency check. Because UniversalRouter.execute is permissionless and its TRANSFER command (0x05) moves the router's own token balance, the attacker made the zero-balance router send 1 wei of SCROLL, underflowing the router's SCROLL balance to 2^256-1, then routed 136,275,915 SCROLL from that fabricated balance into the SCROLL/WETH Uniswap V2 pair and swapped it out for the pair's entire WETH reserve.",
+  "summary": "The unverified SCROLL token exempted whitelisted senders, including Uniswap's Universal Router set in its constructor, from the balance check on transfers. Since anyone can make the router run its TRANSFER command, the attacker had the zero-balance router send SCROLL it never held into the SCROLL/WETH pair and swapped it for the pair's WETH; copycats repeated it on later refills.",
   "targets": [
     {
       "address": "0xe51d3de9b81916d383ef97855c271250852ec7b7",
@@ -12,14 +12,20 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0x23546c3630df5f8625dbf1c4e6f78abae75de0e61bac0b4604af9a40718d714b",
+    "eip155:1:0xab8b6a9d1c21bac6b87dd48487a05cf3317afb105433b5fbcc97609acaddfd5e",
+    "eip155:1:0xdbec6ca1f27e37403ab45a95d53c7b4e51db5ecc4352da79093a8370db1e4b4a",
+    "eip155:1:0x6c9f7e050d42b8cf2b8afb2154547234aeaf5eafdc2d954d652aa65eb3e76124"
+  ],
   "loss": {
-    "usd": 293986.42098,
+    "usd": 294855.53,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "76.360109345510532175",
-        "usd": 293986.42098
+        "amount": "76.585607784353998257",
+        "usd": 294855.53
       }
     ]
   },
@@ -27,8 +33,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/SCROLL_exp.sol"
   ],
   "notes": [
-    "The 11,337-byte SCROLL runtime was installed by top-level CREATE in this transaction and is byte-identical at block 19956149 and at block 19971610, the block before the exploit.",
-    "Exact victim depletion: the Uniswap V2 pair 0xa718aa1b3f61c2b90a01ab244597816a7ee69fd2 transferred 76.360109345510532175 WETH out in the single Swap of the anchor transaction, leaving a 0.076589 WETH reserve. The attacker unwrapped that WETH and forwarded 76.361109345510532175 ETH to the sender EOA, the extra 999999 wei being the value the sender supplied with the deployment; only the pair's WETH is victim loss. WETH is valued at the DefiLlama WETH price seven seconds before the exploit block; the attacker's own SCROLL selling moved only the SCROLL leg, which is worthless fabricated supply and is not counted. Six later transactions by five unrelated senders reproduced the same underflow between blocks 19973774 and 19989190, but the pair was already empty and they removed 0.0406 WETH in total, so they are copycat follow-ons rather than part of this campaign and are not included.",
-    "The SCROLL token source is not verified on Etherscan; the root cause was established from the anchor call trace, the token's Transfer log history, and a mainnet-fork reproduction rather than from published source."
+    "The router's whitelist entry (mapping slot 3) is already set at the deployment block; the deployer's later 7f21b9b9 calls for the router and V2 router wrote nothing, so deployment is the reset.",
+    "Campaign: four later transactions by two other senders minted SCROLL through the router into the pair and swapped out WETH that had been added after the anchor. Router sweeps to EOAs that removed no WETH, and the deployer's own liquidity removals and sells, are not exploits."
   ]
 }

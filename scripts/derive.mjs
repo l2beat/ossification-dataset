@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { EMPTY_CODE_HASH, blockTag, callTrace, hexInt, keccak256, rpc, traceFrames } from './rpc.mjs'
+import { EMPTY_CODE_HASH, blockTag, callTrace, hexInt, keccak256, rpc, rpcUrl, traceFrames } from './rpc.mjs'
 
 const word = (value) => `0x${value.replace(/^0x/, '').padStart(64, '0')}`
 
@@ -166,6 +166,11 @@ export async function derive(chainId, hash, record) {
   await Promise.all(Array.from({ length: 8 }, async () => {
     for (let id = legs.shift(); id; id = legs.shift()) {
       const [, campaignChain, campaignHash] = id.split(':')
+      if (!rpcUrl(Number(campaignChain))) {
+        const note = `campaign on eip155:${campaignChain}: no RPC`
+        if (!report.unverified.includes(note)) report.unverified.push(note)
+        continue
+      }
       const receipt = await rpc(Number(campaignChain), 'eth_getTransactionReceipt', [campaignHash])
       if (!receipt) report.failures.push(`campaign ${id} not found`)
       else if (receipt.status === '0x0') report.failures.push(`campaign ${id} reverted`)

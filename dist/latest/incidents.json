@@ -666,9 +666,9 @@
     "tx": "0x13959bc1ea4ba372a0dae00ee8569b26190c2477cb137a130a25001f3c20e001",
     "protocol": "ShiMama",
     "name": "ShiMamaProtocol executePairBurn without access control",
-    "summary": "ShiMamaProtocol.executePairBurn(referenceIn,minPull,deadline) is callable by anyone and sizes the pull from the caller-supplied referenceIn; it makes ShiMamaToken.forcePullFromPair move that many ShiMama out of the ShiMama/FlapTaxToken PancakeSwap pair, syncs and burns them. The attacker pulled 1,311,349,143.96 ShiMama (all but 21.54) from the pair and sold 30.78 pre-acquired ShiMama into the collapsed reserve for 14.88M of the pair's quote token, which it sold for 52.98 WBNB.",
-    "lossUsd": 35636.872961047506,
-    "codeAgeSeconds": 10695,
+    "summary": "ShiMamaProtocol.executePairBurn is callable by anyone and sizes its pull from a caller-supplied referenceIn, using its forcePullFromPair power on ShiMamaToken to take ShiMama out of the ShiMama/FlapTaxToken pair, sync and burn it. The attacker pulled all but 21.54 ShiMama, sold 30.78 ShiMama into the collapsed pair for its FlapTaxToken and dumped that for WBNB.",
+    "lossUsd": 37512.5,
+    "codeAgeSeconds": 10413,
     "exploit": {
       "block": 87295853,
       "index": 46,
@@ -679,13 +679,13 @@
       "codeHash": "0xee6e956dd5148c20c9531c3242f58848069f917ebe9eb5c986b5e0a67b578b22"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x404fe6fe0179df5caa5bbdb534ca424808c6fd98a26ad4e3c49745c5795e0802",
-      "block": 87272099,
-      "index": 4,
-      "timestamp": 1773820936
+      "kind": "config",
+      "tx": "0x44cf1fed04175fa1652973f631ec36e45f0c053916272ffb729f8bb55b2b76b7",
+      "block": 87272725,
+      "index": 13,
+      "timestamp": 1773821218
     },
-    "claimsSha256": "52a4d9a391fef0a92c0d58391e695b3f3d6d1ebe61ab3bc3c82d7f4d5a980ddf"
+    "claimsSha256": "d4dcbba37ee14155ee6b7df371fb873572fc984ea3c873a35db550fc57de63a6"
   },
   {
     "id": "eip155:1:0xf63913a784b0699fcd9a65072d81b5e639ff38b886bc7bfeb447f675172a622e",
@@ -2026,8 +2026,8 @@
     "tx": "0xf2a0c957fef493af44f55b201fbc6d82db2e4a045c5c856bfe3d8cb80fa30c12",
     "protocol": "SVT",
     "name": "SVT pool marginal-price quote without an invariant",
-    "summary": "The SVT pool 0x2120f8f305347b6aa5e5dbb347230a8234eb3379 quotes both sides of the market at its instantaneous spot ratio and applies no constant-product or any other invariant to the trade being executed. buy(uint256) (selector 0xd96a094a) takes a 1.5 percent USDT fee and pays out (amount - fee) * 1e18 / price SVT, and sell(uint256) (selector 0xe4849b32) pays out amount * price / 1e18 USDT less a 10 percent fee, where in both cases price = USDT.balanceOf(pool) * 1e18 / SVT.balanceOf(pool) read from the live balances before the transfer. Because the quote ignores the trade's own effect on those balances, a buy moves the ratio without charging for the move, and the SVT just bought redeems immediately at the new, higher ratio. I reproduced all four legs of the anchor transaction to the wei with that formula. The invariant broken is that an automated market maker must price a trade against the reserve curve it will end on, not against the marginal price it starts from. No parameter repairs it: for any fee below 100 percent an attacker sizes the buy so that the ratio distortion exceeds the fees, and as the USDT input approaches the pool's USDT balance the payout approaches the pool's whole SVT inventory.",
-    "lossUsd": 518869.4759131468,
+    "summary": "SVT's unverified exchange contract priced buy() and sell() at its live USDT/SVT balance ratio read before the transfer, with no invariant for the trade's own effect. Two flash-loaned USDT buys pushed the ratio up, and selling the SVT back at the inflated quotes returned far more USDT than was paid in; the attacker sold its leftover SVT in two later transactions.",
+    "lossUsd": 518703.17,
     "codeAgeSeconds": 90167,
     "exploit": {
       "block": 31178238,
@@ -2045,7 +2045,7 @@
       "index": 75,
       "timestamp": 1692927482
     },
-    "claimsSha256": "641fab0d8b7a68d315accfab3c70f49d86938287335a1353cce12a783f4c0de1"
+    "claimsSha256": "3586bd771ed1a1218164d95dfc2f5653bdcb9dbd643205893ec73068753cab8d"
   },
   {
     "id": "eip155:56:0x0507476234193a9a5c7ae2c47e4c4b833a7c3923cefc6fd7667b72f3ca3fa83a",
@@ -2951,8 +2951,8 @@
     "tx": "0x661505c39efe1174da44e0548158db95e8e71ce867d5b7190b9eabc9f314fe91",
     "protocol": "Scroll Network (SCROLL) token",
     "name": "Scroll Network token unchecked router transfer underflow",
-    "summary": "SCROLL's transfer(address,uint256) blocks ordinary holder-to-holder transfers with a bare \"Err\" revert but exempts the Uniswap UniversalRouter, and on that exempt path it debits the sender without any balance-sufficiency check. Because UniversalRouter.execute is permissionless and its TRANSFER command (0x05) moves the router's own token balance, the attacker made the zero-balance router send 1 wei of SCROLL, underflowing the router's SCROLL balance to 2^256-1, then routed 136,275,915 SCROLL from that fabricated balance into the SCROLL/WETH Uniswap V2 pair and swapped it out for the pair's entire WETH reserve.",
-    "lossUsd": 293986.42098,
+    "summary": "The unverified SCROLL token exempted whitelisted senders, including Uniswap's Universal Router set in its constructor, from the balance check on transfers. Since anyone can make the router run its TRANSFER command, the attacker had the zero-balance router send SCROLL it never held into the SCROLL/WETH pair and swapped it for the pair's WETH; copycats repeated it on later refills.",
+    "lossUsd": 294855.53,
     "codeAgeSeconds": 186684,
     "exploit": {
       "block": 19971611,
@@ -2970,7 +2970,7 @@
       "index": 7,
       "timestamp": 1716751811
     },
-    "claimsSha256": "2ae35a2391a180e07983c03602cf0ecdf1075f97579c05f746909979bc29b849"
+    "claimsSha256": "a42c6cd02d8a19ad193a45f93482b1d6786f6c9bd85883a0798a9a5318183fbb"
   },
   {
     "id": "eip155:1:0x995e880635f4a7462a420a58527023f946710167ea4c6c093d7d193062a33b01",
@@ -4621,8 +4621,8 @@
     "tx": "0xe30dc75253eecec3377e03c532aa41bae1c26909bc8618f21fb83d4330a01018",
     "protocol": "ShadowFi",
     "name": "ShadowFi SDF unauthenticated burn(address,uint256)",
-    "summary": "ShadowFi's SDF token declares burn(address account, uint256 _amount) public with no owner check, no allowance check and no msg.sender == account check; it simply calls _transferFrom(account, DEAD, _amount). The attacker deployed a one-shot contract that bought 0.010354936721195452 SDF from the PancakeSwap SDF/WBNB pair 0xf9e3151e813cd6729d52d9a0c3ee69f22cce650a with 0.001 WBNB, called SDF.burn(pair, 10354936721195451) to destroy the pair's entire SDF reserve except one wei, called pair.sync() so the reserves became 1 wei SDF against 1,078.615699417903036883 WBNB, and then swapped 8.461538283 SDF for 1,078.616699290110670619 WBNB before selfdestructing.",
-    "lossUsd": 298656.942611,
+    "summary": "ShadowFi's SDF token exposed burn(address account, uint256 amount) with no access, allowance or msg.sender check, moving any holder's SDF to the dead address. The attacker bought a little SDF, burned all but one wei of the PancakeSwap SDF/WBNB pair's SDF, synced the pair and swapped its SDF back for nearly all of the pair's WBNB.",
+    "lossUsd": 298657.77,
     "codeAgeSeconds": 592946,
     "exploit": {
       "block": 20969096,
@@ -4640,7 +4640,7 @@
       "index": 78,
       "timestamp": 1661494816
     },
-    "claimsSha256": "5880f1254d6a9e57c31cd3d8933bfbda44ffba987560a38c4b24153eae9febf2"
+    "claimsSha256": "e30f0cb4f6a22d5bc2456951d819db620f85ea11b5fab3a576a50d2748cde34a"
   },
   {
     "id": "eip155:56:0x2f1c33eaaaace728f6101ff527793387341021ef465a4a33f53a0037f5bd1626",
@@ -6156,8 +6156,8 @@
     "tx": "0x55dad44a7ed31d1637e70879af66e02290d39aea54554f8411e6ec19c03a074b",
     "protocol": "SafeDollar",
     "name": "SafeDollar reward pool deflationary-token accounting",
-    "summary": "SdoRewardPool credited the nominal PLX deposit and returned that nominal amount even though PLX burned 0.15% on transfer. Repeated deposit/withdraw cycles depleted the pool's actual PLX balance to two wei; updatePool() divided newly accrued SDO by that balance, inflating accSdoPerShare and allowing a pre-positioned stake to mint unbacked SDO.",
-    "lossUsd": 248236.987767,
+    "summary": "SdoRewardPool listed PLX, whose transfers charge the sender a fee on top, yet repaid deposits at face value and derived rewards per share from its live PLX balance. After staking PLX, the attacker deposited and withdrew 101 times per transaction so the pool paid the fees from other stakers' PLX down to 2 wei; the inflated index minted SDO, dumped for the SDO pairs' USDC and USDT.",
+    "lossUsd": 248805.98,
     "codeAgeSeconds": 1366744,
     "exploit": {
       "block": 16225172,
@@ -6175,7 +6175,7 @@
       "index": 80,
       "timestamp": 1623466022
     },
-    "claimsSha256": "d1946c17dd6115c373dea0febad63d6d012f7cfbd7168bf6c8a0ca58309c7e9a"
+    "claimsSha256": "a7917b4e1ea8e80f5a14c4c40862ef6539c3e9a55088fc5674559c63b625adfd"
   },
   {
     "id": "eip155:1:0x59faab5a1911618064f1ffa1e4649d85c99cfd9f0d64dcebbc1af7d7630da98b",
@@ -9918,8 +9918,8 @@
     "tx": "0x05cfcfe9bdf8d19aaea3ba417e6559aee37c82120974e75335d06e56030f4dad",
     "protocol": "Sharwa Finance",
     "name": "Sharwa margin Hegic option collateral valued by a Uniswap V3 spot quote",
-    "summary": "Sharwa's HegicModule values a Hegic option NFT held as margin collateral by passing its USDC.e payoff to UniswapModuleWithoutChainlink.getInputPositionValue, which returns the Uniswap V3 Quoter's live quote through the thin USDC.e/USDC 0.05% pool. Inside a Balancer flash loan the attacker pushed 22,000 USDC into that pool, raising an option with a 0.137528 USDC.e payoff to about 21,223 USDC of collateral value (later 36,584), and borrowed USDC, WETH and WBTC from Sharwa's liquidity pools against it.",
-    "lossUsd": 32866.22041413083,
+    "summary": "Sharwa's HegicModule valued Hegic option NFTs held as margin collateral by quoting their USDC.e payoff through the Uniswap V3 Quoter on the thin USDC.e/USDC pool. In a flash loan the attacker skewed that pool so an option paying about 0.14 USDC.e counted as over 20,000 USDC of collateral, and borrowed USDC, WETH and WBTC from Sharwa's pools against it.",
+    "lossUsd": 32866.23,
     "codeAgeSeconds": 9156383,
     "exploit": {
       "block": 458233156,
@@ -9938,6 +9938,37 @@
       "timestamp": 1768474244
     },
     "claimsSha256": "256bde3f205d69bf23860af7d9330a160486244e7734effbbbafd8abda4f58bb"
+  },
+  {
+    "id": "eip155:1:0x6fdb1869659197947facc536823dbb58260d8db0e79949675ae87df2a9b82b9a",
+    "chainId": 1,
+    "tx": "0x6fdb1869659197947facc536823dbb58260d8db0e79949675ae87df2a9b82b9a",
+    "protocol": "Secured Finance",
+    "name": "Secured Finance same-block order-book unit price valued as collateral",
+    "summary": "Secured Finance's controller valued lend positions held as collateral at LendingMarket.getMarketUnitPrice, the current block's own fill price once block volume passes a threshold. Attackers self-matched orders between two accounts in one transaction to set that price, so cheaply bought lend positions counted as full collateral, and withdrew other users' TokenVault deposits.",
+    "lossUsd": 180727.62,
+    "codeAgeSeconds": 9218712,
+    "exploit": {
+      "block": 25914035,
+      "index": 375,
+      "timestamp": 1788646283
+    },
+    "target": {
+      "address": "0x35e9d8e0223a75e51a67aa731127c91ea0779fe2",
+      "code": "0x60ccbf7e864df8c7223216baca4149a8190e5fc7",
+      "codeHash": "0x0a06e1e20d5698cef15dc574d12fbd46e1829439065424c7bf34a5dd728edfe8"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0x39c18bebadf2da4f79c3f09383a29d724bed4f19848caa72d15bd8e1c1a04407",
+      "block": 25148695,
+      "index": 91,
+      "timestamp": 1779427571
+    },
+    "unverified": [
+      "campaign on eip155:314: no RPC"
+    ],
+    "claimsSha256": "4c28e9c65ac4ee2bfd2bc7e2ed284feb8dd876bda2f4f6a4aaa2bb943ee6efe6"
   },
   {
     "id": "eip155:137:0x7320accea0ef1d7abca8100c82223533b624c82d3e8d445954731495d4388483",
@@ -10761,6 +10792,33 @@
     "claimsSha256": "fdd0e60e9d116caee96e127c1a18b171b2ee7a033347292a4c767c5296f43bdc"
   },
   {
+    "id": "eip155:42161:0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d",
+    "chainId": 42161,
+    "tx": "0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d",
+    "protocol": "Sentiment",
+    "name": "Sentiment WeightedBalancerLPOracle Balancer vault read-only reentrancy",
+    "summary": "Sentiment's WeightedBalancerLPOracle priced Balancer BPT from vault.getPoolTokens balances and the pool's totalSupply without checking the Vault's reentrancy lock. From the ETH callback inside Vault.exitPool, after the BPT was burned but before balances settled, the attacker had its BPT collateral valued about 16 times too high and borrowed from Sentiment's lending pools.",
+    "lossUsd": 1098944.66,
+    "codeAgeSeconds": 11823498,
+    "exploit": {
+      "block": 77026913,
+      "index": 4,
+      "timestamp": 1680630629
+    },
+    "target": {
+      "address": "0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b",
+      "codeHash": "0x0a1961db8700d29e1ed861d644d78ffd51e058c308ac2aa8e64ef6cf1279c35d"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x703f4f28d1c1660b702cd029ff21bf4a08f0a31f9766c71f720045f70d8a49c8",
+      "block": 39151565,
+      "index": 1,
+      "timestamp": 1668807131
+    },
+    "claimsSha256": "96bc22a7394e8d9202373354634f83606e5474ceaefd9db4c11b01bf3dc33bc7"
+  },
+  {
     "id": "eip155:1:0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842",
     "chainId": 1,
     "tx": "0x600373f67521324c8068cfd025f121a0843d57ec813411661b07edc5ff781842",
@@ -10814,33 +10872,6 @@
       "timestamp": 1653628352
     },
     "claimsSha256": "d45b58e959e2c1db3ba2b0e87170443592d5993d6ab8140b1f4838bc6543d154"
-  },
-  {
-    "id": "eip155:42161:0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d",
-    "chainId": 42161,
-    "tx": "0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d",
-    "protocol": "Sentiment",
-    "name": "Sentiment WeightedBalancerLPOracle Balancer vault read-only reentrancy",
-    "summary": "WeightedBalancerLPOracle.getPrice(token) values a Balancer weighted-pool BPT as the weighted-geometric invariant of vault.getPoolTokens(poolId) balances divided by IPool(token).totalSupply(). Both reads are unguarded external views on the Balancer Vault and the pool token, and the oracle never probes the vault's reentrancy lock. Inside Vault.exitPool the BPT is burned before the pool's native-ETH payout returns, so total supply is already reduced while the token balances are not yet settled, and the quotient overstates the unit value. The attacker re-entered Sentiment from the exitPool ETH callback and had RiskEngine.isAccountHealthy price 221.214516056534546564 B-33WETH-33WBTC-33USDC at 3.5500730700050576 ETH instead of the 0.2201185612401734 ETH the same function returned outside reentrancy, a 16.1x inflation, which let AccountManager.borrow approve four undercollateralised borrows in the same transaction. The violated invariant is that a collateral price must not be derived from a Balancer pool's balances and supply while that pool is mid-update; the deployed oracle has no state in which it can detect that.",
-    "lossUsd": 1098458.66,
-    "codeAgeSeconds": 12166280,
-    "exploit": {
-      "block": 77026913,
-      "index": 4,
-      "timestamp": 1680630629
-    },
-    "target": {
-      "address": "0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b",
-      "codeHash": "0x0a1961db8700d29e1ed861d644d78ffd51e058c308ac2aa8e64ef6cf1279c35d"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xa8ab8ca1dea6bac57c3d8140fa685c7170e5de5ea2089ea6598f59cf9fdb48e1",
-      "block": 38133216,
-      "index": 1,
-      "timestamp": 1668464349
-    },
-    "claimsSha256": "a6557a036598b84fe8e72e6140407163a1d8fc3798443eeb2f3617eccc472c3e"
   },
   {
     "id": "eip155:5000:0xb3c4c313a8d3e2843c9e6e313b199d7339211cdc70c2eca9f4d88b1e155fd6bd",
@@ -11552,34 +11583,6 @@
       "timestamp": 1771522751
     },
     "claimsSha256": "d3d1aa775a0ab92f081786a7f44d1697e1134113d3833e7b07ae9d1e13ed35ea"
-  },
-  {
-    "id": "eip155:1:0x6fdb1869659197947facc536823dbb58260d8db0e79949675ae87df2a9b82b9a",
-    "chainId": 1,
-    "tx": "0x6fdb1869659197947facc536823dbb58260d8db0e79949675ae87df2a9b82b9a",
-    "protocol": "Secured Finance",
-    "name": "Secured Finance same-block order-book unit price valued as collateral",
-    "summary": "Secured Finance valued lend positions used as collateral with LendingMarket.getMarketUnitPrice, which returns the current block's filled amount divided by filled future value once block volume passes a fixed threshold. Attackers matched orders between two of their own accounts inside one transaction to set that price, so a cheaply bought lend position counted as fully backed collateral, and withdrew other depositors' USDC, WBTC, WETH and JPYC from the TokenVault on Ethereum and Arbitrum.",
-    "lossUsd": 140554.51612548676,
-    "codeAgeSeconds": 17926908,
-    "exploit": {
-      "block": 25914035,
-      "index": 375,
-      "timestamp": 1788646283
-    },
-    "target": {
-      "address": "0x75c762781bcc7dce2fd1512099b71ca8b3634b1f",
-      "code": "0xd06dd40ba7c2cff3a6aa2f59c55d249aca57e521",
-      "codeHash": "0x8e522bfa0342951c5d6a116683c2c1bd0b13b76554e1a54dbb20773fe92f8e1d"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0xdfd5308c2db7fcee003a10d4180d3d270d183c329de104acab92c02cb14fe6a1",
-      "block": 24425782,
-      "index": 425,
-      "timestamp": 1770719375
-    },
-    "claimsSha256": "a6556e9a4ab050aaaab28e6d3a5b06116ae513979fc82b1a413f8c819c4921b3"
   },
   {
     "id": "eip155:1:0xd07c0f40eec44f7674dddf617cbdec4758f258b531e99b18b8ee3b3b95885e7d",

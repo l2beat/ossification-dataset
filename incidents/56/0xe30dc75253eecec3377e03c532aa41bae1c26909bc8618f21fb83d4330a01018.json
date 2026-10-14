@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ShadowFi",
   "name": "ShadowFi SDF unauthenticated burn(address,uint256)",
-  "summary": "ShadowFi's SDF token declares burn(address account, uint256 _amount) public with no owner check, no allowance check and no msg.sender == account check; it simply calls _transferFrom(account, DEAD, _amount). The attacker deployed a one-shot contract that bought 0.010354936721195452 SDF from the PancakeSwap SDF/WBNB pair 0xf9e3151e813cd6729d52d9a0c3ee69f22cce650a with 0.001 WBNB, called SDF.burn(pair, 10354936721195451) to destroy the pair's entire SDF reserve except one wei, called pair.sync() so the reserves became 1 wei SDF against 1,078.615699417903036883 WBNB, and then swapped 8.461538283 SDF for 1,078.616699290110670619 WBNB before selfdestructing.",
+  "summary": "ShadowFi's SDF token exposed burn(address account, uint256 amount) with no access, allowance or msg.sender check, moving any holder's SDF to the dead address. The attacker bought a little SDF, burned all but one wei of the PancakeSwap SDF/WBNB pair's SDF, synced the pair and swapped its SDF back for nearly all of the pair's WBNB.",
   "targets": [
     {
       "address": "0x10bc28d2810dd462e16facff18f78783e859351b",
@@ -12,14 +12,17 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:56:0xe2701f779ab47c36fc5ed151c9abe8fd43a689e3e9c482433994f09faee0979b"
+  ],
   "loss": {
-    "usd": 298656.942611,
+    "usd": 298657.77,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "1078.615699290110670619",
-        "usd": 298656.942611
+        "amount": "1078.618680685368398447",
+        "usd": 298657.77
       }
     ]
   },
@@ -28,7 +31,7 @@
     "https://twitter.com/PeckShieldAlert/status/1565549688509861888"
   ],
   "notes": [
-    "Top-level creation of the immutable SDF token by 0x5671e238bee4cd57a5722038f846f35d8ca35ed7; the constructor also created the SDF/WBNB pair. The 18,501-byte runtime is byte-identical at block 20771762 and block 20969095 and the contract has no proxy or upgrade mechanism.",
-    "Single-transaction exploit. The victim is the PancakeSwap SDF/WBNB pair 0xf9e3151e813cd6729d52d9a0c3ee69f22cce650a and its liquidity providers. Its WBNB balance went from 1,078.615699417903036883 before the transaction to 127,792,366,264 wei after, a depletion of 1,078.615699290110670619 WBNB, which is also exactly the 1,078.616699290110670619 WBNB the attacker received minus the 0.001 WBNB he seeded, so the attacker-supplied input is excluded. The 10,354,936.721195451 SDF burned out of the same pair is not valued separately: its only market was this pool, so pricing it would double-count the WBNB leg, and the burn made it unsellable. Gas is not deducted and there was no recovery; the attacker unwrapped the WBNB in the next block and moved it out in 26 transactions to 0x0d5550d52428e7e3175bfc9550207e4ad3859b17."
+    "The owner later exempted the pair from the tx limit and lowered the limit to 150,000 SDF; the burn passed via that exemption, but splitting it into limit-sized burns works without it, so it is not a reset. Other owner calls were fee, swap-back and trading settings.",
+    "Pre-anchor burns were the owner's own; a later copycat burned the pair again and swapped out 0.003 WBNB of refilled liquidity. The burned SDF is not valued separately, as its only market was this pair."
   ]
 }

@@ -2,33 +2,34 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "ShiMama",
   "name": "ShiMamaProtocol executePairBurn without access control",
-  "summary": "ShiMamaProtocol.executePairBurn(referenceIn,minPull,deadline) is callable by anyone and sizes the pull from the caller-supplied referenceIn; it makes ShiMamaToken.forcePullFromPair move that many ShiMama out of the ShiMama/FlapTaxToken PancakeSwap pair, syncs and burns them. The attacker pulled 1,311,349,143.96 ShiMama (all but 21.54) from the pair and sold 30.78 pre-acquired ShiMama into the collapsed reserve for 14.88M of the pair's quote token, which it sold for 52.98 WBNB.",
+  "summary": "ShiMamaProtocol.executePairBurn is callable by anyone and sizes its pull from a caller-supplied referenceIn, using its forcePullFromPair power on ShiMamaToken to take ShiMama out of the ShiMama/FlapTaxToken pair, sync and burn it. The attacker pulled all but 21.54 ShiMama, sold 30.78 ShiMama into the collapsed pair for its FlapTaxToken and dumped that for WBNB.",
   "targets": [
     {
       "address": "0x5049d10378356fde0b44c93fa7bb75836f10b49a",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x404fe6fe0179df5caa5bbdb534ca424808c6fd98a26ad4e3c49745c5795e0802"
+        "kind": "config",
+        "tx": "0x44cf1fed04175fa1652973f631ec36e45f0c053916272ffb729f8bb55b2b76b7",
+        "address": "0xfeb6e1bab35b9ac5f6deba729d1fae791033ff4f",
+        "slot": "0x7"
       }
     }
   ],
   "loss": {
-    "usd": 35636.872961047506,
+    "usd": 37512.5,
     "assets": [
       {
         "token": "0xaff08796d28d1018f16fc2a76baf401fea647777",
         "symbol": "FlapTaxToken",
-        "amount": "14134581.872915428175946684",
-        "usd": 35636.872961047506
+        "amount": "14878507.234647819132575456",
+        "usd": 37512.5
       }
     ]
   },
   "refs": [
-    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-16-mar-22-2026",
-    "eip155:56:0x44cf1fed04175fa1652973f631ec36e45f0c053916272ffb729f8bb55b2b76b7"
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-16-mar-22-2026"
   ],
   "notes": [
-    "Direct immutable protocol contract; the owner's initial wiring ShiMamaToken.setProtocol(0x5049d103) (0x44cf1fed04175fa1652973f631ec36e45f0c053916272ffb729f8bb55b2b76b7, block 87272725, 626 blocks later) only makes the deployed protocol operational and supplies no erroneous value.",
-    "The ShiMama/FlapTaxToken pair 0x564cb2bae0b35cfc8c77d94d65015fe898f8f927 lost 14,878,507.234647819132575456 of its quote token 0xaff08796 in the anchor transaction: 743,925.36 went to the quote token's own tax and 14,134,581.87 were sold by the attacker into the 0xaff08796/WBNB pair for 52.981232710993276266 WBNB. Only the sold portion is counted, valued at those realised proceeds and the DefiLlama WBNB price; the 30.78 ShiMama the attacker sold into the pair are its own input."
+    "Reset: ShiMamaToken.setProtocol(0x5049d103) granted the protocol the onlyProtocol forcePullFromPair power that executePairBurn uses; without it the pull reverts, so this role grant, 626 blocks after the protocol's deployment, is the latest change the exploit needed.",
+    "The pair lost 14.88M FlapTaxToken: 14.13M sold by the attacker for 52.98 WBNB and 0.74M taken as the token's transfer tax. FlapTaxToken has no DefiLlama price and the dump moved its WBNB pool by about a quarter, so the whole amount is valued at the attacker's realised rate."
   ]
 }

@@ -2,41 +2,43 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Sentiment",
   "name": "Sentiment WeightedBalancerLPOracle Balancer vault read-only reentrancy",
-  "summary": "WeightedBalancerLPOracle.getPrice(token) values a Balancer weighted-pool BPT as the weighted-geometric invariant of vault.getPoolTokens(poolId) balances divided by IPool(token).totalSupply(). Both reads are unguarded external views on the Balancer Vault and the pool token, and the oracle never probes the vault's reentrancy lock. Inside Vault.exitPool the BPT is burned before the pool's native-ETH payout returns, so total supply is already reduced while the token balances are not yet settled, and the quotient overstates the unit value. The attacker re-entered Sentiment from the exitPool ETH callback and had RiskEngine.isAccountHealthy price 221.214516056534546564 B-33WETH-33WBTC-33USDC at 3.5500730700050576 ETH instead of the 0.2201185612401734 ETH the same function returned outside reentrancy, a 16.1x inflation, which let AccountManager.borrow approve four undercollateralised borrows in the same transaction. The violated invariant is that a collateral price must not be derived from a Balancer pool's balances and supply while that pool is mid-update; the deployed oracle has no state in which it can detect that.",
+  "summary": "Sentiment's WeightedBalancerLPOracle priced Balancer BPT from vault.getPoolTokens balances and the pool's totalSupply without checking the Vault's reentrancy lock. From the ETH callback inside Vault.exitPool, after the BPT was burned but before balances settled, the attacker had its BPT collateral valued about 16 times too high and borrowed from Sentiment's lending pools.",
   "targets": [
     {
       "address": "0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xa8ab8ca1dea6bac57c3d8140fa685c7170e5de5ea2089ea6598f59cf9fdb48e1"
+        "kind": "config",
+        "tx": "0x703f4f28d1c1660b702cd029ff21bf4a08f0a31f9766c71f720045f70d8a49c8",
+        "address": "0x08f81e1637230d25b4ea6d4a69d74373e433efb3",
+        "slot": "0x98dc242c497f9a9f863eb5e2a93fb234e83a3b24ac879effce7556bb20b0b649"
       }
     }
   ],
   "loss": {
-    "usd": 1098458.66,
+    "usd": 1098944.66,
     "assets": [
       {
         "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
         "symbol": "USDC.e",
-        "amount": "461000.000000",
+        "amount": "461000",
         "usd": 461000
       },
       {
         "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
         "symbol": "USDT",
-        "amount": "361000.000000",
-        "usd": 361000
+        "amount": "361000",
+        "usd": 361361
       },
       {
         "token": "0x17fc002b466eec40dae837fc4be5c67993ddbd6f",
         "symbol": "FRAX",
-        "amount": "125000.000000000000000000",
-        "usd": 125000
+        "amount": "125000",
+        "usd": 125125
       },
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
-        "amount": "81.000000000000000000",
+        "amount": "81",
         "usd": 151458.66
       }
     ]
@@ -47,9 +49,7 @@
     "eip155:42161:0x4d9e9ad33412949def1b3246833e46440208142450f9916905a8f9d8e9a64cc9"
   ],
   "notes": [
-    "WeightedBalancerLPOracle is a plain non-proxy contract whose runtime contains no DELEGATECALL, CREATE or SELFDESTRUCT. Its 7,090-byte runtime is byte-identical at the creation block, at the block before the exploit and at head, so the executed pricing code dates from deployment.",
-    "Gross depletion of Sentiment's four LToken lending pools in the anchor transaction, read from the AccountManager Borrow(account,owner,token,amount) events at log indices 37, 40, 43 and 46: 461,000 USDC.e out of LUSDC 0x0ddb1ea478f8ef0e22c7706d2903a41e94b1299b, 361,000 USDT out of LUSDT 0x4c8e1656e042a206eef7e8fcff99bac667e4623e, 81 WETH out of LWETH 0xb190214d5ebac7755899f2d96e519aa7a5776bec and 125,000 FRAX out of LFRAX 0x2e9963ae673a885b6bfeda2f80132ce28b784c40. Each pool also paid a 0.1 percent origination fee out of the same amount to the Sentiment treasury 0x92f473ef0cd07080824f5e6b0859ac49b3aeb215; the fee is included because it left the lending pool. The attacker's realised proceeds, forwarded from the exploit contract to the attacker EOA at log indices 110-113, were 0.51695721 WBTC, 29.973117081932212940 WETH, 538,399.328226 USDC.e and 360,000 USDT, about 968,971 USD at the same prices, the roughly 1M USD figure reported at the time; the gap to gross depletion is Aave flash-loan premiums, Balancer join and exit costs and the balances left behind in the borrowing account. The 50 WETH margin deposited into the Sentiment account before the borrows came from the Aave flash loan and was converted into 221.214516056534546564 BPT that stayed inside the Sentiment account as collateral, so it is not counted as depletion. Sentiment recovered the position on 2023-04-08 in transaction 0x4d9e9ad33412949def1b3246833e46440208142450f9916905a8f9d8e9a64cc9, where liquidator 0xf0885fc34fa3b36910d0f256d0fd862a4be79c16, funded by 0xc478f962e932bd8f4e45f9a66b5cbb972d8ac63e, repaid 464,272.338750 USDC.e, 363,579.746514 USDT, 81.674233642042944923 WETH and 125,901.406716158845171079 FRAX and took the account's collateral; per methodology that later recovery does not reduce gross victim depletion.",
-    "USDC.e, USDT and FRAX are valued at par. DefiLlama quoted FRAX at 1.001 at the anchor timestamp, which would raise the total by 125 USD.",
-    "The OracleFacade mapping that routes the BPT 0x64541216bafffeec8ea535bb71fbc927831d0595 to this oracle is protocol configuration and is not the age basis; the defect is in the oracle's own executable pricing logic."
+    "Reset: the oracle contract is unchanged since deployment, but the exploit needed OracleFacade to route the BPT to it; that oracle assignment (a Safe batch about two weeks after deployment) is the latest such change. Later Chainlink feed swaps for the underlying tokens and an AccountManager upgrade did not create the flaw.",
+    "Gross depletion of the four LToken pools; the 0.1% origination fee paid to the treasury out of each borrow is included. The attacker's BPT left in the account, the later liquidation that recovered the debt, and the bounty-negotiated return of about 466 ETH do not reduce the loss."
   ]
 }

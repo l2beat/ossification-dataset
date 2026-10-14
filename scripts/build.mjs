@@ -65,7 +65,8 @@ function row({ id, chainId, tx, record }, facts, key) {
 // Facts a row carries over when its claims are unchanged.
 const factsOf = (previous, record) => ({
   exploit: previous.exploit,
-  target: record.targets.findIndex((target) => target.address === previous.target.address && (target.code ?? null) === (previous.target.code ?? null)),
+  target: record.targets.findIndex((target) => target.address === previous.target.address && (target.code ?? null) === (previous.target.code ?? null) &&
+    target.reset.kind === previous.reset.kind && (target.reset.tx ?? null) === (previous.reset.tx ?? null)),
   reset: { block: previous.reset.block, index: previous.reset.index, timestamp: previous.reset.timestamp },
   codeHash: previous.target.codeHash,
   codeAgeSeconds: previous.codeAgeSeconds,
@@ -96,7 +97,7 @@ export async function build({ root = ROOT, all = false, only = null, offline = f
         for (const failure of report.failures) errors.push(`${item.incident.path}: ${failure}`)
         rows.push(row(item.incident, facts, item.key))
       } catch (error) {
-        // A chain no RPC serves keeps its previous facts while its targets are unchanged.
+        // A chain no RPC serves keeps its previous facts while the age-setting target and reset are unchanged.
         const carried = item.old && /^no RPC/.test(error.message) && factsOf(item.old, item.incident.record)
         if (carried && carried.target >= 0)
           rows.push(row(item.incident, { ...carried, unverified: [...new Set([...(carried.unverified ?? []), error.message])] }, item.key))

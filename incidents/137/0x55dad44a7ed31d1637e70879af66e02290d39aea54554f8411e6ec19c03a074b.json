@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SafeDollar",
   "name": "SafeDollar reward pool deflationary-token accounting",
-  "summary": "SdoRewardPool credited the nominal PLX deposit and returned that nominal amount even though PLX burned 0.15% on transfer. Repeated deposit/withdraw cycles depleted the pool's actual PLX balance to two wei; updatePool() divided newly accrued SDO by that balance, inflating accSdoPerShare and allowing a pre-positioned stake to mint unbacked SDO.",
+  "summary": "SdoRewardPool listed PLX, whose transfers charge the sender a fee on top, yet repaid deposits at face value and derived rewards per share from its live PLX balance. After staking PLX, the attacker deposited and withdrew 101 times per transaction so the pool paid the fees from other stakers' PLX down to 2 wei; the inflated index minted SDO, dumped for the SDO pairs' USDC and USDT.",
   "targets": [
     {
       "address": "0x17684f4d5385fac79e75ceafc93f22d90066ed5c",
@@ -14,31 +14,41 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:137:0x4dda5f3338457dfb6648e8b959e70ca1513e434299eebfebeb9dc862db3722f3",
+    "eip155:137:0xd78ff27f33576ff7ece3a58943f3e74caaa9321bcc3238e4cf014eca2e89ce3f",
+    "eip155:137:0x1360315a16aec1c7403d369bd139f0fd55a99578d117cb5637b234a0a0ee5c14"
+  ],
   "loss": {
-    "usd": 248236.987767,
+    "usd": 248805.98,
     "assets": [
       {
         "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         "symbol": "USDC",
         "amount": "202230.248261",
-        "usd": 202230.248261
+        "usd": 202805.51
       },
       {
         "token": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
         "symbol": "USDT",
         "amount": "46006.739506",
-        "usd": 46006.739506
+        "usd": 46000.47
+      },
+      {
+        "token": "0x7a5dc8a09c831251026302c93a778748dd48b4df",
+        "symbol": "PLX",
+        "amount": "305514.573900082567598120",
+        "usd": 0
       }
     ]
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-06/SafeDollar_exp.sol",
-    "eip155:137:0xd78ff27f33576ff7ece3a58943f3e74caaa9321bcc3238e4cf014eca2e89ce3f",
-    "eip155:137:0x1360315a16aec1c7403d369bd139f0fd55a99578d117cb5637b234a0a0ee5c14",
     "https://safedollar.medium.com/safedollar-post-mortem-analysis-cb2769fe059"
   ],
   "notes": [
-    "The add(500, PLX, 0, 1623470400) calldata installed deflationary PLX 0x7a5dc8a09c831251026302c93a778748dd48b4df as pool 9, changing poolLength() from 9 to 10 and creating the vulnerable code-and-token combination. The operator's only later call before exploitation changed pool 8, not pool 9.",
-    "The campaign's final transaction transfers exactly 202,230.248261 USDC and 46,006.739506 USDT from the two SDO liquidity pools to the attacker helper after the helper sells the unbacked reward SDO. Stablecoins are valued at par."
+    "Reset: add() listing PLX as pool 9 (poolLength 9 to 10) created the vulnerable pool; later owner calls touched other pools, and PLX's own proxy upgrade four days before only added an ERC1820 toggle, not the fee behaviour.",
+    "The two drain transactions took other stakers' PLX from the pool as burns and fees; DefiLlama has no PLX price and the attacker realised nothing from it, so it is listed at zero (about 1.5k USD at pair prices).",
+    "Other pool-9 stakers later harvested inflated SDO too, but the SDO pairs held only about 60 USD after the attacker's dump, so those harvests are not listed."
   ]
 }
