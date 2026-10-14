@@ -30,6 +30,8 @@ const RPC_ENV = {
 const PUBLIC_RPC = {
   30: 'https://public-node.rsk.co',
   250: 'https://rpcapi.fantom.network',
+  288: 'https://mainnet.boba.network',
+  1868: 'https://rpc.soneium.org',
   204: 'https://opbnb-mainnet-rpc.bnbchain.org',
   369: 'https://rpc.pulsechain.com',
   999: 'https://rpc.hyperliquid.xyz/evm',
@@ -56,6 +58,7 @@ export async function rpc(chainId, method, params) {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
+        signal: AbortSignal.timeout(120_000),
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
       })
       if (response.status === 429 || response.status >= 500) throw new Error(`HTTP ${response.status}`)
