@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Zentra Finance",
   "name": "Zentra aToken burn clamp lets repayWithATokens clear debt without burning",
-  "summary": "Zentra, an Aave V3 fork on Citrea, upgraded its aTokens to an implementation whose _burnScaled caps the scaled burn at the holder's scaled balance with no bound on the difference. Pool.repayWithATokens burns the caller's aTokens and marks the debt repaid, so a caller holding no aTokens repays in full while burning nothing. With 200,000 flash-borrowed USDC.e as collateral, the attacker borrowed 140,000 ctUSD, cleared the debt with repayWithATokens and withdrew the collateral. It repeated this for 30 USDC.e.",
+  "summary": "Zentra, an Aave V3 fork on Citrea, upgraded its aTokens to an implementation whose burn clamps the amount to the holder's balance instead of reverting. repayWithATokens marks debt repaid after that burn, so a caller without aTokens repays for free. The attacker borrowed ctUSD against flash-loaned USDC.e, cleared the debt this way and withdrew the collateral, then repeated it on USDC.e.",
   "targets": [
     {
       "address": "0xba2a69b92e0071924c387a200409b658e4f6cac8",
@@ -11,31 +11,39 @@
         "kind": "upgrade",
         "tx": "0xe473cb44f0c7038c5758cace629555ba2125914b7ea6aeadae1e0493c627daae"
       }
+    },
+    {
+      "address": "0x01465912c8cec266237050f429fe1b88daa56c0a",
+      "code": "0x62ff719abcaedead9055ba980fce3821ebdda694",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xfb5408ecf86de7834b170cd0090d3d07517b10b4440b1bd6eca7ce081b1eb9f5"
+      }
     }
   ],
   "loss": {
-    "usd": 140147.85861992638,
+    "usd": 140147.86,
     "assets": [
       {
         "token": "0x8d82c4e3c936c7b5724a382a9c5a4e6eb7ab6d5d",
         "symbol": "ctUSD",
         "amount": "139999.999999",
-        "usd": 140117.86218561005
+        "usd": 140117.86
       },
       {
         "token": "0xe045e6c36cf77faa2cfb54466d71a3aef7bbe839",
         "symbol": "USDC.e",
         "amount": "29.999999",
-        "usd": 29.996434316323803
+        "usd": 30
       }
     ]
   },
   "refs": [
-    "eip155:4114:0x8c707f2c20258ddd0c0e403a77a64f1dcf946c6e53aa691ecb8cf383b53a4b88",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/ZentraFinance_exp.sol"
   ],
   "notes": [
-    "PoolConfigurator 0x6864042da4a5bbeb2a98e910599964c9d8b7b684, called by Zentra deployer 0x76be77a1, upgraded the zctUSD proxy from ATokenV2 0x2ec995d521d5248c15b874a5cfb80c65a7dc63f7 to AToken 0x62ff719a, which added the uncapped burn clamp. zUSDC 0x01465912c8cec266237050f429fe1b88daa56c0a received the same implementation two blocks earlier (block 9161294).",
-    "Net reserve depletion in the single exploit transaction. The zctUSD reserve paid 140,000 ctUSD in the borrow and received 0.000001 ctUSD net from the attacker's 50 supplied and 49.999999 withdrawn. The zUSDC reserve paid the 30 USDC.e borrow and kept 0.000001 of the 200,000 USDC.e collateral supplied and withdrawn. The debt tokens were burned without repayment. The PoC reports ~140,000 ctUSD + 30 USDC.e (~$143K)."
+    "Both aTokens the anchor burned from run the upgraded implementation; the earlier ones (0x777a1e50, 0xe4f00a8e, 0x2ec995d5) revert on an over-balance burn when replayed on a fork, so the defect dates from this upgrade. The reserve settings and price sources the exploit read did not change after it; later configurator events are pause toggles and an unrelated sUSN listing.",
+    "No earlier or further exploit: from the upgrade to block 13940093 the only Repay events with useATokens are the two in the anchor. Zentra has code only on Citrea, and the attacker EOA has no other Zentra activity on other chains.",
+    "Loss is the two reserves' net outflow in the anchor at DefiLlama prices; the attacker's flash-loaned USDC.e collateral and its 50 ctUSD supply were withdrawn in the same transaction and net out."
   ]
 }
