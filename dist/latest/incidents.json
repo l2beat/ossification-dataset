@@ -2597,8 +2597,8 @@
     "tx": "0x4f37ffecdad598f53b8d5a2d9df98e3c00fbda4328585eb9947a412b5fe17ac5",
     "protocol": "Stars Arena",
     "name": "Stars Arena share-buy reentrancy",
-    "summary": "The share-buy entry point (selector 0xe9ccf3a3) sent AVAX back to the caller before finalising share accounting, letting the attacker re-enter the weight-setting function (selector 0x5632b2e4) mid-call so that a single share could then be sold via sellShares() for ~266,000 AVAX.",
-    "lossUsd": 2964147.8284259983,
+    "summary": "The upgraded Stars Arena shares implementation refunded excess AVAX to the buyer through an unrestricted call before finishing the buy. The attacker's contract re-entered from the refund and called 0x5632b2e4 to set the pricing weight for its new subject, then sold its single share at the inflated price for most of the contract's AVAX.",
+    "lossUsd": 3064299.19,
     "codeAgeSeconds": 144451,
     "exploit": {
       "block": 36136406,
@@ -3606,8 +3606,8 @@
     "tx": "0xc6c3331fa8c2d30e1ef208424c08c039a89e510df2fb6ae31e5aa40722e28fd6",
     "protocol": "Socket",
     "name": "SocketGateway wrapped-token swap route arbitrary call",
-    "summary": "Socket route 406 (WrappedTokenSwapperImpl 0xcc5fda5e3ca925bd0bb428c8b2669496ee43067e) is delegatecalled by SocketGateway and, in performAction, forwards fully caller-controlled calldata to a caller-controlled address with `fromToken.call(swapExtraData)`. With amount = 0 the surrounding balance-delta and safeTransferFrom checks are satisfied trivially, so the attacker made the gateway execute `USDC.transferFrom(victim, attacker, allowance)` and equivalent calls on WETH, USDT, WBTC, DAI and MATIC, draining every unlimited approval users held on SocketGateway. The route had been registered three days earlier through NewRouteAdded(uint32,address); the gateway itself was never upgraded.",
-    "lossUsd": 3302795.167444433,
+    "summary": "SocketGateway route 406, WrappedTokenSwapperImpl, made the gateway call fromToken with caller-supplied swapExtraData after pulling only the caller's own amount. With amount 0 and an ERC-20 as fromToken, attackers had the gateway execute transferFrom(victim, attacker, amount) on tokens users had approved to the gateway, draining those approvals.",
+    "lossUsd": 3311946.88,
     "codeAgeSeconds": 305256,
     "exploit": {
       "block": 19021454,
@@ -3626,7 +3626,7 @@
       "index": 88,
       "timestamp": 1705127027
     },
-    "claimsSha256": "02f9cf94420005e7b0f45ab529fe69f73e3057dbc636b9ce088f508146efb88c"
+    "claimsSha256": "c2a06096961e74e25ab64bc808fcc8ed58730ac6e580ed675cadb83acd2481e7"
   },
   {
     "id": "eip155:250:0x39825ff84b44d9c9983b4cff464d4746d1ae5432977b9a65a92ab47edac9c9b5",
@@ -4676,7 +4676,7 @@
     "protocol": "Silo Finance",
     "name": "LeverageUsingSiloFlashloanWithGeneralSwap unvalidated swap target",
     "summary": "openLeveragePosition() on the unreleased leverage helper accepted a caller-supplied flashloan target and swap calldata without constraining them to the selected Silo market, so a fake flash lender's onFlashLoan callback made the helper call the real WETH Silo's borrow() on behalf of a third party that had granted it debt-receive approval.",
-    "lossUsd": 546092.5115717358,
+    "lossUsd": 549183.86,
     "codeAgeSeconds": 614748,
     "exploit": {
       "block": 22781962,
@@ -4694,7 +4694,7 @@
       "index": 34,
       "timestamp": 1750245935
     },
-    "claimsSha256": "2ccc1565d4af0d2eae2059c68ea71d36cf34999790e9f09d29415efc83e0a510"
+    "claimsSha256": "8fe3137536237e3368cdcf288a38bd01e0c92e1e74e96319c1e086f9e8ca76c6"
   },
   {
     "id": "eip155:43114:0x586c2285e2ecc7c45e75ee4c8b9400aa39b6b72fb14513739e34065d209348b4",
@@ -7087,10 +7087,10 @@
     "id": "eip155:56:0x9fcf38d0af4dd08f4d60f7658b623e35664e74bca0eaebdb0c3b9a6965d6257b",
     "chainId": 56,
     "tx": "0x9fcf38d0af4dd08f4d60f7658b623e35664e74bca0eaebdb0c3b9a6965d6257b",
-    "protocol": "SquidSwap 0xd309",
+    "protocol": "SquidSwap",
     "name": "SQUID migration self-sale uses manipulable minimum output",
-    "summary": "SquidTokenSwap.sellSwappedTokens is public and derives its minimum output from the same PancakeSwap reserves its trade consumes. An attacker repeatedly trades around the SQUID v1-to-v2 conversion and these treasury-funded sales, controlling both legs of the spot quote and extracting WBNB. The nominal 5% slippage check has no independent price reference.",
-    "lossUsd": 97478.7786078532,
+    "summary": "SquidTokenSwap gave SQUID V2 one-for-one for V1 to anyone and let anyone call sellSwappedTokens, whose minimum output came from the same live Pancake reserves the sale traded through. Attackers bought cheap V1, swapped it for V2 at par, triggered the contract's V1-to-V2 sales to lift V2, and dumped the V2 for WBNB.",
+    "lossUsd": 97478.78,
     "codeAgeSeconds": 2491030,
     "exploit": {
       "block": 37672970,
@@ -7108,7 +7108,7 @@
       "index": 54,
       "timestamp": 1710066786
     },
-    "claimsSha256": "7933a7a0194b5e0066d4a48ee8119f4a73ef38957281d69f73c245fe8a75a5e2"
+    "claimsSha256": "5db14d15a6211e2283837063b751e8dda0d909f27df51cd7e24002e950e6d733"
   },
   {
     "id": "eip155:250:0x1077b3d038ca8e803850a6ac53cf54cea6e1daf40e5ce085f56ae380af258d9e",
@@ -7992,8 +7992,8 @@
     "tx": "0xfaf84cabc3e1b0cf1ff1738dace1b2810f42d98baeea17b146ae032f0bdf82d5",
     "protocol": "Sperax USDs",
     "name": "Sperax USDs non-rebasing migration reinterprets credits as tokens",
-    "summary": "The USDs implementation keeps two balance representations: rebasing accounts store scaled credits in _creditBalances and divide by rebasingCreditsPerToken, while non-rebasing (contract) accounts are flagged by nonRebasingCreditsPerToken[account] = 1 and have _creditBalances read back as plain token units. The lazy migration that _isNonRebasingAccount() runs the first time a transfer touches an unclassified contract account sets that flag without rescaling the account's stored credit balance, so a balance accumulated while the address was still an EOA is reinterpreted at a factor of rebasingCreditsPerToken/1e18. The attacker sent 11 USDs to a counterfactual Gnosis Safe address, deployed the Safe, and let the first transferFrom() out of it trigger the migration: with rebasingCreditsPerToken = 890714019687982181365620786, the Safe's 11 USDs became 9,797,854,205.567804 USDs of spendable balance, which was then sold into Arbitrum liquidity.",
-    "lossUsd": 306440.3189585675,
+    "summary": "USDs migrates a contract account to non-rebasing on its first transfer by setting a per-account rate of 1 without rescaling the credits it already holds. The attacker sent 11 USDs to a counterfactual Safe address, deployed the Safe, and the migration turned its credits into about 9.8 billion USDs, which it sold into Arbitrum pools.",
+    "lossUsd": 306440.31,
     "codeAgeSeconds": 3652369,
     "exploit": {
       "block": 57803530,
@@ -8012,7 +8012,7 @@
       "index": 1,
       "timestamp": 1671814445
     },
-    "claimsSha256": "b854e026269fa244302347aa9f9672b7552d66ace0449de47c9ae33714f280ec"
+    "claimsSha256": "3e9c0b8df0910b356169e99098fb430dd0954a6c488063706cdbf28f72c9b74d"
   },
   {
     "id": "eip155:56:0x2c123d08ca3d50c4b875c0b5de1b5c85d0bf9979dffbf87c48526e3a67396827",
@@ -8456,8 +8456,8 @@
     "tx": "0xf5ea6266a56f4e0135b73f63050afca7146bc940ac73da8b5fade9d8031582e2",
     "protocol": "Sovryn",
     "name": "Sovryn loan-closing cross-contract reentrancy into iToken mint",
-    "summary": "Sovryn's LoanClosingsWith protocol module reduced the lender pool's principalTotal in _settleInterest before pulling the repayment (an rUSDT ERC777 transferFrom that calls the payer's tokensToSend hook) or refunding native RBTC to the borrower. From those callbacks the attacker minted iUSDT or iRBTC while the pool's totalAssetSupply omitted the repaid principal, i.e. at a depressed tokenPrice, then burned the iTokens at the corrected price once the close finished. Repeated with flash-swapped collateral, this drained the iUSDT and iRBTC lending pools.",
-    "lossUsd": 1171196.3462127135,
+    "summary": "Sovryn's LoanClosingsWith module lowered the lender pool's principal before pulling the repayment or refunding RBTC, and no guard spanned protocol and loan tokens. From the rUSDT ERC777 send hook or the RBTC refund the attacker minted iUSDT or iRBTC at the depressed price, then burned them after the principal arrived. Repeated, this drained both pools.",
+    "lossUsd": 1171196.35,
     "codeAgeSeconds": 4631239,
     "exploit": {
       "block": 4689413,
@@ -8477,9 +8477,10 @@
       "timestamp": 1660216280
     },
     "unverified": [
-      "exploit trace"
+      "exploit trace",
+      "0x849c47f9c259e9d62f289bf1b2729039698d8387: 0x646155b650cf74c78ae0ad0e6472a24e5fef901276abc7666c1b9275e61c29e4 activating 0x82c49ec67389b6e8c377ed1da7816b9add4e3b1e"
     ],
-    "claimsSha256": "cd53aea6cbd4aa128c28a44b0d9f9943cfd7bea0a94233a56273bd1c9f0bb89b"
+    "claimsSha256": "8ed1d7d6b810df278ecfa26f345881c264c61f7045eb2fb8fa35158646830f62"
   },
   {
     "id": "eip155:56:0x199c4b88cab6b4b495b9d91af98e746811dd8f82f43117c48205e6332db9f0e0",
@@ -11508,8 +11509,8 @@
     "tx": "0xea0087c6f5926d41f6d5f589e5797dac7e9b6a3ff2f15afb8db84aad94b71327",
     "protocol": "Silo Finance",
     "name": "Silo soUSDC SiloVault externally credited wstUSR-market shares inflate totalAssets",
-    "summary": "SiloVault.totalAssets() sums previewRedeem of the vault's share balance in every withdraw-queue market, so bUSDC shares a third party mints to the vault through wstUSR/USDC market.deposit(assets, receiver=soUSDC) raise soUSDC's share price without minting soUSDC shares and without the curator allocating. That market prices wstUSR collateral with an immutable wstUSR/stUSR exchange-rate feed (1.1330 USDC) while wstUSR traded near 0.12 after the USR depeg. Each cycle flash-borrowed USDC, deposited into soUSDC, donated USDC into the wstUSR market for soUSDC, borrowed that USDC back against wstUSR, and redeemed the inflated soUSDC shares from healthy markets, leaving soUSDC holding undercollateralised wstUSR-market shares.",
-    "lossUsd": 359680.622174,
+    "summary": "SiloVault soUSDC counts its shares in every withdraw-queue market at face value, and anyone can deposit into a market for it. Market 149 priced wstUSR at the stUSR exchange rate after USR depegged. Attackers deposited flash-loaned USDC into soUSDC, deposited USDC into market 149 for the vault, borrowed it back against wstUSR and redeemed soUSDC at the inflated price.",
+    "lossUsd": 359680.62,
     "codeAgeSeconds": 17531200,
     "exploit": {
       "block": 448623207,
@@ -11527,7 +11528,7 @@
       "index": 1,
       "timestamp": 1757692266
     },
-    "claimsSha256": "dfbaf3ae67b5966878e681514f5fa30010d606f9740836dd76ac454f12f65577"
+    "claimsSha256": "e4ee2b81650b65a3ee70ff22fce7b5baa9ec2744bd914ac880b7cfe25f5b50fc"
   },
   {
     "id": "eip155:1:0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d",
@@ -12496,8 +12497,8 @@
     "tx": "0xf65796553b20ce44f6248951af4f4612965b2fe5ce8254433cb4022729f26d01",
     "protocol": "Stake DAO Votemarket",
     "name": "Stake DAO L1BlockOracleUpdater sender check bypass for chain 1",
-    "summary": "L1BlockOracleUpdater.receiveMessage rejects a LaPoste message only when chainId != 1 and the sender is neither L1_SENDER nor the updater, so any Ethereum sender passes. The attacker sent a fabricated L1 block through LaPoste to the Arbitrum and Base updaters, which wrote it into the Votemarket oracles, then registered a crafted header and storage proofs against an attacker-controlled state root and claimed the current epoch of 54 Votemarket campaigns.",
-    "lossUsd": 174810.72,
+    "summary": "L1BlockOracleUpdater.receiveMessage rejected a LaPoste message only when the source chain was not 1 and the sender was untrusted, so any Ethereum sender passed. The attacker sent a fake L1 block to the Arbitrum and Base updaters, which wrote it into the Votemarket oracles, then proved fabricated votes against a crafted header and claimed 54 Votemarket campaigns.",
+    "lossUsd": 183143.65,
     "codeAgeSeconds": 30865503,
     "exploit": {
       "block": 440837126,
@@ -12515,7 +12516,7 @@
       "index": 1,
       "timestamp": 1742409507
     },
-    "claimsSha256": "48f2fd5bb4dd95e7f799e540ec51c3c878ce0e450afd05b231966408e221921d"
+    "claimsSha256": "ef5840b3be4de1a4fc776b264169f9cdb79da740f756d1a4b394a8eba1d465dd"
   },
   {
     "id": "eip155:1:0xb1f70464bd95b774c6ce60fc706eb5f9e35cb5f06e6cfe7c17dcda46ffd59581",

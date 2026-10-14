@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Sperax USDs",
   "name": "Sperax USDs non-rebasing migration reinterprets credits as tokens",
-  "summary": "The USDs implementation keeps two balance representations: rebasing accounts store scaled credits in _creditBalances and divide by rebasingCreditsPerToken, while non-rebasing (contract) accounts are flagged by nonRebasingCreditsPerToken[account] = 1 and have _creditBalances read back as plain token units. The lazy migration that _isNonRebasingAccount() runs the first time a transfer touches an unclassified contract account sets that flag without rescaling the account's stored credit balance, so a balance accumulated while the address was still an EOA is reinterpreted at a factor of rebasingCreditsPerToken/1e18. The attacker sent 11 USDs to a counterfactual Gnosis Safe address, deployed the Safe, and let the first transferFrom() out of it trigger the migration: with rebasingCreditsPerToken = 890714019687982181365620786, the Safe's 11 USDs became 9,797,854,205.567804 USDs of spendable balance, which was then sold into Arbitrum liquidity.",
+  "summary": "USDs migrates a contract account to non-rebasing on its first transfer by setting a per-account rate of 1 without rescaling the credits it already holds. The attacker sent 11 USDs to a counterfactual Safe address, deployed the Safe, and the migration turned its credits into about 9.8 billion USDs, which it sold into Arbitrum pools.",
   "targets": [
     {
       "address": "0xd74f5255d557944cf7dd0e45ff521520002d5748",
@@ -13,31 +13,7 @@
       }
     }
   ],
-  "loss": {
-    "usd": 306440.3189585675,
-    "assets": [
-      {
-        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-        "symbol": "USDT",
-        "amount": "149793.350734",
-        "usd": 149793.350734
-      },
-      {
-        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-        "symbol": "USDC.e",
-        "amount": "107946.413734",
-        "usd": 107946.413734
-      },
-      {
-        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-        "symbol": "ETH",
-        "amount": "29.420036549112749275",
-        "usd": 48700.55449056748
-      }
-    ]
-  },
-  "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/USDs_exp.sol",
+  "campaign": [
     "eip155:42161:0xb5b107cc986e6ad5a05db946fec6b9557a4bb6bfc115590542feee8659bb4645",
     "eip155:42161:0x0e2ded065094d7007af2c44d7fcf6770d11bb1f9257f1c9ccd729e807e7453ae",
     "eip155:42161:0x18ffec15fa7008fd61cf977d0b4a363293df8bb57eb73214c17efb61f4ca329b",
@@ -59,14 +35,37 @@
     "eip155:42161:0x7c4d9b2a87c7c5499f3295424f7114c230ab24c26edddd53f8a9cc4eb130df46",
     "eip155:42161:0xf161eacf53a872056ddbceb952bd8b1498bdbaa0ee0e2f9428f9bfe4737530b5",
     "eip155:42161:0x659fe2cdbc1f5cb8bd5e889357d6ff2d1dee709bda873314285f7f6fe46d75d4",
-    "eip155:42161:0xb29f84372275b5cf5d0134e82c68ffd80cb5092683c8a299a10dc75529c26f55",
+    "eip155:42161:0xb29f84372275b5cf5d0134e82c68ffd80cb5092683c8a299a10dc75529c26f55"
+  ],
+  "loss": {
+    "usd": 306440.31,
+    "assets": [
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "149793.350734",
+        "usd": 149793.35
+      },
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "107946.413734",
+        "usd": 107946.41
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "ETH",
+        "amount": "29.420036549112749275",
+        "usd": 48700.55
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/USDs_exp.sol",
     "https://medium.com/sperax/usds-feb-3-exploit-report-from-engineering-team-9f0fd3cef00c"
   ],
   "notes": [
-    "Last of five pre-exploit EIP-1967 Upgraded events on the USDs proxy, installing implementation 0x97a7e6cf949114fe4711018485d757b9c4962307. The next Upgraded event is the remediation at block 57843294, after the campaign.",
-    "Realised proceeds, not a par valuation of the fabricated USDs. The campaign sold 310,004 USDs out of the Safe's fabricated 9.79785e9 USDs balance across 23 transactions between blocks 57803530 and 57840578; the attacker's own selling moved USDs against USDC.e/USDT/WETH on Camelot, Curve and 1inch routes, so only the assets actually received are counted. Components are the exact ERC-20 and native-value credits to the attacker set (EOA 0x26c1fd9f..., proceeds wallet 0x4afcd19b..., exploit Safe 0x5c978df5...): 149,804.349817 USDT less the 10.999083 USDT realised on the attacker's own 11 USDs seed leg in the anchor transaction, 107,946.413734 USDC.e, and 29.420036549112749275 ETH (24.4887 native ETH unwrapped through 1inch plus 5.931308 WETH). The 10,007.133196 USDT the Safe routed into Stargate (received back as 9,986.758893 S*USDT and staked) is counted once, as USDT. Gas and DEX fees are not deducted. USDs itself is excluded from the components because the fabricated units never had backing.",
-    "Implementation 0x97a7e6cf949114fe4711018485d757b9c4962307 is not source-verified on Arbiscan; the defect was established from the deployed runtime's execution (opcode-level traces of balanceOf and the anchor transaction) and from the pre/post storage state, cross-read against the source-verified predecessor implementation 0x2d715a14d0577964f9dd7956c9a369b26afa55dc (USDsL2) which contains the same _isNonRebasingAccount/_ensureRebasingMigration structure.",
-    "The seed row's summary attributed the loss to toggling a rebase opt-in state. That is wrong: rebaseState[account] is owner-only and stayed 0 for the exploit Safe throughout. The defect is the lazy non-rebasing migration that runs automatically the first time a transfer touches a contract account.",
-    "The campaign ended when Sperax upgraded the proxy at block 57843294, roughly 15 minutes after the last drain transaction."
+    "Valued at realised proceeds (rule 15): the fabricated USDs had no backing and the sales moved the pools. Assets are the USDT, USDC.e and ETH the attacker set received for 310,004 USDs over 23 transactions, less the 11 USDs seed leg; the pools' USDC.e depletion agrees within 0.1%.",
+    "Implementation 0x97a7e6cf is unverified; the defect was read from traces and storage against the verified predecessor USDsL2, which has the same migration code. The upgrade that installed it is the last change before the exploit."
   ]
 }

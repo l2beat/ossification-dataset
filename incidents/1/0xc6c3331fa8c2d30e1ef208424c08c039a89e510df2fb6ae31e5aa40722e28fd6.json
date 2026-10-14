@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Socket",
   "name": "SocketGateway wrapped-token swap route arbitrary call",
-  "summary": "Socket route 406 (WrappedTokenSwapperImpl 0xcc5fda5e3ca925bd0bb428c8b2669496ee43067e) is delegatecalled by SocketGateway and, in performAction, forwards fully caller-controlled calldata to a caller-controlled address with `fromToken.call(swapExtraData)`. With amount = 0 the surrounding balance-delta and safeTransferFrom checks are satisfied trivially, so the attacker made the gateway execute `USDC.transferFrom(victim, attacker, allowance)` and equivalent calls on WETH, USDT, WBTC, DAI and MATIC, draining every unlimited approval users held on SocketGateway. The route had been registered three days earlier through NewRouteAdded(uint32,address); the gateway itself was never upgraded.",
+  "summary": "SocketGateway route 406, WrappedTokenSwapperImpl, made the gateway call fromToken with caller-supplied swapExtraData after pulling only the caller's own amount. With amount 0 and an ERC-20 as fromToken, attackers had the gateway execute transferFrom(victim, attacker, amount) on tokens users had approved to the gateway, draining those approvals.",
   "targets": [
     {
       "address": "0x3a23f943181408eac424116af7b7790c94cb97a5",
@@ -13,54 +13,58 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb4633c57e354a26e5c512dd87375f8d0f5b5d788450e3069a064cbf62771fb7a",
+    "eip155:1:0x591d054a9db63f0976e533f447df482bed5f24d7429646570b2108a67e24ce54",
+    "eip155:1:0x594374ef958f647bf584e93a088f2a8648813a0806abc2085b174bcb6a2a6ea6"
+  ],
   "loss": {
-    "usd": 3302795.167444433,
+    "usd": 3311946.88,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "2569980.189709",
-        "usd": 2569980.189709
+        "amount": "2570850.823395",
+        "usd": 2578563.38
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
         "amount": "347005.653023",
-        "usd": 347005.653023
+        "usd": 347005.65
       },
       {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "13821.013832088432971148",
-        "usd": 13821.013832088433
-      },
-      {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "42.475261047009995242",
-        "usd": 108901.89704581845
+        "token": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
+        "symbol": "MATIC",
+        "amount": "166196.991611426813451965",
+        "usd": 139437.28
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
         "amount": "2.88962154",
-        "usd": 124260.29009918658
+        "usd": 124216.16
       },
       {
-        "token": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
-        "symbol": "MATIC",
-        "amount": "165356.991611426813451965",
-        "usd": 138826.12373533982
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "42.475261047009995242",
+        "usd": 108889.58
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "13821.013832088432971148",
+        "usd": 13834.83
       }
     ]
   },
   "refs": [
-    "eip155:1:0x591d054a9db63f0976e533f447df482bed5f24d7429646570b2108a67e24ce54",
     "https://rivanorth.com/blog/hack-explained-socket",
     "https://www.theblock.co/post/273964/socket-ether-recovery-bungee-exploit"
   ],
   "notes": [
-    "NewRouteAdded(uint32 indexed routeId, address indexed route) log 345 of transaction 0x1df44e22, with topic1 = routeId 0x196 (406) and topic2 = route 0xcc5fda5e3ca925bd0bb428c8b2669496ee43067e. This is the 22nd and last of the 22 NewRouteAdded events the gateway emitted before the exploit; routes(406) reads 0x0 at block 18996161 and 0xcc5fda5e.. at block 19021453, routesCount is 407 so no later addRoute could overwrite id 406, and RouteDisabled never fired.",
-    "The campaign is exactly two transactions, both contract creations whose constructors run the drain: 0xc6c3331f at block 19021454 and 0x591d054a at block 19021465. Netting every ERC-20 Transfer in the two receipts gives the attacker EOA 0x50df5a2217588772471b84adbbe4194a2ed39066 a gain of 2,569,980.189709 USDC, 347,005.653023 USDT, 13,821.013832088432971148 DAI, 42.475261047009995242 WETH, 2.88962154 WBTC and 165,356.991611426813451965 MATIC, taken from roughly 200 distinct approval-granting victim addresses. All ten other routeId-406 calls to the gateway between installation and the exploit are small legitimate WETH wrap/unwrap swaps and are excluded. Stables are valued at par and the three volatile assets at DefiLlama observations within 95 seconds before the exploit. On 2024-01-22/23 the attacker returned 1,032 ETH to 0xc3a8af8c8bfc263030258afd80eb25afb6ff0820 and the full WETH, WBTC, DAI and MATIC balances plus 106.047775245495926983 ETH to 0xb4a3b6268c306833f75ebe43192c38905c992598, reported by Socket as about 2.3M USD recovered; recovery is not netted out of the exploit-time gross figure."
+    "Reset: route 406 was registered by addRoute three days before the exploit; the gateway proxy itself was not upgraded. Same-impl routes added on OP, BSC, Polygon, Arbitrum, Base and Avalanche saw only wrap/unwrap use before they were disabled.",
+    "Campaign from every zero-amount WrappedTokenSwapperImpl SocketSwapTokens event before the route was disabled: the attacker's second drain, a copycat that took 840 MATIC, and a c0ffeebabe front-run of 870 USDC. Later returns by the attacker are not netted."
   ]
 }

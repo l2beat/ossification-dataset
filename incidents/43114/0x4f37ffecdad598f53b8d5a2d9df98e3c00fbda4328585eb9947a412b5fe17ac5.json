@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Stars Arena",
   "name": "Stars Arena share-buy reentrancy",
-  "summary": "The share-buy entry point (selector 0xe9ccf3a3) sent AVAX back to the caller before finalising share accounting, letting the attacker re-enter the weight-setting function (selector 0x5632b2e4) mid-call so that a single share could then be sold via sellShares() for ~266,000 AVAX.",
+  "summary": "The upgraded Stars Arena shares implementation refunded excess AVAX to the buyer through an unrestricted call before finishing the buy. The attacker's contract re-entered from the refund and called 0x5632b2e4 to set the pricing weight for its new subject, then sold its single share at the inflated price for most of the contract's AVAX.",
   "targets": [
     {
       "address": "0xa481b139a1a654ca19d2074f174f17d7534e8cec",
@@ -14,12 +14,12 @@
     }
   ],
   "loss": {
-    "usd": 2964147.8284259983,
+    "usd": 3064299.19,
     "assets": [
       {
         "symbol": "AVAX",
-        "amount": "266103.97278",
-        "usd": 2964147.8284259983
+        "amount": "274332.962",
+        "usd": 3064299.19
       }
     ]
   },
@@ -29,7 +29,7 @@
     "https://www.certik.com/blog/stars-arena-incident-analysis"
   ],
   "notes": [
-    "The second and final pre-incident Upgraded event selected the vulnerable Stars Arena implementation.",
-    "The exploit trace records exactly 266,103.97278 AVAX transferred from the Stars Arena proxy through the attack contracts and then to the attacker EOA."
+    "Reset: the upgrade to 0x8af92c23, which replaced the code exploited on 5 October (a zero-share sell bug, a separate incident). No other large outflow from the proxy between the upgrade and the pause.",
+    "Gross loss is the AVAX that left the proxy, including the protocol and subject fees it paid out in the sale; the attacker received 266,103.97 AVAX and later returned about 90%, which is not netted."
   ]
 }

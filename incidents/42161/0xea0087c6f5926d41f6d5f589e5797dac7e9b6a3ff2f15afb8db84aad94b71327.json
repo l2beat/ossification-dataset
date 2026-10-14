@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Silo Finance",
   "name": "Silo soUSDC SiloVault externally credited wstUSR-market shares inflate totalAssets",
-  "summary": "SiloVault.totalAssets() sums previewRedeem of the vault's share balance in every withdraw-queue market, so bUSDC shares a third party mints to the vault through wstUSR/USDC market.deposit(assets, receiver=soUSDC) raise soUSDC's share price without minting soUSDC shares and without the curator allocating. That market prices wstUSR collateral with an immutable wstUSR/stUSR exchange-rate feed (1.1330 USDC) while wstUSR traded near 0.12 after the USR depeg. Each cycle flash-borrowed USDC, deposited into soUSDC, donated USDC into the wstUSR market for soUSDC, borrowed that USDC back against wstUSR, and redeemed the inflated soUSDC shares from healthy markets, leaving soUSDC holding undercollateralised wstUSR-market shares.",
+  "summary": "SiloVault soUSDC counts its shares in every withdraw-queue market at face value, and anyone can deposit into a market for it. Market 149 priced wstUSR at the stUSR exchange rate after USR depegged. Attackers deposited flash-loaned USDC into soUSDC, deposited USDC into market 149 for the vault, borrowed it back against wstUSR and redeemed soUSDC at the inflated price.",
   "targets": [
     {
       "address": "0x2514a2ce842705ead703d02fabfd8250bfcfb8bd",
@@ -22,18 +22,7 @@
       }
     }
   ],
-  "loss": {
-    "usd": 359680.622174,
-    "assets": [
-      {
-        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-        "symbol": "USDC",
-        "amount": "359680.622174",
-        "usd": 359680.622174
-      }
-    ]
-  },
-  "refs": [
+  "campaign": [
     "eip155:42161:0xb80892c45dbed854ea3e59b52080458a234f0a9d27f2207a1077c3f083f6b35f",
     "eip155:42161:0x5534bcc4764eb2d70156c20bb44b8343ce1370bbf0da9e0bb36dd8039003e321",
     "eip155:42161:0xbfc76e7ff66ecd61c915e9d0bd801f0f3637ed244d785c6084553e4e82e467d6",
@@ -64,14 +53,25 @@
     "eip155:42161:0xfc2caacacd686b9c249e7f42aa614e7403334a564baa143c3c0254492fea150d",
     "eip155:42161:0x83fa0baa318b4590c4aefd8a648090d521f24716f30f7b5984292ceb20edeb05",
     "eip155:42161:0x3e8f482fd16151b7fa32426a9de20e992f14721c02393c6bd0d62796625051a6",
-    "eip155:42161:0x5784a8a00c3a9d8a173b42941889a9c41046edda7798b9336300abbf423bbdfd",
+    "eip155:42161:0x5784a8a00c3a9d8a173b42941889a9c41046edda7798b9336300abbf423bbdfd"
+  ],
+  "loss": {
+    "usd": 359680.62,
+    "assets": [
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "359680.622174",
+        "usd": 359680.62
+      }
+    ]
+  },
+  "refs": [
     "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-30-apr-5-2026",
     "eip155:42161:0x78ebdd433ec4cbc5ca6a1d557238799b91bd8b7d40433726048ebeaa785a9e48"
   ],
   "notes": [
-    "acceptCap(wstUSR/USDC market 0xa9a4bd976dbcfc2b89f554467ac85e2c758e2618), executed by curator Safe 0x80071b39aa896aa12240c5194e42661d671bdfb2, enabled the market and pushed it onto soUSDC's withdrawQueue (SetWithdrawQueue at log 1, SetCap(1e13) at log 2). config(market) changes from (0, false, 0) at block 378417292 to (1e13, true, 0) at block 378417293 and still returns (1e13, true, 0) at block 448623206. From this change totalAssets() counts the vault's shares in the market whose immutable oracle prices wstUSR at the exchange rate; the market stayed in the queue through the exploit.",
-    "EIP-1167 clone whose 45-byte runtime hardcodes ChainlinkV3Oracle logic 0x4db912bfe4385274a51fc55ff671da71b02d1fc7; the same transaction created its immutable ChainlinkV3OracleConfig 0xabbbc66646fd03961ad3144d128782979aff360b, which selects Chainlink 'wstUSR / stUSR Exchange Rate' 0x9bc7e5a6f1eed1c3217d2c63ad680df83d84a906 as the only price leg (convertToQuote false, no USR/USD leg). Neither the clone pointer nor the config can change.",
-    "Exact net USDC outflow from the soUSDC victim set (vault plus its ten withdraw-queue markets) to attacker contracts across all 32 successful campaign transactions from five actors, 1775223466 to 1775231146. Attacker USDC deposits into soUSDC and USDC donated into the wstUSR market are netted as attacker inputs; zero-fee flash loans from 0x6c247b1f6182318877311737bac0844baa518f5e net to zero. The total equals soUSDC totalAssets() of 359680.779038 USDC at block 448623206 to within 0.157 USDC. The 377529.207693 wstUSR the attackers pledged as collateral in the wstUSR market, worth about $45.5k at the DefiLlama incident price of 0.12059 (source-9), stays pledged to attacker-held borrow positions and is not deducted. The $392k reported figure is the nominal wstUSR-market exposure; BlockSec reports $359k.",
-    "Not the knot: the oracle clone and its config were created at block 375611456, and SiloConfig 0x6b5ac2967a03908b5e9af6288d86c7139f586b3f bound it to the wstUSR market at block 376970206. Both precede target-1's reset at block 378417293, when soUSDC began counting that market, so target-1 supplies the curve age. The exchange-rate price alone would have exposed only the market's own 1.058179 USDC of liquidity."
+    "Reset: acceptCap enabled market 149 in soUSDC's withdraw queue, from which totalAssets counted the donated shares. The oracle clone and market 149 were created earlier, so the vault setting sets the age; later queue reorders kept market 149 counted.",
+    "Campaign: all 31 further market-149 borrows after the anchor, by five actors in about two hours. Loss is the net USDC that left soUSDC and its queue markets; attacker USDC deposits and donations net out, and the wstUSR pledged as collateral is not deducted."
   ]
 }
