@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Private DeFi Saver-style Safe router",
   "name": "Router multicall self-target authorization bypass drives Safe modules",
-  "summary": "Private DeFi Saver-style Router 0x4f0055926c839d1d960a82cbf84e2ee933958ebc exposes multicall(address,bytes[]) and treats any call whose target is the Router itself as authorized. Wrapping multicall(MODULE, [recipe]) inside multicall(ROUTER, [...]) runs the inner call with the Router as msg.sender. Safe module 0xea18b13d11f705a68f0954f637949e1eaa7ac4ca lists the Router as an executor, so it forwarded an attacker recipe into the victim Safe as a DELEGATECALL to RecipeExecutor. That recipe moved 2,900 aEthrsETH to the Uniswap V4 PoolManager for an MEV frontrunner. Copycats repeated it within 1,443 blocks against this Safe and three other Safes whose modules also trusted the Router, taking aEthrsETH, DUSD, USDC, PAXG and dust.",
+  "summary": "The Safe automation router's multicall skipped its executor check whenever the call target was the router itself. Nesting multicall(router, [multicall(module, recipe)]) made the router, a listed executor of the Safes' modules, run attacker-chosen whitelisted recipes that swapped the Safes' aTokens and stablecoins into attacker-made Uniswap v4 pools.",
   "targets": [
     {
       "address": "0x4f0055926c839d1d960a82cbf84e2ee933958ebc",
@@ -15,81 +15,114 @@
       "address": "0xea18b13d11f705a68f0954f637949e1eaa7ac4ca",
       "reset": {
         "kind": "config",
-        "tx": "0x64f7cf208d24847e0aec4f3f71c4f6c4a70a69d6f593e7cf7c98599c34da0655",
+        "tx": "0xe7b6cd64567fc2e7b4725fa8d4a81b934aed45e9635857d71b328920a86e7a4f",
         "address": "0xea18b13d11f705a68f0954f637949e1eaa7ac4ca",
-        "slot": "0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f861"
+        "slot": "0x5"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xffbc6f742c85d0c7293eca8842f66b1a72581bed1c114b52f9d6f463e5964f9a",
+    "eip155:1:0xb95af93953fe02aeffa2abf30d8ad5fb1f92723064d12ca0dd2c14f44ee96df5",
+    "eip155:1:0x850342386d7446e3ce479ecc246e843961a46fa6540d279a5ef602d14deb547e",
+    "eip155:1:0xb960ffb101a2abbd96c110c06829c90dc4aec75ca15f8f89e55c899e8e6d8036",
+    "eip155:1:0x7c95d830c27f5f97bf2a966ad4da8ad17072c86c58869f73c01a3d09e3c8300f",
+    "eip155:1:0xcea1588eea727e53126b80362567b1ca44bf98c1c279de37dd79b39a72dbfce6",
+    "eip155:1:0xff568bad976561b48bf84942a72841e2d60f9386d7b526837a1d1eb61fd7cb5e",
+    "eip155:1:0xe2d35c8952db38f5d01400c13e9977a75b342e5f25e5527227f329714d2670ec",
+    "eip155:1:0x7b9f1fa0a20aa480ccbbb44dad0a7cae57db2188de37df9ee0d42d2a5aa5b8cd",
+    "eip155:1:0xe5dce3fe5e3266598b19f6cc9ccfbedad94fefee9a15c704009cc65fddd6d210",
+    "eip155:1:0x60a689ea8b37692282bf40386dde79e1a77158f35b210974441de122c416ea29",
+    "eip155:1:0x8c1eaa5d8599f694a7c39165b489c089840081188eec216d7f0bfd66653e8e45",
+    "eip155:1:0x4ea122f5ff96fcc75e953334bc260d500903c15e2ad38aada03df221692849be",
+    "eip155:1:0xea414ec1ad527c618caa619f250911ee5731061149a3650e61b343348a8eeede",
+    "eip155:1:0xdcdde513e372fbf68634d960fc2b90fdd6ca2d17838f88b74294ff379cd00a26",
+    "eip155:1:0xf8723f156ea085a7e02341d0dfc5b121a8640dc2272e736846f54e8e695d0276",
+    "eip155:1:0x266e841216767a12bff2cc46dace087139fc7ccef2c9ce61805c1fb104e4790c",
+    "eip155:1:0x118454a2c57ee7bc7590fd56c955375216a4a81cf747939da1d04aeb61bb1a13",
+    "eip155:1:0xe5b774f774c9fcd6487c6c15e9b87f2021e02f3d7c038d51c132a34a59d87bc8",
+    "eip155:1:0x08bb0af4e557f82c9157e2b94f7dcd6e8716120737ad4c6c00cb77ebf41e0693",
+    "eip155:1:0xfd5fd7bd77ff8b2b745bf8fd38b61819d855a5f8a256333463ccefddce18de02",
+    "eip155:1:0x28ee77c39d69cb7a91a9a795610d94c5f3f0a7f5c0590cb4ca3e370347bf31ab",
+    "eip155:1:0x9059eaecec9e39c54cd772d62c011316d837981954b560c50ad60208665d78e4",
+    "eip155:1:0x3c23ef79822cd417e00acbc0f1cbd6eb076e3750312353118a4b83d9fc339e1c",
+    "eip155:1:0x08cf4dd4efa40eb14096db25966f2fbf588a50397c10b1a2036c56312511ab16",
+    "eip155:1:0xe03b6920046d4dc31997facd41f004c3d8cff20176f55c5d89359f7e296624e2",
+    "eip155:1:0x44a4dcc2617023fae4366926352c6daff6acda1c85cba8d5dbabd2c564465a5e",
+    "eip155:1:0xce8c88b00d68426912d0e76df6bd5234b1ab7075667bba991b5232b20e9f8255",
+    "eip155:1:0xb1d1856488769475fa1f169158b9dff1b85b5a2e892b374b6bbcc6f9234bba6b",
+    "eip155:1:0xb6409373924d31a27698b816e6c88d841976226738cd934ee218e7b2f95dc66b"
+  ],
   "loss": {
-    "usd": 8092416.145102957,
+    "usd": 8090505.22,
     "assets": [
       {
         "token": "0x2d62109243b87c4ba3ee7ba1d91b0dd0a074d7b1",
         "symbol": "aEthrsETH",
-        "amount": "2965.999999999976730685",
-        "usd": 7960586.747146951
+        "amount": "2965.999999990458177971",
+        "usd": 7960194.12
       },
       {
         "token": "0x1e33e98af620f1d563fcd3cfd3c75ace841204ef",
         "symbol": "DUSD",
         "amount": "86631.946830531868921782",
-        "usd": 90540.55924061779
+        "usd": 90539.69
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
-        "amount": "38248.15816",
-        "usd": 38248.15816
+        "amount": "38248.157786",
+        "usd": 38242.73
       },
       {
         "token": "0x45804880de22913dafe09f4980848ece6ecbaf78",
         "symbol": "PAXG",
-        "amount": "0.701391963568975838",
-        "usd": 3018.3577780091728
+        "amount": "0.350519296096175304",
+        "usd": 1506.21
       },
       {
         "token": "0xdbdb4d16eda451d0503b854cf79d55697f90c8df",
         "symbol": "ALCX",
         "amount": "5.76877625252797",
-        "usd": 12.255505799021838
+        "usd": 12.28
       },
       {
         "token": "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
         "symbol": "CVX",
         "amount": "1.744314952179387837",
-        "usd": 3.4826068218319315
+        "usd": 3.49
       },
       {
         "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
         "symbol": "crvUSD",
         "amount": "2.478205282638692451",
-        "usd": 2.476305883037213
+        "usd": 2.48
       },
       {
         "token": "0x7159cc276d7d17ab4b3beb19959e1f39368a45ba",
         "symbol": "YND",
         "amount": "5870.347661085283107241",
-        "usd": 2.381501887924776
+        "usd": 2.33
       },
       {
         "token": "0x59a529070fbb61e6d6c91f952ccb7f35c34cf8aa",
         "symbol": "ASF",
         "amount": "209.2785900628525656",
-        "usd": 1.7268569871911783
+        "usd": 1.73
+      },
+      {
+        "symbol": "ETH",
+        "amount": "0.000064083553162801",
+        "usd": 0.16
       }
     ]
   },
   "refs": [
-    "eip155:1:0x16b9ddf976b805e20e08ff49e3f1d01ac7605814fb489f8795c7d95fbc3eeb45",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/RsETHSafeModule_exp.sol"
   ],
   "notes": [
-    "Immutable Router runtime holds multicall(address,bytes[]) with the self-target authorization shortcut; unchanged from creation to the exploit.",
-    "The victim Safe 0x40e93a52 (owner 0xe32e3bd2ec560513cab4757564ca50d13caf9f7f) called module 0x00000020(Router, true), appending the Router as the seventh entry of the module's executor array (slot 3 length 6 -> 7; element keccak256(3)+6). Router calls into the module require this entry.",
-    "Gross depletion of the four victim Safes across 31 router-self-call transactions from block 25980525 to 25981968. Safe 0x40e93a52f6af9fcd3b476aedadd7feabd9f7aba8 (module 0xea18b13d) lost 2,965.999999999976730685 aEthrsETH in 17 transactions. Safe 0x6a1fac6b3466e29421f70d6eaa91a0de0f627ea2 (module 0xf73a5695) lost 86,631.946830531868921782 DUSD and 38,248.15816 USDC in one transaction. Safe 0xb8e12daf63314a9baa71b1e39baa4538637bf138 (module 0xd479bcc8) lost crvUSD, ASF, YND, ALCX, CVX and 0.000064083553162801 WETH (not valued) in three transactions. Safe 0xb725533606e9d0b4a07ac2b8bd477353aa8b509b (module 0xb8c74599) lost 0.701391963568975838 PAXG in ten transactions. All went to the Uniswap V4 PoolManager 0x000000000004444c5dc75cb358380d2e3de08a90. aEthrsETH is priced at the DefiLlama aEthrsETH quote. The first frontrunner kept 2,882.367408826118 rsETH and paid 17.632591173879632 rsETH to the builder; later recoveries are not deducted. The PoC reports ~7.8M USD for the first transaction only.",
-    "Not the latest age reset: the anchor Safe's module whitelisted this Router in source-4, 2.2 days after this deployment.",
-    "Router bytecode is unverified; the authorization flaw is established from the call trace, not source.",
-    "Module bytecode is unverified; its executor check is established from the 0x0000004f executor list and the call trace."
+    "The module only runs recipes in its Merkle root (slot 5). Replaying the anchor against the root before 0xe7b6cd64 reverts, and keepers first used this swap recipe 5,000 blocks after it, so that root update, not the earlier executor grant of the router, set the exploitable state.",
+    "Campaign: every router self-call after the anchor that executed a module on a Safe (trace_filter on the router to the latest block); six router calls that executed no module are left out. Four Safes lost assets.",
+    "Loss nets each Safe per tx: after its first drain, nine calls on Safe 0xb7255336 only routed PAXG through it with no net outflow, so 0.35 PAXG is counted, not 0.70."
   ]
 }

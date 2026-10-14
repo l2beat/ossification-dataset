@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "RADT DAO",
   "name": "RADT DAO wrapper unauthenticated withdraw",
-  "summary": "The RADT-DAO token (TWN) calls wrapper withdraw(from,to,amount) on every transfer, and the token's fallback lets the wrapper move any holder's balance. The wrapper, a proxy to implementation 0x9122191d7b2ccf11a2600de4eafd6b8cd3d03a62, never checks that withdraw's caller is the token. With cc (slot 0x1a) false, a direct call with to = the RADT/USDT pair and a pair USDT balance above reserve runs the pair-payout branch, which transfers RADT out of the pair to the named LP holder and fee recipients. The attacker stripped the pair's RADT, called sync() and sold RADT into the remaining USDT.",
+  "summary": "The RADT-DAO token calls its wrapper's withdraw(from,to,amount) on every transfer and lets the wrapper move any holder's balance, but the wrapper never checks its caller. Calling it directly with the RADT/USDT pair as target paid the pair's RADT out to LP and fee addresses; the attacker then synced the pair and sold RADT into its USDT.",
   "targets": [
     {
       "address": "0x01112ea0679110cbc0ddea567b51ec36825aef9b",
@@ -16,13 +16,13 @@
     }
   ],
   "loss": {
-    "usd": 94459.32096524519,
+    "usd": 94459.32,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "94459.320965245189785325",
-        "usd": 94459.32096524519
+        "usd": 94459.32
       }
     ]
   },
@@ -32,7 +32,12 @@
     "eip155:56:0x028d710cfbd0c034c39c0d698e024784a155446b20f01c4b10c72a3a8ef36a6b"
   ],
   "notes": [
-    "Owner call cc(false) (selector 0xca03656b) cleared wrapper slot 0x1a, 36 blocks after cc(true) had set it. With slot 0x1a nonzero the implementation's pair-payout routine returns early (pc 0x1889 SLOAD 0x1a, ISZERO, JUMPI to 0x189c, else return) before any pair transfer. debug_traceCall of the attacker's withdraw at block 21572418 makes 6 pair->holder transfers with the slot at 0 and none with it at 1, so the cleared flag is necessary to the exploited path. No later write to the slot occurs before the exploit, and the implementation (activated at block 20627998) is unchanged until block 21625505.",
-    "Exact net BSC-USD depletion of the RADT/USDT pair 0xaf8fb60f310dcd8e488e4fa10c48907b7abf115e. Source-1: 95305.580256723571814836 USDT out minus the attacker's 1000 USDT buy and 1 USDT balance nudge = 94304.580256723571814836; the DODO flash loan of 243673.2130680496 USDT is repaid in the same tx. Three later direct wrapper withdraw calls repeated the drain on the depleted pair: 0x2a8b13da919c35f9d50980db02b7af8f0346df313f342393b5bd5178f8f5a795 (block 21581514, 139.947367702162221125 USDT), 0x2e4a4eda9b168e9dfdc6768c75daba7b509b91ab5d5383173f4e4337721427b8 (21581562, 9.813802445018996652) and 0x112c387548f930115fdbe771e93b8030d2280ddaf1ff9422fb23c5f0d121e294 (21617521, 4.979538374436752712); a fourth, 0x35f01ebce53727872ef601d30fcbb73e9f53f62ea8e5a06988a122b643f129ff (21625307), moved no USDT. USDT is at par."
+    "The wrapper's pair-payout branch returns early while slot 0x1a is set. The owner set it at block 20646987 and cleared it (cc(false)) 36 blocks later, re-opening the path after the implementation upgrade (0x028d710c); that clear is the latest change the exploit needed.",
+    "Loss is the pair's net USDT depletion: the anchor's 95,305.58 out minus the attacker's 1,001 in, plus three small copycat drains on the emptied pair; the flash loan is repaid in-tx. USDT at par."
+  ],
+  "campaign": [
+    "eip155:56:0x2a8b13da919c35f9d50980db02b7af8f0346df313f342393b5bd5178f8f5a795",
+    "eip155:56:0x2e4a4eda9b168e9dfdc6768c75daba7b509b91ab5d5383173f4e4337721427b8",
+    "eip155:56:0x112c387548f930115fdbe771e93b8030d2280ddaf1ff9422fb23c5f0d121e294"
   ]
 }
