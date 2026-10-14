@@ -2,7 +2,9 @@ name: Derive
 
 # Re-derives the onchain facts of the records a pull request changes and
 # fails if they differ from the committed dist/latest. Needs archive RPC
-# URLs as repository secrets; chains without one use public endpoints.
+# URLs as repository secrets and skips without ETHEREUM_RPC_URL; other
+# chains without one use public endpoints. Which checks a node can serve
+# (the rows' unverified lists) is not compared.
 
 on:
   pull_request:
@@ -44,8 +46,15 @@ jobs:
           node-version: 22
       - name: Re-derive changed records
         run: |
+          if [ -z "$ETHEREUM_RPC_URL" ]; then echo "no RPC secrets; skipped"; exit 0; fi
           base=${{ github.event.pull_request.base.sha || 'HEAD~1' }}
           changed=$(git diff --name-only --diff-filter=AM "$base" HEAD -- 'incidents/**.json')
           if [ -z "$changed" ]; then echo "no changed records"; exit 0; fi
           node scripts/build.mjs --only $changed
-          git diff --exit-code dist/latest
+          git show HEAD:dist/latest/incidents.json > committed.json
+          node -e '
+            const read = (f) => JSON.parse(require("fs").readFileSync(f, "utf8")).map(({ unverified, ...row }) => JSON.stringify(row))
+            const [committed, derived] = [read("committed.json"), read("dist/latest/incidents.json")]
+            const differ = derived.filter((row, i) => row !== committed[i])
+            for (const row of differ) console.error(`differs: ${JSON.parse(row).id}`)
+            process.exit(differ.length || committed.length !== derived.length ? 1 : 0)'
