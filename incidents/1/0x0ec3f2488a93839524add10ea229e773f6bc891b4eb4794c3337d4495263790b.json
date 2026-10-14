@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "The DAO",
   "name": "TheDAO splitDAO recursive-call drain",
-  "summary": "TheDAO.splitDAO(uint256,address) moved the caller's proportional ether to the child DAO with createTokenProxy.value(fundsToBeMoved) and then called withdrawRewardFor(msg.sender) before zeroing balances[msg.sender], totalSupply and paidOut[msg.sender]. withdrawRewardFor forwards nearly all remaining gas through ManagedAccount.payOut(address,uint256), which performs a value-bearing call to the token holder, so the attacker's fallback re-entered splitDAO while its own DAO-token balance was still intact and fundsToBeMoved was recomputed from the same unburned balance on every recursion. The violated invariant is that a split must pay out a token holder's share at most once per token lot; the deployed code performed the external interaction before the state update that enforces it.",
+  "summary": "TheDAO.splitDAO sent the caller's share of ether to its child DAO and then paid the caller's rewards through ManagedAccount.payOut before zeroing the caller's token balance. The attacker's contract re-entered splitDAO from that payout, so each recursion moved the same unburned share again, draining TheDAO into the attacker's child DAO over hundreds of transactions.",
   "targets": [
     {
       "address": "0xbb9bc244d798123fde783fcc1c72d3bb8c189413",
@@ -13,16 +13,26 @@
     }
   ],
   "loss": {
-    "usd": 56072614.97245849,
+    "usd": 56072614.97,
     "assets": [
       {
         "symbol": "ETH",
         "amount": "3641694.241898506992612617",
-        "usd": 56072614.97245849
+        "usd": 56072614.97
       }
     ]
   },
   "refs": [
+    "https://github.com/blockchainsllc/DAO/blob/982e3c242ee31dfed4c04db79ea9751ac3e98efb/DAO.sol",
+    "https://blog.ethereum.org/2016/06/17/critical-update-re-dao-vulnerability",
+    "https://hackingdistributed.com/2016/06/18/analysis-of-the-dao-exploit/",
+    "https://eips.ethereum.org/EIPS/eip-779"
+  ],
+  "notes": [
+    "Loss is TheDAO's ether moved into the attacker's child DAO 0x304a554a by the attacker's 488 recursive transactions, at the DefiLlama daily ETH price for the anchor day. The hard fork at block 1920000 moved it to WithdrawDAO; that later recovery does not reduce the loss.",
+    "Other recursive splits are excluded as Robin Hood (WHG) rescues: WHG DAO 0xb1367076 and the child DAOs 0x84ef4b23, 0x4613f3bc and 0xf4c64518 were filled by the same group, and on ETC their ether went to the WHG refund key 0x59bc6123. Unattributed recursive splits after the attack total under 6,000 ETH and are left out."
+  ],
+  "campaign": [
     "eip155:1:0xecbdaf337c91c3b4ece2bfbd5fd1dee159dbe0bfbe528222c6e4f8e6149532a7",
     "eip155:1:0xfb6526b62f0a4627543cba59a24b9790d0f53ecd841b0adc6ba0026cadf77715",
     "eip155:1:0x43e328ef43c6f2dcce8025efbcbc280c89464fb2b34462653fa13ba5bab89496",
@@ -509,16 +519,6 @@
     "eip155:1:0x307548b214f9f022d39a5f466f9ac13841b18bbf8a09de383a5e264210e0dfa0",
     "eip155:1:0xc4d2815617f82a69efd9c96fcc57e3700f437fdee67cb5b3560a717b952e1b80",
     "eip155:1:0x8471497131d77305416c760ebfed2b6d653c2066c51dac58c6551dcc7dfb3350",
-    "eip155:1:0xa348da60799bff3ca804b3e49c96edebea44c5728a97f64bec3e21056d42f6e3",
-    "https://github.com/blockchainsllc/DAO/blob/982e3c242ee31dfed4c04db79ea9751ac3e98efb/DAO.sol",
-    "https://blog.ethereum.org/2016/06/17/critical-update-re-dao-vulnerability",
-    "https://hackingdistributed.com/2016/06/18/analysis-of-the-dao-exploit/",
-    "https://eips.ethereum.org/EIPS/eip-779"
-  ],
-  "notes": [
-    "TheDAO is an immutable 2016 contract with no proxy, delegatecall dispatch or upgrade path. Its 10,838-byte runtime was installed by this top-level creation and hashes to the same value at blocks 1428757, 1428758, 1500000 and 1718496.",
-    "Exact victim depletion: 14,112 internal ether transfers from TheDAO 0xbb9bc244d798123fde783fcc1c72d3bb8c189413 to the attacker's child DAO 0x304a554a310c7e546dfe434669c62820b7d83490 across the 488 successful campaign transactions in blocks 1718497-1720245, summing to 3,641,694.241898506992612617 ETH; the child DAO's balance at block 1720685 equals that figure to the wei. Over the same window TheDAO's own balance fell from 11,599,353.240235775461586204 to 7,929,780.451475795897256723 ETH, and the 27,878.546861472571716864 ETH difference went to nine unrelated child DAOs across 16 transfers, never more than one per recipient per transaction, i.e. ordinary splits, and is excluded. The attacker's own legitimate entitlement was one DAO-token lot of 258.056141471 tokens (258.0565647603817 ETH per split), about 0.007 percent of the drain, and is not deducted from this gross measure. ETH is valued at the DefiLlama 2016-06-17T00:00:00Z daily point of 15.397397817568129 USD, the last price stamp at or before the anchor; ETH fell to 11.197136666677007 USD by 2016-06-18T00:00:00Z, so the same quantity is worth about 40.8M USD one day later - the USD figure is unusually sensitive to valuation time. The drain was reversed offchain: the DAO hard fork at block 1920000 zeroed the child DAO and moved all DAO-related ether into the WithdrawDAO refund contract 0xbf4ed7b27f1d666546e30d74d50d173d20bca754, which the node reports holding 12,001,961.845205763407115004 ETH at block 1920001. METHODOLOGY excludes later recoveries from gross victim depletion, so the recovery does not reduce this number.",
-    "Pre-Byzantium receipts carry no status field; success of the anchor and of every campaign transaction was established from Etherscan's isError flag and from the executed value transfers in the traces.",
-    "The 2016-06-17 daily ETH price is the finest granularity DefiLlama publishes for that date."
+    "eip155:1:0xa348da60799bff3ca804b3e49c96edebea44c5728a97f64bec3e21056d42f6e3"
   ]
 }

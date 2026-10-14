@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "TempleDAO",
   "name": "TempleDAO StaxLPStaking unrestricted migrateStake",
-  "summary": "StaxLPStaking.migrateStake(address oldStaking, uint256 amount) took the migration source as a caller-supplied address and called oldStaking.migrateWithdraw() without checking that the caller was an authorised migrator or that the source was a known staking contract. The attacker passed a contract of their own, was credited a stake equal to the whole StaxLP balance held by the staking contract, and withdrew it.",
+  "summary": "StaxLPStaking.migrateStake(oldStaking, amount) called migrateWithdraw on a caller-supplied oldStaking address without checking it was a known staking contract, then credited amount as the caller's stake. The attacker passed its own contract as oldStaking, was credited the contract's whole xFraxTempleLP balance and withdrew it.",
   "targets": [
     {
       "address": "0xd2869042e12a3506100af1d192b5b04d65137941",
@@ -13,13 +13,13 @@
     }
   ],
   "loss": {
-    "usd": 2349942.089502233,
+    "usd": 2349942.09,
     "assets": [
       {
         "token": "0xbcb8b7fc9197feda75c101fa69d3211b5a30dcd9",
         "symbol": "xFraxTempleLP",
         "amount": "321154.865567124596801893",
-        "usd": 2349942.089502233
+        "usd": 2349942.09
       }
     ]
   },
@@ -30,7 +30,7 @@
     "eip155:1:0xa532ad6be7115b83a6d13ce0855ec36459a4e1813bc74e63ad04bacef4a1e70c"
   ],
   "notes": [
-    "Non-upgradeable contract. The runtime code hash is 0x07c9b4e5624e6dc13f3a2c14a90320b7c74b7c3e8405b41325fe4ca4227dab3b both at the deployment block 14887950 and at block 15725066, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit.",
-    "The exploit transaction moves the staking contract’s entire StaxLP balance, 321154.865567124596801893 xFraxTempleLP, to the attacker. Within 41 blocks the attacker unwound that position through three further transactions and ended holding 1830.122796124022576955 WETH and nothing else, so the realised proceeds are used as the unit valuation, priced at the DefiLlama ETH observation nearest the incident timestamp. That is a realisation value including the attacker’s own market impact, not a mark-to-model LP value. Nothing was recovered."
+    "The staked xFraxTempleLP has no DefiLlama price; it is valued at the WETH the attacker realised when it unwound the position through the xLP/LP pool, the LP and the Temple AMM (rule 15), priced in ETH at block time.",
+    "Nine later migrateStake calls by other addresses up to block 15800000 moved nothing (the contract was empty), so the campaign is empty; the deployer created no sibling StaxLPStaking before the exploit."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Tender.fi",
   "name": "Tender.fi GMXPriceOracle tGMX price 1e20 decimal inflation",
-  "summary": "Tender.fi activated a new GMXPriceOracle whose tGMX branch multiplied a price already scaled by 1e20 by another 1e10, returning the GMX price with 38 instead of 18 decimals. While it was live, healthy GMX borrowers became liquidatable for wei-sized repayments, and one GMX of collateral let an attacker borrow about $1.59m of every other market's assets.",
+  "summary": "Tender.fi switched its Comptroller to a GMXPriceOracle whose tGMX branch multiplied an already 1e20-scaled GMX price by another 1e10, overpricing GMX 1e20-fold. A liquidation bot then seized healthy GMX borrowers' ETH collateral for wei-sized repayments, and an attacker borrowed every other market's assets against one GMX.",
   "targets": [
     {
       "address": "0x614157925d4b6f7396cde6434998bfd04789272d",
@@ -13,35 +13,41 @@
     }
   ],
   "loss": {
-    "usd": 1621046.03,
+    "usd": 1622202.6,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "18.681895076176123477",
-        "usd": 29388.86
+        "amount": "19.220056662489164666",
+        "usd": 30235.46
       },
       {
         "symbol": "ETH",
         "amount": "198.7",
-        "usd": 311921.25
+        "usd": 312024.57
       },
       {
         "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
         "symbol": "USDC.e",
         "amount": "641690.1",
-        "usd": 641638.12
+        "usd": 641760.81
       },
       {
         "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
         "symbol": "WBTC",
         "amount": "16",
-        "usd": 358395.6
+        "usd": 358496
+      },
+      {
+        "token": "0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
+        "symbol": "LINK",
+        "amount": "16203.0000000001",
+        "usd": 111423.64
       },
       {
         "token": "0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
         "symbol": "UNI",
         "amount": "8798.00000100001",
-        "usd": 56450.1
+        "usd": 56578.07
       },
       {
         "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
@@ -60,16 +66,20 @@
         "symbol": "FRAX",
         "amount": "24975.000000000001",
         "usd": 24975
-      },
-      {
-        "token": "0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
-        "symbol": "LINK",
-        "amount": "16203.0000000001",
-        "usd": 111568.05
       }
     ]
   },
   "refs": [
+    "eip155:42161:0x13be707a08ae3d45c5408884c7deb8e0577b6e2dbb0e9a1cea9583a6b2e1086a",
+    "https://blog.solidityscan.com/tender-finance-hack-analysis-improper-oracle-price-calculation-408f424d8548/",
+    "https://www.theblock.co/post/217823/tender-fi-hacker-returns-stolen-funds-gets-bounty-reward"
+  ],
+  "notes": [
+    "The reset is the Comptroller _setPriceOracle call that pointed the markets at this oracle; the eip155 ref reverted the pointer. Within that window only the two tGMX liquidations and the attacker's borrows left accounts that were unhealthy at the correct price.",
+    "The anchor is a liquidation bot unaffiliated with Tender. The first ETH row is the borrowers' seized collateral, including the seize share that went to Tender reserves. The attacker's first 0.01 ETH borrow fit its real capacity and is excluded.",
+    "The attacker repaid the debt after a bounty offer and kept 62.16 ETH; per rule 5 and 14 the return is a later recovery and does not reduce the loss."
+  ],
+  "campaign": [
     "eip155:42161:0x8498e6eb2b2412be1d3e497b45a5d8a932800968bf42707ae7dc889fb1f39957",
     "eip155:42161:0xd673a0e83ae9f9748c5e2385531ce8b1c218051ae34e77807c2a7031f7322793",
     "eip155:42161:0x3536f0c7cce8ac5c5b68d9af0712299a279d748e7877af5aea88932c5fb98309",
@@ -97,14 +107,6 @@
     "eip155:42161:0xf9da6e4dd7d6a9f044e3fc1bbcc4420d90264847e03cb9ea465ea50a5c72c269",
     "eip155:42161:0x381519881f1fb7be7c3151d7a2d7f8adda62ab799d93afac3f50d17021a99cf6",
     "eip155:42161:0x49c0049b68842bbada0335a895f34ce44579bc78462db283c2fc01a3784480c9",
-    "eip155:42161:0xf14df8a4220bdcc26e1615ab777e3777e5d164097ef524ab0c1bf2c64d6c63de",
-    "eip155:42161:0x13be707a08ae3d45c5408884c7deb8e0577b6e2dbb0e9a1cea9583a6b2e1086a",
-    "https://blog.solidityscan.com/tender-finance-hack-analysis-improper-oracle-price-calculation-408f424d8548/",
-    "https://www.theblock.co/post/217823/tender-fi-hacker-returns-stolen-funds-gets-bounty-reward"
-  ],
-  "notes": [
-    "Tender's Safe called Comptroller _setPriceOracle, moving the oracle pointer from 0x4df9b2246bb592823fa60872e4f1a636f1be7473 to this GMXPriceOracle. No later NewPriceOracle event occurs before the exploit; the fix at block 67558205 reverted the pointer.",
-    "Two campaigns merged. (1) 2023-03-07 07:13 UTC: liquidation bot 0x3ac52d0e (EOA 0x14c07a5f) liquidated two healthy GMX borrowers for 3 and 1 wei of GMX and redeemed 18.681895076176123477 ETH of their seized tETH; the protocol seize share that went to Tender reserves is excluded. (2) 08:24-08:44 UTC: attacker 0x896df375 supplied about 1 GMX and made 27 defect-enabled borrows, listed at their exact Borrow amounts. The first borrow, 0.01 ETH, was within legitimate capacity and is excluded. The attacker's collateral is not netted. The attacker later repaid the debt and kept 62.158670296 ETH as a bounty; that return does not reduce gross loss.",
-    "The anchor is a liquidation by an apparently generic liquidation bot, not by the publicly reported attacker; it is the earliest successful transaction that benefits from the defective tGMX price."
+    "eip155:42161:0xf14df8a4220bdcc26e1615ab777e3777e5d164097ef524ab0c1bf2c64d6c63de"
   ]
 }

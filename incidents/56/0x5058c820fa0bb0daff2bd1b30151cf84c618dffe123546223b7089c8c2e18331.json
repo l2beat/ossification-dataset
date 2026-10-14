@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Thoreum Finance",
   "name": "Thoreum V4 self-transfer balance doubling",
-  "summary": "The V4 implementation's transfer accounting credited the recipient without debiting the sender when both are the same address, so any account could call transfer(self, balanceOf(self)) and have its recorded THOREUM balance grow by the post-fee transfer amount. The campaign repeatedly doubled small acquired balances and sold the unsupported tokens into the THOREUM/WBNB BiSwap pair. The defect is permissionless executable logic in the implementation the project itself authored, deployed and installed; the privileged upgrade is the code-change event, not the cause.",
+  "summary": "The THOREUM V4 implementation credited the recipient without debiting the sender when both were the same address, so transfer(self, balance) grew the caller's balance by the post-fee amount. The attacker's contract repeatedly doubled small purchased balances and sold the unbacked tokens into the THOREUM/WBNB BiSwap pair.",
   "targets": [
     {
       "address": "0xce1b3e5087e8215876af976032382dd338cf8401",
@@ -14,17 +14,29 @@
     }
   ],
   "loss": {
-    "usd": 928504.9554488137,
+    "usd": 928888.01,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
         "amount": "3194.414045570313325194",
-        "usd": 928504.9554488137
+        "usd": 928888.01
       }
     ]
   },
   "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-01/ThoreumFinance_exp.sol",
+    "https://www.certik.com/blog/post-mortem-thoreum-finance",
+    "https://time.graphics/line/751827",
+    "eip155:56:0x27b93aadbec88758fc379d5b28db5c7ce48ff3758bb10fe56e6f380e3e5e0a92",
+    "eip155:56:0x821e268f2005a3ef75fc16f49b5efe04a0fc93dcaf5375f3e4cc76f5c8a186ae",
+    "eip155:56:0x84e99e927c94f0fe521f545583c935f12d7438ea65eaed132efc390ad7c7ab80"
+  ],
+  "notes": [
+    "The reset is the upgrade that installed the self-transfer implementation 1.7 hours before the exploit; the eip155 refs after it are the post-attack upgrades (a brief re-installation of the same implementation saw no further self-transfer exploit).",
+    "Loss is the pair's gross WBNB outflow over the attacker's 36 transactions, including the WBNB the token's fee machinery routed to project wallets; no other address made a profitable self-transfer while this implementation was live."
+  ],
+  "campaign": [
     "eip155:56:0x08114d50db7bf23f0ea1e57d496f61033b9516b60eaf2316092f023171b66536",
     "eip155:56:0xe37e92f7bf7e0a5dbe06e937012820286370df5846d9019ed789cf688a76d50d",
     "eip155:56:0x762ff716d9acc40ea99879922e6ca24b9353f4a330e9ab05c95d4041eac8a188",
@@ -59,18 +71,6 @@
     "eip155:56:0x908525966c7e2ee20e86f4a73b0130253072c3519af58080e49d6e9060eda34a",
     "eip155:56:0x3ba407d118e35a09405001a47fa4314be47d9f0dfd741245cfbe42433eec9416",
     "eip155:56:0x9f787efc07ffe6bbf252679881f18f036138b028c569fb233c005d6c4ffbafe1",
-    "eip155:56:0x885262f9bcccf8f80bb1a2173a5e3dd2f9c27a0dead0215139b983a7702ead34",
-    "eip155:56:0x8fb6742e960874cf126d39517130a9a9d6f1d90b727ca968c6cffd3bf825a443",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-01/ThoreumFinance_exp.sol",
-    "https://www.certik.com/blog/post-mortem-thoreum-finance",
-    "https://time.graphics/line/751827",
-    "eip155:56:0xfe6284a4a156a77d3b71de485cccebb06349666fb09f0a42e95c4a689dce64ab",
-    "eip155:56:0x27b93aadbec88758fc379d5b28db5c7ce48ff3758bb10fe56e6f380e3e5e0a92",
-    "eip155:56:0x821e268f2005a3ef75fc16f49b5efe04a0fc93dcaf5375f3e4cc76f5c8a186ae",
-    "eip155:56:0x84e99e927c94f0fe521f545583c935f12d7438ea65eaed132efc390ad7c7ab80"
-  ],
-  "notes": [
-    "upgradeTo(address) selected 0x79fe086a4c03c5e38ff8074dea9ee0a18dc1af4f in Upgraded log 0. The EIP-1967 implementation slot contains 0x0743931af9ce6a0dbd8d8d664c3d87d0bb797d2c at block 24910633 and 0x79fe086a4c03c5e38ff8074dea9ee0a18dc1af4f from block 24910634 through the pre-anchor block 24912666. Runtime hash 0x79f89e49910917df2c2f6e904235ca553b292e6de6b97311e01079b41e56252f is identical at implementation deployment block 24910631 and pre-anchor block 24912666.",
-    "The coherent campaign is 36 successful calls from the same EOA to the same helper, from block 24912667 through block 24913336. Receipt Transfer-log netting gives the THOREUM/WBNB BiSwap pair 0xd822e1737b1180f72368b2a9eb2de22805b67e34 an exact aggregate delta of -3194.414045570313325194 WBNB after already subtracting 1.7735 WBNB of identifiable campaign inputs. Of the gross WBNB outputs, 2261.490132565026795779 WBNB went to attacker beneficiary 0x1285fe345523f00ab1a66acd18d9e23d18d2e35c and 934.697413005286529415 WBNB went through the BiSwap router as the token's transfer-fee machinery. The seed row's ~2,000/2,260 BNB reports measure attacker proceeds rather than the pair's exact pre-recovery depletion. No recovery was identified."
+    "eip155:56:0x885262f9bcccf8f80bb1a2173a5e3dd2f9c27a0dead0215139b983a7702ead34"
   ]
 }

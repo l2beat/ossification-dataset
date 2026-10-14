@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "The Idols NFT",
   "name": "Idols NFT self-transfer reward double-credit",
-  "summary": "IdolMain._beforeTokenTransfer settles stETH rewards twice for the same holder when the sender and the receiver are the same address. It first calls _claimEthRewards(_from), which pays balanceOf(_from) * (rewardPerGod - claimedSnapshots[_from]) and writes claimedSnapshots[_from] = rewardPerGod, and then, because the sender will hold one fewer token, executes delete claimedSnapshots[_from] whenever balanceOf(_from) == 1. It then evaluates the receiver branch, where balanceOf(_to) > 0 still holds, and calls _claimEthRewards(_to) against a snapshot that has just been zeroed, paying the whole cumulative rewardPerGod again. Calling safeTransferFrom(self, self, tokenId) in a loop therefore mints one full rewardPerGod payout per iteration while the token never leaves the caller. The onlyAllowedContracts(_to) guard, which relies on Address.isContract, does not stop it because the loop runs inside the exploit contract's constructor, when its code size is still zero.",
+  "summary": "IdolMain's transfer hook claimed the sender's stETH rewards and, when the sender held one Idol, deleted its reward snapshot before claiming for the recipient from zero. A self-transfer therefore paid the full cumulative rewardPerGod again each time; the attacker looped self-transfers in contract constructors to pass the contract whitelist, and copycats kept repeating it.",
   "targets": [
     {
       "address": "0x439cac149b935ae1d726569800972e1669d17094",
@@ -13,19 +13,25 @@
     }
   ],
   "loss": {
-    "usd": 346780.41406602797,
+    "usd": 690645.86,
     "assets": [
       {
         "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
         "symbol": "stETH",
-        "amount": "107.685747932188918815",
-        "usd": 346780.41406602797
+        "amount": "236.826981296372916382",
+        "usd": 690645.86
       }
     ]
   },
   "refs": [
     "https://rekt.news/theidolsnft-rekt",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-01/IdolsNFT_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-01/IdolsNFT_exp.sol"
+  ],
+  "notes": [
+    "Campaign selection: transactions after the anchor in which IdolMain emitted an Idol Transfer with from == to, or paid stETH to one address twice, and sent stETH. The attacker EOA's 46 are listed; the rest, from other addresses through block 26183545, are a bundle.",
+    "Loss is IdolMain's stETH paid out in those transactions, priced per transaction with DefiLlama's stETH price. Earlier self-transfers in 2022 came from team contracts deployed by the IdolMain deployer, or one accidental OpenSea self-transfer, and are not exploits."
+  ],
+  "campaign": [
     "eip155:1:0xbffcf01e5aef5d5fc82f9ab7bf78110e3479dffc8f4dc503f663c6b47b9992a4",
     "eip155:1:0x61092c396208c4c74430967e6061e9031ef80adcbb4cf64e58598a9e6b608302",
     "eip155:1:0x1aaa35712784713d9ef40bf4848132cc031ce04611d7837649a7f0bf3e03bbf5",
@@ -40,11 +46,7 @@
     "eip155:1:0x5e989304b1fb61ea0652db4d0f9476b8882f27191c1f1d2841f8977cb8c5284c",
     "eip155:1:0xd9870068e40f8d7c4d58b87802c4fc830acbd90ff3e44460747c3a0727dfd3df",
     "eip155:1:0xcd335c1bf78b26a226fd583289c32d726d060d62b5f6e04c55b2ef1866558582",
-    "eip155:1:0x554300c9576400fb8d2c66efc51442ff46e1d18b0fa461f58644b10b669efbf8",
-    "eip155:1:0x0d1f54624365a91fa6c19a28f07bf11c674e856ff3ec36b9006641c09398f405",
     "eip155:1:0x23f73d3194e1ba9413ec80decc5e7c08a8b037dbc887ccfe79393e01d1e1a4d6",
-    "eip155:1:0xba0e2e5ac8d463e43cd8f8af682285ae12f83f0f649373c8b1e884d7c5f09d6e",
-    "eip155:1:0x11dc29ffe83d9e18450c4449f8a732803855e6f8210dc1511017fbbef901d183",
     "eip155:1:0x3e5f4ccd1c7fd2ad94224b78d17c63d83c05235365f5bd2f265fd8ae0c9921a2",
     "eip155:1:0x175320607f10268df8096598abccc8dda7d54b926181c17f571390c72ab345db",
     "eip155:1:0xfa0ef53d21783c2c2550fc9e281ff1fab28ed57876ae001e7a912ca62043fc02",
@@ -76,11 +78,12 @@
     "eip155:1:0x017237ed8eb0c2d3695b20706aa5781460fdb216ad7e57d1f3689719bf909e1b",
     "eip155:1:0xc44b242ac385633bcbe40461a0316b7628fc2fcf8302af1826956449405d1247",
     "eip155:1:0x5cc6d66f8c8ec8d2eadb2918c3382350189cb9e8f57b6087c823fb37831ecf5f",
-    "eip155:1:0x321c0038331065107aea06985e0c2d5ebec5bcad6605cc74fc6840fe8de71c12"
-  ],
-  "notes": [
-    "IdolMain is a plain non-upgradeable ERC721Enumerable contract. Its 24,062-byte runtime is byte-identical at its creation block and at block 21624127, immediately before the exploit, so deployment is the last executable-code change.",
-    "Exact victim depletion: the sum of every stETH Transfer log emitted with IdolMain 0x439cac149b935ae1d726569800972e1669d17094 as sender to an attacker-controlled address between blocks 21624128 and 21626433, 107.685747932188918815 stETH over 51 transactions. A further 0.114227 stETH left IdolMain to four unrelated addresses in the same window and is excluded as ordinary user claims. None of the extracted amount was the attacker's entitlement: each exploit contract received its Idol immediately beforehand, which set claimedSnapshots[contract] = rewardPerGod, so its legitimate pending reward was zero. stETH is deeply liquid and was not sold through a thin market, so it is marked at the DefiLlama stETH price for the campaign-end timestamp rather than at realised proceeds. Gas is not deducted; the attacker kept the Idol NFTs, which are not part of this measurement.",
-    "The snapshot row anchored on the attacker's thirteenth exploit transaction. The anchor here is the first one, twelve blocks earlier; the later transaction remains part of the campaign and appears in the loss transaction set."
+    {
+      "chainId": 1,
+      "count": 679,
+      "from": 21629890,
+      "to": 26183545,
+      "selection": "Transactions not sent by the attacker EOA 0xe546480138d50bb841b204691c39cc514858d101 in which IdolMain 0x439cac149b935ae1d726569800972e1669d17094 emitted an ERC721 Transfer with from == to, or paid stETH to one address at least twice, and sent stETH"
+    }
   ]
 }
