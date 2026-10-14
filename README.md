@@ -51,6 +51,8 @@ npm run build -- --all        # re-derive every record
 npm run build -- --only <files>   # re-derive these records
 ```
 
-CI runs `npm test` on every change. `.github/workflows/derive.yml`
-re-derives the records a pull request changes and fails when `dist/latest`
-disagrees; it reads archive RPC URLs from repository secrets.
+CI runs `npm test` on every change; it is offline and fails when
+`dist/latest` was not rebuilt after a claim changed. Deriving needs archive
+RPCs and runs locally: rebuild with `npm run build` before opening a pull
+request, and reviewers re-derive changed records with
+`npm run build -- --only <files>` and `git diff dist/latest`.
