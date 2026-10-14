@@ -2,22 +2,26 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Taiko",
   "name": "Taiko SGX attestation accepts DEBUG-mode enclaves",
-  "summary": "Taiko's AutomataDcapV3Attestation checked an application enclave quote's MRENCLAVE and MRSIGNER but never its attributes, so a DEBUG-mode enclave passed SgxVerifier.registerInstance. The attacker re-signed the trusted Raiko enclave with the MRSIGNER key that had been committed to the public raiko repository, ran it in DEBUG mode, and registered instances in both the SGX-GETH and SGX-RETH verifiers. The debug-readable instance keys then signed forged proofs, the Inbox saved forged L2 checkpoints, and forged bridge messages drained ETH and ERC-20s from the L1 Bridge and ERC20Vault.",
+  "summary": "Taiko's AutomataDcapV3Attestation checked a quote's MRENCLAVE and MRSIGNER but not its attributes, so DEBUG-mode enclaves passed. With the raiko MRSIGNER key leaked publicly, the attacker ran trusted raiko builds in debug mode, registered SGX-GETH and SGX-RETH instances with readable keys and used forged proofs and bridge messages to drain the L1 Bridge and ERC20Vault.",
   "targets": [
     {
       "address": "0x0ffa4a625ed9db32b70f99180fd00759fc3e9261",
       "code": "0x5e46443bd131eb6d4c6fb4849bad29af9596dd72",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x3b734f101aeef12dbbef6a43abae4176ac967c5ab8ea0194c6d890dafd6573ad"
+        "kind": "config",
+        "tx": "0xa5cfcd6c3998a3f463fdc2a7afc7743a0cdd651e025250344ae4fb8b0d4ded9b",
+        "address": "0x0ffa4a625ed9db32b70f99180fd00759fc3e9261",
+        "slot": "0x1e416d2c4ca58a246f1def0dcec832a6e1fdaa53582c44a6ca3c60d427096a7c"
       }
     },
     {
       "address": "0x8d7c954960a36a7596d7ea4945ddf891967ca8a3",
       "code": "0x5f73f0adc7daa6134fe751c4a78d524f9384e0b5",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x46a6d47c15505a1259c64d1e09353680e525b2706dd9e095e15019dda7c1b295"
+        "kind": "config",
+        "tx": "0x6a240314c6a48f3ab58e0a3d5bf0e915668dac5eec19c694656eeb3d66c12465",
+        "address": "0x8d7c954960a36a7596d7ea4945ddf891967ca8a3",
+        "slot": "0x1e416d2c4ca58a246f1def0dcec832a6e1fdaa53582c44a6ca3c60d427096a7c"
       }
     }
   ],
@@ -86,6 +90,19 @@
     ]
   },
   "refs": [
+    "eip155:1:0x7486b942c054eb6641ea701f0835d23fa606accad0e96051791da26c56a10771",
+    "eip155:1:0xf2c9b238be314ff8b10e12cf7975499486d143d7f4e06bf9fe816d5b54d54592",
+    "https://etherscan.io/address/0x5e46443bd131eb6d4c6fb4849bad29af9596dd72#code",
+    "https://etherscan.io/address/0x5f73f0adc7daa6134fe751c4a78d524f9384e0b5#code",
+    "https://github.com/taikoxyz/raiko/blob/b3c2c1d9136348004f0a8653538cadf2743e8873/docker/enclave-key.pem",
+    "https://api.llama.fi/hacks"
+  ],
+  "notes": [
+    "The SGX-GETH attestation proxy trusted nothing until config tx 0xa5cfcd6c, which trusted MRSIGNER 0xca0583a7 (the leaked key), the anchor's MRENCLAVE 0xfda8bb1f, TCB and QE identity. SGX-RETH trusted that MRSIGNER at 19966171; later MRENCLAVE additions were not needed, as older builds stayed trusted.",
+    "Campaign: 29 forged checkpoint proofs and 36 processMessage/retryMessage txs by the attacker through block 25370061, plus c0ffeebabe's front-run of forged message 9000 (kept 18 ETH fee). Loss is exact L1 Bridge and ERC20Vault depletion, at DefiLlama prices nearest first release.",
+    "The exploit also needed the leaked enclave signing key (offchain); admission rests on the onchain attestation defect, without which a DEBUG quote could not register."
+  ],
+  "campaign": [
     "eip155:1:0x017292a7de5fef52a3274e37dda5ace4c4d0cdafe91b7b4ac9c700f02fae35ee",
     "eip155:1:0x4986e4a4c8c541bc623bff9a6f1caa1795d92d0fcff8efef4d79d7ac4834ee61",
     "eip155:1:0x2eff2a4d084a595352fc930c8ea75542f138237f5cfb4b469860f82360c07f1b",
@@ -94,47 +111,63 @@
     "eip155:1:0x2067b5d4bf676541b036f46f6d6cdcb8b51be96303dfd07f72597c50f1005e64",
     "eip155:1:0x0bf2478d2038b2a765b68d0cc02a5f6e1295f17fde5cdeef9f6f5916eddfa811",
     "eip155:1:0x0f163c55606820dba7dc863bd4d979f32bc6464059f48240415d1831b18ce002",
+    "eip155:1:0x55712f93962dbf1bdbba781b512fefe81f191e42bb946d1fbf73f7455d738d30",
     "eip155:1:0xb8befb015a67de8f40890b1f8667c597c3b66a52b388ec1c6cd28637fd65dd13",
     "eip155:1:0x4a5c6d40b7523c84eb5f140802d063029781e6b3b215de9ac9bfc03986da67d8",
+    "eip155:1:0xcf9a4525046ef34ddbe57b8fafe66a7203d55bc9ecc4abe58382ba78a7e37675",
+    "eip155:1:0xabed9edc7c63191109617757814d8151110eb60b43329f4d36f0ebf5328ee96b",
+    "eip155:1:0x2bb815cb39225b35456316d3da455225b6e037d31e8cd2f6c4110d5a217ca71c",
     "eip155:1:0x451423923ab3df56ce436a921d34d782681cf698b72ca61ad6b8a8b2aeee53b7",
+    "eip155:1:0x0eaedc254a2b1bfaf5aae588b27a6b3900809073e86e9f93fc7b15aa26e6eb88",
     "eip155:1:0x06282e10591308871bdb9287a6106c96b5c023458a8532b6f87ca63cd5cf1d41",
+    "eip155:1:0x1f4340d2d004bee9e8177e1c6b39f92d471ee18bba0aadba0481208f6598a87b",
+    "eip155:1:0xce58daced6ab2cf0bc3112f4904d584d0877ba01ff0e4d3db78128849dddc6af",
     "eip155:1:0x88d002b1a1044dc80daf5a891a87a30905b05197e8c61a200e079b471733e0bd",
-    "eip155:1:0xccfc5ca63f68d4bcd74fddf281335e252f663c22b1da3bd40d805bd98ff83e4e",
+    "eip155:1:0x403910fdaab5ef225effbcebf1c55a76c7ad45d1fbece036eb8d74b2b7d3de0c",
+    "eip155:1:0xc9210b9c7510c1d3a28b7465c45acb436f5c420dfdb003fd7f53457577be052f",
     "eip155:1:0xfef888302494c16930bf57c81c9b5ff8a173cce52046fb5f149904d72bd6b1ec",
+    "eip155:1:0xe3965b827ded451fd0699b46ce20232c3ee20d638aee575b6206649c747f8623",
     "eip155:1:0x18b50a2704eed58a598bb4c76bdae7e77a48005f494bd8667489b9aaa86b1816",
+    "eip155:1:0x2cb300c3d39e958b77d81b44364bd559bedff919fa424725365b491241284fd2",
     "eip155:1:0x9d2c1fbbfebeabc8a71b6c989d9a2878d8aab360369a2bd69da078b82c42f619",
+    "eip155:1:0x1f05668d59e51aa165aa8702159669da20a2978e555d7f18c3b4f5b7be6a9dc9",
     "eip155:1:0x86b8606a2037bc14d37cb26b61f1b99278ea6164703629f028d4f170b266b8d6",
+    "eip155:1:0x8befa36616981a6de0e09874db674a2224c1e7ad1196ca64321faee4fc484792",
     "eip155:1:0xec8ee1c1a1814b9c5e06e44d053a1a3368749cdcf8afedcaecd9206d2247d7a0",
+    "eip155:1:0x90dd6cc5adff552479cbf540529732190653b1792c67098776652a556c4d49b2",
     "eip155:1:0x25f2dc828d6c66d880f9b92ecda9e6531f85d82df629628f86a9ba5cec104dfd",
+    "eip155:1:0x145c4f068712f9eac21f0dc289eb224965ebf43a067fb970531958b89bdc29f1",
     "eip155:1:0xdb569bf382912d68f286be371a5eed514a8bc54c77d2ffbfbeb82c9a455b1611",
+    "eip155:1:0x783e1f771ae1bebe55e810595f7a0862340a61f4de7904dee0e7e610f5fc0454",
     "eip155:1:0x6f4a24eac8e5a949f9fc602c9a59776b890f9f72705e23dcce5ba1ba8984ebb0",
+    "eip155:1:0xdf43d68ebb47a6bcb2cbc0adc1c2c83c1e6c964e3b9eccc2fdc7f641e50be1df",
     "eip155:1:0x53a3e2b0da12b81bb20b0537e7cd7bf9b3001446fbd388a9226dee6ae92ab412",
+    "eip155:1:0x666977de454c137a0b42c379886d92381035043806e4879f4fe102b86cae8510",
     "eip155:1:0x839a5c8fd37724dd2bfad6327cfe18be4dd177f352581cdcf1732230ebdb049a",
+    "eip155:1:0x5a55e082c7fd98e1a25f21212c689f9d7f84e83125d93c1c4a826b837bd7e66d",
     "eip155:1:0x84d6e71216341085fba89308976dce3018f3265780936aa4d042e216d3714351",
+    "eip155:1:0xc00ff525907da123aa0a8b089b25215ea7728e29f6473e09be89e5c148c21ed6",
     "eip155:1:0x53f9cad025f2869dc369c19b364a9612029457b211ab0261e3587bfaeadb0a1b",
+    "eip155:1:0xecf1fd92c39225f63f8209ab8a43a53fe53c97e02c2b1178c638f60d22c7a8f7",
     "eip155:1:0x282dd3aedbe83e83b14a7c1245cf306465228653cd66367fdda506ef0b6c57b1",
+    "eip155:1:0x7d3d0b112e7239a98e5c4080c9ae4f33331347a10c788b0dcc16e73df9789390",
     "eip155:1:0x59bffa028f40baad9465b9ae8628895a67f56f3af5ed393a616d7a2a057ea5e2",
+    "eip155:1:0xd6614dffdc7a5cd53892b68f8b88574bc7eaf2f1d4efa72577e48f2123fcb996",
     "eip155:1:0xbc62f96d2058a7ac9bbaf5cba60abd23bf94d684eb0547aa5d69dd07f6030f56",
+    "eip155:1:0xb8db684277680865580536161c71e4d4bc3b03366f3351c28e1af806dc80299f",
     "eip155:1:0x487f58339737d28003a390fb596b236fbadff1e8d37912750e21e4e4099f3b36",
+    "eip155:1:0x2886150e778f516ddcc0024106a436dafdb603bdcaf78384608357d8f30f6352",
     "eip155:1:0x41645a1968cd3d68e832d88a34e32e583340e732d61f8463ef24c2e9a7426d25",
+    "eip155:1:0x885d424d01b0790c936ef0322161e5868a2660c4f14d3ac70f747750cb9dec0f",
     "eip155:1:0x36637aad299e6f0115cc4075d2bdc54e91b41822004d5643d68d755def3a4797",
+    "eip155:1:0x6f71c46d11fc1a4723086d808bf81f70f7e92ab0cbcafbbfa9179f8ad77d31e0",
     "eip155:1:0x5141c5d1abf6e1769f5ceb9d4ed327c717399206afc97c25a40bd20bfe49649e",
+    "eip155:1:0x06fcf3fb551e268a5a72419e1dc1cf214c26286fc43f690bfd9408c4aa264e4a",
     "eip155:1:0x774dc5b0a8710f8d969f75ffcff1aee9f9f9276505f5bf12de901434115b3215",
+    "eip155:1:0x9f75a821ba2f1e1d4147948da01bf551e57e7c8b231f448ad0758c608c559727",
     "eip155:1:0xb8224640eec11d80c800a41be5cb5caea3274b6d538b8a6f650e7ef0e5eb72dd",
+    "eip155:1:0x68ff8e072ff76dc90af1cba793b5923eda87945052e078478e35e90aa7ef7955",
     "eip155:1:0x98bbed7852ba2173a2615f4cb93d5a2766f8186133066cd80ac0b170372ec7ca",
-    "eip155:1:0x7486b942c054eb6641ea701f0835d23fa606accad0e96051791da26c56a10771",
-    "eip155:1:0xf2c9b238be314ff8b10e12cf7975499486d143d7f4e06bf9fe816d5b54d54592",
-    "eip155:1:0xa5cfcd6c3998a3f463fdc2a7afc7743a0cdd651e025250344ae4fb8b0d4ded9b",
-    "https://etherscan.io/address/0x5e46443bd131eb6d4c6fb4849bad29af9596dd72#code",
-    "https://etherscan.io/address/0x5f73f0adc7daa6134fe751c4a78d524f9384e0b5#code",
-    "https://github.com/taikoxyz/raiko/blob/b3c2c1d9136348004f0a8653538cadf2743e8873/docker/enclave-key.pem",
-    "https://api.llama.fi/hacks"
-  ],
-  "notes": [
-    "The SGX-GETH attestation proxy's creation receipt emitted its only Upgraded event, selecting AutomataDcapV3Attestation 0x5e46443bd131eb6d4c6fb4849bad29af9596dd72, which stayed active with an unchanged runtime through the exploit.",
-    "Upgraded event selecting AutomataDcapV3Attestation 0x5f73f0adc7daa6134fe751c4a78d524f9384e0b5, the SGX-RETH attestation implementation active through the exploit.",
-    "Exact L1 depletion of the Taiko Bridge (native ETH) and ERC20Vault (ERC-20 Transfer logs) caused by forged messages across 36 transactions, including 18 ETH taken as the processing fee by 0xc0ffeebabe while it front-ran the forged message 9000. Each asset is valued at its DefiLlama price nearest its first release. The reported DefiLlama figure is $1.7M (source-12). Recoveries are not deducted.",
-    "The exploit also required the leaked enclave signing key (offchain); admission rests on the onchain attestation defect, without which a DEBUG quote could not register.",
-    "Same missing local-report attribute check in the SGX-RETH attestation; both SGX sub-proofs were needed, and target-1's later activation supplies the knot."
+    "eip155:1:0xccfc5ca63f68d4bcd74fddf281335e252f663c22b1da3bd40d805bd98ff83e4e"
   ]
 }

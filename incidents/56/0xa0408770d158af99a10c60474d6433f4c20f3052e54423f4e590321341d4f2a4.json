@@ -1,25 +1,27 @@
 {
   "$schema": "../../schema/incident.schema.json",
   "protocol": "TGBS",
-  "name": "TGBS public _burnBlock()",
-  "summary": "A public state-changing token function allowed an arbitrary caller to reduce the TGBS balance held by its PancakeSwap pair, breaking the pair's reserve accounting and depleting its WBNB reserve.",
+  "name": "TGBS _burnPool catch-up burns pair balance",
+  "summary": "TGBS burned 0.3% of its pair's TGBS on each transfer while _burnBlock lagged the block number, advancing it only 1,200 blocks per burn. After the owner set _burnBlock to 1, the attacker flash-borrowed WBNB, bought TGBS and made 1,600 one-wei self-transfers, each burning pair TGBS and syncing, then sold back into the inflated price.",
   "targets": [
     {
       "address": "0xedecfa18cae067b2489a2287784a543069f950f4",
       "reset": {
-        "kind": "deployment",
-        "tx": "0xafffc4ef57adee128d73edcccb25551f201053c9e452af0c0754d797eca027c6"
+        "kind": "config",
+        "tx": "0x8f568ebeb63deaa705b9341c5ebcc9532683ef4d24cdbb95ff60ea633e57af4d",
+        "address": "0xedecfa18cae067b2489a2287784a543069f950f4",
+        "slot": "0x9"
       }
     }
   ],
   "loss": {
-    "usd": 153877.7678413062,
+    "usd": 156864.42,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "377.419655738898226050",
-        "usd": 153877.7678413062
+        "amount": "386.327497242067951743",
+        "usd": 156864.42
       }
     ]
   },
@@ -28,8 +30,11 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-03/TGBS_exp.sol"
   ],
   "notes": [
-    "TGBS is directly deployed. Its 16,737-byte runtime is absent one block before creation and has code hash 0xf583f884e1cae893cdc9ff073714238410dcf3ae0468477a662edd6a4db875ac at deployment and immediately before the incident; both EIP-1967 code-selection slots are zero. The public pair-balance mutation exists in that deployed runtime and does not depend on a later configuration change.",
-    "The incident receipt shows 1,235.242777623808307005 WBNB entering PancakeSwap TGBS/WBNB pair 0x779a0e4799488d2fcac65f5fb8eb65dbbf08ce43 and 1,612.662433362706533055 WBNB leaving it, for exact net depletion of 377.419655738898226050 WBNB. Archive balances fall from 381.978233513290349616 WBNB before the incident block to 4.558577774392123566 WBNB after it, reproducing the receipt result. The same sender's preceding transaction 0xe02c6f4b38ac1063154bea7fd37ec3b61190b2ed17522dc99eca3e4caecc0827 has no WBNB or TGBS transfer into or out of this pair and is excluded from the single-transaction campaign. Gross pair depletion nets all WBNB inputs in the incident receipt; financing fees, gas, and later recovery are not deducted. The closest preceding DefiLlama BNB observation is $407.71 at 1709709892, 183 seconds before the incident.",
-    "Replaces the seed's rounded $150,000 estimate with exact gross WBNB pair depletion valued at the closest preceding BNB price."
+    "Reset is the owner's setBurnBlock(1) about an hour before the anchor (after setBurnBlock(0) at block 36708087). Before that _burnBlock tracked the block number, so a transfer could trigger at most one 0.3% burn; set to 1, it let one transaction trigger thousands. Deployment alone was not exploitable.",
+    "Campaign: copycat 0xd070490b repeated the 1,601-burn loop 72 blocks later. Later txs by the stake-fee address 0x1eab3b72 and 0xec819380 triggered burns but drew no WBNB and are excluded.",
+    "Loss is gross WBNB pair depletion in both txs at DefiLlama BNB $406.04; TGBS burned from the pair is not counted separately."
+  ],
+  "campaign": [
+    "eip155:56:0x961ac6a22a74fb1001081c54f98ad135ebd3e608fce2126e9b2b5aea2c10737b"
   ]
 }

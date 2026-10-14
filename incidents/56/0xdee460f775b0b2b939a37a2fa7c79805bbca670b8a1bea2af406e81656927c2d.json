@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "TMM",
   "name": "TMM deferred sell burn drains the TMM/USDT pair",
-  "summary": "While freeTrade is off, TMM accumulates waitBurnTokenAmount from buys and, on the next sell into the pair, transfers that amount from the TMM/USDT pair to 0xdead and calls sync(). The attacker flash-borrowed USDT, bought TMM to grow the pending burn beyond the pair's balance, triggered two pair burns that left a reserve of 1 TMM-wei, and sold a small amount of TMM for almost all of the pair's USDT.",
+  "summary": "While freeTrade is off, every sell into the TMM/USDT pair adds twice the sold amount to waitBurnTokenAmount, and the next sell moves that amount from the pair to 0xdead and syncs. With flash-loaned USDT the attacker sold to grow the queue, bought the pair's TMM down to the queued amount, let a 1-TMM sell burn the rest and sold into the 1-wei TMM reserve.",
   "targets": [
     {
       "address": "0x1d6f03b0b20b2ec05b37bf60f56af442ced66666",
@@ -14,18 +14,18 @@
     }
   ],
   "loss": {
-    "usd": 1677164.87,
+    "usd": 1650842.99,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "1677164.868298635063778366",
-        "usd": 1677164.87
+        "amount": "1650618.723630849098448271",
+        "usd": 1650842.99
       }
     ]
   },
   "notes": [
-    "Fifth and last upgradeTo before the exploit activated the exploited TMM implementation.",
-    "USDT reserve drop of the TMM/USDT pair in the exploit transaction. The reported $1.665m is the attacker's profit after flash-loan costs."
+    "Fifth and last upgradeTo before the exploit activated the exploited TMM implementation; ownership was renounced right after, and no later state change was needed.",
+    "Loss is the pair's net USDT outflow (1,677,164.87) less 26,546.14 USDT the attacker took back by removing its own 1.9M LP in the same tx; that LP came from liquidity its EIP-7702 sybil wallets added days earlier (round trip, rule 14). USDT at DefiLlama $1.000136."
   ]
 }
