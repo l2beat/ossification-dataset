@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown Arbitrum LP manager 0x09c12514",
   "name": "Unknown Arbitrum LP manager public withdraw swaps user positions with no minimum output",
-  "summary": "Two byte-identical, unverified Uniswap V3 WETH/USDC position managers, 0x09c12514 and 0x3b329559, expose withdraw(address user, uint128 liquidity) (0x08fab167) to any caller. It removes and collects the user's position, sells all WETH for USDC via SwapRouter exactInputSingle with amountOutMinimum 0 and no price limit, and sends the USDC to the user. The attacker flash-borrowed 20,000 WETH from Aave and sold 7,825 WETH into the 0.05% pool. It then called withdraw for all 11 open positions in both managers, so the positions' WETH was sold at the depressed price. Finally it swapped back and kept 71.54 WETH.",
+  "summary": "Two byte-identical unverified Uniswap V3 WETH/USDC position managers, 0x09c12514 and 0x3b329559, let any caller run withdraw(user, liquidity), which removes the user's position and sells its WETH via SwapRouter with amountOutMinimum 0. The attacker flash-borrowed WETH, crashed the pool price, forced withdraw for all 11 open positions, then swapped back.",
   "targets": [
     {
       "address": "0x09c12514535d676c6f48d284d12604320a368048",
@@ -10,28 +10,35 @@
         "kind": "deployment",
         "tx": "0x9829fbe854509463e6a6ee73af573e5cd1e99b541fc9b052462dc05eb907ddf6"
       }
+    },
+    {
+      "address": "0x3b329559046cb4d0f5f105c5acc71932a47f4e98",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x86a16d2e133383ddd2c5f6c055f844705d67291ec4654e453e4d77a01635443e"
+      }
     }
   ],
   "loss": {
-    "usd": 230548.9161313564,
+    "usd": 230548.92,
     "assets": [
       {
         "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         "symbol": "WETH",
         "amount": "78.611616434521354757",
-        "usd": 207516.58671535642
+        "usd": 207516.59
       },
       {
         "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "symbol": "USDC",
         "amount": "23032.329416",
-        "usd": 23032.329416
+        "usd": 23032.33
       }
     ]
   },
   "notes": [
-    "Direct, non-upgradeable manager runtime with the public zero-minimum withdraw. It is the later of two byte-identical siblings; 0x3b329559046cb4d0f5f105c5acc71932a47f4e98 was deployed at block 287807994 and exploited in the same transaction. The operator's collectFees and re-range calls change positions, not withdraw authorization or slippage.",
-    "The 11 positions (tokenIds 4184891, 4184901, 4190157, 4190178, 4192245, 4193097, 4193103, 4193166, 4193167, 4193506, 4193585) were worth 78.611616434521354757 WETH and 23815.920221 USDC, principal plus uncollected fees, at the pre-exploit pool state (block 303809031). Users received 783.590805 USDC back in the same calls, so the USDC component is 23815.920221 - 783.590805. The position value is simulated rather than read from logs, hence medium confidence. The attacker's net gain of 71.543669283808496020 WETH is lower because of pool fees, flash-loan premium and the attacker's own swap costs.",
+    "Direct, non-upgradeable runtimes; the anchor ran withdraw on both siblings, so both are targets and the later deployment (0x09c12514) sets the age. Operator collectFees and re-range calls change positions, not authorization or slippage; an earlier third-party withdraw (0x732260ca) paid its user in full.",
+    "The 11 positions were worth 78.611616 WETH and 23,815.920221 USDC (principal plus uncollected fees) at the pre-exploit pool state; users got 783.590805 USDC back, which the USDC component nets. An independent principal-only recomputation gives 78.34 WETH and 23,093 USDC.",
     "The managers have no verified source. Selector names come from the public signature database. The missing caller check and zero minimum are established from the exploit trace (calldata of withdraw and exactInputSingle), not from source text."
   ]
 }

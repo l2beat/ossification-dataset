@@ -2,34 +2,58 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unknown Aave/Pendle leverage helper 0xc1d7d366",
   "name": "Unknown leverage helper unauthenticated onMorphoFlashLoan callback",
-  "summary": "An unverified leverage helper that EOA 0x85b5bef6 deployed and granted Aave v3 credit delegation exposes onMorphoFlashLoan(uint256,bytes) without checking that the caller is Morpho Blue or that a flash loan is in progress. Any caller can make it repay and re-borrow USDC, borrow USDe on behalf of the delegator and forward caller-supplied calldata to the Pendle router, so attackers had 1.51m USDe borrowed against the delegator's position and added as Pendle PT-pUSDe liquidity with the LP tokens minted to themselves.",
+  "summary": "A private Aave/Pendle leverage helper, granted Aave v3 credit delegation by its deployer 0x85b5bef6, exposed onMorphoFlashLoan without checking the caller or an active flash loan. Attackers called it with their own calldata, making it borrow USDe on the delegator's behalf and route it through Pendle into PT and YT minted to themselves.",
   "targets": [
     {
       "address": "0xc1d7d3660354185b224fb98c27cbfdafc4f2b249",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x12864faf59f491d044fd88b20542c941aaca4b0e2ea1ec76f17bf7cd0dea27b5"
+        "kind": "config",
+        "tx": "0x8bbb18a9c68e391b8b5c489e95d6e71c1908461fddcc33d5cca3c3e1cfb5b5e3",
+        "address": "0x015396e1f286289ae23a762088e863b3ec465145",
+        "call": "0x6bd76d2400000000000000000000000085b5bef6d57ed80cd2dcce9061e44ff6fae55d31000000000000000000000000c1d7d3660354185b224fb98c27cbfdafc4f2b249"
       }
     }
   ],
   "loss": {
-    "usd": 1511510,
+    "usd": 1512839.19,
     "assets": [
       {
-        "token": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
-        "symbol": "USDe",
-        "amount": "1510000",
-        "usd": 1511510
+        "token": "0x015396e1f286289ae23a762088e863b3ec465145",
+        "symbol": "variableDebtEthUSDe",
+        "amount": "1511005.552556227114960284",
+        "usd": 1512514.35
+      },
+      {
+        "token": "0x72e95b8931767c79ba4eee721354d6e99a61d004",
+        "symbol": "variableDebtEthUSDC",
+        "amount": "324.877352",
+        "usd": 324.76
+      },
+      {
+        "token": "0xe6a934089bbee34f832060ce98848359883749b3",
+        "symbol": "PT-sUSDE-27NOV2025",
+        "amount": "0.08",
+        "usd": 0.08
       }
     ]
   },
-  "refs": [
-    "eip155:1:0x590e6e090e8513dddb32401c2f3fdb778dd11788ef46eadbf488c5da23e3a16e",
-    "eip155:1:0xe8bbedf4117a914c38b45a6b3848d49bb1f489907ad1af973d99448d71bf9c36"
+  "campaign": [
+    "eip155:1:0xe8bbedf4117a914c38b45a6b3848d49bb1f489907ad1af973d99448d71bf9c36",
+    "eip155:1:0x0e612ac4bfa9c7bf5fa32e1adbf86f2cf39d56cc0d56ccadd0343e44a617ad5c",
+    "eip155:1:0x34beed4adb6319241bf9d5a9fb592dde23fe48f6e646b16f37a994fc314fe547",
+    "eip155:1:0xcbee0fcb1d13fd021968b69cd8dc420d7314a520a0a8ef51792e91dd21e2c1f1",
+    "eip155:1:0xb807c0c6c13e8ee89047eb6f8428c33fd96838926b259bb016d950a267ee89e6",
+    "eip155:1:0x47aba6dcacd8e7f149797ada0fdde8518911c47fb0b22dffd5e50a84b53c175d",
+    "eip155:1:0xc3903b368af1de2f0ff0c1fa207f48b07f3c96ba2d0581c5cd127c7e77d7c3e6",
+    "eip155:1:0xe1791cfc4150d6fdf5ae24cf748a32b2e44d1997b19d3e2616e08fb32e3e9d78",
+    "eip155:1:0xdce410ed036aa52d454d3bf02fd62e22d9c5ba8e7e71e373aeb518b873896e1a",
+    "eip155:1:0xc0c0fcc586a9f9424fc5adabd69cc51f971627976e980d51ec2073bb3616e390",
+    "eip155:1:0x3b53852212299f68855481df4993ee7fb5b987326c2b778d5f68e19242ce0062",
+    "eip155:1:0x2ad38a30c82f5417164d469443185cffc4a131afd63c86cea3958401701e739f",
+    "eip155:1:0x590e6e090e8513dddb32401c2f3fdb778dd11788ef46eadbf488c5da23e3a16e"
   ],
   "notes": [
-    "Direct, non-upgradeable 3,097-byte runtime deployed by the delegator; the unauthenticated callback is in this runtime from creation.",
-    "Gross USDe borrowed against delegator 0x85b5bef6d57ed80cd2dcce9061e44ff6fae55d31 in the 14 unauthorized transactions and pushed through the helper into the Pendle router with an attacker receiver. Each forced cycle repays and re-borrows 100,000 USDC for the delegator (net zero USDC debt). The 100,000 USDC of Morpho flash-loan capital that the first attacker transaction left in the helper is an attacker-supplied input the owner later swept, so the delegator's net loss is about 1.41m USDe-equivalent; gross depletion is recorded. Merged campaigns: 0x3c34abb66270e0287d138c2cbb69da85cdea3a8e through contract 0x09ecc686ae7068d120fcbbd5034c91d1b66ddf8b (12 transactions, 1.4m USDe, blocks 23476882-23476937), copycat EIP-7702 account 0x08c5aff5f89fed5fc36b660e44393ec4ffa0b1a1 (0xe8bbedf4..9c36, block 23476889, 100,000 USDe) and EOA 0x00138c2862f3b9068320325e44093e190ded2db2 calling the helper directly (0x590e6e09..a16e, block 23477078, 10,000 USDe). The delegator's Aave position stayed solvent, so no protocol bad debt is added.",
-    "The helper has no verified source; the missing caller and flash-loan-state checks are established from execution traces (calls accepted from attacker contract 0x09ecc686.. and directly from EOA 0x00138c28..) rather than from source text."
+    "Reset is the delegator's approveDelegation of USDe debt to the helper, 12 blocks after its deployment: without that grant the helper cannot borrow for the delegator. Later allowance decreases from the delegator's own borrow are live values.",
+    "Loss is the debt created on the delegator (loss.mjs) by the attacker's 12 transactions via 0x09ecc686 and two copycats (EIP-7702 account 0x08c5aff5, EOA 0x00138c28); the 100,000 USDC the first attacker left in the helper is not subtracted. The delegator's seven older helpers saw no third-party borrows."
   ]
 }

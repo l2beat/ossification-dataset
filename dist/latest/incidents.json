@@ -830,9 +830,9 @@
     "tx": "0xfc1086c8974db1d9778fca0e115264e1ad65e9ddad66af32a2960c2ccb42d09a",
     "protocol": "Unknown Aave/Pendle leverage helper 0xc1d7d366",
     "name": "Unknown leverage helper unauthenticated onMorphoFlashLoan callback",
-    "summary": "An unverified leverage helper that EOA 0x85b5bef6 deployed and granted Aave v3 credit delegation exposes onMorphoFlashLoan(uint256,bytes) without checking that the caller is Morpho Blue or that a flash loan is in progress. Any caller can make it repay and re-borrow USDC, borrow USDe on behalf of the delegator and forward caller-supplied calldata to the Pendle router, so attackers had 1.51m USDe borrowed against the delegator's position and added as Pendle PT-pUSDe liquidity with the LP tokens minted to themselves.",
-    "lossUsd": 1511510,
-    "codeAgeSeconds": 16716,
+    "summary": "A private Aave/Pendle leverage helper, granted Aave v3 credit delegation by its deployer 0x85b5bef6, exposed onMorphoFlashLoan without checking the caller or an active flash loan. Attackers called it with their own calldata, making it borrow USDe on the delegator's behalf and route it through Pendle into PT and YT minted to themselves.",
+    "lossUsd": 1512839.19,
+    "codeAgeSeconds": 16572,
     "exploit": {
       "block": 23476882,
       "index": 0,
@@ -843,13 +843,13 @@
       "codeHash": "0xea955c1fb6ef4b9965a338c49b83a7d94db33526617cea1e0e9d38b3ae71ade9"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x12864faf59f491d044fd88b20542c941aaca4b0e2ea1ec76f17bf7cd0dea27b5",
-      "block": 23475500,
-      "index": 151,
-      "timestamp": 1759231595
+      "kind": "config",
+      "tx": "0x8bbb18a9c68e391b8b5c489e95d6e71c1908461fddcc33d5cca3c3e1cfb5b5e3",
+      "block": 23475512,
+      "index": 149,
+      "timestamp": 1759231739
     },
-    "claimsSha256": "f4eb864404542bf9dec693e0665665895796bb4cfba25f9f6760ffc902db7119"
+    "claimsSha256": "38f173cf6cb3edf94d88ddd9760f2bfdd76837ca69c95b0900b0abdcd8ef0ec8"
   },
   {
     "id": "eip155:250:0x5118df23e81603a64c7676dd6b6e4f76a57e4267e67507d34b0b26dd9ee10eac",
@@ -884,8 +884,8 @@
     "tx": "0xc12a4155c2c90707138e4aef8883c8f724371145823e2f661f19b93e5b3a9d6e",
     "protocol": "Unizen",
     "name": "Unizen Trade Aggregator arbitrary call in swap",
-    "summary": "The implementation installed on the Unizen Trade Aggregator proxy four hours and fifty-two minutes before the exploit added a swap entrypoint, selector 0x1ef29a02, that executes a caller-supplied array of (targetExchange, calldata) calls without checking targetExchange against any exchange whitelist. Callers passed an ERC-20 address as targetExchange and transferFrom(victim, aggregator, amount) as the calldata, so the aggregator spent the allowances users had granted it, and the entrypoint then forwarded the pulled balance to the caller-supplied receiver.",
-    "lossUsd": 3654454.983051798,
+    "summary": "Implementation 0xa051fc7d, installed on the Unizen aggregator proxy hours before the exploit (the same release also went to other chains), added swap entrypoint 0x1ef29a02 that ran caller-supplied (target, calldata) calls without a whitelist, so callers had the proxy transferFrom users' approved tokens to itself and forward them.",
+    "lossUsd": 3896240.4,
     "codeAgeSeconds": 17520,
     "exploit": {
       "block": 19392761,
@@ -904,7 +904,7 @@
       "index": 150,
       "timestamp": 1709911295
     },
-    "claimsSha256": "892a76181818a86fccf69e6e44aa20d56f8c0fd3f6b2d77e9932d954e2c1811f"
+    "claimsSha256": "e777c3cd697bde150da7ea47903cf146a7cdbd15b8c5666e9ed085d88041a5ef"
   },
   {
     "id": "eip155:8453:0x52d3e16c14ffa576855c1f5787dd4450969c7fcc5fac0b8a9b650fcb854d1974",
@@ -8239,8 +8239,8 @@
     "tx": "0x4b75157d64bb371380bc83256ee36034effb07c532b8623a34154aa881df9798",
     "protocol": "Unknown Arbitrum LP manager 0x09c12514",
     "name": "Unknown Arbitrum LP manager public withdraw swaps user positions with no minimum output",
-    "summary": "Two byte-identical, unverified Uniswap V3 WETH/USDC position managers, 0x09c12514 and 0x3b329559, expose withdraw(address user, uint128 liquidity) (0x08fab167) to any caller. It removes and collects the user's position, sells all WETH for USDC via SwapRouter exactInputSingle with amountOutMinimum 0 and no price limit, and sends the USDC to the user. The attacker flash-borrowed 20,000 WETH from Aave and sold 7,825 WETH into the 0.05% pool. It then called withdraw for all 11 open positions in both managers, so the positions' WETH was sold at the depressed price. Finally it swapped back and kept 71.54 WETH.",
-    "lossUsd": 230548.9161313564,
+    "summary": "Two byte-identical unverified Uniswap V3 WETH/USDC position managers, 0x09c12514 and 0x3b329559, let any caller run withdraw(user, liquidity), which removes the user's position and sells its WETH via SwapRouter with amountOutMinimum 0. The attacker flash-borrowed WETH, crashed the pool price, forced withdraw for all 11 open positions, then swapped back.",
+    "lossUsd": 230548.92,
     "codeAgeSeconds": 4022918,
     "exploit": {
       "block": 303809032,
@@ -8258,7 +8258,7 @@
       "index": 4,
       "timestamp": 1734967152
     },
-    "claimsSha256": "89d00bd4e7187610217e2e381218a00e2d0e94b1cd5f12a95ed597bdb5e8cc23"
+    "claimsSha256": "0129e6f0d2f0f948a382d756bfaa843d105868a2c78afe0222c65804a8731e00"
   },
   {
     "id": "eip155:1:0x0ec3f2488a93839524add10ea229e773f6bc891b4eb4794c3337d4495263790b",
@@ -10633,8 +10633,8 @@
     "tx": "0x9437dde6c06a20f6d56f69b07f43d5fb918e6c57c97e1fc25a4162c693f578aa",
     "protocol": "Uniswap V1",
     "name": "Uniswap V1 ERC-777 sender-hook reserve reentrancy",
-    "summary": "Uniswap V1 tokenToEthInput pays ETH before collecting tokens and has no reentrancy lock. An ERC-777 tokensToSend callback can sell again before the first transfer updates the token reserve, overpaying ETH against a stale reserve.",
-    "lossUsd": 232855.2491883574,
+    "summary": "Uniswap V1's tokenToEthInput pays out ETH before pulling the sold tokens and has no reentrancy lock. imBTC is an ERC-777 token whose transferFrom first calls the seller's tokensToSend hook, so the attacker's hook sold again against the stale token reserve and was overpaid ETH, hundreds of times; copycats hit other ERC-777 V1 pools.",
+    "lossUsd": 232649.38,
     "codeAgeSeconds": 11545398,
     "exploit": {
       "block": 9893295,
@@ -10653,7 +10653,7 @@
       "index": 41,
       "timestamp": 1575626101
     },
-    "claimsSha256": "aab1a9bb7d513d25b4a81a40608e925cf8b9874f2766f98524b56b5fb57a9e29"
+    "claimsSha256": "6f3aaecde78c6a713c0d52be083d258e3ab9f7f846a5699970c244ae572dcea8"
   },
   {
     "id": "eip155:56:0x3e30d1ff965a1024fadb9d112591832e16d9741115140f7c80645e580c968f98",
@@ -12250,8 +12250,8 @@
     "tx": "0xfe34c4beee447de536bbd3d613aa0e3aa7eeb63832e9453e4ef3999924ab466a",
     "protocol": "UniswapV4Router04 by z0r0z",
     "name": "z0r0z V4 Router hardcoded calldata-offset payer check bypass",
-    "summary": "UniswapV4Router04.swap(bytes data, uint256 deadline) checks the payer with inline assembly comparing calldataload(164) to caller(), assuming the data bytes argument always sits at offset 0x40. Because ABI encoding lets a dynamic argument's offset point elsewhere, an attacker crafts calldata that places their own address at byte 164 to pass the check while the decoded BaseData.payer is a victim who had approved the router. The router then pulls the victim's tokens and sends the swap output to an attacker-named receiver. Sixteen addresses drained 30 approved victims across 54 transactions.",
-    "lossUsd": 50908.522937,
+    "summary": "UniswapV4Router04.swap(bytes,uint256) checked the payer by comparing calldataload(164) with caller(), assuming the data argument sits at offset 0x40. Attackers moved the bytes offset, planted their own address at byte 164 and named a victim with a standing router approval as BaseData.payer, so the router pulled the victim's tokens and paid the swap output to them.",
+    "lossUsd": 69759.8,
     "codeAgeSeconds": 27716784,
     "exploit": {
       "block": 24575085,
@@ -12269,7 +12269,7 @@
       "index": 46,
       "timestamp": 1744801847
     },
-    "claimsSha256": "ecba1d034d0c6a9972ead2d2368de5815b8b60c852142269eb9676354a7311b9"
+    "claimsSha256": "e42cac6ed72848c633e9e5258f502e00a31d6a044c963acd10df6ce949912a60"
   },
   {
     "id": "eip155:1:0x2b6d0af0dc513a15e325703405739057f9de6ef3f99934b957653b8a3fade4c6",
@@ -13428,6 +13428,34 @@
     "claimsSha256": "51e82d9adb5f39c214513fd02857c922cbe24009d12752199df1554db5c79d3e"
   },
   {
+    "id": "eip155:10:0x18e34ce214211afedb6008c0cd00d476ce71222643521dbff5e2b65cdb2ccb80",
+    "chainId": 10,
+    "tx": "0x18e34ce214211afedb6008c0cd00d476ce71222643521dbff5e2b65cdb2ccb80",
+    "protocol": "Interest Protocol",
+    "name": "Interest Protocol Univ3CollateralToken minter-wide position collateral",
+    "summary": "Interest Protocol's Univ3CollateralToken on Optimism stored deposited Uniswap V3 positions per vault minter, and balanceOf(vault) valued that minter-wide list. The attacker minted 30 vaults, deposited one WETH/USDC.e position for one of them, and borrowed USDC and USDi from every vault against the same position, redeeming the USDi for USDC.e.",
+    "lossUsd": 51233.66,
+    "codeAgeSeconds": 68639252,
+    "exploit": {
+      "block": 149373833,
+      "index": 39,
+      "timestamp": 1774346443
+    },
+    "target": {
+      "address": "0x7131ff92a3604966d7d96ccc9d596f7e9435195c",
+      "code": "0x833a17fa29bc2772e4302823b7d39edd7c4bb79a",
+      "codeHash": "0xbb43a05ca373b7d686f0f13d3cbff8464905494f5964fad2fd6a8d77ce296e86"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x27c42a84bf51164c653853bdcd8262be499a38eadd1df578963d9d40a4f4e70d",
+      "block": 115054207,
+      "index": 3,
+      "timestamp": 1705707191
+    },
+    "claimsSha256": "584b102aee1ae43a21b01055a51ebb9f9ca8a6a981d984aaeeaaef47af3b5973"
+  },
+  {
     "id": "eip155:1:0x074ec9317d8336db37e8c348fbdd7515573ff4088239c77ab429f522509aeeb1",
     "chainId": 1,
     "tx": "0x074ec9317d8336db37e8c348fbdd7515573ff4088239c77ab429f522509aeeb1",
@@ -13481,34 +13509,6 @@
       "timestamp": 1671724079
     },
     "claimsSha256": "51f837703c4e2f7279130e3a42c22da94966fe624715e84cb5db17f885366670"
-  },
-  {
-    "id": "eip155:10:0x18e34ce214211afedb6008c0cd00d476ce71222643521dbff5e2b65cdb2ccb80",
-    "chainId": 10,
-    "tx": "0x18e34ce214211afedb6008c0cd00d476ce71222643521dbff5e2b65cdb2ccb80",
-    "protocol": "Univ3CollateralToken",
-    "name": "Univ3CollateralToken",
-    "summary": "Univ3CollateralToken stored deposited Uni V3 positions under the vault minter and balanceOf(vault) valued that minter-wide list. One position deposited for vault 40 therefore supplied borrowing power to every vault owned by the same minter.",
-    "lossUsd": 51238.324516,
-    "codeAgeSeconds": 69593330,
-    "exploit": {
-      "block": 149373833,
-      "index": 39,
-      "timestamp": 1774346443
-    },
-    "target": {
-      "address": "0x7131ff92a3604966d7d96ccc9d596f7e9435195c",
-      "code": "0x833a17fa29bc2772e4302823b7d39edd7c4bb79a",
-      "codeHash": "0xbb43a05ca373b7d686f0f13d3cbff8464905494f5964fad2fd6a8d77ce296e86"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0xe2821820301c1e17debb4e259a59117f942f65bd881d683d8039ffb1bf94aa13",
-      "block": 114577168,
-      "index": 4,
-      "timestamp": 1704753113
-    },
-    "claimsSha256": "1c0e24f3e1581855af73d9138ce4be39d5582d3eaea0d9b365916c6ee80d3a36"
   },
   {
     "id": "eip155:1:0xbb29cd17b99840e268adea3dcba8d2baa1ad0713234fc3dfa78e800b66bf375e",
@@ -14280,8 +14280,8 @@
     "tx": "0x653b185a57fb5909180fe4eede67e51c5e9b70af16937382f86d5aefe635e5a7",
     "protocol": "Unidentified proxy 0x6f7a…ea68",
     "name": "Unidentified proxy 0x6f7a unauthorized balance routing",
-    "summary": "Proxy selector 0xbfd479c4 processed arbitrary token amounts with no caller authorization or ownership check, letting anyone route the victim's live balances into a liquidity path.",
-    "lossUsd": 6532.573051752836,
+    "summary": "Implementation 0x338ffeac's selector 0xbfd479c4 let any caller name a token and an amount that the proxy then sold from its own balance on Uniswap V2 with no minimum output, paying the ETH to block.coinbase. The attacker set the amounts to the proxy's whole DAI, WETH and FEI balances, collected the builder refund and backran the skewed pools.",
+    "lossUsd": 7874.95,
     "codeAgeSeconds": 115829043,
     "exploit": {
       "block": 23196046,
@@ -14499,8 +14499,8 @@
     "tx": "0x74634e4ccc7e8922798c7043f839219b1a1a4d6087f57cdbf3bd1544198b02e8",
     "protocol": "Unifi Protocol",
     "name": "Unifi UP reward manager accepts a caller-supplied fake pool for LP reward eligibility and reward math",
-    "summary": "The unverified Unifi UP reward manager 0x5d8aa155 treats any contract that calls mintUP(self) as a pool once its token0() returns WBNB, and claimUP(pool, a, b) sizes the payout from balanceOf and totalSupply read from that same address. The attacker's contract, whose runtime differs from every Unifi pool, minted UP with 0.001 flash-borrowed BNB, then claimed the manager's whole 0.559 UP reward reserve by reporting a huge LP balance. It redeemed the UP at the UPRedeemer for 5.86 BNB.",
-    "lossUsd": 4200.15,
+    "summary": "Unifi's UP reward manager 0x5d8aa155 treated any contract whose token0() returned WBNB as a pool in mintUP, and claimUP sized the payout from balanceOf and totalSupply read from that same address. The attacker's fake pool minted UP with 0.001 flash-borrowed BNB, reported a huge LP balance to claim the manager's UP reward reserve, and redeemed the UP for BNB.",
+    "lossUsd": 4200.23,
     "codeAgeSeconds": 127077612,
     "exploit": {
       "block": 121045767,
@@ -14518,7 +14518,7 @@
       "index": 78,
       "timestamp": 1661954703
     },
-    "claimsSha256": "437672f5f0754c1da916b1ddbafd78402a55f736baa3747f20ab70b077fd6305"
+    "claimsSha256": "1cccf0a50143ab966321b683ae330e40966714edc3f9b093434ac8114c396e61"
   },
   {
     "id": "eip155:42161:0xe1e6aa5332deaf0fa0a3584113c17bedc906148730cbbc73efae16306121687b",

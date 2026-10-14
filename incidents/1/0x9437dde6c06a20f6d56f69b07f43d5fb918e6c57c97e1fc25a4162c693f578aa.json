@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Uniswap V1",
   "name": "Uniswap V1 ERC-777 sender-hook reserve reentrancy",
-  "summary": "Uniswap V1 tokenToEthInput pays ETH before collecting tokens and has no reentrancy lock. An ERC-777 tokensToSend callback can sell again before the first transfer updates the token reserve, overpaying ETH against a stale reserve.",
+  "summary": "Uniswap V1's tokenToEthInput pays out ETH before pulling the sold tokens and has no reentrancy lock. imBTC is an ERC-777 token whose transferFrom first calls the seller's tokensToSend hook, so the attacker's hook sold again against the stale token reserve and was overpaid ETH, hundreds of times; copycats hit other ERC-777 V1 pools.",
   "targets": [
     {
       "address": "0xffcf45b540e6c9f094ae656d2e34ad11cdfdb187",
@@ -14,21 +14,16 @@
     }
   ],
   "loss": {
-    "usd": 232855.2491883574,
+    "usd": 232649.38,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "1278.781248956352130815",
-        "usd": 220669.94871485446
-      },
-      {
-        "symbol": "ETH",
-        "amount": "70.613755290031533337",
-        "usd": 12185.300473502957
+        "amount": "1352.468482170098214432",
+        "usd": 232649.38
       }
     ]
   },
-  "refs": [
+  "campaign": [
     "eip155:1:0x86fe82055b14e0bae49fd29bb18e7a96da29d605e98f6af4e96114b14f61c452",
     "eip155:1:0x5099e25e661157db72eb2d64ee781b48c086e21cae102887601df66f6cf0d5a5",
     "eip155:1:0x219bac67ff2840a3eb83d8febda1cb88fe1769e1e24257f8e7ba519061ff595f",
@@ -553,12 +548,20 @@
     "eip155:1:0x52fd8f9208b15e4b571d16e7d9a8d2fee7d63cb6a01ded2a9324e9511dc7a993",
     "eip155:1:0x3e018de3a065fed3de760849e8d370ad42469c26808d267768ec9125c30cba2c",
     "eip155:1:0x9cb1d93d6859883361e8c2f9941f13d6156a1e8daa0ebe801b5d0b5a612723c1",
+    "eip155:1:0xffcb4e6a667c2727dee0a2d5a359c801af77cd153f832ab07829a1c1f03bd11d",
+    "eip155:1:0xfdde2d4ea83fd18ef36d33fc715796fe41b7c4ca5095f3c1a3324557ca9b064f",
+    "eip155:1:0xdf1890e8b15521e232f1ae2caf939d98f7dae4b8b86937e42abe0f6adf7c10a6",
+    "eip155:1:0x03d0cbe8713f2db129fde71f011b36dc20a6f7d6409e2965debbaa6db426e5b1",
+    "eip155:1:0xe74772f7250a737a43bf7cb8125714a027a9e227c88626b31a7a97ea2985faaa"
+  ],
+  "refs": [
     "https://support.tokenlon.im/hc/en-us/articles/360042172392-imBTC-fully-restored-transfer-trading-mint-and-redeem",
     "https://github.com/christoftorres/Horus/blob/cbfc18ea5f21a8d32393a72d2121ba9cfd34adbc/experiments/uniswap/results/UniswapHack.csv",
     "https://eprint.iacr.org/2021/284.pdf"
   ],
   "notes": [
-    "Clone basis: deployment binds the exchange to imBTC, whose ERC-777 sender hook makes this template defect reachable.",
-    "The components are ETH reserve depletion in the imBTC exchange (519 transactions) and eINV exchange (six transactions). For each campaign transaction, sum ETH calls out of its exchange minus ETH calls into it; this excludes recycled attacker inputs and flash-loan principal without subtracting gas or later recoveries. The eINV total exceeds the attacker payout column in the Horus table by 2,193 wei retained in the helper. Both components use the same incident-time ETH price. Unvalued residual token depletion is 0.00000245 imBTC and 0.000000000000000003 eINV."
+    "Clone basis: the exchange's creation bound the V1 template to imBTC (deployed earlier), whose ERC-777 sender hook makes the template defect reachable; enableTransfer on imBTC also predates it.",
+    "Campaign: the attacker's 518 further imBTC and 6 eINV double sells via its contract 0xbd2250d7, plus 5 flash-loan copycat double sells on the imBTC, eINV, pBTC and plDai V1 exchanges; a scan of all 12 V1 exchanges of ERC1820-registered ERC-777 tokens found no earlier double sell.",
+    "Loss is the ETH the four exchanges lost per transaction (loss.mjs, victims netted within each transaction); residual token dust (2.49e-6 imBTC, a few wei of eINV and pBTC) is left out."
   ]
 }

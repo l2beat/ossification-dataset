@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Unifi Protocol",
   "name": "Unifi UP reward manager accepts a caller-supplied fake pool for LP reward eligibility and reward math",
-  "summary": "The unverified Unifi UP reward manager 0x5d8aa155 treats any contract that calls mintUP(self) as a pool once its token0() returns WBNB, and claimUP(pool, a, b) sizes the payout from balanceOf and totalSupply read from that same address. The attacker's contract, whose runtime differs from every Unifi pool, minted UP with 0.001 flash-borrowed BNB, then claimed the manager's whole 0.559 UP reward reserve by reporting a huge LP balance. It redeemed the UP at the UPRedeemer for 5.86 BNB.",
+  "summary": "Unifi's UP reward manager 0x5d8aa155 treated any contract whose token0() returned WBNB as a pool in mintUP, and claimUP sized the payout from balanceOf and totalSupply read from that same address. The attacker's fake pool minted UP with 0.001 flash-borrowed BNB, reported a huge LP balance to claim the manager's UP reward reserve, and redeemed the UP for BNB.",
   "targets": [
     {
       "address": "0x5d8aa15505afec01bab0de21f9377673b5246eae",
@@ -13,21 +13,25 @@
     }
   ],
   "loss": {
-    "usd": 4200.15,
+    "usd": 4200.23,
     "assets": [
       {
         "token": "0x36f20660b9947929ab3edd8727b5af60260333a7",
         "symbol": "UPbnb",
-        "amount": "0.559116757634477508",
-        "usd": 4200.15
+        "amount": "0.559127104960528308",
+        "usd": 4200.23
       }
     ]
   },
+  "campaign": [
+    "eip155:56:0xdd6bc946c16a35ca20e8dc4c3254a12b6c1e1394045d29ef4ea6917881f8e652"
+  ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/UnifiProtocol_exp.sol"
   ],
   "notes": [
-    "Direct unverified runtime with no DELEGATECALL or SELFDESTRUCT and an empty EIP-1967 implementation slot; its only non-claim admin transaction is transferOwnership, and eligibility is decided by runtime code (token0() == WBNB), so deployment is the only age basis.",
-    "The manager's pre-exploit UP reward reserve, less 1 wei left behind; the 0.000092563800 UP net minted from the attacker's own 0.001 BNB in the same transaction is excluded. Valued at the transaction's own redemption rate, 5.860110743711839863 BNB for 0.559209321435491586 UP (10.479279 BNB per UP), times the DefiLlama WBNB price."
+    "Direct unverified runtime with no delegation; its only admin transaction is transferOwnership and eligibility is decided by runtime code (token0() == WBNB), so deployment is the age basis.",
+    "Every mint event of the manager since deployment (66,608) names a UnifiRouter-created pool except the anchor's and one copycat's fake pool, created by a different EOA with the same bytecode three days later; it took the dust minted since.",
+    "UP has no market price: the manager's net UP outflow (attacker's own minted UP excluded) is valued at the anchor's redemption rate, 10.479279 BNB per UP, times DefiLlama's WBNB price at each transaction."
   ]
 }
