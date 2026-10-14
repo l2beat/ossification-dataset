@@ -2,30 +2,32 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Warp Finance",
   "name": "Warp Finance LP collateral priced from spot reserves",
-  "summary": "UniswapLPOracleFactory.getUnderlyingPrice valued a Uniswap V2 LP token as (twapPrice0 * reserve0 + twapPrice1 * reserve1) * 10**decimals / totalSupply, taking the reserves from the pair's instantaneous state through UniswapV2Library.getReserves while taking only the unit prices from a TWAP. Flash-loaned swaps that skewed the DAI/WETH pair raised that sum without changing totalSupply, so WarpControl.getBorrowLimit valued the attacker's LP collateral at 135.470392 USDC per token against a true 58.815427 and authorised 3.86 million DAI and 3.92 million USDC of borrowing. The reserve term is unbounded and none of the contract's parameters bounds or averages it, so no parameter value makes the function correct.",
+  "summary": "UniswapLPOracleFactory.getUnderlyingPrice valued a Uniswap V2 LP token from TWAP unit prices times the pair's instantaneous reserves over totalSupply. With flash-loaned swaps the attacker skewed the DAI/WETH pair, inflating the value of its DAI/WETH LP collateral in WarpControl's borrow limit, and borrowed the DAI and USDC lending vaults dry.",
   "targets": [
     {
       "address": "0x4a224cd0517f08b26608a2f73bf390b01a6618c8",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x311c90a9411131a7473e916f6893559658f6fe334e1a315c19680c1147f00bb5"
+        "kind": "config",
+        "tx": "0xbd03ffc80eff983579f3a8ecdf7afdb8ccfc69e1e59fba85e53d34e6a87ce80f",
+        "address": "0x4a224cd0517f08b26608a2f73bf390b01a6618c8",
+        "call": "0xf9160f3d000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
       }
     }
   ],
   "loss": {
-    "usd": 7780630.4252966605,
+    "usd": 7780630.43,
     "assets": [
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "3917983.816717",
-        "usd": 3917983.816717
+        "usd": 3917983.82
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
         "amount": "3862646.608579660094744528",
-        "usd": 3862646.6085796603
+        "usd": 3862646.61
       }
     ]
   },
@@ -34,8 +36,7 @@
     "https://slowmist.medium.com/analysis-of-warp-finance-hacked-incident-cb12a1af74cc"
   ],
   "notes": [
-    "UniswapLPOracleFactory is a plain non-delegating deployment with no upgrade path. Its runtime is byte-identical at the deployment block, at block 11473329 and in the anchor transaction prestate, so the deployment is the last executable-code change. The owner-only createNewOracles registration of the DAI/WETH pair is configuration and is context only.",
-    "Exact depletion of Warp's two stablecoin lending vaults in the anchor transaction, read from receipt log indices 27 and 32: 3,917,983.816717 USDC left WarpVaultSC 0xae465fd39b519602ee28f062037f7b9c41fdc8cf and 3,862,646.608579660094744528 DAI left WarpVaultSC 0x6046c3ab74e6ce761d218b9117d5c63200f4b406, both to the attacker contract, and neither was repaid. Both assets are valued at par. The 94,349.340516285530671934 UNI-V2 DAI/WETH tokens the attacker posted as collateral stayed in WarpVaultLP 0x13db1cb418573f4c3a2ea36486f0e421bc0d2427 and were recovered by Warp and white-hat helpers on 2020-12-20 at roughly 5.85 million USD; that later recovery does not reduce gross victim depletion. The attacker's flash-loan principal from dYdX and three Uniswap pairs is repaid inside the same transaction and is not counted.",
-    "The seed inventory aged this row from WarpControl 0xba539b9a5c2d412cb10e5770435f362094f9541c. WarpControl applied the price it was given as designed; the defect-bearing artifact is UniswapLPOracleFactory 0x4a224cd0517f08b26608a2f73bf390b01a6618c8, which computed it, so the target and the code age were moved there. The two contracts were deployed 261 seconds apart, so the change in basis moves the age by less than five minutes."
+    "The age runs from the owner's createNewOracles call that registered the USDC price instance (tokenToUSDC[USDC]); before it, borrowSC(USDC) reverted, and it is the latest of the oracle and market registrations the anchor needed (DAI/WETH LP listing and DAI pricing came a few minutes earlier).",
+    "WarpControl applied the price it was given; the defect is the factory's reserve-based LP pricing. The DAI/WETH LP the attacker left as collateral, later recovered by Warp, is not subtracted (rule 14). Stablecoins valued at par."
   ]
 }

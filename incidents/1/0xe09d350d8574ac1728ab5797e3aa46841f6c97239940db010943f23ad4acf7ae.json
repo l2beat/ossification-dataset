@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "XBridge",
   "name": "XBridge permissionless listToken then withdrawTokens",
-  "summary": "XBridge.listToken() has no caller restriction, so anyone could register a listing for a token the bridge already custodies and pair it with a corresponding token and chain of their own choosing. The attacker listed the bridge’s own STC, SRLTY and Mazi holdings against listings they controlled and then called withdrawTokens() to move the real deposits out.",
+  "summary": "XBridge.listToken() had no caller restriction and overwrote the token owner for any token, even one the bridge already custodied. The attacker listed the bridge's STC, SRLTY and Mazi holdings against pairs of its own choosing, became their token owner, and called withdrawTokens() to take the deposits, on Ethereum and then on the BSC deployment of the same implementation.",
   "targets": [
     {
       "address": "0x47ddb6a433b76117a98fbeab5320d8b67d468e31",
@@ -14,39 +14,68 @@
     }
   ],
   "loss": {
-    "usd": 1036119.186308296,
+    "usd": 1157547.09,
     "assets": [
       {
         "token": "0x19ae49b9f38dd836317363839a5f6bfbfa7e319a",
         "symbol": "STC",
         "amount": "482589886.903032631",
-        "usd": 825011.5411550795
+        "usd": 492921.95
       },
       {
         "token": "0x142a774e8b52550e88e196cedd7a5835acb646d0",
         "symbol": "SRLTY",
         "amount": "1372522850.794421868",
-        "usd": 186306.25176683482
+        "usd": 125337.93
       },
       {
         "token": "0x5b8650cd999b23cf39ab12e3213fbc8709c7f5cb",
         "symbol": "Mazi",
         "amount": "18450672.062477135347786",
-        "usd": 24801.393386381766
+        "usd": 12072.83
+      },
+      {
+        "chainId": 56,
+        "token": "0x19ae49b9f38dd836317363839a5f6bfbfa7e319a",
+        "symbol": "STC",
+        "amount": "466490205.18469224",
+        "usd": 476477.58
+      },
+      {
+        "chainId": 56,
+        "token": "0xee8ed80bb013325ea63df19233aae584e94f3826",
+        "symbol": "SRLTY",
+        "amount": "511424527.363940842",
+        "usd": 43431.19
+      },
+      {
+        "chainId": 56,
+        "token": "0x5b8650cd999b23cf39ab12e3213fbc8709c7f5cb",
+        "symbol": "Mazi",
+        "amount": "11165018.691315825286444",
+        "usd": 7305.61
       }
     ]
   },
   "refs": [
     "https://twitter.com/CyversAlerts/status/1783045506471432610",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/XBridge_exp.sol",
-    "eip155:1:0x6956a153b5f595b769f2ddd9d941d32ca9adf61e721da57f5a528dca50ea64f1",
-    "eip155:1:0x68e2ab07e09e79360dacda1a32a26b7eb2a9fad361330c103d8093c08c27c719",
-    "eip155:1:0x903d88a92cbc0165a7f662305ac1bff97430dbcccaa0fe71e101e18aa9109c92",
-    "eip155:1:0xb8801c7ec53f48304acb6961ba51b9c255a50cd47954685881102a8223e805dd",
-    "eip155:1:0xc1169fef00f42d8e53d5f14f80dcad775ef8b6dfbde282e486f09dea3d7d79fa"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/XBridge_exp.sol"
   ],
   "notes": [
-    "The fifth and last Upgraded event the proxy emitted before the exploit, log 248 of block 19720066, selected 0x354cca2f55dde182d36fe34d673430e226a3cb8c. The anchor transaction’s trace shows the proxy delegate-calling exactly that implementation for listToken, 12 hours 13 minutes later.",
-    "Components are the bridge proxy’s net ERC-20 deltas across the six campaign transactions the attacker sent to its exploit contract between blocks 19723701 and 19723925. All three tokens are thin, so the DefiLlama unit prices, observed 98 to 167 seconds before the anchor, are a mark-to-market figure rather than a realisable one, which is why confidence is medium; contemporaneous reporting put the loss near USD 1.6 million. Nothing was recovered."
+    "The age runs from the proxy's upgrade to implementation 0x354cca2f, which the anchor's listToken ran. The BSC proxy 0xdac6ea96 runs the same implementation address; the attacker repeated the list-and-withdraw there minutes later, so those legs are campaign.",
+    "All three tokens are thin (rule 15): the attacker's Ethereum STC swaps failed and its sales on both chains moved the price. Each token is valued at the attacker's realised average sale price (BNB or ETH proceeds at DefiLlama prices), applied to every unit taken on both chains, including units still held."
+  ],
+  "campaign": [
+    "eip155:1:0x903d88a92cbc0165a7f662305ac1bff97430dbcccaa0fe71e101e18aa9109c92",
+    "eip155:1:0xb8801c7ec53f48304acb6961ba51b9c255a50cd47954685881102a8223e805dd",
+    "eip155:1:0x68e2ab07e09e79360dacda1a32a26b7eb2a9fad361330c103d8093c08c27c719",
+    "eip155:1:0xc1169fef00f42d8e53d5f14f80dcad775ef8b6dfbde282e486f09dea3d7d79fa",
+    "eip155:1:0x6956a153b5f595b769f2ddd9d941d32ca9adf61e721da57f5a528dca50ea64f1",
+    "eip155:56:0x8167b69e80eb789c04deaf3a86bdf7f61d25213399c74887670a91a04d8280da",
+    "eip155:56:0xcf8aa3b9dfcf9250a5da5e9571f98374f1d649024a81b8d5f7da2f7d92f313f9",
+    "eip155:56:0x563cb908e0b05d41349d77157f468e17aaa8cdb4957f044fcc9c6cdc3a12159a",
+    "eip155:56:0xd4f11e3ea752a5515bce5b89d482afc2937db6bedf756376f1313f35f2d8d2cf",
+    "eip155:56:0xb867c33519664512ae2a4eaffe671415dfd29c3b07bf14b31a59f5a170348ee6",
+    "eip155:56:0xae5e6bd9326ae2998291698154318a55fb68c31ab51026bbb17a4400f6be40e0"
   ]
 }

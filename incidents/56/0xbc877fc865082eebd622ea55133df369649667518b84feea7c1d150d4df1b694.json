@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "XBIT",
   "name": "XBITVault fail-open transfer authorization while unbound",
-  "summary": "XBITVault keeps the XBIT balance ledger and its transfer(from,to,amount) only enforces msg.sender == xbitContract when xbitContract is non-zero. bindXBIT was never called, so anyone could move any holder's XBIT. The attacker moved 1,526,216,569.965537999999999998 XBIT out of the XBIT/USDT PancakeSwap pair, synced its XBIT reserve to 2 wei and sold XBIT back 20 times for the pair's USDT.",
+  "summary": "XBITVault keeps the XBIT balance ledger, and its transfer(from,to,amount) only checks msg.sender == xbitContract when xbitContract is set; bindXBIT was never called, so anyone could move anyone's XBIT. The attacker moved the XBIT/USDT pair's XBIT to itself, synced the pair and sold back for its USDT. A copycat repeated it against an unbound sibling vault.",
   "targets": [
     {
       "address": "0xc8790ba6c20c7e07c9ca4d4060979390d342391a",
@@ -13,22 +13,25 @@
     }
   ],
   "loss": {
-    "usd": 53112.28469985901,
+    "usd": 53190.12,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
-        "amount": "53112.284699859007901897",
-        "usd": 53112.28469985901
+        "amount": "53171.745877878029536565",
+        "usd": 53190.12
       }
     ]
   },
   "refs": [
-    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-6-apr-12-2026",
-    "eip155:56:0xd4735de2cafaa4f4700a12881a182e05868d1ed7717ca8d5f1cdd15425c8131c"
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-6-apr-12-2026"
   ],
   "notes": [
-    "Direct immutable vault; the fail-open check is in the deployed code and xbitContract was zero from construction through the exploit (bindXBIT never called), so no configuration change created the condition.",
-    "Exact USDT depletion of the XBIT/USDT pair 0xf019728561318141edde5255525df2cb57f6d6ff in the anchor transaction; the attacker supplied no USDT. The pair's pre-exploit liquidity came from a single addLiquidity (source-5). BSC-USD valued at par."
+    "The vault is immutable and xbitContract stayed zero from construction until the owner's bindXBIT after the exploit, so the deployment is the reset.",
+    "Campaign: the attacker's second contract run and a copycat that drained this pair's remainder and the pair of sibling vault 0x7612bede (same deployer and template, never bound); pair Sync scans on all four sibling pairs find no earlier exploit. Loss is the USDT both pairs lost, at DefiLlama prices."
+  ],
+  "campaign": [
+    "eip155:56:0xf3bf365fd9818731b7ee6e5259c22164c6121b771648c07fa8a2f573375200bd",
+    "eip155:56:0x1ae39cf3d69e88dfd62eccac4394a6d2db625705562e496baa11acfe69e7812c"
   ]
 }

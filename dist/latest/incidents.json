@@ -775,8 +775,8 @@
     "tx": "0x2da59a05359c07bb640075ce99416846f6f26f9fb594dedaab9e1662de750bd1",
     "protocol": "WDGG Token",
     "name": "WDGG burnFrom without authorization burns the PancakeSwap pair reserve",
-    "summary": "The WDGG implementation's burnFrom(from,value) debits any holder's balance with no allowance or caller check (and setWdgAddress lets anyone mark themselves fee-exempt). The attacker exempted its contract, bought 45.62 WDGG, burned 399,902.21 WDGG straight out of the WDGG/USDT pair, called sync() and sold the 45.62 WDGG for 40,008.28 USDT. Two later actors repeated the pair burn against newly added liquidity.",
-    "lossUsd": 40600.3223723836,
+    "summary": "The WDGG implementation's burnFrom(from,value) debits any holder's balance with no allowance or caller check, and setWdgAddress lets anyone mark an address fee-exempt. The attacker exempted its contract, bought a little WDGG, burned nearly all WDGG held by the WDGG/USDT pair, called sync() and sold its WDGG into the inflated price. Two later actors repeated the pair burn.",
+    "lossUsd": 40567.43,
     "codeAgeSeconds": 16124,
     "exploit": {
       "block": 89481584,
@@ -795,7 +795,7 @@
       "index": 21,
       "timestamp": 1774799744
     },
-    "claimsSha256": "d9a2e4e9dd03ee6e4f64c121463169d4b7255b975c0db4bf585ae9929b51a421"
+    "claimsSha256": "8375881d2311575a1549d82fa8672c1810d75241bfaffc0f565e07f218738a95"
   },
   {
     "id": "eip155:1:0xd62f044cf4d6aa759b3724886c3ab4149c825234d5075df74fa2a25577f7f810",
@@ -1320,8 +1320,8 @@
     "tx": "0xbc877fc865082eebd622ea55133df369649667518b84feea7c1d150d4df1b694",
     "protocol": "XBIT",
     "name": "XBITVault fail-open transfer authorization while unbound",
-    "summary": "XBITVault keeps the XBIT balance ledger and its transfer(from,to,amount) only enforces msg.sender == xbitContract when xbitContract is non-zero. bindXBIT was never called, so anyone could move any holder's XBIT. The attacker moved 1,526,216,569.965537999999999998 XBIT out of the XBIT/USDT PancakeSwap pair, synced its XBIT reserve to 2 wei and sold XBIT back 20 times for the pair's USDT.",
-    "lossUsd": 53112.28469985901,
+    "summary": "XBITVault keeps the XBIT balance ledger, and its transfer(from,to,amount) only checks msg.sender == xbitContract when xbitContract is set; bindXBIT was never called, so anyone could move anyone's XBIT. The attacker moved the XBIT/USDT pair's XBIT to itself, synced the pair and sold back for its USDT. A copycat repeated it against an unbound sibling vault.",
+    "lossUsd": 53190.12,
     "codeAgeSeconds": 41312,
     "exploit": {
       "block": 91870104,
@@ -1339,7 +1339,7 @@
       "index": 1,
       "timestamp": 1775850595
     },
-    "claimsSha256": "14a801e3f2e7dc57318551f9bccc1691a060c78769a8bc04fd30b81941bf7d83"
+    "claimsSha256": "233756b3f707df6f6a2504a8da48afa5240beb5a2d189f800b2b787edb5a90be"
   },
   {
     "id": "eip155:42161:0xf52a681bc76df1e3a61d9266e3a66c7388ef579d62373feb4fd0991d36006855",
@@ -1374,8 +1374,8 @@
     "tx": "0xe09d350d8574ac1728ab5797e3aa46841f6c97239940db010943f23ad4acf7ae",
     "protocol": "XBridge",
     "name": "XBridge permissionless listToken then withdrawTokens",
-    "summary": "XBridge.listToken() has no caller restriction, so anyone could register a listing for a token the bridge already custodies and pair it with a corresponding token and chain of their own choosing. The attacker listed the bridge’s own STC, SRLTY and Mazi holdings against listings they controlled and then called withdrawTokens() to move the real deposits out.",
-    "lossUsd": 1036119.186308296,
+    "summary": "XBridge.listToken() had no caller restriction and overwrote the token owner for any token, even one the bridge already custodied. The attacker listed the bridge's STC, SRLTY and Mazi holdings against pairs of its own choosing, became their token owner, and called withdrawTokens() to take the deposits, on Ethereum and then on the BSC deployment of the same implementation.",
+    "lossUsd": 1157547.09,
     "codeAgeSeconds": 43992,
     "exploit": {
       "block": 19723701,
@@ -1394,7 +1394,7 @@
       "index": 76,
       "timestamp": 1713899123
     },
-    "claimsSha256": "fabccb80aee745a8c0f0e2734f44fc992edd9b8505cd5eded12256b76ead7ada"
+    "claimsSha256": "68b25cfb609ef1048323a35c324b7de7a6b12ff5cc803ca06f287b67d221313d"
   },
   {
     "id": "eip155:56:0xd87cdecd5320301bf9a985cc17f6944e7e7c1fbb471c80076ef2d031cc3023b2",
@@ -2346,6 +2346,33 @@
     "claimsSha256": "fc76bab67d0cd63175b55633703d2d89d9aa9216dde6c62f97c31d569af19d63"
   },
   {
+    "id": "eip155:1:0x04e16a79ff928db2fa88619cdd045cdfc7979a61d836c9c9e585b3d6f6d8bc31",
+    "chainId": 1,
+    "tx": "0x04e16a79ff928db2fa88619cdd045cdfc7979a61d836c9c9e585b3d6f6d8bc31",
+    "protocol": "WiseLending",
+    "name": "WiseLending empty-market donation/rounding inflation (second incident)",
+    "summary": "WiseLending v2 let the attacker shrink the new PLP-stETH market to a tiny share base, then repeated deposits and withdrawals whose share rounding left value in the pool, inflating the share price past the donation guard. The inflated PLP collateral of a second position then borrowed wstETH, WETH, USDC, USDT and DAI from the other markets.",
+    "lossUsd": 565709.49,
+    "codeAgeSeconds": 112032,
+    "exploit": {
+      "block": 18992908,
+      "index": 0,
+      "timestamp": 1705087763
+    },
+    "target": {
+      "address": "0x37e49bf3749513a02fa535f0cbc383796e8107e4",
+      "codeHash": "0xfde0dd23524a100fc5f6652cf93ea15339137ad1b646ac9571d49ed9dded4f32"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x48470cb3be62d8fa656363e2bbe6a598253e40efda304c7311f0087cf5c84f93",
+      "block": 18983652,
+      "index": 92,
+      "timestamp": 1704975731
+    },
+    "claimsSha256": "bcbe7d472dc4cb1d3d62b6cdebbb78a756f00dd9db1a6441de99aa9ad6ba416f"
+  },
+  {
     "id": "eip155:1:0xeaef2831d4d6bca04e4e9035613be637ae3b0034977673c1c2f10903926f29c0",
     "chainId": 1,
     "tx": "0xeaef2831d4d6bca04e4e9035613be637ae3b0034977673c1c2f10903926f29c0",
@@ -2653,9 +2680,9 @@
     "tx": "0x8bb8dc5c7c830bac85fa48acad2505e9300a91c3ff239c9517d0cae33b595090",
     "protocol": "Warp Finance",
     "name": "Warp Finance LP collateral priced from spot reserves",
-    "summary": "UniswapLPOracleFactory.getUnderlyingPrice valued a Uniswap V2 LP token as (twapPrice0 * reserve0 + twapPrice1 * reserve1) * 10**decimals / totalSupply, taking the reserves from the pair's instantaneous state through UniswapV2Library.getReserves while taking only the unit prices from a TWAP. Flash-loaned swaps that skewed the DAI/WETH pair raised that sum without changing totalSupply, so WarpControl.getBorrowLimit valued the attacker's LP collateral at 135.470392 USDC per token against a true 58.815427 and authorised 3.86 million DAI and 3.92 million USDC of borrowing. The reserve term is unbounded and none of the contract's parameters bounds or averages it, so no parameter value makes the function correct.",
-    "lossUsd": 7780630.4252966605,
-    "codeAgeSeconds": 148612,
+    "summary": "UniswapLPOracleFactory.getUnderlyingPrice valued a Uniswap V2 LP token from TWAP unit prices times the pair's instantaneous reserves over totalSupply. With flash-loaned swaps the attacker skewed the DAI/WETH pair, inflating the value of its DAI/WETH LP collateral in WarpControl's borrow limit, and borrowed the DAI and USDC lending vaults dry.",
+    "lossUsd": 7780630.43,
+    "codeAgeSeconds": 146865,
     "exploit": {
       "block": 11473330,
       "index": 65,
@@ -2666,13 +2693,13 @@
       "codeHash": "0xcec2342d0bda17ff30969753d2a350b76c88cad9a4387ee0c7fdb3a8f1312834"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0x311c90a9411131a7473e916f6893559658f6fe334e1a315c19680c1147f00bb5",
-      "block": 11462140,
-      "index": 89,
-      "timestamp": 1608095269
+      "kind": "config",
+      "tx": "0xbd03ffc80eff983579f3a8ecdf7afdb8ccfc69e1e59fba85e53d34e6a87ce80f",
+      "block": 11462265,
+      "index": 31,
+      "timestamp": 1608097016
     },
-    "claimsSha256": "aab71676ef5f87ff6cda368fb5d2d43249972c2942a7538b32d7b288f36393cf"
+    "claimsSha256": "294522afbb3ff59617fa8117b183c16ed3e2625f14014b7620b03cc8ac6f984c"
   },
   {
     "id": "eip155:56:0xc346adf14e5082e6df5aeae650f3d7f606d7e08247c2b856510766b4dfcdc57f",
@@ -7851,33 +7878,6 @@
     "claimsSha256": "245284988ec95ceb682ddb9b0aec8827244bde76c8d3c5228ecee4c9607f6892"
   },
   {
-    "id": "eip155:1:0x04e16a79ff928db2fa88619cdd045cdfc7979a61d836c9c9e585b3d6f6d8bc31",
-    "chainId": 1,
-    "tx": "0x04e16a79ff928db2fa88619cdd045cdfc7979a61d836c9c9e585b3d6f6d8bc31",
-    "protocol": "WiseLending",
-    "name": "WiseLending empty-market donation/rounding inflation (second incident)",
-    "summary": "The attacker reduced the PLP-stETH-Dec2025 lending market to a tiny share base, donated pool tokens, and repeatedly exercised asymmetric deposit/withdraw rounding to inflate the collateral value of a second position, which then borrowed assets from five other WiseLending markets.",
-    "lossUsd": 565709.4913023192,
-    "codeAgeSeconds": 3452448,
-    "exploit": {
-      "block": 18992908,
-      "index": 0,
-      "timestamp": 1705087763
-    },
-    "target": {
-      "address": "0x37e49bf3749513a02fa535f0cbc383796e8107e4",
-      "codeHash": "0xfde0dd23524a100fc5f6652cf93ea15339137ad1b646ac9571d49ed9dded4f32"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x8be21da4e53a7e35f1d8c14fabfbd8a33d4b2f430e6ca55e4b17b6153af5a25e",
-      "block": 18708240,
-      "index": 106,
-      "timestamp": 1701635315
-    },
-    "claimsSha256": "822d84cc406f37e48f0206fe2d8c49933a0c90dca46e723ce94bce8614e63417"
-  },
-  {
     "id": "eip155:1:0x6b04344d5627df59d3bc645e7454f4605a90272852a91e435e370376643353b3",
     "chainId": 1,
     "tx": "0x6b04344d5627df59d3bc645e7454f4605a90272852a91e435e370376643353b3",
@@ -8367,6 +8367,33 @@
       "timestamp": 1723883093
     },
     "claimsSha256": "55d795374695bf38067e90f0b32a52c774ad3d633fd6ec914da76f50d9467f9d"
+  },
+  {
+    "id": "eip155:1:0x7ac4a98599596adbf12fffa2bd23e2a2d2ac7e8989b6ea043fcc412a29126555",
+    "chainId": 1,
+    "tx": "0x7ac4a98599596adbf12fffa2bd23e2a2d2ac7e8989b6ea043fcc412a29126555",
+    "protocol": "WiseLending",
+    "name": "WiseLending empty-pool share inflation through a direct WBTC donation",
+    "summary": "WiseLending v1 credited any token surplus in a pool to existing shares (_cleanUp) and minted one share per wei into an empty pool. The attacker made two one-wei WBTC deposits, donated flash-loaned WBTC so each share was worth a fortune, borrowed every other asset against that collateral, and pulled the WBTC back through rounding-favoured withdrawals.",
+    "lossUsd": 262683.87,
+    "codeAgeSeconds": 4321548,
+    "exploit": {
+      "block": 18342121,
+      "index": 1,
+      "timestamp": 1697207963
+    },
+    "target": {
+      "address": "0x84524baa1951247b3a2617a843e6ece915bb9674",
+      "codeHash": "0x7d311619daf40dc50ea5d54ce2b69d5479c4937c60f086f69c55a6e80489dceb"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x10f94b30f1de331e02421f9df7af1d12828610d11e5072a560e75e439703c9b4",
+      "block": 17985083,
+      "index": 24,
+      "timestamp": 1692886415
+    },
+    "claimsSha256": "6177b68b078a4fc3b9bc03daaff0fb2e39db5ab74da61cb7794bc4b57099add5"
   },
   {
     "id": "eip155:56:0xfb153c572e304093023b4f9694ef39135b6ed5b2515453173e81ec02df2e2104",
@@ -8999,33 +9026,6 @@
       "timestamp": 1763702185
     },
     "claimsSha256": "c4a0bd0acdd3ae1f249f7a5a2dbe777d4d56d8a78693589e214fe5bbc1c85130"
-  },
-  {
-    "id": "eip155:1:0x7ac4a98599596adbf12fffa2bd23e2a2d2ac7e8989b6ea043fcc412a29126555",
-    "chainId": 1,
-    "tx": "0x7ac4a98599596adbf12fffa2bd23e2a2d2ac7e8989b6ea043fcc412a29126555",
-    "protocol": "WiseLending",
-    "name": "WiseLending empty-pool share inflation through a direct WBTC donation",
-    "summary": "MainHelper._cleanUp, run through the syncPool modifier on every WiseLending entry point, compares IERC20.balanceOf(address(this)) against totalPool plus totalBareToken and credits any surplus to both totalPool and pseudoTotalPool without minting shares, so an unsolicited token transfer is booked as pool income for existing shareholders. MainHelper.calculateLendingShares additionally returns the raw amount when totalDepositShares is at most 1, so the first deposit into an empty pool mints one share per wei. Two one-wei WBTC depositExactAmount calls left the WBTC pool with two shares and a pseudoTotalPool of two, a direct transfer of 49.99999998 WBTC then made _cleanUp value each of those shares at about 25 WBTC, and the inflated collateral let borrowExactAmount take every other asset the protocol held before the flash loan was repaid out of a geometric sequence of WBTC withdrawals.",
-    "lossUsd": 262280.5133647331,
-    "codeAgeSeconds": 5772324,
-    "exploit": {
-      "block": 18342121,
-      "index": 1,
-      "timestamp": 1697207963
-    },
-    "target": {
-      "address": "0x84524baa1951247b3a2617a843e6ece915bb9674",
-      "codeHash": "0x7d311619daf40dc50ea5d54ce2b69d5479c4937c60f086f69c55a6e80489dceb"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x2d762fe43ecf6d9830972ce070f69d9ab8b2e161f095d3269ea74e68ef900677",
-      "block": 17865066,
-      "index": 86,
-      "timestamp": 1691435639
-    },
-    "claimsSha256": "642618e704ee72a92b6afe63aa1445d4f3d2856429cee792f6d3d2aaa97e1178"
   },
   {
     "id": "eip155:56:0x8de1921ae538264917f99f8ebd567890061d39c92a8fe58f4abd108d2373a265",
@@ -11317,8 +11317,8 @@
     "tx": "0x940ce704f1d21274219746e00b8dcb7d334515d39402358cf34ba40920821431",
     "protocol": "Whalebit",
     "name": "Whalebit staking level redemption at live CES/USDT pool price",
-    "summary": "Whalebit's staking proxy 0x40465755eb5846d655bbcc8c186a477469f9ce36 runs implementation 0x9153e149b0d90dea634ed9f7df6ff71c2109b654, whose deposit(level) and withdraw(amount) both convert between CES and an internal point balance at a price read from the CES/USDT Algebra pool 0xd3a9331a654444f9fe7ddbaec6678c2dc9113197 at call time, through pricer 0xb5ea1d17f3d8da34a6d6a1d2acc2a148e1411868 and price source 0xa293baf403299d3d5723e8fa3f9f946752aecf9a. The point balance credited on deposit is fixed by the level table, but the CES charged on deposit and the CES paid on withdrawal are each divided by a fresh price, and nothing ties the redemption price to the price the position was opened at: no price is stored with the position, there is no withdrawal delay, no deviation guard between the two legs and no minimum holding period. In the anchor transaction the pricer answers 1.085562 for five deposits of 5979.492113764512759291 CES each crediting 6491.109418002432000001 points, the attacker then swaps 7240.741153581361260699 CES into the Algebra pool, and the same five positions redeem the same 6491.109418002432000001 points for 6002.255702326453957437 CES each at the new price 1.081445. The contract's own nominally averaged source does not help: getAveragePrice(120) and getActualPrice() return the identical word in every read of the trace, before and after each swap, so the redemption rate follows the pool tick inside one transaction. No parameter value makes this correct - the level price, the priced pool and the averaging argument are configuration, but a deposit and a redemption quoted at two independently sampled market prices is extractable under all of them.",
-    "lossUsd": 913382.8821328304,
+    "summary": "Whalebit's staking implementation charged CES for a level deposit and paid CES on withdrawal at the CES/USDT Algebra pool's live price, with no stored entry price or delay. Using flash-loaned CES the attacker deposited via five helpers, pushed the pool price down, and redeemed the same points for more CES, repeating until the reserve was empty.",
+    "lossUsd": 913382.88,
     "codeAgeSeconds": 16149966,
     "exploit": {
       "block": 84938856,
@@ -11337,7 +11337,7 @@
       "index": 62,
       "timestamp": 1758847783
     },
-    "claimsSha256": "845e03b992e886202f265cf28775aeafd4cb77ae2c3576fa27e0e6e3d32b09ea"
+    "claimsSha256": "f6fb864996a6fa57105c9c3f57c72415258906e92d54df55dbc24000830762a5"
   },
   {
     "id": "eip155:1:0x945cd2720316a7b9b43d0099818dc9c38f882aafe3211bbf63474b4d22e58398",

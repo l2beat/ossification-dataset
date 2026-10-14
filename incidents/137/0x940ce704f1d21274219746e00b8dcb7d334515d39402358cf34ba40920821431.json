@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Whalebit",
   "name": "Whalebit staking level redemption at live CES/USDT pool price",
-  "summary": "Whalebit's staking proxy 0x40465755eb5846d655bbcc8c186a477469f9ce36 runs implementation 0x9153e149b0d90dea634ed9f7df6ff71c2109b654, whose deposit(level) and withdraw(amount) both convert between CES and an internal point balance at a price read from the CES/USDT Algebra pool 0xd3a9331a654444f9fe7ddbaec6678c2dc9113197 at call time, through pricer 0xb5ea1d17f3d8da34a6d6a1d2acc2a148e1411868 and price source 0xa293baf403299d3d5723e8fa3f9f946752aecf9a. The point balance credited on deposit is fixed by the level table, but the CES charged on deposit and the CES paid on withdrawal are each divided by a fresh price, and nothing ties the redemption price to the price the position was opened at: no price is stored with the position, there is no withdrawal delay, no deviation guard between the two legs and no minimum holding period. In the anchor transaction the pricer answers 1.085562 for five deposits of 5979.492113764512759291 CES each crediting 6491.109418002432000001 points, the attacker then swaps 7240.741153581361260699 CES into the Algebra pool, and the same five positions redeem the same 6491.109418002432000001 points for 6002.255702326453957437 CES each at the new price 1.081445. The contract's own nominally averaged source does not help: getAveragePrice(120) and getActualPrice() return the identical word in every read of the trace, before and after each swap, so the redemption rate follows the pool tick inside one transaction. No parameter value makes this correct - the level price, the priced pool and the averaging argument are configuration, but a deposit and a redemption quoted at two independently sampled market prices is extractable under all of them.",
+  "summary": "Whalebit's staking implementation charged CES for a level deposit and paid CES on withdrawal at the CES/USDT Algebra pool's live price, with no stored entry price or delay. Using flash-loaned CES the attacker deposited via five helpers, pushed the pool price down, and redeemed the same points for more CES, repeating until the reserve was empty.",
   "targets": [
     {
       "address": "0x40465755eb5846d655bbcc8c186a477469f9ce36",
@@ -14,17 +14,17 @@
     }
   ],
   "loss": {
-    "usd": 913382.8821328304,
+    "usd": 913382.88,
     "assets": [
       {
         "token": "0x1bdf71ede1a4777db1eebe7232bcda20d6fc1610",
         "symbol": "CES",
-        "amount": "3856764.211173318784126340",
-        "usd": 913382.8821328304
+        "amount": "3856764.21117331878412634",
+        "usd": 913382.88
       }
     ]
   },
-  "refs": [
+  "campaign": [
     "eip155:137:0x469edbd867367ac06c267e90aaab37a854423d1f0b01375f1636d053203e977a",
     "eip155:137:0xf46c0fefb01db7c2047d78aec47fe42afce8327d3338880e0ca9870b4859fc03",
     "eip155:137:0x09c36b157f14e22967fff0c3c8242d74c0433d01947a7cc315a2706a82aac8db",
@@ -176,18 +176,15 @@
     "eip155:137:0x61338baa8d7db06ae595ccadd5dbbe60122b959a00440a2c3599f20ea9830683",
     "eip155:137:0xe8f44d101ce783759c3ba757a433fcefe388f1d3e4a7a2549dd6a9e5bbbb20b0",
     "eip155:137:0x9811e7f1cd24dfc4188f356217c465fe59c58f9fed8ac4dcb660f9150c1bd315",
-    "eip155:137:0x99f1242c8d04457f7cba394ef192650023a57e574f304bd36f11b538e8cb1d4d",
-    "eip155:137:0xe3ac3598c8ff6d53df9da87c8e0acd2ea1ac38a37757ff6d26f3a866bb87183d",
+    "eip155:137:0x99f1242c8d04457f7cba394ef192650023a57e574f304bd36f11b538e8cb1d4d"
+  ],
+  "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-03/WhalebitOracleManipulation_exp.sol",
-    "eip155:137:0x312dec48abb5be2520317366cb8271f770476ece0fa4ee327d7202319b24a2fd",
-    "eip155:137:0x3ded0b52c2c803357bbbb2b5074ce8342012a26b71f0b642a65dd1e045dfe6e0",
-    "eip155:137:0x5f8122439db3e4c6d58e9da75a778850cfdb627422caacac4fdd10203c9b232b",
-    "eip155:137:0x2178a741480eabd3f1aac9ef08597cbf9c7fed600fe3d432ca8e6b7e3e998217",
-    "eip155:137:0xc1705369ed2d56d387df4f0153cf7afad391b43caad41f4671b7342e9b8cedb2"
+    "eip155:137:0x312dec48abb5be2520317366cb8271f770476ece0fa4ee327d7202319b24a2fd"
   ],
   "notes": [
-    "Scanning the proxy's Upgraded topic from deployment to the exploit block returns exactly four events: 0x5a02541cb59efcc23c581f8d6599fc9810e7ea50 at block 69852042 (the proxy's own creation) and again at 74633620, 0xfd28a6e45402a4322fed47f883b765f03327b36e at 76558148, and 0x9153e149b0d90dea634ed9f7df6ff71c2109b654 at 76904623 log 398. The EIP-1967 implementation slot holds 0xfd28a6e4 at block 76904622 and 0x9153e149 at the pre-exploit block 84938855. Implementation 0x9153e149 was deployed 8 seconds earlier at block 76904619 and its runtime hashes to 0x42b0e9fb7741fa038dbf6c64f2167c84c9136502f2364afb0c7514caa35bea2a identically at blocks 76904619, 76904623 and 84938855.",
-    "Victim depletion is the CES reserve of the Whalebit pricer 0xb5ea1d17f3d8da34a6d6a1d2acc2a148e1411868, which held 3860529.112155042786446303 CES at block 84938855 and 3764.900981724002319963 CES at block 84938891, the block of the last successful campaign transaction: an exact delta of 3856764.211173318784126340 CES. Netting every CES Transfer log in blocks 84938856-84938891 confirms the destination split to the wei: 3480231.008245918711348953 CES to the attacker's cash-out address 0x48880b3dd87638e5ea75905c3a150e8a3aa6cda9 by way of the attack contract, 327410.568602360 CES absorbed by the CES/USDT Algebra pool as price impact, 45966.219626878 CES to the flash-loan pool 0x296b95dd0e8b726c4e358b0683ff0b6d675c35e9 as its fee, and about 3158 CES to ordinary user withdrawals in the same window. The attacker supplied no CES of its own: the attack contract's CES balance is zero at block 84938855 and every CES it used came from the flash loan, which was repaid in each transaction. CES cannot be marked at spot: the whole CES/USDT pool held only 506592.192894 USDT against 1172329.719850312269562891 CES before the attack, so the DefiLlama spot of 1.0794181571885721 USD would value the depletion at 4.16 million USD that could never have been realised. The evidenced price is what the attacker actually got: it moved 3480230.179742374772846706 CES through swap helper 0x63242a4ea82847b20e506b63b0e2e2eff0cc6cb0 in 43 tranches between blocks 84938903 and 84940699 and received 670659.427635127488882569 DAI, 113829.474698 USDC and 39720.849160 USDT back, 824209.751493127488882569 USD at par, an average of 0.2368262180733517 USD per CES. That average is applied to the full gross depletion here, which is why the recorded figure of 913382.88 USD exceeds the 824209.75 USD the attacker kept; the difference is the CES the pools took as slippage and flash fee, which METHODOLOGY does not deduct from gross victim depletion. The seed row's 824000 USD figure is the attacker's realised proceeds rounded. A later 113829.474698 USDC transfer into the cash-out address from 0x9295ee1d8c5b022be115a2ad3c30c72e34e7f096 at block 84946849 is a downstream reshuffle of funds that address had already sent out and is not counted twice. No recovery was identified.",
-    "The staking implementation 0x9153e149b0d90dea634ed9f7df6ff71c2109b654 and the pricer implementation 0x0729ea061132bcd76f420f9139af8957b41b90cb are unverified on Polygonscan, so the root cause is established from the call trace, the emitted Deposit and Withdraw values and the two price reads rather than from source. Only the level table implementation 0x35952dd1d135215cb22c07ae956ee02d4793023b is verified, and it contains no oracle: getPriceForLevel returns owner-set storage."
+    "Campaign: every transaction since the pricer's deployment that both minted and burned its receipt token (same-transaction deposit and redemption), 153 in all, all by the attack contract from two attacker EOAs; none earlier.",
+    "CES is valued at the attacker's realised average (rule 15): it sold the CES it extracted through an aggregator for DAI, USDC and USDT in one dump that the pool could not absorb; that average price is applied to the pricer's full gross depletion, including CES the pools kept as slippage and flash fees.",
+    "Staking and pricer code is unverified; the defect is read from the trace. The pricer and its price source (deployed earlier) only report the pool price; the staking route change to 0x9153e149 is the latest change of the code the exploit relied on."
   ]
 }

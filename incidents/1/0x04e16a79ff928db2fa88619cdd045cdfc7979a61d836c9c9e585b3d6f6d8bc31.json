@@ -2,30 +2,32 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "WiseLending",
   "name": "WiseLending empty-market donation/rounding inflation (second incident)",
-  "summary": "The attacker reduced the PLP-stETH-Dec2025 lending market to a tiny share base, donated pool tokens, and repeatedly exercised asymmetric deposit/withdraw rounding to inflate the collateral value of a second position, which then borrowed assets from five other WiseLending markets.",
+  "summary": "WiseLending v2 let the attacker shrink the new PLP-stETH market to a tiny share base, then repeated deposits and withdrawals whose share rounding left value in the pool, inflating the share price past the donation guard. The inflated PLP collateral of a second position then borrowed wstETH, WETH, USDC, USDT and DAI from the other markets.",
   "targets": [
     {
       "address": "0x37e49bf3749513a02fa535f0cbc383796e8107e4",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x8be21da4e53a7e35f1d8c14fabfbd8a33d4b2f430e6ca55e4b17b6153af5a25e"
+        "kind": "config",
+        "tx": "0x48470cb3be62d8fa656363e2bbe6a598253e40efda304c7311f0087cf5c84f93",
+        "address": "0x37e49bf3749513a02fa535f0cbc383796e8107e4",
+        "slot": "0xc5ed894adc1e3da9a5272fbf9bb0cf2652c79a12d3b4bd6229f564c99e7700d8"
       }
     }
   ],
   "loss": {
-    "usd": 565709.4913023192,
+    "usd": 565709.49,
     "assets": [
       {
         "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
         "symbol": "wstETH",
         "amount": "104.066616635764896511",
-        "usd": 310702.6308133061
+        "usd": 310702.63
       },
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "92.012091781801765194",
-        "usd": 239006.86048901314
+        "usd": 239006.86
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -48,10 +50,12 @@
     ]
   },
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-01/WiseLending02_exp.sol"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-01/WiseLending02_exp.sol",
+    "https://osec.io/blog/2024-01-18-rounding-bugs"
   ],
   "notes": [
-    "The direct WiseLending deployment installed the failure-bearing share-accounting runtime, which remained unchanged through the exploit.",
-    "The exploit receipt records the exact gross borrow outflows from WiseLending: 104.066616635764896511 wstETH, 92.012091781801765194 WETH, 9,000 USDC, 2,000 USDT, and 5,000 DAI. The latest CoinGecko WETH and wstETH observations before the transaction plus stablecoin-par valuation produce $565,709.49."
+    "The age runs from the owner's createPool for the PLP-stETH-Dec2025 market (collateral factor and pool data), listed the day before; the exploit needed that market as its inflatable collateral. The deployment-era code is unchanged.",
+    "Separate from the October 2023 WiseLending v1 incident: v1 was abandoned and v2 redeployed with a donation guard; this exploit bypassed the guard through withdraw rounding in a newly listed market. The attacker's setup transaction a minute earlier only opened positions and seeded the pool.",
+    "WETH and wstETH valued at CoinGecko prices before the transaction, stablecoins at par."
   ]
 }

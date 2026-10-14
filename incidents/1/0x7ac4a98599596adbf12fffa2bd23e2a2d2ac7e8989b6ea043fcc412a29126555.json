@@ -2,72 +2,80 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "WiseLending",
   "name": "WiseLending empty-pool share inflation through a direct WBTC donation",
-  "summary": "MainHelper._cleanUp, run through the syncPool modifier on every WiseLending entry point, compares IERC20.balanceOf(address(this)) against totalPool plus totalBareToken and credits any surplus to both totalPool and pseudoTotalPool without minting shares, so an unsolicited token transfer is booked as pool income for existing shareholders. MainHelper.calculateLendingShares additionally returns the raw amount when totalDepositShares is at most 1, so the first deposit into an empty pool mints one share per wei. Two one-wei WBTC depositExactAmount calls left the WBTC pool with two shares and a pseudoTotalPool of two, a direct transfer of 49.99999998 WBTC then made _cleanUp value each of those shares at about 25 WBTC, and the inflated collateral let borrowExactAmount take every other asset the protocol held before the flash loan was repaid out of a geometric sequence of WBTC withdrawals.",
+  "summary": "WiseLending v1 credited any token surplus in a pool to existing shares (_cleanUp) and minted one share per wei into an empty pool. The attacker made two one-wei WBTC deposits, donated flash-loaned WBTC so each share was worth a fortune, borrowed every other asset against that collateral, and pulled the WBTC back through rounding-favoured withdrawals.",
   "targets": [
     {
       "address": "0x84524baa1951247b3a2617a843e6ece915bb9674",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x2d762fe43ecf6d9830972ce070f69d9ab8b2e161f095d3269ea74e68ef900677"
+        "kind": "config",
+        "tx": "0x10f94b30f1de331e02421f9df7af1d12828610d11e5072a560e75e439703c9b4",
+        "address": "0x84524baa1951247b3a2617a843e6ece915bb9674",
+        "slot": "0x54b96745b79a8ffbd91072ee1a04e15b5b531458e8cc17f3390efd0157ef150"
       }
     }
   ],
   "loss": {
-    "usd": 262280.5133647331,
+    "usd": 262683.87,
     "assets": [
       {
         "token": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
         "symbol": "aEthWETH",
         "amount": "98.969695170313667802",
-        "usd": 152953.70509791296
+        "usd": 152953.71
       },
       {
         "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
         "symbol": "wstETH",
         "amount": "33.538664799002267467",
-        "usd": 59291.66395156415
+        "usd": 59291.66
       },
       {
         "token": "0x23878914efe38d27c4d67ab83ed1b93a74d4086a",
         "symbol": "aEthUSDT",
         "amount": "26082.604928",
-        "usd": 26075.615755257393
+        "usd": 26075.62
       },
       {
         "token": "0x83f20f44975d03b1b09e64809b757c47f942beea",
         "symbol": "sDAI",
         "amount": "16161.4801",
-        "usd": 16773.580442342132
+        "usd": 16773.58
       },
       {
         "token": "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c",
         "symbol": "aEthUSDC",
         "amount": "5108.838976",
-        "usd": 5108.838976
+        "usd": 5108.84
       },
       {
         "token": "0x018008bfb33d285247a21d44e50697654f754e63",
         "symbol": "aEthDAI",
         "amount": "1302.840051447830677479",
-        "usd": 1301.7339402441517
+        "usd": 1301.73
       },
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "0.339996372423526589",
-        "usd": 525.4507937256634
+        "usd": 525.45
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
         "amount": "200.094287736946980059",
-        "usd": 199.9244076866583
+        "usd": 199.92
       },
       {
         "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "symbol": "USDC",
         "amount": "50.0",
         "usd": 50
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.01500092",
+        "usd": 403.36
       }
     ]
   },
@@ -75,8 +83,11 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-10/WiseLending_exp.sol"
   ],
   "notes": [
-    "WiseLending is a non-proxy contract that inherits MainHelper, WiseCore and WiseLowLevelHelper into one immutable runtime. That runtime has no address slot and no self-destruct or upgrade path, and it hashes to the same value at its creation block 17865066 and at the pre-exploit block 18342120.",
-    "Quantities are WiseLending's own ERC20 balance deltas between block 18342120 and block 18342121, so the aToken amounts already net out the interest that accrued inside the transaction. The 50 WBTC Balancer flash loan is attacker-supplied and is not loss; WiseLending in fact ended the transaction 0.01503674 WBTC richer than it started, and that surplus is not netted against the depletion. aEthWETH is valued at the ETH price because Aave v3 aTokens are redeemable one for one against their underlying and DefiLlama publishes no separate quote for aEthWETH. The executing searcher's own realised take was 169.402969354568854988 WETH, about 261805 USD at the same ETH price, which is the figure the seed row rounded to 260000; the 262280.51 USD recorded here is the larger victim-side depletion. Every component is valued from a DefiLlama historical query taken at the anchor timestamp 1697207963; the datapoints DefiLlama returned for that query carry their own stamps between 1697207997 and 1697208522, all within ten minutes of the anchor. Recoveries after the fact, if any, do not reduce gross depletion under the methodology.",
-    "The transaction was executed by the coffeebabe.eth searcher through a TyForTheMEV() entry point rather than by the original attacker, so it may have been a frontrun; that does not change which code executed, the depletion measured, or the anchor, which is the earliest successful defect-executing transaction either way."
+    "The age runs from the owner's createPool for WBTC (collateral factor and pool data): the empty WBTC market was the collateral the exploit inflated, and it was the latest listing before the exploit; the runtime itself is immutable.",
+    "The coffeebabe searcher executed the anchor and returned part of its take to Wise, but most of the proceeds went to the block builder and proposer, so it is an unaffiliated exploit. The later copycat drained the WBTC dust the anchor left, net of its own deposit.",
+    "aEthWETH is valued at the ETH price (Aave v3 aTokens redeem one for one); stablecoins at DefiLlama or par. Recoveries are not subtracted."
+  ],
+  "campaign": [
+    "eip155:1:0x8e081f0af925fd5d1083d3c1cb813aee660ff9859de402fc140e4c705c484ed6"
   ]
 }
