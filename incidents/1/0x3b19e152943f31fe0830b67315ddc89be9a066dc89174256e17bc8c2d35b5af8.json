@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Uwerx",
   "name": "Uwerx WERX fee burn charged to the sending Uniswap pair",
-  "summary": "WERX's ERC20._transfer() credits the recipient the full `amount` and then, when `to == uniswapPoolAddress`, charges an extra 1% on top by calling _burn(from, burnAmount) against the sender, while emitting decorative 97/2/1 Transfer events that do not match the balance updates. Because UniswapV2Pair.skim(to) is permissionless and makes the pair itself the `from` of a WERX transfer, anyone can donate tokens to the pair, skim them to `uniswapPoolAddress` and have 1% of the donated amount burned out of the pair's own reserve. The attacker donated 4,429,817.738575912760684500 WERX, exactly 100x the pair's remaining reserve, so the 1% burn destroyed the entire WERX side of pair 0xa41529982bcccdfa1105c6f08024df787ca758c4 and let him buy back all 174.79 WETH for dust. No value of uniswapPoolAddress repairs this: pointing it at the real pair leaves skim(pair) reaching the same _burn(from == pair) path.",
+  "summary": "WERX's _transfer credits the recipient the full amount and, when the recipient is uniswapPoolAddress (left at its 0x…01 placeholder), burns a further 1% from the sender. The attacker flash-loaned WETH, bought most of the pair's WERX, sent it back and skimmed it to that address so the extra burn came out of the pair's reserve, synced, and sold WERX for all the pair's WETH.",
   "targets": [
     {
       "address": "0x4306b12f8e824ce1fa9604bbd88f2ad4f0fe3c54",
@@ -13,15 +13,15 @@
     }
   ],
   "loss": {
-    "usd": 324542.8313879492,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "174.786100489116297833",
-        "usd": 324542.8313879492
+        "usd": 324985.04
       }
-    ]
+    ],
+    "usd": 324985.04
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-08/Uwerx_exp.sol",
@@ -29,8 +29,7 @@
     "eip155:1:0x54698b1e30efdf5cd958475e7603dc24bc50a39e077ccaa23b6c4ec707e7bbda"
   ],
   "notes": [
-    "WERX is a plain non-upgradeable Solidity 0.8.17 contract with no proxy and no delegatecall; its 7,401-byte runtime is byte-identical at the creation block and immediately before the exploit.",
-    "Realised proceeds, not a spot mark of the pool. The WERX/WETH pair 0xa41529982bcccdfa1105c6f08024df787ca758c4 held 5,097,936.050192694905259125 WERX and 174.786100489116297837 WETH immediately before the exploit; afterwards its WETH balance is 4 wei, so 174.786100489116297833 WETH left the pair, and the attacker's helper unwrapped exactly that amount and forwarded it to the EOA (its ETH balance rose 174.780439904115240779 after gas). The 20,000 WETH Balancer flash loan was repaid in the same transaction and is not loss. The WERX side of the pool was destroyed too, but the attacker's own extraction collapsed the WERX price to nothing, so that quantity could not have been sold at the pre-exploit spot and is deliberately not valued; the reported ~$650k pool TVL would be such a spot mark. The follow-up transaction 0x54698b1e30efdf5cd958475e7603dc24bc50a39e077ccaa23b6c4ec707e7bbda re-ran the identical code path 29 blocks later against the already empty pair and moved zero net value (the attacker's ETH balance fell 0.004247182253782881 on gas), so it adds nothing to the loss.",
-    "The seed record's summary attributed the burn to a loop of tiny transfers deducting the fee from the pair's balance; the actual mechanism is a single 100x-reserve donation followed by a permissionless skim into the unset uniswapPoolAddress placeholder."
+    "Non-upgradeable token; uniswapPoolAddress was never set and the only later write (marketing wallet) is not needed by the exploit.",
+    "Loss is the pair's WETH. The WERX taken from the pair was bought with flash-loaned WETH in the same transaction and is worthless after the drain; the follow-up 0x54698b1e re-ran the path on the empty pair and moved nothing."
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "UtopiaSphere (UPS)",
   "name": "UPS sell path burns the pair's reserve",
-  "summary": "On every non-whitelisted sale to its USDT pair, the UPS token burns 95% of the sold amount directly from the pair's balance and calls sync() before the swap settles. The attacker used flash-loaned USDT to buy almost all UPS out of the pair, sending it to an address on the public whitelist because ordinary buys revert. It then sold 4,982,240 UPS. The burn cut the pair's UPS reserve to 1 wei, so the swap paid out 560,128 USDT.",
+  "summary": "UPS burns the sold amount, less the fee, straight from its PancakeSwap USDT pair and calls sync() before a non-whitelisted sale reaches the pair. With flash-loaned USDT the attacker bought nearly all UPS out to a whitelisted recipient (plain buys revert), then sold UPS so the burn emptied the pair's UPS reserve and the swap paid out the pair's USDT.",
   "targets": [
     {
       "address": "0xe2bb1b04c978a8c8cc1e0bcca5ad30e274b69bfa",
@@ -13,18 +13,18 @@
     }
   ],
   "loss": {
-    "usd": 560128.3245473708,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "560128.324547370758240113",
-        "usd": 560128.3245473708
+        "usd": 559694.79
       }
-    ]
+    ],
+    "usd": 559694.79
   },
   "notes": [
-    "Direct, non-upgradeable UPS token. The pair-burn sell path and the constructor whitelisting of the deployer, which already provides a buy recipient, exist from deployment. Later whitelist, node-list and rate writes are not needed for the exploited condition.",
-    "Exact USDT depletion of the UPS/USDT PancakeSwap pair 0x5db4604c8952a8c3474e8ac33e0d31814d75f786 in the single exploit transaction; the drained UPS reserve is worthless afterwards and is not counted. Flash-loan principal and fees, and the UPS sent to the whitelisted recipient, are attacker-side flows, not victim loss."
+    "Non-upgradeable token. The deployer stays whitelisted from the constructor, so the later whitelist grant to the buy recipient 0x4ef09b34 and the node-list writes were not needed.",
+    "Loss is the pair's USDT depletion. The UPS bought out of the pair was paid for with the attacker's flash-loaned USDT in the same transaction and has no market price after the drain, so it is not counted."
   ]
 }

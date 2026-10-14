@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Vee Finance",
   "name": "Vee Finance leveraged-trade swap without a valid price bound",
-  "summary": "When a Vee lending market opens a leveraged position it hands control to the trading proxy 0xd1f855cef146d36cc5851e2139c54524420797f2, which resolves its execution venue with PangolinFactory.getPair(collateral, target) and then swaps the borrowed principal through PangolinRouter.swapExactTokensForTokens. The deployed code applies no liquidity floor to the pair it receives, no comparison against an independent price, and the amountOutMin it supplies is computed wrongly (Halborn attributes the miscalculation to dropped token decimals). In the anchor transaction it swaps 1.551393710318664115 WETH.e into a WETH.e/QI pair that the attacker had created 21 minutes earlier and seeded with 0.000003118379317223 WETH.e and 0.059871635214100967 QI, with amountOutMin set to 10649908 wei of QI, and accepts 0.059871514507227568 QI as the whole position. The attacker immediately bought the WETH.e back out of their own pair for the same dust, leaving Vee's market holding worthless collateral against the borrow. Repeating this 1,232 times emptied Vee's WETH.e and WBTC.e markets.",
+  "summary": "Vee Finance's leverage proxy swapped borrowed funds through whatever Pangolin pair getPair returned, with no liquidity floor or independent price bound and a mis-scaled amountOutMin. The attacker seeded thin pairs, opened leveraged positions that swapped borrowed WETH.e, WBTC.e and USDT.e into them for dust, then bought the funds back out of its own pairs, leaving Vee with worthless positions.",
   "targets": [
     {
       "address": "0xd1f855cef146d36cc5851e2139c54524420797f2",
@@ -13,37 +13,52 @@
       }
     }
   ],
+  "campaign": [
+    {
+      "chainId": 43114,
+      "count": 2745,
+      "from": 4622795,
+      "to": 4627593,
+      "selection": "successful txs from any EOA to attacker contracts 0x255945a4f673851633355b2592f602025ca20142 or 0x490d25a327768bd5e3d2bf98b8e10419b3e70b82 calling 0x7cda23fa or 0xc66851a6 whose receipt shows a net Transfer outflow from a Vee market (comptroller 0x43aad7d8 getAllMarkets), excluding the anchor"
+    }
+  ],
   "loss": {
-    "usd": 35798320.475517005,
     "assets": [
       {
         "token": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
         "symbol": "WETH.e",
-        "amount": "8918.152004900399986929",
-        "usd": 26815005.314119846
+        "amount": "7318.836221667820180165",
+        "usd": 22006199.5
       },
       {
         "token": "0x50b7545627a5162f82a992c33b87adc75187b218",
         "symbol": "WBTC.e",
-        "amount": "207.18590825",
-        "usd": 8983315.16139716
+        "amount": "207.15823407",
+        "usd": 8982115.24
+      },
+      {
+        "token": "0xc7198437980c041c805a1edcba50c1ce5db95118",
+        "symbol": "USDT.e",
+        "amount": "5366666.66452",
+        "usd": 5366666.66
+      },
+      {
+        "token": "0x5947bb275c521040051d82396192181b413227a3",
+        "symbol": "LINK.e",
+        "amount": "1259.115714421667650234",
+        "usd": 29723.08
       }
-    ]
+    ],
+    "usd": 36384704.48
   },
   "refs": [
-    "eip155:43114:0xeaadeb9322f34914e6e5750b1c1be031e8988203fc1ccdaced17b33a9f686992",
-    "eip155:43114:0x3f7159110d3204363821fb6bc4490d4f9ca76e8a6869462474f8b0336c7eb582",
-    "eip155:43114:0x7a42318b86660a294b259a9d64da6224d14397ba48e1a8b8edb60d0230f1efb8",
-    "eip155:43114:0xd913c5025054a16d79345f72d54fb259f54c20cabb23d6738a08ab9703e7c446",
-    "eip155:43114:0x7677eb0896f87fba6094b3e931479e3510f7344394bed9b595e289f2014dcaaf",
-    "eip155:43114:0xbbec1109b972cd14ae0c2825c1628b9fbfeeb9f9c66124c338da6dea47d71353",
-    "eip155:43114:0x32fa6779c999593160b6295ba5dbf4237f58de67edbc898b8a6993982e8254a2",
     "https://www.halborn.com/blog/post/explained-the-vee-finance-hack-september-2021",
+    "eip155:43114:0xeaadeb9322f34914e6e5750b1c1be031e8988203fc1ccdaced17b33a9f686992",
     "eip155:43114:0x072c8cb4a3d71f833d9b22965993657fd2a38e599ed0bcaa37554b39ac0be1b0"
   ],
   "notes": [
-    "Third and last pre-exploit Upgraded event from the Vee trading proxy. The proxy was constructed with implementation 0x8e03cf8a57362d3e3e501a526d0a6946e3ec3b07 at block 4275868, briefly switched to 0x933b76e659696b5acc61524192f0dd6307cce4ba at block 4283816, and was returned to 0x8e03cf8a57362d3e3e501a526d0a6946e3ec3b07 here; that is the change that made the exploited artifact active. The EIP-1967 implementation slot still holds it at block 4622794.",
-    "Measured as the complete drain of the two Vee market contracts. veWETH.e 0x024fdf9702c5ed031defeb380ca4d198435b305d holds 8918.152004900399986930 WETH.e at block 4622794 and 0.000000000000000001 WETH.e at block 4628953; veWBTC.e 0x60655668622b81f2a48b2095f593a8b5690aa1bd holds 207.18590825 WBTC.e and then exactly 0. Aggregating every WETH.e and WBTC.e Transfer log over blocks 4622795-4628960 reproduces those two addresses as the only large net losers, at exactly -8918.152004900399986929 WETH.e and -207.18590825 WBTC.e; their recorded totalBorrows rise from 3177.145372797417598036 to 9711.788308072086 WETH.e and from 185.48532883 to 392.66226447 WBTC.e over the same window, so the removed cash is not recoverable debt. The attacker's own collateral deposits are already netted inside these balance deltas because each iteration mints and then redeems the same 0.962462752229458474 WETH.e. A small unquantified part of the outflow may be contemporaneous legitimate redemptions in the same two-hour window; the reported team figures of 8804.7 ETH and 213.93 BTC bracket the measured quantities within a few per cent. WETH.e and WBTC.e are 1:1 Avalanche-Bridge representations of ETH and BTC and are valued with the DefiLlama ETH and BTC datapoints closest to the campaign. Later recoveries are not netted out.",
-    "The exploited implementation 0x8e03cf8a57362d3e3e501a526d0a6946e3ec3b07 has no verified source on Snowtrace, so the failure is characterised from the executed call trace, the decoded swap arguments, and published analysis rather than from source text."
+    "Reset: the proxy's switch back to implementation 0x8e03cf8a at block 4284011 made the exploited code active; the markets, collateral factors and oracle were configured before it.",
+    "Loss sums each campaign transaction's net token outflow from Vee's markets in receipt logs (loss.mjs ignores bundles), so concurrent user redemptions are excluded. WETH.e, WBTC.e and LINK.e use DefiLlama ETH, BTC and LINK prices at the anchor; USDT.e is at par.",
+    "The implementation is unverified; the mechanism is read from traces and Halborn's analysis."
   ]
 }

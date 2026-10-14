@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "VOW",
   "name": "VOW temporary usdRate exposure",
-  "summary": "A scheduled rate-setting transaction changed the effective VOW-to-vUSD conversion from [5,1] to [1,100]. Twenty-four seconds later, the attacker flash-borrowed VOW, sent it through the permissionless VSCTokenManager receive path, minted 148.66 million vUSD, and traded it against VOW liquidity pools.",
+  "summary": "VSCTokenManager mints vUSD for any VOW sent to it at the USD rates stored on the tokens. The team raised VOW's rate to 100 USD for nine blocks to mint vUSD for itself; an attacker contract waiting since April minted vUSD at that rate 24 seconds later, swapped it for VOW and sold the VOW into the VOW/WETH and VOW/USDT pools.",
   "targets": [
     {
       "address": "0x184497031808f2b6a2126886c712cc41f146e5dc",
@@ -14,34 +14,33 @@
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb569340f147cb6d5722490221ba65950a870aaa4db6ab835b8aa128c5dee36b3",
+    "eip155:1:0x4b439b82c8878644cd809cfafa6e5c056518a54ea4df098eb1fed9d1cce5ca5f"
+  ],
   "loss": {
-    "usd": 1058620.251774619,
     "assets": [
-      {
-        "symbol": "ETH",
-        "amount": "175.477781952968920940",
-        "usd": 462649.73409461905
-      },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
-        "amount": "595970.517680",
-        "usd": 595970.51768
+        "amount": "671436.202306",
+        "usd": 672099.64
       },
       {
-        "token": "0x1bbf25e71ec48b84d773809b4ba55b6f4be946fb",
-        "symbol": "VOW",
-        "amount": "5801632.714644004917570378"
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "198.887909131735343985",
+        "usd": 523878.56
       }
-    ]
+    ],
+    "usd": 1195978.2
   },
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/VOW_exp.sol",
     "https://vowwhitepaper.com/great-test/august-2024"
   ],
   "notes": [
-    "VOWToken.setUSDRate changed usdRate from [5,1] to [1,100], and VSCTokenManager.getVOWVSCRate() reproduced the effective conversion change across the block.",
-    "The exploit sends exactly 175.477781952968920940 ETH, 595,970.517680 USDT, and 5,801,632.714644004917570378 VOW to the attacker EOA after repaying the flash-borrowed VOW. The Chainlink ETH/USD feed returned $2,636.5146, and USDT is valued at par. VOW is left unpriced because the exploit itself consumed its liquidity, so the USD total is a floor.",
-    "The USD total excludes the retained VOW because the exploit consumed its available liquidity."
+    "Cohort: the rate change came from the team's usdRateSetter 0xba1be907, but the exploiting EOA was funded through Tornado Cash and is unaffiliated; earlier temporary rate windows (blocks 17673150, 18623961, 19336624) saw only team mints.",
+    "Campaign adds the attacker's second mint 0xb569340f and its sale 0x4b439b82 of retained VOW into the same pools. Loss is the pools' WETH and USDT; VOW and vUSD are valued through those proceeds. 1M VOW bridged out via deBridge is not counted."
   ]
 }

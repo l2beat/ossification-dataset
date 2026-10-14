@@ -2,129 +2,101 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "UwU Lend",
   "name": "UwU Lend sUSDe price provider spot-median manipulation",
-  "summary": "sUSDePriceProviderBUniCatch.getPrice() takes the median of eleven USDe price observations, but five of them are instantaneous Curve spot quotes read through get_p(0) on five hard-coded pools (FRAX, USDC, DAI, crvUSD, GHO), alongside five price_oracle(0) EMAs and one Uniswap V3 TWAP. Because a single transaction can move all five get_p inputs at once, the sorted median is pushed to whichever end of the honest cluster the attacker chooses; the code applies no deviation, staleness or spot-versus-EMA sanity check before scaling the median by sUSDeScalingFactor and returning it as the sUSDe price. All five pool addresses are compile-time constants, so no parameter value makes the deployed logic sound. Flash-loaned swaps across those pools drove UwU's reported sUSDe price from 1.03040982 to 0.98821237 and then to 1.03183659 inside the anchor transaction while the five EMA inputs stayed byte-identical, and the attacker converted that mispricing into deposits, borrows and self-liquidations that emptied every UwU reserve.",
+  "summary": "UwU Lend priced sUSDe with sUSDePriceProviderBUniCatch: the median of five Curve USDe pools' EMA prices, their five spot get_p quotes and a Uniswap TWAP. Spot quotes move within one transaction, so flash-loaned swaps across those pools pushed the median down and up while the attacker deposited, borrowed and self-liquidated against the mispriced sUSDe, emptying UwU's reserves.",
   "targets": [
     {
       "address": "0xd252953818bdf8507643c237877020398fa4b2e8",
       "reset": {
-        "kind": "deployment",
-        "tx": "0x7020c69b8f6547b5db906a9c34bfda076e1230853a66911bd2556c3154ee95ad"
+        "kind": "config",
+        "tx": "0x56b1c19a3fdc2a661be29721019652a9ed724fc2fabe65245d7f3102ba6d41b2",
+        "address": "0x2409af0251dcb89ee3dee572629291f9b087c668",
+        "slot": "0x68b396f5d6729cb7e58718ee71e5b700ac81c8f181cb3be555c7e67cbaaf2d1e"
       }
     }
   ],
+  "campaign": [
+    "eip155:1:0xb3f067618ce54bc26a960b660cfc28f9ea0315e2e9a1a855ede1508eb4017376",
+    "eip155:1:0xca1bbf3b320662c89232006f1ec6624b56242850f07e0f1dadbe4f69ba0d6ac3",
+    "eip155:1:0x9235e0662e230bdfa94f56f4932fd09a95fea17e4b9b44a4f40a59449e216110"
+  ],
   "loss": {
-    "usd": 27190741.036384184,
     "assets": [
       {
         "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
         "symbol": "CRV",
-        "amount": "25326128.474128429112309929",
-        "usd": 10483269.685424
+        "amount": "25326202.123910818301012211",
+        "usd": 10483290
       },
       {
         "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "symbol": "USDT",
-        "amount": "4221692.419481",
-        "usd": 4220246.076031
+        "amount": "5165086.476275",
+        "usd": 5163331.13
       },
       {
         "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "symbol": "DAI",
-        "amount": "3520271.928241005850941584",
-        "usd": 3518303.804731
+        "amount": "4802906.94859513561357992",
+        "usd": 4800803.71
       },
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "481.297021573695722911",
-        "usd": 1767457.426385
+        "amount": "831.484918604126191365",
+        "usd": 2992653.91
       },
       {
         "token": "0x83f20f44975d03b1b09e64809b757c47f942beea",
         "symbol": "sDAI",
         "amount": "1393231.116642762378019902",
-        "usd": 1516003.907706
+        "usd": 1516003.91
       },
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
         "amount": "17.61017372",
-        "usd": 1221846.683215
+        "usd": 1221180.86
+      },
+      {
+        "token": "0xb9d7dddca9a4ac480991865efef82e01273f79c3",
+        "symbol": "bLUSD",
+        "amount": "498960.112775926423531666",
+        "usd": 600678.94
       },
       {
         "token": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
         "symbol": "sUSDe",
         "amount": "461496.017260554794537319",
-        "usd": 496787.576058
+        "usd": 496787.58
       },
       {
         "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
         "symbol": "crvUSD",
-        "amount": "233680.825790709832164322",
-        "usd": 233082.076573
-      },
-      {
-        "token": "0xb9d7dddca9a4ac480991865efef82e01273f79c3",
-        "symbol": "UWU",
-        "amount": "498960.112775926423531666"
-      },
-      {
-        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-        "symbol": "WETH",
-        "amount": "350.187897030430468454",
-        "usd": 1226683.690145
-      },
-      {
-        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "symbol": "DAI",
-        "amount": "1282635.020354129762638336",
-        "usd": 1282499.907748
-      },
-      {
-        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-        "symbol": "USDT",
-        "amount": "943394.056794",
-        "usd": 943085.052184
-      },
-      {
-        "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
-        "symbol": "crvUSD",
-        "amount": "210873.479686812532931415",
-        "usd": 210962.871637
+        "amount": "444554.305477522365095737",
+        "usd": 443082.54
       },
       {
         "token": "0x853d955acef822db058eb8505911ed77f175b99e",
         "symbol": "FRAX",
         "amount": "50632.558956447565621342",
-        "usd": 50506.686415
+        "usd": 50510.13
       },
       {
         "token": "0x5f98805a4e8be255a32880fdec7f6728c6568ba0",
         "symbol": "LUSD",
         "amount": "19985.277163801969294224",
-        "usd": 19985.277164
-      },
-      {
-        "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
-        "symbol": "CRV",
-        "amount": "73.649782389188702282",
-        "usd": 20.314967
+        "usd": 19985.28
       }
-    ]
+    ],
+    "usd": 27788307.99
   },
   "refs": [
-    "eip155:1:0xb3f067618ce54bc26a960b660cfc28f9ea0315e2e9a1a855ede1508eb4017376",
-    "eip155:1:0xca1bbf3b320662c89232006f1ec6624b56242850f07e0f1dadbe4f69ba0d6ac3",
     "https://x.com/peckshield/status/1800176089316163831",
-    "eip155:1:0x9235e0662e230bdfa94f56f4932fd09a95fea17e4b9b44a4f40a59449e216110",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-06/UwuLend_Second_exp.sol"
   ],
   "notes": [
-    "sUSDePriceProviderBUniCatch is an immutable non-proxy contract; its runtime is byte-identical at its creation block and immediately before the exploit.",
-    "Quantities are the exact underlying balances that left UwU's nine funded uToken reserve contracts during the 2024-06-10 campaign, measured both from receipt Transfer logs and by reading each underlying token's balanceOf(uToken) at block 20061318 and block 20061352: every reserve went from its pre-attack balance to zero. The campaign is the anchor transaction plus 0xb3f067618ce54bc26a960b660cfc28f9ea0315e2e9a1a855ede1508eb4017376 (block 20061322, the CRV reserve) and 0xca1bbf3b320662c89232006f1ec6624b56242850f07e0f1dadbe4f69ba0d6ac3 (block 20061352, the WBTC, WETH, sDAI, crvUSD and UWU reserves); all three call the same defective price provider. Eight components are valued at DefiLlama prices timestamped within about four minutes of the anchor. The protocol's own UWU token has no DefiLlama price and is recorded with an exact quantity and a null USD value, so the total is a floor with respect to that component. The CRV component is the largest and is spot-marked: the attacker moved 23,617,586.25 CRV to 0xafca625321df8d6a068bdd8f1585d489d2acf11b and still holds 13,491,866.08 CRV there, so that quantity was never realised in the market; widely reported totals of about USD 19.4 million are consistent with a lower effective CRV valuation. Second leg, 2024-06-13 (seven further components): the same attacker EOA's transaction 0x9235e0662e230bdfa94f56f4932fd09a95fea17e4b9b44a4f40a59449e216110 (block 20081504) used 60,000,000 of the uSUSDE the anchor transaction had moved into attacker contract 0x4cd6feba837b6944be0b2311b7a21036e86c3354 as collateral and borrowed every remaining reserve; each underlying balanceOf(uToken) falls from its block-20081503 value to exactly zero at block 20081504, matching the receipt's Transfer logs. That uSUSDE was backed by no sUSDe: the reserve held zero sUSDe cash from the end of the 2024-06-10 campaign through block 20081503, and its 173.28 million sUSDe of variable debt sat in three attacker-created debtor contracts that never repaid. The leg does not call the defective provider, which UwU had replaced at block 20075143, but it only cashes out collateral the manipulation created, so its loss belongs to this fault episode. The DAI, USDT, crvUSD and WETH it took had been deposited after 2024-06-10; FRAX and LUSD are balances the first campaign had left. Valued at DefiLlama prices 7 to 279 seconds before the transaction.",
-    "The CRV component is marked at the DefiLlama incident-time price although the attacker never liquidated 13,491,866.08 of the 25,326,128.47 CRV taken; commonly reported totals of about USD 19.4 million imply a lower effective CRV valuation.",
-    "The 498,960.11 UWU taken has no price source and contributes zero to the USD total, so the total understates gross depletion by that component.",
-    "The Aave-v2-fork LendingPool that consumed the price is not aged as a target: its code applies the configured oracle as designed, and which oracle it consults is a configuration parameter rather than an executable-code defect.",
-    "The 2024-06-13 transaction 0x9235e0662e230bdfa94f56f4932fd09a95fea17e4b9b44a4f40a59449e216110 is merged as a second loss leg: it borrowed against uSUSDE collateral created by the 2024-06-10 manipulation, not against a new defect, and the code age stays measured at the 2024-06-10 anchor (review source-18)."
+    "Reset is the sUSDe reserve listing with its collateral parameters on the LendingPool, after the provider's deployment and its wiring into FallbackOracle 0x9bc63330 (block 19667151); the exploit needs sUSDe as priced collateral.",
+    "0x9235e066 (June 13) used no new defect: with the getter already replaced, it borrowed the remaining reserves against 60M uSUSDe the June 10 legs left unbacked (the sUSDe reserve held no cash), realising this incident's collateral.",
+    "bLUSD has no price and is valued at the attacker's realised 163.2976 ETH from six Universal Router sales. CRV is marked at DefiLlama although the attacker parked 23.6M CRV in LlamaLend instead of selling it."
   ]
 }

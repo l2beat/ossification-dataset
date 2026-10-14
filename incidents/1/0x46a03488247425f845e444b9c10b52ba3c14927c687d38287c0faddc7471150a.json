@@ -2,14 +2,16 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Value DeFi",
   "name": "Value DeFi MultiStables vault share value from manipulable Curve 3pool quote",
-  "summary": "MultiStablesVault prices a share against IMultiVaultController.balanceOf(3CRV, _sell), which converts every non-3CRV strategy holding through ShareConverter.convert_shares_rate. That function quotes the holding as StableSwap3Pool.calc_token_amount([0, usdc, 0], true), a spot, fee-free, single-transaction-manipulable pool quantity. Because mint uses balance() before the transfer and redemption uses balance_to_sell() computed at the same instant, an attacker who deposits, imbalances the Curve 3pool and redeems inside one transaction is paid at an inflated share price. In the anchor the identical BUSD-pool holding of 1,988,683.965709684903991584 BCrv quoted 2,100,754.566072978362359769 3CRV before the imbalance and 11,140,592.572211842856711915 3CRV after it, so 24,923,202.990614843737795018 shares redeemed for 33,089,069.045892566308558644 3CRV. withdrawFor carries no contract-depositor guard at all, and the deposit-side checkContract guard was satisfied because the whitelisted ValueVaultBank 0x8764f2c305b79680cfcc3398a96aedea9260f7ff forwards any caller's deposit.",
+  "summary": "MultiStablesVault priced shares with the controller's balanceOf, which converts the BUSD- and sUSD-pool strategy holdings to 3CRV through ShareConverter.convert_shares_rate using Curve 3pool's spot calc_token_amount. In one transaction the attacker deposited DAI, imbalanced the 3pool to inflate those holdings' 3CRV value, and redeemed its shares for more 3CRV than it put in.",
   "targets": [
     {
       "address": "0x55bf8304c78ba6fe47fd251f37d7beb485f86d26",
       "code": "0xddd7df28b1fb668b77860b473af819b03db61101",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0x25a3423137d4a43ed3dbf0652de4e3e4435258e909fd7109693cf708919a3fd4"
+        "kind": "config",
+        "tx": "0x4e07d29ad446066a52a5645263812fce5a496ba56199429697c89e47fc5e4bc7",
+        "address": "0x55bf8304c78ba6fe47fd251f37d7beb485f86d26",
+        "slot": "0xa0"
       }
     },
     {
@@ -21,13 +23,13 @@
     }
   ],
   "loss": {
-    "usd": 8168339.829743055,
+    "usd": 8168339.83,
     "assets": [
       {
         "token": "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490",
         "symbol": "3Crv",
         "amount": "8132993.965848305428414002",
-        "usd": 8168339.829743055
+        "usd": 8168339.83
       }
     ]
   },
@@ -36,12 +38,7 @@
     "https://valuedefi.medium.com/multistables-vault-exploit-post-mortem-d11b0635788f"
   ],
   "notes": [
-    "The AdminUpgradeabilityProxy constructor wrote MultiStablesVault 0xddd7df28b1fb668b77860b473af819b03db61101 into the EIP-1967 implementation slot. This proxy version does not emit Upgraded on construction, and no Upgraded log has ever been emitted by the proxy, so this write is the only implementation selection before the exploit.",
-    "The ShareConverter runtime is immutable and was deployed in this transaction. Its runtime hash is identical at deployment and immediately before the exploit.",
-    "Exact victim depletion measured as the change in 3CRV backing the vault across the single exploit block. Immediately before block 11256673 the vault proxy held 15,481.012004745341988972 3CRV and its Curve 3pool strategy 0x467e9f2caa9b7678ddc29b248cb9fb181907bf3e held 8,907,642.635740816269236890 3CRV in gauge 0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a, a total of 8,923,123.647745561611225862 3CRV; immediately after, the totals are 0 and 790,129.681897256182811860 3CRV. Vault share totalSupply is unchanged at 11,306,867.172450486840394244 because the attacker burned exactly the shares it minted, and the BUSD-pool and sUSD-pool strategy holdings are unchanged, so the entire delta of 8,132,993.965848305428414002 3CRV is uncompensated depletion. The attacker's own 25,000,000 DAI deposit is an attacker-supplied input and is already netted out by this measurement, as is the 24,956,075.080044260880144642 3CRV the vault received for it. The attacker's realised proceeds were smaller than the depletion: 5,410,161.951405400704050092 DAI was sent to the attacker EOA and 2,000,000 DAI was sent back to Value DeFi deployer 0x7be4d5a99c903c437ec77a20cb6d0688cbb73c7f inside the same transaction, with the remaining difference consumed by Curve and Uniswap slippage and the 72 ETH Aave flash-loan fee. Under the gross-depletion rule the same-transaction 2,000,000 DAI return is a recovery and does not reduce this figure; Value DeFi's post-mortem quotes roughly 6,000,000 USD, which is this depletion net of that return. 3Crv is valued at the DefiLlama observation nearest the exploit, 1.0043459842762914 USD, which matches the pool's own pre-exploit get_virtual_price of 1.004346861769940042.",
-    "Not the knot: sibling instance of the same template and failure; target-2 carries the latest age reset and supplies the incident's single observation.",
-    "This target carries the same failureModeId as target-1 because it is the same defect realised in a second contract, so curve construction keeps only one observation for the incident.",
-    "Value DeFi's post-mortem quotes a net loss of roughly 6,000,000 USD, which is the onchain depletion recorded here minus the 2,000,000 DAI the attacker returned to the deployer inside the same transaction.",
-    "The web-list lead web:2020-12-14:value-defi-multistables is a misdated duplicate of this incident, not a second campaign. Value DeFi titles this event the MultiStables Vault Exploit and reports its net loss as roughly 6,000,000 USD, which is the amount and name that lead carries. No December 2020 drain exists onchain: between blocks 11256673 and 11500000 the vault proxy holds no 3CRV outside settlement and the Curve 3pool strategy gauge balance and vault share supply decline smoothly with ordinary user withdrawals (730,580.93 3CRV / 2,565,136.66 shares on 2020-12-14 at block 11455000, unchanged through 11465000), with no single-transaction step."
+    "Reset: governance's setCap(0) removed the 10M deposit cap while the vault's balance (10.75M 3CRV) already exceeded it, so depositFor would have reverted '>totalDepositCap' and the exploit's deposit needed this change. The cap was set to 1 right after the exploit.",
+    "Loss is the 3CRV that left the vault and its 3pool strategy gauge 0xbfcf6329, net of the attacker's same-transaction deposit. The 2M DAI the attacker sent to the deployer in the same transaction is a recovery and is not subtracted; Value DeFi's ~6M USD figure nets it."
   ]
 }

@@ -199,8 +199,8 @@
     "tx": "0x758efef41e60c0f218682e2fa027c54d8b67029d193dd7277d6a881a24b9a561",
     "protocol": "VOW",
     "name": "VOW temporary usdRate exposure",
-    "summary": "A scheduled rate-setting transaction changed the effective VOW-to-vUSD conversion from [5,1] to [1,100]. Twenty-four seconds later, the attacker flash-borrowed VOW, sent it through the permissionless VSCTokenManager receive path, minted 148.66 million vUSD, and traded it against VOW liquidity pools.",
-    "lossUsd": 1058620.251774619,
+    "summary": "VSCTokenManager mints vUSD for any VOW sent to it at the USD rates stored on the tokens. The team raised VOW's rate to 100 USD for nine blocks to mint vUSD for itself; an attacker contract waiting since April minted vUSD at that rate 24 seconds later, swapped it for VOW and sold the VOW into the VOW/WETH and VOW/USDT pools.",
+    "lossUsd": 1195978.2,
     "codeAgeSeconds": 24,
     "exploit": {
       "block": 20519309,
@@ -218,7 +218,7 @@
       "index": 107,
       "timestamp": 1723547339
     },
-    "claimsSha256": "c07bf7cd199c278ff017d650ad72be8ab5d212ee947cf8debca8cc693b855e3b"
+    "claimsSha256": "6d3a95c1d038673663dde5bb54737873601f46bfa3b714ae95d832fc65ca5853"
   },
   {
     "id": "eip155:1:0xaa10cc076f27fcf7fc0b0a83ad170983e6791f5349d097ef4db0592a55d64048",
@@ -1122,6 +1122,34 @@
       "timestamp": 1750630439
     },
     "claimsSha256": "989140eba03957108f0f76ed89b5dbeb98d2c596552b1c6135dc5408f1a52324"
+  },
+  {
+    "id": "eip155:1:0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a",
+    "chainId": 1,
+    "tx": "0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a",
+    "protocol": "Value DeFi",
+    "name": "Value DeFi MultiStables vault share value from manipulable Curve 3pool quote",
+    "summary": "MultiStablesVault priced shares with the controller's balanceOf, which converts the BUSD- and sUSD-pool strategy holdings to 3CRV through ShareConverter.convert_shares_rate using Curve 3pool's spot calc_token_amount. In one transaction the attacker deposited DAI, imbalanced the 3pool to inflate those holdings' 3CRV value, and redeemed its shares for more 3CRV than it put in.",
+    "lossUsd": 8168339.83,
+    "codeAgeSeconds": 29320,
+    "exploit": {
+      "block": 11256673,
+      "index": 59,
+      "timestamp": 1605368190
+    },
+    "target": {
+      "address": "0x55bf8304c78ba6fe47fd251f37d7beb485f86d26",
+      "code": "0xddd7df28b1fb668b77860b473af819b03db61101",
+      "codeHash": "0x4e4b8f472c7985421ee3449feaebc26dffa5d8bd4ba54585062e2c6a2a076776"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x4e07d29ad446066a52a5645263812fce5a496ba56199429697c89e47fc5e4bc7",
+      "block": 11254467,
+      "index": 187,
+      "timestamp": 1605338870
+    },
+    "claimsSha256": "4750aa4b247720e19d64a349cb1e8b1ac4048779dd587b1224c01d976f069026"
   },
   {
     "id": "eip155:56:0x8c026c3939f7e2d0376d13e30859fa918a5a567348ca1329836df88bef30c73e",
@@ -3307,8 +3335,8 @@
     "tx": "0x54121ed538f27ffee2dbb232f9d9be33e39fdaf34adf993e5e019c00f6afd499",
     "protocol": "UvToken",
     "name": "UvToken Eco Staking pool caller-supplied pledge contract",
-    "summary": "The UvTokenWallet Eco Staking pool 0x5ecfda78754ec616ed03241b4ae64a54d6705a1a pays withdrawals from a caller-supplied pledge contract address. Its withdraw function (selector 0xc81daf6e, arguments user and pledge) asks that address for the user's amount through selector 0x95b81c68 and has UVT vault 0x36f277165c8b1b80cc3418719badb1864e2687bc transfer that amount, without checking the address against the pool's registered pledges. The attacker passed its own contract, which reported 100,449,018.65 UVT, received that from the vault and sold it for 5,011.175 WBNB.",
-    "lossUsd": 1454293.100024811,
+    "summary": "The UvToken staking pool's withdraw (0xc81daf6e) took a caller-supplied pledge address, asked it for the user's amount and had the registry-authorised UVT vault pay that amount without checking the address. The attacker staked a little UVT, passed its own contract reporting about 100M UVT, received them from the vault and dumped them for WBNB.",
+    "lossUsd": 1454293.1,
     "codeAgeSeconds": 244138,
     "exploit": {
       "block": 22529657,
@@ -3960,33 +3988,6 @@
       "timestamp": 1698072491
     },
     "claimsSha256": "75ad1395806cc37b4a150f2b8fe53ea57ba7544bc4ea07c5e4acf43571e89d6e"
-  },
-  {
-    "id": "eip155:1:0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a",
-    "chainId": 1,
-    "tx": "0x46a03488247425f845e444b9c10b52ba3c14927c687d38287c0faddc7471150a",
-    "protocol": "Value DeFi",
-    "name": "Value DeFi MultiStables vault share value from manipulable Curve 3pool quote",
-    "summary": "MultiStablesVault prices a share against IMultiVaultController.balanceOf(3CRV, _sell), which converts every non-3CRV strategy holding through ShareConverter.convert_shares_rate. That function quotes the holding as StableSwap3Pool.calc_token_amount([0, usdc, 0], true), a spot, fee-free, single-transaction-manipulable pool quantity. Because mint uses balance() before the transfer and redemption uses balance_to_sell() computed at the same instant, an attacker who deposits, imbalances the Curve 3pool and redeems inside one transaction is paid at an inflated share price. In the anchor the identical BUSD-pool holding of 1,988,683.965709684903991584 BCrv quoted 2,100,754.566072978362359769 3CRV before the imbalance and 11,140,592.572211842856711915 3CRV after it, so 24,923,202.990614843737795018 shares redeemed for 33,089,069.045892566308558644 3CRV. withdrawFor carries no contract-depositor guard at all, and the deposit-side checkContract guard was satisfied because the whitelisted ValueVaultBank 0x8764f2c305b79680cfcc3398a96aedea9260f7ff forwards any caller's deposit.",
-    "lossUsd": 8168339.829743055,
-    "codeAgeSeconds": 428284,
-    "exploit": {
-      "block": 11256673,
-      "index": 59,
-      "timestamp": 1605368190
-    },
-    "target": {
-      "address": "0x57cda125d0c7b146a8320614ccd6c55999d15bf2",
-      "codeHash": "0xa221ddc90029c2fa67862d77c8ba5616325cb7919df03a5adb34aeda402d49ff"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x5e2fe0ec8cbe392661dfb085557f0a937afc704bcbbc036f5887c16ed37d04ba",
-      "block": 11224431,
-      "index": 35,
-      "timestamp": 1604939906
-    },
-    "claimsSha256": "5377e229139d59efa26a03de3d261f38762d4fc802300d948a4342e1692d4b20"
   },
   {
     "id": "eip155:137:0x554c9e4067e3bc0201ba06fc2cfeeacd178d7dd9c69f9b211bc661bb11296fde",
@@ -4729,8 +4730,8 @@
     "tx": "0x586c2285e2ecc7c45e75ee4c8b9400aa39b6b72fb14513739e34065d209348b4",
     "protocol": "Vee Finance",
     "name": "Vee Finance leveraged-trade swap without a valid price bound",
-    "summary": "When a Vee lending market opens a leveraged position it hands control to the trading proxy 0xd1f855cef146d36cc5851e2139c54524420797f2, which resolves its execution venue with PangolinFactory.getPair(collateral, target) and then swaps the borrowed principal through PangolinRouter.swapExactTokensForTokens. The deployed code applies no liquidity floor to the pair it receives, no comparison against an independent price, and the amountOutMin it supplies is computed wrongly (Halborn attributes the miscalculation to dropped token decimals). In the anchor transaction it swaps 1.551393710318664115 WETH.e into a WETH.e/QI pair that the attacker had created 21 minutes earlier and seeded with 0.000003118379317223 WETH.e and 0.059871635214100967 QI, with amountOutMin set to 10649908 wei of QI, and accepts 0.059871514507227568 QI as the whole position. The attacker immediately bought the WETH.e back out of their own pair for the same dust, leaving Vee's market holding worthless collateral against the borrow. Repeating this 1,232 times emptied Vee's WETH.e and WBTC.e markets.",
-    "lossUsd": 35798320.475517005,
+    "summary": "Vee Finance's leverage proxy swapped borrowed funds through whatever Pangolin pair getPair returned, with no liquidity floor or independent price bound and a mis-scaled amountOutMin. The attacker seeded thin pairs, opened leveraged positions that swapped borrowed WETH.e, WBTC.e and USDT.e into them for dust, then bought the funds back out of its own pairs, leaving Vee with worthless positions.",
+    "lossUsd": 36384704.48,
     "codeAgeSeconds": 616859,
     "exploit": {
       "block": 4622795,
@@ -4749,7 +4750,7 @@
       "index": 4,
       "timestamp": 1631553908
     },
-    "claimsSha256": "85ccdce7db5fd33d426d5e381d3030bb0bd83a7275c6d34587aefc2dd15b834b"
+    "claimsSha256": "a9255b6dacd34d3c7b8f4608e3b0d31ef778f3a943e0c323535a1447e7e72ba2"
   },
   {
     "id": "eip155:1:0x569733b8016ef9418f0b6bde8c14224d9e759e79301499908ecbcd956a0651f5",
@@ -5271,6 +5272,34 @@
     "claimsSha256": "cb453e596249115f685ccb8c3db29d574b436412158ccdbb4598b640a6a55364"
   },
   {
+    "id": "eip155:1:0x8f21bd8f0fce72ac959caa93a9923d85f902dfc6eddac2785ac5bc49c3b28d8f",
+    "chainId": 1,
+    "tx": "0x8f21bd8f0fce72ac959caa93a9923d85f902dfc6eddac2785ac5bc49c3b28d8f",
+    "protocol": "VerusBridge",
+    "name": "VerusBridge duplicate-proof-root parser divergence",
+    "summary": "The bridge's NotarizationSerializer took the last proof-root entry when a notarization listed the same system ID twice, while Verus consensus used the first. Notary-signed notarizations with duplicate entries let the attacker install and confirm its own Verus state root on Ethereum, then prove an unbacked import against it and drain the bridge's reserves.",
+    "lossUsd": 7542021.12,
+    "codeAgeSeconds": 901560,
+    "exploit": {
+      "block": 25592725,
+      "index": 100,
+      "timestamp": 1784777015
+    },
+    "target": {
+      "address": "0x71518580f36feceffe0721f06ba4703218cd7f63",
+      "code": "0x95b8005c4d9fe80f0aee5b7adce53766080600fb",
+      "codeHash": "0x7af074381469f2eeb4d02cfbd6bfdf966b26d6d3cc220a9c79b6c47515dfb711"
+    },
+    "reset": {
+      "kind": "upgrade",
+      "tx": "0xb29f45f3c788cc635fe746754dfe79b00f36758cbd9f418e69866e72c08e192d",
+      "block": 25517881,
+      "index": 85,
+      "timestamp": 1783875455
+    },
+    "claimsSha256": "5453434014715c66f901c38e4efb47d8dabb1f53e098ebd847236e8af5a8c0d5"
+  },
+  {
     "id": "eip155:10:0xf4fc3b638f1a377cf22b729199a9aeb27fc62fe2983a65c4d14b99ee5c5b2328",
     "chainId": 10,
     "tx": "0xf4fc3b638f1a377cf22b729199a9aeb27fc62fe2983a65c4d14b99ee5c5b2328",
@@ -5296,34 +5325,6 @@
       "timestamp": 1705282347
     },
     "claimsSha256": "46f6a9fc237f175c72437a8f033bf9611e08af39308ff1f11d1a91cd506f8f1f"
-  },
-  {
-    "id": "eip155:1:0x51b1c8341da4092b7d1e0e4865f7b318de4e96245358b05b2bff2df50adaf0c9",
-    "chainId": 1,
-    "tx": "0x51b1c8341da4092b7d1e0e4865f7b318de4e96245358b05b2bff2df50adaf0c9",
-    "protocol": "VerusBridge",
-    "name": "VerusBridge duplicate-proof-root parser divergence",
-    "summary": "NotarizationSerializer used the last Verus proof-root entry when duplicate system IDs were present, while Verus consensus kept the first. Two signed notarizations therefore installed and confirmed an attacker-chosen root that authorized a later unbacked import.",
-    "lossUsd": 7542021.122007327,
-    "codeAgeSeconds": 902652,
-    "exploit": {
-      "block": 25592815,
-      "index": 622,
-      "timestamp": 1784778107
-    },
-    "target": {
-      "address": "0x71518580f36feceffe0721f06ba4703218cd7f63",
-      "code": "0x95b8005c4d9fe80f0aee5b7adce53766080600fb",
-      "codeHash": "0x7af074381469f2eeb4d02cfbd6bfdf966b26d6d3cc220a9c79b6c47515dfb711"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0xb29f45f3c788cc635fe746754dfe79b00f36758cbd9f418e69866e72c08e192d",
-      "block": 25517881,
-      "index": 85,
-      "timestamp": 1783875455
-    },
-    "claimsSha256": "73043ae2b1a1438216cdbb2b771498b7dd8a898dc8c6f8f2531dd1ed73253776"
   },
   {
     "id": "eip155:1:0xa109ecf32bb1a3e29c126a7b52f56a02801c1583fe33e7e003465d3e8676784c",
@@ -8537,6 +8538,33 @@
     "claimsSha256": "2841f475d49cd0db8660512ca04041c93b110d4eede7cab2f050bfb95ac15f31"
   },
   {
+    "id": "eip155:1:0x242a0fb4fde9de0dc2fd42e8db743cbc197ffa2bf6a036ba0bba303df296408b",
+    "chainId": 1,
+    "tx": "0x242a0fb4fde9de0dc2fd42e8db743cbc197ffa2bf6a036ba0bba303df296408b",
+    "protocol": "UwU Lend",
+    "name": "UwU Lend sUSDe price provider spot-median manipulation",
+    "summary": "UwU Lend priced sUSDe with sUSDePriceProviderBUniCatch: the median of five Curve USDe pools' EMA prices, their five spot get_p quotes and a Uniswap TWAP. Spot quotes move within one transaction, so flash-loaned swaps across those pools pushed the median down and up while the attacker deposited, borrowed and self-liquidated against the mispriced sUSDe, emptying UwU's reserves.",
+    "lossUsd": 27788307.99,
+    "codeAgeSeconds": 4758288,
+    "exploit": {
+      "block": 20061319,
+      "index": 0,
+      "timestamp": 1718021159
+    },
+    "target": {
+      "address": "0xd252953818bdf8507643c237877020398fa4b2e8",
+      "codeHash": "0xab609be9fd7dd78230faa321c93dce5b9989438928aae767a607001b7248e036"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0x56b1c19a3fdc2a661be29721019652a9ed724fc2fabe65245d7f3102ba6d41b2",
+      "block": 19667415,
+      "index": 117,
+      "timestamp": 1713262871
+    },
+    "claimsSha256": "a984e536be7b57b865d7610d12a91caec6a8170ed36036a471b9f9afa6caa303"
+  },
+  {
     "id": "eip155:56:0x1350cc72865420ba5d3c27234fd4665ad25c021b0a75ba03bc8340a1b1f98a45",
     "chainId": 56,
     "tx": "0x1350cc72865420ba5d3c27234fd4665ad25c021b0a75ba03bc8340a1b1f98a45",
@@ -8562,33 +8590,6 @@
       "timestamp": 1712376455
     },
     "claimsSha256": "72583d8468e27dda4669253edde5327990d11831951a616fe2415761ebac0cc4"
-  },
-  {
-    "id": "eip155:1:0x242a0fb4fde9de0dc2fd42e8db743cbc197ffa2bf6a036ba0bba303df296408b",
-    "chainId": 1,
-    "tx": "0x242a0fb4fde9de0dc2fd42e8db743cbc197ffa2bf6a036ba0bba303df296408b",
-    "protocol": "UwU Lend",
-    "name": "UwU Lend sUSDe price provider spot-median manipulation",
-    "summary": "sUSDePriceProviderBUniCatch.getPrice() takes the median of eleven USDe price observations, but five of them are instantaneous Curve spot quotes read through get_p(0) on five hard-coded pools (FRAX, USDC, DAI, crvUSD, GHO), alongside five price_oracle(0) EMAs and one Uniswap V3 TWAP. Because a single transaction can move all five get_p inputs at once, the sorted median is pushed to whichever end of the honest cluster the attacker chooses; the code applies no deviation, staleness or spot-versus-EMA sanity check before scaling the median by sUSDeScalingFactor and returning it as the sUSDe price. All five pool addresses are compile-time constants, so no parameter value makes the deployed logic sound. Flash-loaned swaps across those pools drove UwU's reported sUSDe price from 1.03040982 to 0.98821237 and then to 1.03183659 inside the anchor transaction while the five EMA inputs stayed byte-identical, and the attacker converted that mispricing into deposits, borrows and self-liquidations that emptied every UwU reserve.",
-    "lossUsd": 27190741.036384184,
-    "codeAgeSeconds": 4818684,
-    "exploit": {
-      "block": 20061319,
-      "index": 0,
-      "timestamp": 1718021159
-    },
-    "target": {
-      "address": "0xd252953818bdf8507643c237877020398fa4b2e8",
-      "codeHash": "0xab609be9fd7dd78230faa321c93dce5b9989438928aae767a607001b7248e036"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0x7020c69b8f6547b5db906a9c34bfda076e1230853a66911bd2556c3154ee95ad",
-      "block": 19662429,
-      "index": 101,
-      "timestamp": 1713202475
-    },
-    "claimsSha256": "79f7809bfd88fbfdb6533c06e7ff9cb0b4ef6eba829ae1b93c8cb73f00ba604c"
   },
   {
     "id": "eip155:42161:0x19cbafae517791e7e73403313d70440abf60558350e419df05c04f816998fe0a",
@@ -9919,8 +9920,8 @@
     "tx": "0x1ddf415a4b18d25e87459ad1416077fe7398d5504171d4ca36e757b1a889f604",
     "protocol": "UtopiaSphere (UPS)",
     "name": "UPS sell path burns the pair's reserve",
-    "summary": "On every non-whitelisted sale to its USDT pair, the UPS token burns 95% of the sold amount directly from the pair's balance and calls sync() before the swap settles. The attacker used flash-loaned USDT to buy almost all UPS out of the pair, sending it to an address on the public whitelist because ordinary buys revert. It then sold 4,982,240 UPS. The burn cut the pair's UPS reserve to 1 wei, so the swap paid out 560,128 USDT.",
-    "lossUsd": 560128.3245473708,
+    "summary": "UPS burns the sold amount, less the fee, straight from its PancakeSwap USDT pair and calls sync() before a non-whitelisted sale reaches the pair. With flash-loaned USDT the attacker bought nearly all UPS out to a whitelisted recipient (plain buys revert), then sold UPS so the burn emptied the pair's UPS reserve and the swap paid out the pair's USDT.",
+    "lossUsd": 559694.79,
     "codeAgeSeconds": 8968219,
     "exploit": {
       "block": 40665083,
@@ -11235,8 +11236,8 @@
     "tx": "0x3b19e152943f31fe0830b67315ddc89be9a066dc89174256e17bc8c2d35b5af8",
     "protocol": "Uwerx",
     "name": "Uwerx WERX fee burn charged to the sending Uniswap pair",
-    "summary": "WERX's ERC20._transfer() credits the recipient the full `amount` and then, when `to == uniswapPoolAddress`, charges an extra 1% on top by calling _burn(from, burnAmount) against the sender, while emitting decorative 97/2/1 Transfer events that do not match the balance updates. Because UniswapV2Pair.skim(to) is permissionless and makes the pair itself the `from` of a WERX transfer, anyone can donate tokens to the pair, skim them to `uniswapPoolAddress` and have 1% of the donated amount burned out of the pair's own reserve. The attacker donated 4,429,817.738575912760684500 WERX, exactly 100x the pair's remaining reserve, so the 1% burn destroyed the entire WERX side of pair 0xa41529982bcccdfa1105c6f08024df787ca758c4 and let him buy back all 174.79 WETH for dust. No value of uniswapPoolAddress repairs this: pointing it at the real pair leaves skim(pair) reaching the same _burn(from == pair) path.",
-    "lossUsd": 324542.8313879492,
+    "summary": "WERX's _transfer credits the recipient the full amount and, when the recipient is uniswapPoolAddress (left at its 0x…01 placeholder), burns a further 1% from the sender. The attacker flash-loaned WETH, bought most of the pair's WERX, sent it back and skimmed it to that address so the extra burn came out of the pair's reserve, synced, and sold WERX for all the pair's WETH.",
+    "lossUsd": 324985.04,
     "codeAgeSeconds": 15179136,
     "exploit": {
       "block": 17826203,
