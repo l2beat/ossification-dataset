@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Rho Markets",
   "name": "Rho Markets native-ETH feed overwritten by rWBTC listing",
-  "summary": "PriceOracleV2 keys each Chainlink feed by the configured underlying of an rToken. Rho listed rWBTC without setting its RTokenConfig, so its underlying remained the zero address used by the native-ETH market. The admin's subsequent rWBTC feed transaction therefore replaced the ETH/USD feed with WBTC/USD and made 1 ETH read as $63,653.144. Seven borrow transactions then used ETH collateral at that price to remove wstETH from the rwstETH market.",
+  "summary": "PriceOracleV2 keys each Chainlink feed by an rToken's configured underlying. Rho listed rWBTC without an RTokenConfig, so its underlying read as the zero address that also keys native ETH, and the admin's rWBTC feed call replaced the ETH/USD feed with WBTC/USD. A bot then supplied ETH collateral at the BTC price and borrowed wstETH, USDC, USDT and LSTs.",
   "targets": [
     {
       "address": "0x653c2d3a1e4ac5330de3c9927bb9bdc51008f9d5",
@@ -16,26 +16,64 @@
     }
   ],
   "loss": {
-    "usd": 4885267.725382614,
+    "usd": 8442515.49,
     "assets": [
       {
         "token": "0xf610a9dfb7c89644979b4a0f27063e9e7d7cda32",
         "symbol": "wstETH",
-        "amount": "1233.956023308315527280",
-        "usd": 4885267.725382614
+        "amount": "1455.2546475284162708",
+        "usd": 5791472.79
+      },
+      {
+        "token": "0x06efdbff2a14a7c8e15944d1f4a48f9f95f663a4",
+        "symbol": "USDC",
+        "amount": "1456963.515157",
+        "usd": 1458420.48
+      },
+      {
+        "token": "0xf55bec9cafdbe8730f096aa55dad6d22d44099df",
+        "symbol": "USDT",
+        "amount": "757525.506409",
+        "usd": 756217.26
+      },
+      {
+        "token": "0x01f0a31698c4d065659b9bdc21b3610292a1c506",
+        "symbol": "weETH",
+        "amount": "77.217799289589048121",
+        "usd": 273369.98
+      },
+      {
+        "token": "0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f",
+        "symbol": "wrsETH",
+        "amount": "25.891547547898047546",
+        "usd": 89866.2
+      },
+      {
+        "token": "0x80137510979822322193fc997d400d5a6c747bf7",
+        "symbol": "STONE",
+        "amount": "21.116714599670120335",
+        "usd": 73168.78
       }
     ]
   },
-  "refs": [
+  "notes": [
+    "In cohort: the admin's feed call went through the oracle's keying defect, which created the mispricing a later unaffiliated bot exploited. The bot operator's later return of funds does not make the profit-taking exploit a rescue (rule 5) and is not subtracted.",
+    "Campaign: every borrow by the bot EOA 0xe0000084's two helper contracts between the bad feed write and the fix; other borrows in the window are small user positions.",
+    "Loss is every asset borrowed out of the markets at DefiLlama prices; the attacker's ETH collateral left behind is not offset."
+  ],
+  "campaign": [
+    "eip155:534352:0xe642cfb75cee51251dd1ce965ab45269f614a40e69d55aa9f78bf9add4048470",
+    "eip155:534352:0xcde7ef30ccdde6e18fa1086fa4910fbcdc476d7eb6dd37a7533e7dd6363f7c11",
+    "eip155:534352:0x1586f2a59f0feefc4b3da310e7eec0b1fda58dbe9f334fd412191e14ff654bc7",
     "eip155:534352:0xdc67d26319a17d1b6fa968284099f81b55ad1e2a08ca3704d233717508037a5c",
     "eip155:534352:0xc5da00e8ff33f5a385873b64058704b524590ced130e849010911beccd7fe96b",
     "eip155:534352:0xe573baad9d1bce7a5fcde6b753a19b790867491c8f23c5e25d345b312fbce9d6",
     "eip155:534352:0xacbbcf572fe94b5bead67befffdc891b1d01c08e983dddd46abba46e36f20aed",
     "eip155:534352:0x5b8ac3f1f0d5bbf974c4468794f552cc7db9479a7deb271f908e662b6ae9840d",
-    "eip155:534352:0xffba4c2100354fcf4e223da7eb96e1c2bff1187c0294704a642729af0afc263a"
-  ],
-  "notes": [
-    "The Rho admin called setChainlinkPriceFeed for an rWBTC market whose missing RTokenConfig made getUnderlying(rWBTC) return address(0), overwriting the zero-address feed used by native ETH. getUnderlyingPrice(rETH) changed from 3,384.18e18 to 63,653.144e18 across this block and no later feed-setting event preceded the anchor.",
-    "The seven campaign receipts show rwstETH 0xe4fc4c444effb5eca80274c021f652980794eae6 transferring exactly 1,233.956023308315527280 wstETH to the attack helper. In the same transactions the helper sold that wstETH through pool 0x05dff4a55473562dd26bdbe4f74410a7307175bf for 1,443.560249567875793338 WETH. Valuing the realised WETH at the legitimate ETH/USD Chainlink answer of $3,384.18 immediately before the bad feed write gives $4,885,267.725382613902298592. Attacker-supplied flash loans and ETH collateral are excluded. The later return of funds does not reduce gross pre-recovery loss. The seed row's $7.6m report is not retained because it does not reconcile with the victim's complete wstETH outflow during the mispricing window."
+    "eip155:534352:0x0de43a157e02b84cf093a7ff34a48ce3d28c4b3647fb5b8a77ce0243ad98bc63",
+    "eip155:534352:0xffba4c2100354fcf4e223da7eb96e1c2bff1187c0294704a642729af0afc263a",
+    "eip155:534352:0x95c91bb3252ba5a4ecdf11dbfcca11ad41abe2adc81421281266a0c846622347",
+    "eip155:534352:0x8f07797967447ab57ce2d9112500656d75215344de9bc27586e10db82270b411",
+    "eip155:534352:0x682a8c2659f359ebe4fe5241ae3c12cce5b536dbb8ede5ef15bb7bbb429ef7c4"
   ]
 }

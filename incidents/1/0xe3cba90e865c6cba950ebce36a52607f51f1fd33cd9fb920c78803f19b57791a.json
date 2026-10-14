@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Reddio",
   "name": "Reddio RedSonic Vault stETH double count via permissionless registerErc20",
-  "summary": "The RedSonic Vault diamond prices its ETH share class from provider legs that read the vault's raw stETH balance, and anyone could register stETH as a separate share class whose assets are that same raw balance. The attacker registered stETH, bought nearly all rsvETH with flash-loaned ETH, deposited stETH to inflate rsvETH's backing without minting rsvETH, then redeemed rsvETH at the inflated rate and withdrew its stETH, draining the vault's native ETH.",
+  "summary": "The RedSonic Vault diamond prices its rsvETH share class from provider legs that read the vault's raw stETH balance, yet anyone could register stETH as a separate share class backed by that same balance. The attacker registered stETH, bought most rsvETH with flash-loaned ETH, deposited stETH to inflate rsvETH's backing, then redeemed rsvETH and withdrew its stETH.",
   "targets": [
     {
       "address": "0x4315990d9eeaffdfafd49958b4851f203fa1126f",
@@ -22,12 +22,12 @@
     }
   ],
   "loss": {
-    "usd": 22765.757366366743,
+    "usd": 23067.16,
     "assets": [
       {
         "symbol": "ETH",
-        "amount": "9.254631141072739226",
-        "usd": 22765.757366366743
+        "amount": "9.377094078761646211",
+        "usd": 23067.16
       }
     ]
   },
@@ -35,9 +35,13 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/Reddio_exp.sol"
   ],
   "notes": [
-    "DiamondCut Replace routing registerErc20, depositErc20, depositEth and share-token getters to facet 0x92ecc5de (data word 5); manualWithdraw was added to the same facet one block earlier. Last cut before the exploit.",
-    "Initial DiamondCut adding InvestmentManagerFacet (data word 58) with getTotalAssetBalance and getRemainingBalance; never recut.",
-    "Exact native-ETH depletion of the diamond in source-1 (balance before minus after). The attacker's deposited ETH and stETH are returned within the transaction and are not victim loss.",
-    "Raw-balance pricing half of the double count (with its delegatecalled LidoProvider leg, created block 19958201); activated earlier than target-1's facet, so not the knot."
+    "The facet route for registerErc20, depositErc20 and depositEth (manualWithdraw was re-added one block earlier) is the latest cut before the exploit; manualWithdraw had been removed from Sept 2024 until then, so no earlier window existed.",
+    "InvestmentManagerFacet and its LidoProvider strategy leg (configured Oct 2024) supply the raw-balance pricing half of the double count; both were live before the facet cut.",
+    "Campaign: three copycats repeated the stETH deposit and rsvETH redemption within 25 blocks; the attacker's ETH and stETH round trips are not victim loss."
+  ],
+  "campaign": [
+    "eip155:1:0x4e6f5a6427b5afdeaaa31245d6ef19e098e387944be60090063eb5dd6b00c283",
+    "eip155:1:0x95acb2d232118a3f186521a329b2fef39e0769fa95404d42ca29608390446556",
+    "eip155:1:0x267b5525db5fcb89dd2645a9938e3f07c653a37ad030edef0ba10b580fd9ec10"
   ]
 }

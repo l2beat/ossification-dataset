@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Renegade",
   "name": "Renegade unconsumed v2 initializer delegate takeover",
-  "summary": "A May 2025 upgrade introduced Renegade dark pool initializer version 2 but did not consume it on the proxy. The public initializer transferred ownership and installed caller-supplied delegate modules before marking version 2 initialized. The attacker called it with a malicious wallet-operations delegate; the initializer immediately delegatecalled that module, which swept all 26 token balances from proxy storage context.",
+  "summary": "Renegade's dark pool upgrades from April 2025 left the proxy's initializer version unconsumed, so anyone could call initialize. It transfers ownership and installs caller-supplied delegate modules, then delegatecalls them. The attacker passed a malicious wallet-operations module, which swept every token balance from the proxy's storage context.",
   "targets": [
     {
       "address": "0x30bd8eab29181f790d7e495786d4b96d7afdc518",
@@ -172,7 +172,8 @@
     "https://github.com/renegade-fi/renegade-stylus-contracts/blob/35c88f436442077a4925ba148c29f3c3efa52ab5/contracts-stylus/src/contracts/darkpool.rs"
   ],
   "notes": [
-    "The fourteenth and final pre-exploit Upgraded event selected implementation 0xc038933d0b33359f5c87b4b2f92ee0dad11eadc5. The EIP-1967 implementation slot changes to that address at the block boundary and remains there through the pre-exploit block; its 19,447-byte runtime hash is identical at activation and immediately before exploitation.",
-    "The exploit receipt contains exactly 26 ERC-20 Transfer logs from the dark-pool proxy to the attacker EOA, and the trace shows the malicious delegate reading and transferring each full proxy balance. The USD total is the exact sum of the 19 assets with reliable pre-exploit DefiLlama observations. SYNTH, DeFAI, FTW, EVA, HOL, BKC, and SNL are included at exact quantities but left unvalued because no reliable preceding price was available; the recorded $209,196.4623298068 is therefore a conservative floor and replaces the seed row's rounded $209,000 estimate."
+    "Replaying the attacker's initialize call succeeds from the April 2025 upgrade onward and reverts before it; the latest upgrade before the exploit is the reset. No OwnershipTransferred from initialize appears between that upgrade and the exploit, so no earlier caller.",
+    "The attacker returned 90% after Renegade's onchain bounty offer; per rule 5 this does not make it a rescue, and returns are not subtracted.",
+    "SYNTH, DeFAI, FTW, EVA, HOL, BKC and SNL are listed unvalued: no reliable price, never sold by the attacker; their market value is negligible."
   ]
 }

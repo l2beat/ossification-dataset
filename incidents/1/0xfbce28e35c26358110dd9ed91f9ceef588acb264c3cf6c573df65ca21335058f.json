@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Reflexer",
   "name": "GebProxyActions quitSystem callable directly for library-owned SAFEs",
-  "summary": "GebProxyActions is a shared library meant to be DELEGATECALLed from each user's DSProxy. Its quitSystem(manager, safe, dst) has no authentication and forwards to GebSafeManager.quitSystem, which only checks that msg.sender owns the SAFE. SAFEs 3, 5, 8 and 18 were opened with the library itself as owner in October 2020. Calling quitSystem directly on the library therefore passed the ownership check. In the post-shutdown system the attacker processed each SAFE, moved its free ETH-A collateral into its own SAFE, and exited 5.94 ETH.",
+  "summary": "GebProxyActions, a library meant to be delegatecalled from users' DSProxies, exposes quitSystem without authentication; GebSafeManager only checks that the caller owns the SAFE. Four SAFEs had been opened with the library itself as owner, so after shutdown the attacker processed each, called quitSystem directly to move their free collateral to itself and exited it.",
   "targets": [
     {
       "address": "0x84fe452d9fb495a335c74a225e6ad52c35eb8616",
@@ -29,7 +29,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-08/ReflexerGEB_exp.sol"
   ],
   "notes": [
-    "OpenSAFE(sender = library, owner = library, safe = 3) in GebSafeManager: ownsSAFE(3) became the GebProxyActions library address, the first SAFE the library could release through its own quitSystem. SAFEs 5, 8 and 18 were opened the same way at blocks 11152568, 11152621 and 11157462.",
-    "Free ETH-A collateral of SAFEs 3, 5, 8 and 18 after GlobalSettlement.processSAFE settled their RAI debt, exited through the ETH-A CollateralJoin as WETH and unwrapped by the attacker. Before the exploit the SAFEs held 2, 1.5, 0.7 and 2.5 ETH-A of locked collateral. A later direct quitSystem on SAFE 8 by 0x982deb98 (0xa452ecb59f35c03e8838ccc20161c6f9e9ab0b9b28bab7a338507bc496605142) found it already drained."
+    "Reset: the first OpenSAFE that made the library a SAFE owner; before it the unauthenticated quitSystem could move nothing. The three later library-owned SAFEs only add loss. The library has no other path to these SAFEs, and SafeManager logs show no earlier quitSystem by it.",
+    "Loss is the four SAFEs' free ETH-A collateral after processSAFE settled their debt, exited as WETH. A later direct quitSystem on SAFE 8 by 0x982deb98 found it already empty and is not campaign."
   ]
 }

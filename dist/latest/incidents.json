@@ -87,7 +87,7 @@
     "tx": "0x5b99165fb07881590fab962185b5dee877f2978fac83f5f76c88639edcba827d",
     "protocol": "Ronin Bridge",
     "name": "MainchainGatewayV3 cached operator weight left at zero collapses the withdrawal quorum",
-    "summary": "MainchainGatewayV3 implementation 0xfc274ec92bbb1a1472884558d1b5caac6f8220ee replaced the live read `_getTotalWeight() = IBridgeManager(BRIDGE_MANAGER).getTotalWeight()` with a cached `_totalOperatorWeight` that only `initializeV3()` populates, and `initializeV3` is `reinitializer(3)`. The upgrade that installed it ran `initializeV4(wethUnwrapper)` instead, so OpenZeppelin's `_initialized` jumped from 2 to 4 and `initializeV3` became permanently uncallable while the cache stayed at zero. `minimumVoteWeight()` = `(_num * _getTotalWeight() + _denom - 1) / _denom` therefore returns 0 for every value of the threshold parameters, and `_submitWithdrawal`'s verification loop evaluates `weight >= minimumWeight` after the first iteration with no floor on the quorum, so a single arbitrary signature from a non-operator satisfies it. Any caller could then mint themselves an arbitrary withdrawal receipt with an unused id and drain the gateway.",
+    "summary": "MainchainGatewayV3's new implementation reads a cached total operator weight that only initializeV3 sets, but the upgrade ran initializeV4, skipping it for good. The cached weight stayed zero, so minimumVoteWeight returned 0 and any signature passed withdrawal verification. MEV bots submitted withdrawal receipts naming themselves as recipients and drained the gateway.",
     "lossUsd": 11836288.016993068,
     "codeAgeSeconds": 12,
     "exploit": {
@@ -107,7 +107,7 @@
       "index": 127,
       "timestamp": 1722934127
     },
-    "claimsSha256": "291d30b0bd6afbc99e621e86451bff4105cab26626ceb84eb4f83cef911d98a7"
+    "claimsSha256": "e3e69fa79d1e4b3661c9beac0b19ded5e8fb3873d853fbb128529180ebb542cf"
   },
   {
     "id": "eip155:1:0x8da015d7c362a082fd23736b08dc17d3a9794086b713590273c9535a4c47a7e2",
@@ -309,8 +309,8 @@
     "tx": "0x0a7b4c6542eb8f37de788c8848324c0ae002919148a4426903b0fb4149f88f05",
     "protocol": "Rho Markets",
     "name": "Rho Markets native-ETH feed overwritten by rWBTC listing",
-    "summary": "PriceOracleV2 keys each Chainlink feed by the configured underlying of an rToken. Rho listed rWBTC without setting its RTokenConfig, so its underlying remained the zero address used by the native-ETH market. The admin's subsequent rWBTC feed transaction therefore replaced the ETH/USD feed with WBTC/USD and made 1 ETH read as $63,653.144. Seven borrow transactions then used ETH collateral at that price to remove wstETH from the rwstETH market.",
-    "lossUsd": 4885267.725382614,
+    "summary": "PriceOracleV2 keys each Chainlink feed by an rToken's configured underlying. Rho listed rWBTC without an RTokenConfig, so its underlying read as the zero address that also keys native ETH, and the admin's rWBTC feed call replaced the ETH/USD feed with WBTC/USD. A bot then supplied ETH collateral at the BTC price and borrowed wstETH, USDC, USDT and LSTs.",
+    "lossUsd": 8442515.49,
     "codeAgeSeconds": 77,
     "exploit": {
       "block": 7580143,
@@ -329,7 +329,7 @@
       "index": 2,
       "timestamp": 1721379512
     },
-    "claimsSha256": "c5adf2529ff7922450821585704702ba3ea25bdd0f9245c0bddea967f7a077ed"
+    "claimsSha256": "452128f8508b8bdeaa71a4cd8c2f4ecba6adf32aff364b8e5109c6843dffb9b8"
   },
   {
     "id": "eip155:1:0xcc36283cee837a8a0d4af0357d1957dc561913e44ad293ea9da8acf15d874ed5",
@@ -5876,6 +5876,33 @@
     "claimsSha256": "d46f2097cc9ced9349d983a8f4251fadf76bc8e97d2b517203f6601659fad552"
   },
   {
+    "id": "eip155:56:0x93a9b022df260f1953420cd3e18789e7d1e095459e36fe2eb534918ed1687492",
+    "chainId": 56,
+    "tx": "0x93a9b022df260f1953420cd3e18789e7d1e095459e36fe2eb534918ed1687492",
+    "protocol": "Rikkei Finance",
+    "name": "Rikkei Finance SimplePriceOracle setOracleData access control",
+    "summary": "Rikkei's SimplePriceOracle exposes setOracleData(rToken, feed) without access control, so anyone can repoint a market's price feed. The attacker supplied dust BNB to rBNB, pointed the rBNB feed at its own contract returning a huge price, borrowed every other market's cash and restored the feed; a second transaction priced BNB low against dust rBUSD to drain rBNB.",
+    "lossUsd": 1159609.0283967075,
+    "codeAgeSeconds": 1274230,
+    "exploit": {
+      "block": 16956475,
+      "index": 3,
+      "timestamp": 1649992718
+    },
+    "target": {
+      "address": "0xd55f01b4b51b7f48912cd8ca3cdd8070a1a9dba5",
+      "codeHash": "0xe57bae111f926347b290fa23499ce2258e3c04d6a7a4836d5fda47d2b7435510"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0xb5e3f053bff9586cb48fa91897e65ceb0b7c6b43a5a788c997de9359eacf6cff",
+      "block": 16533786,
+      "index": 111,
+      "timestamp": 1648718488
+    },
+    "claimsSha256": "95dbf02f0ef061b935c10a6d8d8135a6b3177cf7d09c3211af4048fa4c9e442a"
+  },
+  {
     "id": "eip155:1:0x7cc7d935d895980cdd905b2a134597fb91004b5d551d6db0fb265e3d9840da22",
     "chainId": 1,
     "tx": "0x7cc7d935d895980cdd905b2a134597fb91004b5d551d6db0fb265e3d9840da22",
@@ -8616,33 +8643,6 @@
       "timestamp": 1670428705
     },
     "claimsSha256": "08c2d62cb757a24326ca0f8ff005650243485d24f8f2f2460361b9e71aeab4f4"
-  },
-  {
-    "id": "eip155:56:0x93a9b022df260f1953420cd3e18789e7d1e095459e36fe2eb534918ed1687492",
-    "chainId": 56,
-    "tx": "0x93a9b022df260f1953420cd3e18789e7d1e095459e36fe2eb534918ed1687492",
-    "protocol": "Rikkei Finance",
-    "name": "Rikkei Finance SimplePriceOracle setOracleData access control",
-    "summary": "SimplePriceOracle 0xd55f01b4b51b7f48912cd8ca3cdd8070a1a9dba5, the price oracle of the Rikkei Finance Cointroller, declares `function setOracleData(address rToken, oracleChainlink _oracle) external { oracleData[rToken] = _oracle; }` with no owner, admin, or any other caller restriction, so any address can repoint any market's feed. getUnderlyingPrice then reads decimals() and latestRoundData() straight from whatever contract that mapping holds. The attacker deposited 0.0001 BNB into rBNB, called setOracleData(rBNB, ownContract) to make the rBNB feed return 4.16881147930e32 with 18 decimals instead of the Chainlink BNB/USD 416.24753868 with 8 decimals, and borrowed the entire cash of the rUSDC, rBTC, rDAI, rUSDT and rBUSD markets against the resulting 2.918e28 account liquidity, then restored the original feed. A second transaction in the same block repeated the pattern in the opposite direction, repointing the rBNB feed at a second attacker contract so that BNB was priced low enough to borrow the whole rBNB market against a dust rBUSD deposit.",
-    "lossUsd": 1159609.0283967075,
-    "codeAgeSeconds": 4872983,
-    "exploit": {
-      "block": 16956475,
-      "index": 3,
-      "timestamp": 1649992718
-    },
-    "target": {
-      "address": "0xd55f01b4b51b7f48912cd8ca3cdd8070a1a9dba5",
-      "codeHash": "0xe57bae111f926347b290fa23499ce2258e3c04d6a7a4836d5fda47d2b7435510"
-    },
-    "reset": {
-      "kind": "deployment",
-      "tx": "0xa5e9f72ca3f235455257dccd978ca3dd035abfa7272872d70bc155923a9e71b3",
-      "block": 15341135,
-      "index": 139,
-      "timestamp": 1645119735
-    },
-    "claimsSha256": "ac6aed834136f34223c2c6e7cdf513b74b68b588e5a1c241a99b022a5d42b3f1"
   },
   {
     "id": "eip155:56:0x12f27e81e54684146ec50973ea94881c535887c2e2f30911b3402a55d67d121d",
@@ -12465,7 +12465,7 @@
     "tx": "0x0e494685ace16d372066c5b4db959b58ebac6d88166c2d9d618e0e421dc0c77e",
     "protocol": "Renegade",
     "name": "Renegade unconsumed v2 initializer delegate takeover",
-    "summary": "A May 2025 upgrade introduced Renegade dark pool initializer version 2 but did not consume it on the proxy. The public initializer transferred ownership and installed caller-supplied delegate modules before marking version 2 initialized. The attacker called it with a malicious wallet-operations delegate; the initializer immediately delegatecalled that module, which swept all 26 token balances from proxy storage context.",
+    "summary": "Renegade's dark pool upgrades from April 2025 left the proxy's initializer version unconsumed, so anyone could call initialize. It transfers ownership and installs caller-supplied delegate modules, then delegatecalls them. The attacker passed a malicious wallet-operations module, which swept every token balance from the proxy's storage context.",
     "lossUsd": 209196.4623298068,
     "codeAgeSeconds": 30536268,
     "exploit": {
@@ -13014,8 +13014,8 @@
     "tx": "0xe3cba90e865c6cba950ebce36a52607f51f1fd33cd9fb920c78803f19b57791a",
     "protocol": "Reddio",
     "name": "Reddio RedSonic Vault stETH double count via permissionless registerErc20",
-    "summary": "The RedSonic Vault diamond prices its ETH share class from provider legs that read the vault's raw stETH balance, and anyone could register stETH as a separate share class whose assets are that same raw balance. The attacker registered stETH, bought nearly all rsvETH with flash-loaned ETH, deposited stETH to inflate rsvETH's backing without minting rsvETH, then redeemed rsvETH at the inflated rate and withdrew its stETH, draining the vault's native ETH.",
-    "lossUsd": 22765.757366366743,
+    "summary": "The RedSonic Vault diamond prices its rsvETH share class from provider legs that read the vault's raw stETH balance, yet anyone could register stETH as a separate share class backed by that same balance. The attacker registered stETH, bought most rsvETH with flash-loaned ETH, deposited stETH to inflate rsvETH's backing, then redeemed rsvETH and withdrew its stETH.",
+    "lossUsd": 23067.16,
     "codeAgeSeconds": 47981076,
     "exploit": {
       "block": 25912201,
@@ -13034,7 +13034,7 @@
       "index": 83,
       "timestamp": 1740643115
     },
-    "claimsSha256": "e299bd98d25fe9ac11e1258f95dcb783c350a742f986547f723608072ac55463"
+    "claimsSha256": "3fbabe609412673548597c24b94b180a2c62448d910eb732808eb6434649c9b9"
   },
   {
     "id": "eip155:1:0x842aae91c89a9e5043e64af34f53dc66daf0f033ad8afbf35ef0c93f99a9e5e6",
@@ -13512,8 +13512,8 @@
     "tx": "0xbb29cd17b99840e268adea3dcba8d2baa1ad0713234fc3dfa78e800b66bf375e",
     "protocol": "RigoBlock",
     "name": "RigoBlock Drago setMultipleAllowances missing owner check",
-    "summary": "Drago v2 pools expose setMultipleAllowances(proxy, tokens, amounts) without the onlyOwner and whenApprovedProxy modifiers that guard setAllowance, so anyone can make a pool approve an arbitrary spender for its ERC-20 holdings. The attacker had the Pure Alpha Drago approve its contract for six tokens and then pulled and sold them; a second actor later used the same call on the byte-identical PayRue 1 Drago to take its aDAI.",
-    "lossUsd": 43949.168224,
+    "summary": "Drago v2 pools expose setMultipleAllowances(proxy, tokens, amounts) without the onlyOwner and whenApprovedProxy modifiers that guard setAllowance, so anyone can make a pool approve any spender. The attacker had the Pure Alpha Drago approve its contract for six tokens, which were then pulled and sold; a second actor did the same to the PayRue 1 Drago.",
+    "lossUsd": 43961.5,
     "codeAgeSeconds": 70752053,
     "exploit": {
       "block": 14224067,
@@ -13531,7 +13531,7 @@
       "index": 124,
       "timestamp": 1574354474
     },
-    "claimsSha256": "f8b940fcd6602ecfa3bb23f6cdb966b34df5972ac442d5ff0d70c0e5f674ed6a"
+    "claimsSha256": "e711c044f4e6a4a64421ba044e7ba82a9e2831d02acbf899d9e0aedcf3d2e204"
   },
   {
     "id": "eip155:1:0xe96eb780dedac4271b10112d7ad4f990e16e8929c38947902277f3c9f3c0626b",
@@ -14167,7 +14167,7 @@
     "tx": "0x7a92106f145045b7a2bdce60a22109739f9b0cd0185bf16ff83fd1fac98cb42e",
     "protocol": "RoyalRoyalties",
     "name": "Royal1155LDA amount-blind batch bookkeeping inflating a royalties claim 100x",
-    "summary": "Royal1155LDA._beforeTokenTransfer loops over the ERC-1155 ids array and never reads the parallel amounts array, so it credits the recipient's shadow per-tier balance _BALANCES_[tierId][to] with exactly one unit per array entry regardless of how many units the ERC-1155 transfer actually moves. Its sender-side branch is additionally skipped whenever _IS_OWNED_TOKENS_BACKFILL_COMPLETE_ is false and the sender's shadow balance has already reached zero, so the same id can be listed many times without reverting. A safeBatchTransferFrom listing LDA id 42<<128|424242 one hundred times with one hundred zero amounts therefore left tierBalanceOf(42, receiver) at 100 against a tier supply of 1, and Royalties, which pro-rates a tier's deposited USDC by tierBalanceOf, paid a claim 100 times the attacker's own 2638.089539 USDC royalty deposit and emptied the contract.",
+    "summary": "Royal1155LDA's _beforeTokenTransfer credits the recipient's per-tier balance one unit per ids entry, ignoring amounts, and skips the sender debit when its tier balance is zero and the backfill flag is unset. A batch transfer listing one LDA id a hundred times with zero amounts gave the attacker's helper a tier balance of 100 against supply 1, and Royalties paid it pro rata.",
     "lossUsd": 261117.33406602498,
     "codeAgeSeconds": 101430522,
     "exploit": {
@@ -15210,7 +15210,7 @@
     "tx": "0xfbce28e35c26358110dd9ed91f9ceef588acb264c3cf6c573df65ca21335058f",
     "protocol": "Reflexer",
     "name": "GebProxyActions quitSystem callable directly for library-owned SAFEs",
-    "summary": "GebProxyActions is a shared library meant to be DELEGATECALLed from each user's DSProxy. Its quitSystem(manager, safe, dst) has no authentication and forwards to GebSafeManager.quitSystem, which only checks that msg.sender owns the SAFE. SAFEs 3, 5, 8 and 18 were opened with the library itself as owner in October 2020. Calling quitSystem directly on the library therefore passed the ownership check. In the post-shutdown system the attacker processed each SAFE, moved its free ETH-A collateral into its own SAFE, and exited 5.94 ETH.",
+    "summary": "GebProxyActions, a library meant to be delegatecalled from users' DSProxies, exposes quitSystem without authentication; GebSafeManager only checks that the caller owns the SAFE. Four SAFEs had been opened with the library itself as owner, so after shutdown the attacker processed each, called quitSystem directly to move their free collateral to itself and exited it.",
     "lossUsd": 14528.080457024047,
     "codeAgeSeconds": 184291056,
     "exploit": {
