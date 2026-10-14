@@ -1,158 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:999:0xff990876d863a61732779c341991215856c89420b84daaf31eece7ecd5ff4243",
-  "protocol": {
-    "name": "Prime Finance",
-    "slug": "prime-finance"
-  },
+  "protocol": "Prime Finance",
   "name": "Prime DataStreamConsumer stores stale signed oracle reports",
-  "incident": {
-    "chainId": 999,
-    "exploit": {
-      "transactionHash": "0xff990876d863a61732779c341991215856c89420b84daaf31eece7ecd5ff4243",
-      "blockNumber": 46060987,
-      "transactionIndex": 0,
-      "timestamp": 1789562255
-    },
-    "attackerAddresses": [
-      "0x19bc1c7fd4aa93f540498499b8f5b4fc3dde5a52",
-      "0x817d33738d979ed899ff2f6e9332246a2f2a6da1"
-    ]
-  },
-  "summary": "Prime's DataStreamConsumer.verifyReport(bytes) is permissionless and, after the Chainlink verifier confirms the DON signature, stores the report's price for its feed without checking that the report's round or timestamp is newer than what is stored. An old but validly signed PRFI report therefore overwrote the live price, inflating PRFI about 52x. The attacker flash-borrowed 100 WHYPE, bought 795,587 PRFI off the thin pool for 26.82 WHYPE, supplied it as collateral at the inflated price and borrowed the lending pool's entire 425.52 WHYPE reserve.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 33484.198235793214,
-      "valuationTimestamp": 1789562255,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 999,
-          "tokenAddress": "0x5555555555555555555555555555555555555555",
-          "symbol": "WHYPE"
-        },
-        "amount": "425.521620381705945356",
-        "usdValue": 33484.198235793214,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789562255,
-          "unitPriceUsd": 78.68976952512274,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The lending pool's WHYPE reserve holder aWHYPE 0xcf4642ef89683d0299b59738b1cc3ac0177348ba held 425.521620381705945356 WHYPE before the borrow and 0 after; the attacker's 26.82 WHYPE spent buying the PRFI collateral is its own input and the 100 WHYPE Morpho flash loan is repaid, so gross loss is the reserve drain. Valued at the DefiLlama WHYPE price at the exploit timestamp.",
-    "realizedAt": 1789562255
-  },
+  "summary": "Prime's DataStreamConsumer.verifyReport stores any validly signed Chainlink Data Streams report for its feed without checking that it is newer than the stored one, and the adapter chain reading it does no staleness check. Replaying an old PRFI report inflated PRFI's oracle price far above its thin market, so cheap PRFI collateral borrowed the whole WHYPE reserve.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x04edbf3904789d80b0c991e0b66577f2208a2be6",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x04edbf3904789d80b0c991e0b66577f2208a2be6",
-        "codeHash": "0xc1851e9e3a98d09ab6f88a1263a43a7ec9272c69e40d9b2f0ad7a45e24d9fc6b"
-      },
-      "deployment": {
-        "timestamp": 1758229860,
-        "blockNumber": 14210170,
-        "transactionHash": "0x8e5b96233b9002fc13015c5d3d8a8b9006c9e830b6ee08be4c47f83a7c11a889",
-        "transactionIndex": 1,
-        "creatorAddress": "0xf2e2a49631927108086268c68c559c63c3c8f73d"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Direct immutable DataStreamConsumer; the missing freshness check is in the deployed runtime, and the owner's setFeedIdByMiddleware feed registrations only route a feed to a reader and do not create the stale-overwrite condition."
-      },
-      "codeAgeSeconds": 31332395,
-      "failureModeId": "failure:prime-datastreamconsumer-stale-report-store",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The lending pool 0xb339448e13e273f6f46e3390e0932ab7ff9f113f consumes this price through the Aave-fork stack; it is the drained victim but holds no defect of its own, so the oracle consumer is the single knot and the pool is described here rather than added as a target."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x04edbf3904789d80b0c991e0b66577f2208a2be6",
+      "reset": {
+        "kind": "config",
+        "tx": "0xaf5bdc3a027ac9e1cfa87d3ac56fb4bf4411b8124ef854df2dd498ed43e0c069",
+        "address": "0x8bd82c5f94d2caff3f980f0137f16add71e98dfb",
+        "slot": "0x4bc7f62dc4eee34004d319e2f71509da68f03761a2db4ef292f384ae32d749eb"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 999,
-      "transactionHash": "0xff990876d863a61732779c341991215856c89420b84daaf31eece7ecd5ff4243"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 999,
-      "transactionHash": "0x8e5b96233b9002fc13015c5d3d8a8b9006c9e830b6ee08be4c47f83a7c11a889"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T00:19:49Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. Verified DataStreamConsumer source (Etherscan V2 getsourcecode chainid=999, v0.8.19+commit.7dd6d404, optimizer 1000; SHA-256 of SourceCode 3418aca3059d664f949525c60314c3293264a8f3001378bf3d45c79fef32d415), contracts/prime/oracles/chainlink/DataStreamConsumer.sol verifyReport(bytes): external with no access modifier; it forwards to verifierProxy.verify (the DON signature check) and then, for report versions 2/3/4, writes oracleData[feedId].answer/startedAt/updatedAt from the report with no comparison against the stored round or timestamp, so any validly signed older report overwrites the live price. latestRoundData returns that stored value to the middleware-mapped feed. debug_traceTransaction(callTracer) of source-1 (block 46060987, index 0; EOA 0x19bc1c7f creates 0xb15b30e1 which creates and self-calls 0x817d3373): the attacker calls verifyReport with two captured reports (decoded: PRFI feed 0x0002dec7..., version 2, validFromTimestamp 1759435272, price 0.110134241134708460e18; WHYPE feed 0x0003d345..., version 3, 20.591543077086843e18), a 100 WHYPE Morpho flash loan, a PRFI buy, a supply and a 425.521620381705945356 WHYPE borrow. eth_call latestRoundData from the PRFI middleware 0xe2b8dbfc returns answer 0.00219591540580956 at block 46060986 and 0.11013424113470846 (updatedAt regressed from 1789560031 to 1759435272) at 46060987, a ~50x inflation. First exercise: the consumer's DecodedPrice events number 8,261 for the PRFI feed and 8,265 for WHYPE over its life; scanning latestRoundData.updatedAt at each update, it regresses (a stale report accepted) at blocks 39394701 and 42359989 (WHYPE) and 46060987 (both feeds) - the two earlier regressions were pushed by 0x9339e6d272935c8b4d6b17cc86078256bbf62754 and the deployer when the aWHYPE reserve held ~0 and 44.1 WHYPE and no borrow drained it (reserve unchanged across those blocks), so source-1 is the first profitable exercise; the check has been absent since deployment. Artifact: eth_getCode 0x at block 14210169; keccak256 0xc1851e9e3a98d09ab6f88a1263a43a7ec9272c69e40d9b2f0ad7a45e24d9fc6b at 14210170 and 46060986; source-2 is a top-level creation (index 1) by 0xf2e2a49631927108086268c68c559c63c3c8f73d, also owner(). It is not a proxy and has no upgrade path (owner functions gate only feed config and withdrawToken). Deployment supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/PrimeFinance_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T00:19:49Z",
-      "note": "Loss: eth_call WHYPE(0x5555555555555555555555555555555555555555).balanceOf(aWHYPE 0xcf4642ef89683d0299b59738b1cc3ac0177348ba) = 425521620381705945356 wei at block 46060986 and 0 at 46060987; source-1 receipt log 25 transfers that WHYPE from aWHYPE to the attacker 0x817d3373. The 100 WHYPE flash loan (logs 1/27) is borrowed and repaid; 26.819582580276282408 WHYPE (log 7) is spent buying PRFI. Valued at USD 78.68976952512274 (source-6)."
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789562255/hyperliquid:0x5555555555555555555555555555555555555555",
-      "observedAt": 1790640142
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 33484.2,
+    "assets": [
+      {
+        "token": "0x5555555555555555555555555555555555555555",
+        "symbol": "WHYPE",
+        "amount": "425.521620381705945356",
+        "usd": 33484.2
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-16:primefinance"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/PrimeFinance_exp.sol"
+  ],
+  "notes": [
+    "Reset: the consumer was deployed first, but the exploit also needed PRFI listed as collateral and the AaveOracle source for PRFI pointed at the Data Streams stack; that source assignment (an oracle setting rated HIGH) is the latest such change. Later pool writes only touched reserve factor, liquidation bonus, rate strategy and an unrelated listing.",
+    "Gross loss is the WHYPE reserve drained from aWHYPE 0xcf4642ef; the attacker's own WHYPE spent on PRFI and the repaid flash loan are not victim assets."
   ]
 }

@@ -1,283 +1,97 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xcbcbcfe3dd9dd8dce6c606ae086f499bb8a1c94b1ba409ebfb07a8373e61f2de",
-  "protocol": {
-    "name": "SEAToken",
-    "slug": "seatoken"
-  },
+  "protocol": "SEAToken",
   "name": "MetaSea atomic open/redeem distributor depletion",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xcbcbcfe3dd9dd8dce6c606ae086f499bb8a1c94b1ba409ebfb07a8373e61f2de",
-      "blockNumber": 463840942,
-      "transactionIndex": 1,
-      "timestamp": 1779038362
-    },
-    "attackerAddresses": [
-      "0x03a51212a139a66e906a2bf493c834838f3a4e29",
-      "0xa783ca067914cde03acfa9cd2c871418e60e3688",
-      "0xee1f058c32724373ffb8f4ad1cc9622013c791e9",
-      "0x352173fabf0e67e1cb1fcdf15474d0477d5d3674",
-      "0x677dab632662b57a79911907a90a026ee523f9f2"
-    ]
-  },
-  "summary": "MetaSea Round implementation 0x13dde273 (activated 4.4 h before the attack) added openV6/redeemPosition. redeemPosition has no elapsed-time gate: a position opened with 3,000 USDT and redeemed in the same transaction takes a SEA fee quoted at 200 USDT, then pays back 2,000 USDT plus SEA quoted at the full 3,000 USDT deposit, both funded from the SEA distributor, so each atomic open/redeem cycle extracts value. Five senders completed 182 redemptions in 16 transactions and sold the SEA into the SEA/USDT pair.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 213948.026971,
-      "valuationTimestamp": 1779038460,
-      "method": "other",
-      "sourceIds": [
-        "source-3",
-        "source-64"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "symbol": "USDT"
-        },
-        "amount": "213944.898898",
-        "usdValue": 213944.898898,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1779038460,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3",
-            "source-64"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-64"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xe548cf28fbb95cedc2b5c25a24f9aa8d06dcc0a6",
-          "symbol": "SEA"
-        },
-        "amount": "383317.208218",
-        "usdValue": 3.128073,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1779038460,
-          "unitPriceUsd": 8.1605e-06,
-          "sourceIds": [
-            "source-64"
-          ]
-        },
-        "sourceIds": [
-          "source-64"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "realizedAt": 1779038460,
-    "notes": "USDT net-drained from the SEA/USDT pair by the sale of distributor-paid SEA across 16 redemption and 37 disposal transactions, plus the unsold SEA residual valued at post-campaign pair spot. Flash-loan premiums are not deducted; SEA flows inside the campaign are not valued a second time."
-  },
+  "summary": "Round implementation 0x13dde273 added openV6/redeemPosition with no elapsed-time gate: a 3,000 USDT position opened and redeemed in one transaction returns 2,000 USDT plus SEA quoted at the full deposit, paid from the SEA distributor. Attackers looped open/redeem under flash loans and sold the SEA into the SEA/USDT pair.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa70f31c06f921019237fc00b1417217dae5c37c5",
-      "relationship": "proxy",
-      "deployment": {
-        "transactionHash": "0x17db38183d6e0ae8cafb4199e98776d65a0e855c5033acc2b69fe1f298675171",
-        "blockNumber": 430663313,
-        "transactionIndex": 7,
-        "timestamp": 1770737466,
-        "creatorAddress": "0x7a8a47d5f291d497dd5722a81cebafcd0d4f0812"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1779022466,
-        "mechanism": {
-          "type": "event",
-          "address": "0xa70f31c06f921019237fc00b1417217dae5c37c5",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "upgradeToAndCall selected implementation 0x13dde273, which introduced openV6/redeemPosition; the only later admin change (setPair, slot 5) is not read by the exploit.",
-        "transactionHash": "0xe5df069b8c60fd5af30f4bc215d3d228754d7a0b33e47db5d56e577f216e1eca",
-        "blockNumber": 463777597,
-        "transactionIndex": 3,
-        "logIndex": 12
-      },
-      "codeAgeSeconds": 15896,
-      "failureModeId": "failure:metasea-round-redeemposition-no-maturity-overpayment",
-      "evidence": {
-        "identitySourceIds": [
-          "source-2",
-          "source-63"
-        ],
-        "ageSourceIds": [
-          "source-55",
-          "source-56",
-          "source-57",
-          "source-61",
-          "source-65"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "Implementation source is unverified; the defect is attributed from the call trace, router quotes and bytecode selectors."
-        ],
-        "reviewSourceIds": [
-          "source-63",
-          "source-65"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x13dde273b66323686bfb96cce5a2a7190b40b264",
-        "codeHash": "0x8408ed817e640150140fa23f054abb7d3f184400bb3dcb64818b02d61f8afe7e"
+      "address": "0xa70f31c06f921019237fc00b1417217dae5c37c5",
+      "code": "0x13dde273b66323686bfb96cce5a2a7190b40b264",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xe5df069b8c60fd5af30f4bc215d3d228754d7a0b33e47db5d56e577f216e1eca"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-05/SEAToken_exp.sol"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xcbcbcfe3dd9dd8dce6c606ae086f499bb8a1c94b1ba409ebfb07a8373e61f2de"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction-set",
-      "chainId": 42161,
-      "transactionHashes": [
-        "0xcbcbcfe3dd9dd8dce6c606ae086f499bb8a1c94b1ba409ebfb07a8373e61f2de",
-        "0x78c552f5959bcd8102a4a0dd7f6f427c4c6bb32176fca1cac44ace5cc1d277b3",
-        "0x4a69165593d673cf6c5c818da01c9956ab6c2121ee4c320cc200e025561fae9b",
-        "0x0d9f734edda858fe5a5e51d48d6209d882c865fe9992289434e9c1f20bb16dcf",
-        "0xec9aaec9b22c185142a9577caf9edda44746b2ca16267b8f5f8141b168b9d01d",
-        "0x9772f47af06120167868c103c62a907796adacb2ac392e069a5ae7881c409b66",
-        "0xb20b7764073dcb50edbe7178dbdfa082f20cb7e2375de57ce98f00332aac0280",
-        "0x021c67043f1b3eae63b66a28b6af752457a9d2f67edbb597fcb16f01d2ef75ca",
-        "0x2ee5135d68394d6b1313cfbdc540cc7654b9e9ea255e845485eb14c2d443935a",
-        "0x642fe9db7a34bc689de9eec1e170274da9dc241c5372e50f00891ad51af52792",
-        "0x7819b513378314d3b0cb59a635a785400ba2c48672a9fe2586b417d89b6d4439",
-        "0x001cb16e17c4c5a5c4d02423c9e9b2f2b11ab6b2a1baf2ba53b8fcaf06167716",
-        "0x73e04d650f58064836d4f92247931b9fa13ca96a4c727ad01db3c6d73ea24917",
-        "0x55a0db88987990fd7875bc7c5aa57151ce55f43d271ad74be45066860908e4f6",
-        "0x98b929217d1532ef2be65af5dd40ef4e06e2905bfd129c5282c1d327dd53a472",
-        "0x6287b348d85af35e940a64d501f770f0920614508a8dcd990971ae58fcde33fc",
-        "0x6297dbadd23790c3c0ff61c779b9c73964d90ab61d6211b45b8cb29f32336700",
-        "0x2d8ecfbca0cf28c226b0c25c976361e1e8d48012d49d679b9328562dee768d3b",
-        "0x2e17b95599d850d6972c49158617889126e359fbd03975857f1f97e2f9b82683",
-        "0xd638f92a6856a9caad13624b18eee6fb34800a5d5e4cf8c8cbc8cfb0ef873ad5",
-        "0xbe279c1922686dfdc535b6762d5976d74bcc3db9b85310742b9b7011e9d178ed",
-        "0x94d5dc4b60dee4c986c45702ab456f94bd89f0181110b0edf74042f983630c59",
-        "0x0c466827ca95f9fa7f9320bf99ffaccf83ad7a6e59ca88f95c82e0e6f4d3982d",
-        "0xdf4ed57c29400c9b4d6610d85ee872e1d0dfe58ec078afb0702a3efdfb76619d",
-        "0xccec34486fc632727842d764ac5d0469a037fb3fc8fd4e78094a9a2f175517a3",
-        "0xef8a726b8be47a35950f78cfb73648a5d454acc612bf0d1bb1f5d5fe8ead18b6",
-        "0xe11f1846c02ef9dc575bb0eacde649f24330e6308a3a6498c51c5629f74d397d",
-        "0x917e1b4be512423bcf40dd6423c7674271296e0a1286ebf04ce1a08dddd73a2f",
-        "0x4a93817086301dfec00e69e08259980137afbfc6e2e281d711dcb1b8d2348acf",
-        "0x1a13722561f502de2ddb3187ac459452f2127432334fb0fc8a83856431664e17",
-        "0x9448dba8ec5e39a1739f2a5b3aef6f11fa9f2cb8e8fef6649de8c28ac7feb456",
-        "0xb0a79d252b00d602ffb98fbf66cc6b34ca21955434be70c7d12d3a995182750c",
-        "0x14bdfa2d280815e1d0f95d9ea776bde2dd576168f0fca8e11c8a92671d5a8580",
-        "0x343bfcbf4c148aad69ef681f7c6e48cbb55f2d1e36d8b375ab22900d76a6b519",
-        "0xfb631ca06506e59a32b695f679b4b81e67982fbf9878b00c6a43715d019c44b0",
-        "0x03bf609d600714428fba0c156292f1409729de90a0bef4ae8c7efff85f22c209",
-        "0xd91c58a7d9e68b7f8294933525ee45eeda79b28a8b0f2259e702b5f743816af3",
-        "0x06c23b803a2c57bede58073a2bc82bf0b72d80539c66eeeef879c0b1f36911e0",
-        "0x56c1912c5497a3ff436288f80b91fd49d5497048d60e1d16e11fecf80c816c26",
-        "0xf2e625f20b19eedbb4316d690302cdf4d1db7f1476c94624b2019c0fe67f181c",
-        "0x2e5b073627c9802d9eed87bc42b0b22d1646b8b7d0a068dfcfbba4e71771955f",
-        "0x509bd8b25c89183e724f55758ef6bba842775456233547b06121842ab5a59a66",
-        "0x78016cd3a18f5f403758312082be106b2187b4d88c1af0fa12ed36d09cdd0bb8",
-        "0xddbbe1b5d39eab8afdfbcc591e8a479ef271a3861fe499610e2c7217a4716695",
-        "0xa53a5aff19a13c5afbb055e3c9fd6de73b70e0873405acfeeaf960766fac57ff",
-        "0x1136e6f87403484afafba1b6b36d9984fa89183902e0cb24d0b174aa03ba8152",
-        "0xdc5a67efb33a4ffbdc4e313408c6286cc820fb5144493f9d9633ddc8eb4d1951",
-        "0xf7f539f1f92d3aa7bf7babad2197336d7866c5304e15c88665a2ac3abb5a73e5",
-        "0xe82c203b9d5588cf943fee9f6fb625ad790a2692a367ad1e8ee658f343c61fae",
-        "0x445c323876843a690ea8c1d46b659e27b33930b82c1db0d473d20cf6feaca706",
-        "0x7818c786602edeca634bdb0c0435e2030155d4104f945acddd1b1f47c7eb0f99",
-        "0x5ced0afeab3fcf40af4a1a266851ee1930c7f3422369fefa7ed946e445a3c121",
-        "0xf2c154a663a173ebec088efbe692d7289418df865b9f84bc13a9c95095048c87"
-      ]
-    },
-    {
-      "id": "source-55",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x17db38183d6e0ae8cafb4199e98776d65a0e855c5033acc2b69fe1f298675171"
-    },
-    {
-      "id": "source-56",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xe5df069b8c60fd5af30f4bc215d3d228754d7a0b33e47db5d56e577f216e1eca"
-    },
-    {
-      "id": "source-57",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xec584595c463564cf6b4a6d29bcb2c82051933976514c514922df472b64682ac"
-    },
-    {
-      "id": "source-61",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x7fd66b87d920e57e348c8d2db37559b1d1cf69bf46586700a531e2ff9cc99639"
-    },
-    {
-      "id": "source-62",
-      "type": "post-mortem",
-      "url": "https://anomly.rs/metasea-redeemposition-distributor-drain-arb-2026-05-17"
-    },
-    {
-      "id": "source-63",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:41:41Z",
-      "note": "Anchor and root cause (Arbitrum, ARBITRUM_RPC_URL). cast logs on Round proxy 0xa70f31c06f921019237fc00b1417217dae5c37c5, blocks 463777597..463844859: Open topic 0x5a3815aac78c63e8e8e94e1bf2d7294adb131f4320dc4172da5d7594eb7bb089 = 183 logs, Redeem topic 0x8e13eae94523af1c4e18788b451cbcf1a6bc9c1ad9f96c3bf1601670e3455988 = 182 logs, both in 16 txs, first at 463840942 tx 1 (log 39 / log 64) = 0xcbcbcfe3, last at 463841129 tx 0x6287b348; per-tx redeem counts 12x14,10,4; zero Redeem logs from 463844859 to latest. Selectors openV6 0x987217bc and redeemPosition 0xf046d966 and both event topics occur in the runtime of implementation 0x13dde273b66323686bfb96cce5a2a7190b40b264 only; none of the 20 earlier implementations selected by Round Upgraded events contains any of them, so no earlier exercise is possible. debug_traceTransaction callTracer on 0xcbcbcfe3, first cycle: attacker contract 0xa07b22838464ce55adefc5f25448df52993274dc calls openV6(3000e6,0); Round pulls 3000 USDT, router-swaps 1000 USDT -> 392699.807960 SEA sent to 0x...dead and 2000 USDT -> 775170.428387 SEA sent to distributor 0x5210525fbf63e55eca1ade9ff98a3ef80af9220e. Same tx, redeemPosition(): Round calls router getAmountsOut(3000e6,[USDT,SEA]) -> 1137840.243436 SEA and getAmountsOut(200e6) -> 76777.314675 SEA; transferFrom 76777.314675 SEA from the caller; distributor fbec6d5e(Round, 906246.648132 SEA) funds swapTokensForExactTokens to 2000 USDT, paid to caller; distributor fbec6d5e(Round, 1137840.243436 SEA) is forwarded to caller. Net per cycle to caller: -3000 USDT -76777 SEA, +2000 USDT +1137840 SEA with zero elapsed time. Distributor fbec6d5e is access-controlled: eth_call at block 463840941 from 0x...beef reverts 'Not authorized', from the Round succeeds, so the SEA release is decided by the Round implementation; the distributor (impl 0xd4114ed07febc57113158d53266f6ecb71447fbf, last Upgraded 449555311:12:47) is a funding source, not the defect. Implementation and distributor sources are unverified; the root cause is established from the trace and bytecode selectors, consistent with source-62."
-    },
-    {
-      "id": "source-64",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:41:41Z",
-      "note": "Loss. cast receipt for all 53 source-3 txs (all status 1; last 463841333 tx 1 0x56c1912c, timestamp 1779038460); the 16 Redeem txs are a subset. Netting every USDT 0xfd086bc7 Transfer log: pair 0xeeb9c6b73a9ba397fbea320d9e4cce7b8ac10513 -213944.898898; +81130.869132 0x352173fa, +60086.474036 0xa783ca06, +42413.245365 0xee1f058c, +17993.689894 0x03a51212, +12277.660891 0x75cb727e, +23.1 Aave aUSDT 0x6ab707ac (flash premiums), +19.859580 0xcde7737b; all other parties net zero. SEA balanceOf at block 463841333: 0 for the five senders, 0x75cb727e and 0xa07b2283; bot 0x4ac7e9f0e5b3313e06bd9337c5311674e70220ba holds 383317.208218 SEA (unchanged at latest). Pair getReserves at 463841333: 1604780350.229029 SEA / 13095.862735 USDT = 0.0000081605 USDT/SEA, valuing the residual at 3.128073 USD. Loss = realised USDT 213944.898898 (par) + residual 3.128073 = 213948.026971 USD. SEA deposited, burned, taxed and resold inside the campaign is not valued again; flash premiums are not deducted. DefiLlama returned no price for arbitrum:0xe548cf28fbb95cedc2b5c25a24f9aa8d06dcc0a6 at 1779038460."
-    },
-    {
-      "id": "source-65",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:41:41Z",
-      "note": "Target age. Proxy runtime (131 bytes, keccak 0x4b9696c8ddebcfe6fc035f1b80fa4efdbb85e504dac1051d99eb789f0bebe645) SLOADs EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc and DELEGATECALLs; no code at 430663312, identical hash at 430663313 and 463840941; created by tx 0x17db3818 (430663313 idx 7, from 0x7a8a47d5f291d497dd5722a81cebafcd0d4f0812). Etherscan getLogs Upgraded topic 0xbc7cd75a on the proxy, blocks 0..463840942: 21 events, latest 463777597:3:12 (tx 0xe5df069b, upgradeToAndCall(0x13dde273, empty data) from 0x7a8a47d5). Slot = 0xf7591e678ec2e14a7d59b0fb6c498a9bc9bd9e6c at 463777596, 0x13dde273 at 463777597, 463840941 and 463840942. Implementation 0x13dde273 created by tx 0x7fd66b87 (463777583 idx 1, from 0x7a8a47d5): no code at 463777582, runtime keccak 0x8408ed817e640150140fa23f054abb7d3f184400bb3dcb64818b02d61f8afe7e at 463777583 and 463840941. Critical state: Etherscan txlist of the proxy 463777597..463840942 shows only two admin txs, the upgrade and setPair(0xeeb9c6b7) tx 0xec584595 at 463777611 (slot 5: 0x...dd1f86e76c3e57fa836d68cc0d7d81184269543b, a codeless address, -> 0x...eeb9c6b7); all other senders call user methods. prestateTracer on 0xcbcbcfe3 lists the 27 Round slots the exploit accessed; slot 5 is not among them (the Round swaps via router 0x258bdfa1 read from slot 4), so setPair is not causal and the age resets at the upgrade: 1779038362 - 1779022466 = 15896 s."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Implementation and distributor sources are unverified; root cause rests on trace evidence."
-    ],
-    "reviewSourceIds": [
-      "source-63",
-      "source-64"
+  "loss": {
+    "usd": 213948.03,
+    "assets": [
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "213944.898898",
+        "usd": 213944.9
+      },
+      {
+        "token": "0xe548cf28fbb95cedc2b5c25a24f9aa8d06dcc0a6",
+        "symbol": "SEA",
+        "amount": "383317.208218",
+        "usd": 3.13
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2026-05/SEAToken_exp.sol",
-    "seed:seatoken:2026-05-17:seatoken"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/SEAToken_exp.sol",
+    "eip155:42161:0x6297dbadd23790c3c0ff61c779b9c73964d90ab61d6211b45b8cb29f32336700",
+    "eip155:42161:0x2d8ecfbca0cf28c226b0c25c976361e1e8d48012d49d679b9328562dee768d3b",
+    "eip155:42161:0x2e17b95599d850d6972c49158617889126e359fbd03975857f1f97e2f9b82683",
+    "eip155:42161:0xd638f92a6856a9caad13624b18eee6fb34800a5d5e4cf8c8cbc8cfb0ef873ad5",
+    "eip155:42161:0xbe279c1922686dfdc535b6762d5976d74bcc3db9b85310742b9b7011e9d178ed",
+    "eip155:42161:0x94d5dc4b60dee4c986c45702ab456f94bd89f0181110b0edf74042f983630c59",
+    "eip155:42161:0x0c466827ca95f9fa7f9320bf99ffaccf83ad7a6e59ca88f95c82e0e6f4d3982d",
+    "eip155:42161:0xdf4ed57c29400c9b4d6610d85ee872e1d0dfe58ec078afb0702a3efdfb76619d",
+    "eip155:42161:0xccec34486fc632727842d764ac5d0469a037fb3fc8fd4e78094a9a2f175517a3",
+    "eip155:42161:0xef8a726b8be47a35950f78cfb73648a5d454acc612bf0d1bb1f5d5fe8ead18b6",
+    "eip155:42161:0xe11f1846c02ef9dc575bb0eacde649f24330e6308a3a6498c51c5629f74d397d",
+    "eip155:42161:0x917e1b4be512423bcf40dd6423c7674271296e0a1286ebf04ce1a08dddd73a2f",
+    "eip155:42161:0x4a93817086301dfec00e69e08259980137afbfc6e2e281d711dcb1b8d2348acf",
+    "eip155:42161:0x1a13722561f502de2ddb3187ac459452f2127432334fb0fc8a83856431664e17",
+    "eip155:42161:0x9448dba8ec5e39a1739f2a5b3aef6f11fa9f2cb8e8fef6649de8c28ac7feb456",
+    "eip155:42161:0xb0a79d252b00d602ffb98fbf66cc6b34ca21955434be70c7d12d3a995182750c",
+    "eip155:42161:0x14bdfa2d280815e1d0f95d9ea776bde2dd576168f0fca8e11c8a92671d5a8580",
+    "eip155:42161:0x343bfcbf4c148aad69ef681f7c6e48cbb55f2d1e36d8b375ab22900d76a6b519",
+    "eip155:42161:0xfb631ca06506e59a32b695f679b4b81e67982fbf9878b00c6a43715d019c44b0",
+    "eip155:42161:0x03bf609d600714428fba0c156292f1409729de90a0bef4ae8c7efff85f22c209",
+    "eip155:42161:0xd91c58a7d9e68b7f8294933525ee45eeda79b28a8b0f2259e702b5f743816af3",
+    "eip155:42161:0x06c23b803a2c57bede58073a2bc82bf0b72d80539c66eeeef879c0b1f36911e0",
+    "eip155:42161:0x56c1912c5497a3ff436288f80b91fd49d5497048d60e1d16e11fecf80c816c26",
+    "eip155:42161:0xf2e625f20b19eedbb4316d690302cdf4d1db7f1476c94624b2019c0fe67f181c",
+    "eip155:42161:0x2e5b073627c9802d9eed87bc42b0b22d1646b8b7d0a068dfcfbba4e71771955f",
+    "eip155:42161:0x509bd8b25c89183e724f55758ef6bba842775456233547b06121842ab5a59a66",
+    "eip155:42161:0x78016cd3a18f5f403758312082be106b2187b4d88c1af0fa12ed36d09cdd0bb8",
+    "eip155:42161:0xddbbe1b5d39eab8afdfbcc591e8a479ef271a3861fe499610e2c7217a4716695",
+    "eip155:42161:0xa53a5aff19a13c5afbb055e3c9fd6de73b70e0873405acfeeaf960766fac57ff",
+    "eip155:42161:0x1136e6f87403484afafba1b6b36d9984fa89183902e0cb24d0b174aa03ba8152",
+    "eip155:42161:0xdc5a67efb33a4ffbdc4e313408c6286cc820fb5144493f9d9633ddc8eb4d1951",
+    "eip155:42161:0xf7f539f1f92d3aa7bf7babad2197336d7866c5304e15c88665a2ac3abb5a73e5",
+    "eip155:42161:0xe82c203b9d5588cf943fee9f6fb625ad790a2692a367ad1e8ee658f343c61fae",
+    "eip155:42161:0x445c323876843a690ea8c1d46b659e27b33930b82c1db0d473d20cf6feaca706",
+    "eip155:42161:0x7818c786602edeca634bdb0c0435e2030155d4104f945acddd1b1f47c7eb0f99",
+    "eip155:42161:0x5ced0afeab3fcf40af4a1a266851ee1930c7f3422369fefa7ed946e445a3c121",
+    "eip155:42161:0xf2c154a663a173ebec088efbe692d7289418df865b9f84bc13a9c95095048c87",
+    "eip155:42161:0xec584595c463564cf6b4a6d29bcb2c82051933976514c514922df472b64682ac",
+    "eip155:42161:0x7fd66b87d920e57e348c8d2db37559b1d1cf69bf46586700a531e2ff9cc99639",
+    "https://anomly.rs/metasea-redeemposition-distributor-drain-arb-2026-05-17"
+  ],
+  "notes": [
+    "upgradeToAndCall selected implementation 0x13dde273, which introduced openV6/redeemPosition (absent from the previous implementation's bytecode); the only later admin change (setPair, slot 5) is not read by the exploit. Implementation and distributor sources are unverified; the defect is attributed from traces.",
+    "Distributor SEA has no market price, so it is valued at what the attackers realised (rule 15): USDT net-drained from the SEA/USDT pair in the 16 redemption txs and the 36 later disposal txs by 0xee1f058c in refs, plus the unsold SEA residual at post-campaign pair spot. Flash-loan premiums are not deducted."
+  ],
+  "campaign": [
+    "eip155:42161:0x78c552f5959bcd8102a4a0dd7f6f427c4c6bb32176fca1cac44ace5cc1d277b3",
+    "eip155:42161:0x4a69165593d673cf6c5c818da01c9956ab6c2121ee4c320cc200e025561fae9b",
+    "eip155:42161:0x0d9f734edda858fe5a5e51d48d6209d882c865fe9992289434e9c1f20bb16dcf",
+    "eip155:42161:0xec9aaec9b22c185142a9577caf9edda44746b2ca16267b8f5f8141b168b9d01d",
+    "eip155:42161:0x9772f47af06120167868c103c62a907796adacb2ac392e069a5ae7881c409b66",
+    "eip155:42161:0xb20b7764073dcb50edbe7178dbdfa082f20cb7e2375de57ce98f00332aac0280",
+    "eip155:42161:0x021c67043f1b3eae63b66a28b6af752457a9d2f67edbb597fcb16f01d2ef75ca",
+    "eip155:42161:0x2ee5135d68394d6b1313cfbdc540cc7654b9e9ea255e845485eb14c2d443935a",
+    "eip155:42161:0x642fe9db7a34bc689de9eec1e170274da9dc241c5372e50f00891ad51af52792",
+    "eip155:42161:0x7819b513378314d3b0cb59a635a785400ba2c48672a9fe2586b417d89b6d4439",
+    "eip155:42161:0x001cb16e17c4c5a5c4d02423c9e9b2f2b11ab6b2a1baf2ba53b8fcaf06167716",
+    "eip155:42161:0x73e04d650f58064836d4f92247931b9fa13ca96a4c727ad01db3c6d73ea24917",
+    "eip155:42161:0x55a0db88987990fd7875bc7c5aa57151ce55f43d271ad74be45066860908e4f6",
+    "eip155:42161:0x98b929217d1532ef2be65af5dd40ef4e06e2905bfd129c5282c1d327dd53a472",
+    "eip155:42161:0x6287b348d85af35e940a64d501f770f0920614508a8dcd990971ae58fcde33fc"
   ]
 }

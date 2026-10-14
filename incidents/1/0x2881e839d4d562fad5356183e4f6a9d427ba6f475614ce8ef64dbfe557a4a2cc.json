@@ -1,146 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x2881e839d4d562fad5356183e4f6a9d427ba6f475614ce8ef64dbfe557a4a2cc",
-  "protocol": {
-    "name": "MahaLend",
-    "slug": "mahalend"
-  },
+  "protocol": "MahaLend",
   "name": "MahaLend",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x2881e839d4d562fad5356183e4f6a9d427ba6f475614ce8ef64dbfe557a4a2cc",
-      "blockNumber": 18544605,
-      "transactionIndex": 20,
-      "timestamp": 1699656239
-    },
-    "attackerAddresses": [
-      "0x0ec330df28ae6106a774d0add3e540ea8d226e3b"
-    ]
-  },
-  "summary": "Aave-fork empty-market donation inflated index plus rounding error to over-withdraw",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 19749.66174385746,
-      "valuationTimestamp": 1699502400,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x8cc0f052fff7ead7f2edcccac895502e884a8a71",
-          "symbol": "ARTH"
-        },
-        "amount": "10001.466755107579871763",
-        "usdValue": 19749.66174385746,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1699502400,
-          "unitPriceUsd": 1.9746765376959976,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The exploit receipt records exactly 10,001.466755107579871763 ARTH leaving the market token for the attack contract and then the beneficiary. It is valued at CoinGecko's nearest pre-exploit observation."
-  },
+  "summary": "MahaLend, an Aave v3 fork, had an empty USDC reserve. The attacker supplied a dust amount, inflated the liquidity index by repeated flash loans whose premiums accrued to its lone deposit, borrowed ARTH against the inflated collateral and withdrew the USDC through rounding that burned fewer shares than owed.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x76f0c94ced5b48020bf0d7f3d0ceabc877744cb5",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xfd11aba71c06061f446ade4eec057179f19c23c4",
-        "codeHash": "0x15efa7eb5624c2c2b003472536190622d77d89910bdbc6f79d6a386a9d93e535"
-      },
-      "deployment": {
-        "timestamp": 1670829443,
-        "blockNumber": 16167084,
-        "transactionHash": "0xdbb69496da0262bda3f276d4bdcbca6e4211a949caa8b0b623e8159e08b8c7f6",
-        "transactionIndex": 12,
-        "creatorAddress": "0x3bbf9f4762508b4dcc3c98b59030d33277949276"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The proxy selected the vulnerable Pool implementation in its constructor and emitted no later Upgraded event before the exploit."
-      },
-      "codeAgeSeconds": 28826796,
-      "failureModeId": "failure:mahalend-empty-market-index-rounding",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x76f0c94ced5b48020bf0d7f3d0ceabc877744cb5",
+      "code": "0xfd11aba71c06061f446ade4eec057179f19c23c4",
+      "reset": {
+        "kind": "config",
+        "tx": "0x99b0c7e7852e9188a41fc12fa47bc3d5947b013c786651e8d6d910bddcd9c373",
+        "address": "0x76f0c94ced5b48020bf0d7f3d0ceabc877744cb5",
+        "slot": "0xed960c71bd5fa1333658850f076b35ec5565086b606556c3dd36a916b43ddf20"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2881e839d4d562fad5356183e4f6a9d427ba6f475614ce8ef64dbfe557a4a2cc"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-11/MahaLend_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T11:42:26Z",
-      "note": "Reviewed the exploit receipt and call trace, the proxy deployment and pre-exploit runtime and implementation slot, a complete Upgraded-event query, and the commit-pinned reproduction. The exploit executes the empty-market donation and rounding path through Pool proxy 0x76f0c94ced5b48020bf0d7f3d0ceabc877744cb5, delegated to implementation 0xfd11aba71c06061f446ade4eec057179f19c23c4. The constructor selected that implementation and a complete standard and nonstandard Upgraded-topic scan from deployment through the exploit returned no events. The receipt records 10,001.466755107579871763 ARTH transferred from mARTH to the attack contract and onward to the beneficiary."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xdbb69496da0262bda3f276d4bdcbca6e4211a949caa8b0b623e8159e08b8c7f6"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/arth/market_chart/range?vs_currency=usd&from=1699483439&to=1699742639",
-      "observedAt": 1787571746
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "CoinGecko's nearest pre-exploit ARTH/USD observation is 42 hours 43 minutes before the exploit because the historical series is sparse."
-    ],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 19702.89,
+    "assets": [
+      {
+        "token": "0x8cc0f052fff7ead7f2edcccac895502e884a8a71",
+        "symbol": "ARTH",
+        "amount": "10001.466755107579871763",
+        "usd": 19702.89
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-11/MahaLend_exp.sol"
+  ],
+  "notes": [
+    "Reset is the reserve configuration that gave USDC its collateral LTV and enabled ARTH borrowing, 26 blocks after the Pool proxy. Later edits (USDC eMode category, liquidation fees, ARTH unfreeze a week before the exploit) were not needed or are pause-type gates; the USDC reserve becoming empty was user withdrawals."
+  ]
 }

@@ -1,222 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x927b784148b60d5233e57287671cdf67d38e3e69e5b6d0ecacc7c1aeaa98985b",
-  "discovery": [
-    "seed:roe-finance:2023-01-11:roe-finance-lp-collateral-valuation"
-  ],
-  "protocol": {
-    "name": "ROE Finance",
-    "slug": "roe-finance"
-  },
+  "protocol": "ROE Finance",
   "name": "ROE WBTC/USDC LP live-reserve collateral valuation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x927b784148b60d5233e57287671cdf67d38e3e69e5b6d0ecacc7c1aeaa98985b",
-      "blockNumber": 16384470,
-      "transactionIndex": 13,
-      "timestamp": 1673450939
-    },
-    "attackerAddresses": [
-      "0x67a909f2953fb1138bea4b60894b51291d2d0795",
-      "0x3a5b7db0be9f74324370fbd65b75850a5c82d176"
-    ]
-  },
-  "summary": "ROE's custom WBTC/USDC LP oracle divided the pair's current externally priced reserves by current LP supply. It applied no time, donation or deviation bound, so a same-receipt reserve donation immediately raised every recursively minted roeLP collateral claim before the USDC borrow check. The violated invariant is that collateral value used to authorize borrowing must not be increased atomically by the borrower through a live reserve balance that is amplified across repeated claims on the same underlying inventory.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 103242.9988379475,
-      "valuationTimestamp": 1673450939,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "2.96141905",
-        "usdValue": 51581.8489419475,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1673450877,
-          "unitPriceUsd": 17417.95,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-8"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "51661.149896",
-        "usdValue": 51661.149896,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1673450860,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Immediately before the receipt, the ROE reserve aToken 0x68b26dcf21180d2a8de5a303f8cc5b14c8d99c4c owns exactly 2,953,841,283 raw UNI-V2 WBTC/USDC LP out of 5,771,992,996 supply. The pair reserves are 578,680,045 WBTC satoshis and 100,949,159,688 USDC micro-units. Integer-floor redemption therefore equals floor(2,953,841,283 * 578,680,045 / 5,771,992,996) = 296,141,905 WBTC satoshis and floor(2,953,841,283 * 100,949,159,688 / 5,771,992,996) = 51,661,149,896 USDC micro-units. Receipt logs 600-605 burn exactly that LP and emit exactly those two quantities; the reserve's LP balance becomes zero. The campaign has 50 borrow principals totalling 147,692,064,150 raw LP, 49 redeposits totalling 144,738,222,867 raw LP, and the final 2,953,841,283-raw burn. At receipt end the EOA has 147,692,064,169 raw variable LP debt and a 5,673,090.338021 roeUSDC claim, while the helper has a 144,738,222,868-raw roeLP claim and 5,673,090.338021 USDC debt. Both underlying reserve balances are zero immediately after the receipt and remain zero through block 25,882,427 while all four claim/debt balances only accrue, so the cross-claims are unbacked bad debt, not collectible consideration. The 5,673,090.338021-USDC Balancer funding, deposit, borrow and repayment cancel exactly. After the burn, 26,024.069170 of the just-received USDC is sent back to the pair and sync() is called; it is recycled victim inventory rather than external attacker consideration. A later same-receipt swap returns 0.66679001 WBTC and 14,345.053375 USDC, leaving the helper with 2.29462904 WBTC and 39,982.134101 USDC proceeds. Those proceeds are not substituted for gross victim depletion. Canonical WBTC reports 8 decimals and Circle USDC reports 6 decimals; DefiLlama's independently preceding observations value them at 17,417.95 USD and par, giving exact products 51,581.8489419475 USD and 51,661.149896 USD."
-  },
+  "summary": "ROE's WBTC/USDC LP oracle priced LP from the pair's live reserves and supply. The attacker looped LP borrows (debt on its EOA, delegated) and redeposits to build phantom LP collateral, burned the reserve's only LP, donated USDC to the pair and synced, inflating the LP price, then borrowed USDC against the inflated collateral.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x849af4b128be3317a694bfd262deff636ab84c1b",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x849af4b128be3317a694bfd262deff636ab84c1b",
-        "codeHash": "0x4f1e3bd02b0cc0f142e23c426832284a364ab1eaba553d9dabe31a4950b44820"
-      },
-      "deployment": {
-        "timestamp": 1660215342,
-        "blockNumber": 15320295,
-        "transactionHash": "0x91379fe9af6d2574085b5ae9397dd1b69cf70e85d55e628634bd083322a9107f",
-        "transactionIndex": 58,
-        "creatorAddress": "0x7433d4158c702dc6bf0974e0bb4eea152cfbdd6a"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1660324124,
-        "blockNumber": 15328176,
-        "transactionHash": "0x4a3c37bfab2c5a4cef861dfecc66ecd182bec0816dbaf69536b6de0206479dbd",
-        "transactionIndex": 187,
-        "logIndex": 403,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x8a4236f5ef6158546c34bd7bc2908b8106ab1ea1",
-          "callData": "0x92bf2be0000000000000000000000000004375dff511095cc5a197a54140a24efef3a416",
-          "valueBefore": "0x000000000000000000000000004375dff511095cc5a197a54140a24efef3a416",
-          "valueAfter": "0x000000000000000000000000849af4b128be3317a694bfd262deff636ab84c1b"
-        },
-        "description": "This is the second and last pre-incident AssetSourceUpdated event for the WBTC/USDC LP. It replaces the pair's self-source with this custom LP oracle, making the otherwise immutable direct runtime callable by ROE's borrow-solvency path. No later source update for this asset occurs before the incident."
-      },
-      "codeAgeSeconds": 13126815,
-      "failureModeId": "failure:roe-live-reserve-lp-oracle-recursive-claim-amplification",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0x849af4b128be3317a694bfd262deff636ab84c1b",
+      "reset": {
+        "kind": "config",
+        "tx": "0xe9ef559c9c68663ce7815014d0fce61c36d1db7a781a2e91911c11ab8bb0e247",
+        "address": "0x5f360c6b7b25dfbfa4f10039ea0f7ecfb9b02e60",
+        "call": "0xc44b11f7000000000000000000000000004375dff511095cc5a197a54140a24efef3a416"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x927b784148b60d5233e57287671cdf67d38e3e69e5b6d0ecacc7c1aeaa98985b"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x470a86e00f9cf0344f503b05cbcc90e04bb922f667cfb99fd31ff99825f626ba",
-        "0x5ffa3a0581f851761b84eadd6ba3b1649506cd9d54469b6d51966daa92ada8ba",
-        "0x16f1107261325af45d06c917903906cd8da38a21e1971cc3a2fd7c1419cd2483",
-        "0xbd306af29a3ff3d4a133a753fb4dddf9d0866c770edef58265ad6039ed95139f",
-        "0x927b784148b60d5233e57287671cdf67d38e3e69e5b6d0ecacc7c1aeaa98985b",
-        "0x2d0ea9dd6432729614acddaab0cc73f15195a49861e9f0cf2fc9c6b30865dadf",
-        "0x359e25fd51c4f7aefd1632ec73b7431770524a2e5a4cd98591c500967b8b73d7",
-        "0x4740e481944f70dd1efcb256b6cb42436d0626c45838cad1774e9a01ca25a530",
-        "0x6fbeb50d92c175d5da38d17588fb8cead7b4905ed57b0d7c9a672f59a761087a",
-        "0x072eca2797eea1b9fbf118889492c97b6aa644e20900974ce529f6c47eab563b",
-        "0x47c91abdaaa69e7d9fbf35374d7407218c0e7fd39ce95f52d3f2700536a93395",
-        "0x23a659612012f1bfe0c136b7f0b92493287a929b6f1fb2423e69f843863a452d",
-        "0xf494a52c739973099d260bf3513f5fcd82f76712254aa9e967b3c276d93d7fb2"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x91379fe9af6d2574085b5ae9397dd1b69cf70e85d55e628634bd083322a9107f"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x4a3c37bfab2c5a4cef861dfecc66ecd182bec0816dbaf69536b6de0206479dbd"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xbb4c9145da463f4dc91192133af16efdf83c6081cb6307af446c98d26e8c4c8a"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1673450939/coingecko:wrapped-bitcoin?searchWidth=6h",
-      "observedAt": 1788266456
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1673450939/ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48?searchWidth=6h",
-      "observedAt": 1788266456
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-01T12:40:56Z",
-      "note": "Reviewed the complete 572-log loss receipt and call trace; the successful sender nonce 3-8 setup/loss sequence, reverted nonce 9-13 withdrawal attempts, successful nonce 14-20 sweeps and disposals, and all later sender activity; every LP, roeLP, variable-debt, WBTC, USDC and roeUSDC transfer; pair supply/reserves and integer-floor burn arithmetic; reserve, helper and EOA archive balances and account-health results immediately before/after the receipt and through latest block 25,882,427; canonical WBTC and Circle USDC identity/decimals; preceding DefiLlama prices; direct custom-oracle creation/runtime continuity; both LP-specific AssetSourceUpdated events and surrounding getSourceOfAsset states; and the live target call path. The EOA creates helper 0x3a5b7db0be9f74324370fbd65b75850a5c82d176 at nonce 3, approves LP variable-debt delegation at nonce 4, configures the helper at nonces 5-6, and executes the only loss at nonce 7. Nonce 8 is an owner read. Nonces 9-13 revert. Nonces 14-15 withdraw the 2.29462904-WBTC and 39,982.134101-USDC downstream proceeds from the helper; nonces 16-20 approve and dispose of those proceeds without returning WBTC, USDC or LP to either ROE reserve. The helper is absent before its same-block creation and ends the loss receipt holding the proceeds but no LP. Fifty LP borrow events mint 147,692,064,150 raw debt to the EOA; 49 exact returns mint 144,738,222,867 raw roeLP claims to the helper, and the fiftieth LP transfer is burned. Receipt-indexed balances differ by only 19 and 1 raw units from those principal totals because of interest indexing. The 5,673,090.338021-USDC Balancer funding is deposited to the USDC reserve for the EOA, borrowed back for the helper after the LP-price change, and repaid to Balancer exactly, leaving equal aUSDC and variable-USDC-debt principals. Although indexed getUserAccountData reports postreceipt health factors 0.835412805483859664 for the EOA and 1.036527084826106806 for the helper, both collateral claims are backed by zero underlying after the receipt and forever afterward; the EOA/helper claims and debts grow while reserve backing remains zero, proving persistent bad debt rather than a recoverable position. At block 16,384,469 the pair's 5,78680045 WBTC and 100,949.159688 USDC reserves and 5,771,992,996 LP supply reproduce the burn outputs with exact Solidity floors. No preceding same-block pair movement occurs. After the burn, the helper recycles 26,024.069170 of the burned USDC into the pair and calls sync, then borrows USDC and swaps back out 0.66679001 WBTC and 14,345.053375 USDC; this is disposition of victim inventory, not a genuine external input. At the preceding market prices the post-sync trade returns 25,959.1684296795 USD against 26,024.069170 USD sent, so it supplies no hidden recovery. The trace executes the selected direct oracle 101 times through AaveOracle.getAssetPrice: 100 calls read pair getReserves() = 578,680,045 / 100,949,159,688 and return 3,495,450,576,387,056,244,740; after the burn and direct USDC transfer/sync, one call reads 282,538,140 / 75,312,078,962 and returns 4,320,806,762,049,972,060,102 for the USDC borrow. The 2,085-byte oracle runtime contains immutable pair and feed addresses, calls pair.getReserves(), pair.totalSupply() and Chainlink latestRoundData(), and has no SSTORE, DELEGATECALL, admin or setter path. It is absent at block 15,320,294, direct-created in source-3, and hashes to 0x4f1e3bd02b0cc0f142e23c426832284a364ab1eaba553d9dabe31a4950b44820 at creation, mapping activation and anchor minus one. Source-5 first changes AaveOracle.getSourceOfAsset(LP) from zero to the LP itself at block 15,328,103 log 553; source-4 changes it from the LP to this custom oracle at block 15,328,176 log 403, and no later LP-specific source event occurs before the incident. The final binding is the later honest activation, so code/configuration age is 1,673,450,939 - 1,660,324,124 = 13,126,815 seconds."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 103242.9988379475,
+    "assets": [
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "2.96141905",
+        "usd": 51581.8489419475
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "51661.149896",
+        "usd": 51661.149896
+      }
     ]
   },
+  "refs": [
+    "eip155:1:0x5ffa3a0581f851761b84eadd6ba3b1649506cd9d54469b6d51966daa92ada8ba",
+    "eip155:1:0x16f1107261325af45d06c917903906cd8da38a21e1971cc3a2fd7c1419cd2483"
+  ],
   "notes": [
-    "The seed's roughly 39,982-USDC figure is downstream proceeds after the burned LP's WBTC/USDC inventory is traded. This review instead measures the reserve's exact gross LP depletion at its immediately preceding underlying entitlement, without double counting pair trades.",
-    "The active ROE lending-pool proxy implementation is execution ancestry. The selected causal artifact is the immutable custom LP oracle whose live reserve mark the pool consumes; its LP-specific mapping activation is later than deployment and therefore resets the observation age."
+    "Reset is enableBorrowingOnReserve for the LP reserve (borrowing bit 0 at the block before, 1 after). The exploit needs LP borrowing for the 50 borrow/redeposit loops; it is later than the oracle's deployment and its AssetSourceUpdated (0x4a3c37bf…) and the LP collateral listing.",
+    "The November 2022 LendingPool implementation upgrade is not a reset: the defect is the oracle's reserve-based price, and the exploit used only standard Aave V2 deposit/borrow paths.",
+    "Loss is the reserve's LP, burned by the attacker, valued at its WBTC and USDC redemption; the cross EOA/helper positions left behind are unbacked bad debt, not consideration."
   ]
 }

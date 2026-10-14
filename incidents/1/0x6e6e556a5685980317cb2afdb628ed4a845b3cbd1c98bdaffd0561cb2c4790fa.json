@@ -1,162 +1,48 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x6e6e556a5685980317cb2afdb628ed4a845b3cbd1c98bdaffd0561cb2c4790fa",
-  "protocol": {
-    "name": "EarningFram",
-    "slug": "earningfram"
-  },
-  "name": "EarningFram",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x6e6e556a5685980317cb2afdb628ed4a845b3cbd1c98bdaffd0561cb2c4790fa",
-      "blockNumber": 17875886,
-      "transactionIndex": 1,
-      "timestamp": 1691566463
-    },
-    "attackerAddresses": [
-      "0xee4b3dd20902fa3539706f25005fa51d3b7bdf1b"
-    ]
-  },
-  "summary": "ENF_ETHLEV ERC4626 withdraw is reentered via ETH callback to withdraw assets twice against stale share accounting.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 295911.91000020964,
-      "valuationTimestamp": 1691564400,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "159.324268834097852251",
-        "usdValue": 295911.91000020964,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1691564400,
-          "unitPriceUsd": 1857.2933813889872,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The trace records 320.599641877332363469 ETH deposited into the strategy and 479.923910711430215720 ETH returned by the two reentrant withdrawals, for an exact strategy net loss of 159.324268834097852251 ETH."
-  },
+  "protocol": "EarningFarm",
+  "name": "EarningFarm ENF ETH vault withdraw share-burn reentrancy",
+  "summary": "EFVault.withdraw() computed the shares to burn, had the controller pay the receiver in ETH, and only then capped the burn at the caller's current balance. In the ETH callback the attacker moved its shares to a helper, so withdraw burned almost nothing and the helper withdrew again with the same shares; repeated until the strategy was drained.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5655c442227371267c165101048e4838a762675d",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x863e572b215fd67c855d973f870266cf827aea5e",
-        "codeHash": "0x3e39655c28a5471e239b05d5b1d4ce8e8dacee06c9f03b7a2501eb0ddd8e3e07"
-      },
-      "deployment": {
-        "timestamp": 1668065171,
-        "blockNumber": 15938118,
-        "transactionHash": "0x743a4dd4b4647a1098875bace2e28d5a4a16a109ec04a00e7f5dcb15e8b40c49",
-        "transactionIndex": 5,
-        "creatorAddress": "0x86b94c96c3e6354e2d6bfc124bbae4425d3132f6"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1677391955,
-        "blockNumber": 16710548,
-        "transactionHash": "0xdfe12c81e01804e8b1babe5cd25481432439393893d34f6cc0088ebc478f1558",
-        "transactionIndex": 27,
-        "logIndex": 66,
-        "mechanism": {
-          "type": "event",
-          "address": "0x5655c442227371267c165101048e4838a762675d",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The last of three pre-exploit Upgraded events restored implementation 0x863e572b215fd67c855d973f870266cf827aea5e."
-      },
-      "codeAgeSeconds": 14174508,
-      "failureModeId": "failure:erc4626-withdraw-reentrancy-stale-shares",
-      "evidence": {
-        "identitySourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x5655c442227371267c165101048e4838a762675d",
+      "code": "0x863e572b215fd67c855d973f870266cf827aea5e",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xdfe12c81e01804e8b1babe5cd25481432439393893d34f6cc0088ebc478f1558"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x6e6e556a5685980317cb2afdb628ed4a845b3cbd1c98bdaffd0561cb2c4790fa"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-08/EarningFram_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T12:28:23Z",
-      "note": "Reviewed the exploit receipt and call trace, the proxy creation and EIP-1967 implementation slot, the complete pre-exploit Upgraded-event history, and the commit-pinned reproduction. The exploit executes the ERC4626 withdrawal path at proxy 0x5655c442227371267c165101048e4838a762675d through implementation 0x863e572b215fd67c855d973f870266cf827aea5e. Three Upgraded events occurred before the incident; the last, at block 16710548 log 66, restored this implementation and no later Upgraded event occurred. During the exploit, 320.599641877332363469 ETH entered the strategy and two reentrant withdrawal legs returned 320.097765098000317500 and 159.826145613429898220 ETH."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x743a4dd4b4647a1098875bace2e28d5a4a16a109ec04a00e7f5dcb15e8b40c49"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xdfe12c81e01804e8b1babe5cd25481432439393893d34f6cc0088ebc478f1558"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1691480063&to=1691570063",
-      "observedAt": 1787574503
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 596028.45,
+    "assets": [
+      {
+        "token": "0x1982b2f5814301d4e9a8b0201555376e62f82428",
+        "symbol": "aSTETH",
+        "amount": "991.319527116792461615",
+        "usd": 596028.45
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:1:0x25567821ea31a8efd395654b7fafbab8511e777420803b99b08ca8500dcc3e95",
+    "eip155:1:0x878d8986ed05ab32cc01e05663d27ea471576d2baff1081b15ed5fb550f9d81b",
+    "eip155:1:0x8454beb56ca22f710706c00ac4b969caa7b8848b4a45202cf52715f10a09fc0f",
+    "eip155:1:0xb35faeee64205e3018a1331e59abf7fa7a20bd0163dd2eed4657a9693e9c7ecf",
+    "eip155:1:0x2b492dd5184f2c0f5049923ea61036bc3aee44dd3aa5454dd3de2be2f354c2b6",
+    "eip155:1:0x0d5106d4fa1bddee97a3ed0cb78f5ee6cf08bac4e7201883b63a7b4e71e5fddc",
+    "eip155:1:0xefb27bfca4bfb0111b8d858340178ccb936c2872026fdfaaabb15eb306e70e4f",
+    "eip155:1:0x09349d03e1961cd067f3a049ddef27e6d4b2b516e0252fb885854ba109089301",
+    "eip155:1:0x8e12959dc243c3ff24dfae0ea7cdad48f6cfc1117c349cdc1742df3ae3a3279b",
+    "eip155:1:0xbc161af1dd9d775a0039ec806e6d50353862d200e2e320e97023bf02f03f57bb",
+    "eip155:1:0x35f8117f843fd0b503e39e2c903fa834efa21f8e1590fd00e15e7611ba323656"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-08/EarningFram_exp.sol"
+  ],
+  "notes": [
+    "The last of three pre-exploit upgrades restored the vulnerable implementation; the route change resets the age even though the code was the same as at creation.",
+    "Campaign: the attacker repeated the reentrant withdraw nine more times, and two copycats repeated it after; no other vault of the deployer runs this implementation.",
+    "The strategy's Aave stETH collateral is listed net of the WETH debt repaid while unwinding it, so the asset value is the ETH the withdrawals paid out beyond the attackers' deposits."
+  ]
 }

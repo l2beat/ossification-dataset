@@ -1,150 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xb375932951c271606360b6bf4287d080c5601f4f59452b0484ea6c856defd6fd",
-  "protocol": {
-    "name": "DCF Token",
-    "slug": "dcftoken"
-  },
+  "protocol": "DCF Token",
   "name": "DCF Token sell-side burnPair reserve destruction",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xb375932951c271606360b6bf4287d080c5601f4f59452b0484ea6c856defd6fd",
-      "blockNumber": 44290970,
-      "transactionIndex": 20,
-      "timestamp": 1732453676
-    },
-    "attackerAddresses": [
-      "0x00c58434f247dfdca49b9ee82f3013bac96f60ff",
-      "0x77ab960503659711498a4c0bc99a84e8d0a47589"
-    ]
-  },
-  "summary": "DCF._transfer gives the sender authority over the liquidity pool's own balance. On any transfer whose destination is pairAddress it computes deadAmount = (amount - 5% fee) / deadCfg from the sender's transfer size and, if the pair still holds more than that, calls burnPair, which executes _burn(pairAddress, deadAmount) and IUniswapV2Pair.sync(). Destroying reserve tokens that belong to the pool's liquidity providers on the strength of a third party's transfer amount violates the invariant that an ERC-20 transfer may only move the sender's own balance, and the same _transfer path then routes the 5% fee through swapExactTokensForTokensSupportingFeeOnTransferTokens with amountOutMin = 0 against the pool it has just repriced. No deadCfg value repairs this: deadCfg is only a divisor, setCfg requires it to be non-zero, and for any divisor d an attacker sizes the transfer at roughly d times the pair's balance to burn the whole reserve, so the deployed code is wrong at every configuration.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 698634.386264,
-      "valuationTimestamp": 1732453676,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "BSC-USD"
-        },
-        "amount": "698634.386264319526727426",
-        "usdValue": 698634.386264,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1732453676,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depletion of the exploited PancakeSwap V2 DCF/BSC-USD pool 0x8487f846d59f8fb4f1285c64086b47e2626c01b6, whose BSC-USD balance fell from 698634.425616096796822251 to 0.039351777270094825 across the single exploit transaction; its DCF reserve went from 4074.442371848803073636 to 78.618712756698854301 and is not valued because DCF has no independent price series once the pool is empty. BSC-USD is taken at par. The attacker's 80,435,691.245080307237888143 BSC-USD of flash-loaned buy pressure is an attacker-supplied input and is netted out. Of the 698,634.386264 taken from the pool, the attacker realised 442,028.607465892649035455 BSC-USD, which is its exploit contract's whole end-of-transaction balance and which it withdrew to its EOA in 0xe8cd91d9135d98988b8ab8197d70d7fd0ece57b79c5149e40fbd4e574b7234a0; 118,575.868323 went to the flash-loan pools as premiums, which METHODOLOGY does not deduct from gross depletion; and 138,029.910475542584895976 was re-deposited by DCF's own fee-and-liquidity path into the sibling DCT/BSC-USD pool 0x5aac7375196e9ea76b1598ed4be19b41fa5ba651, which is not a recovery to the drained pool's liquidity providers. The seed row and the DeFiHackLabs header both report ~442k USD, which is the attacker's realised proceeds rather than victim depletion."
-  },
+  "summary": "DCF's sell path burned (amount - 5% fee) / deadCfg tokens from the PancakeSwap pair's own balance and called sync() before crediting the seller. With flash-loaned USDT the attacker bought almost all DCF out of the pair to a buy-restriction-whitelisted address, then sold DCF sized to burn the pair's remainder to dust and swapped it for the pair's USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa7e92345ddf541aa5cf60fee2a0e721c50ca1adb",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xa7e92345ddf541aa5cf60fee2a0e721c50ca1adb",
+      "reset": {
+        "kind": "config",
+        "tx": "0xbd58b3dcc6d3fe9b2c5d22117f3f7bc9050e6cb032de249f82afbed445cc8ada",
         "address": "0xa7e92345ddf541aa5cf60fee2a0e721c50ca1adb",
-        "codeHash": "0x5a1265d17dd177b01a67f042cf26bd866bddbe7c75cec5734a0666f3ef4b89f0"
-      },
-      "deployment": {
-        "timestamp": 1732266513,
-        "blockNumber": 44228584,
-        "transactionHash": "0x71e7a766a9a8587e1fc4f1112d2646f2255d7562d6eaef1ebd2db3c22cc8e96e",
-        "transactionIndex": 135,
-        "creatorAddress": "0xa1f0254f01809ae58cc8a4e776ce1f2580c3f855"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "DCF is a plain non-proxy Solidity 0.8.27 contract deployed by a top-level creation from the EOA 0xa1f0254f01809ae58cc8a4e776ce1f2580c3f855; its constructor mints the supply, deploys the LiquidityHelper and creates the PancakeSwap pair. The 14,593-byte runtime hashes to 0x5a1265d17dd177b01a67f042cf26bd866bddbe7c75cec5734a0666f3ef4b89f0 at the creation block, at an intermediate sample, and at the block before the exploit, and to the empty-code hash one block earlier, so deployment is the only executable-code change."
-      },
-      "codeAgeSeconds": 187163,
-      "failureModeId": "failure:dcf-transfer-to-pair-burns-pool-reserve",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "slot": "0xb7fc480e78c88090c15bd80da2d097cf84f4dec8e1de6ca53830eced03389b67"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb375932951c271606360b6bf4287d080c5601f4f59452b0484ea6c856defd6fd"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-03/DCFToken_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Target corrected. The seed row and the DeFiHackLabs PoC both name the PancakeSwap V2 pair 0x8487f846d59f8fb4f1285c64086b47e2626c01b6 as the vulnerable contract; the pair runs stock PancakePair code and the defect is in the DCF token 0xa7e92345ddf541aa5cf60fee2a0e721c50ca1adb, whose verified Solidity 0.8.27 source I read. In DCF._transfer, a transfer to pairAddress takes a 5 percent fee, computes deadAmount = (amount - fee) / deadCfg with deadCfg = 2, and when balanceOf(pairAddress) exceeds deadAmount calls burnPair, which is _burn(pairAddress, deadAmount) followed by sync(). Anchor kept. The attacker EOA 0x00c58434f247dfdca49b9ee82f3013bac96f60ff opened the campaign at nonce 84 by unwrapping WBNB, deployed the helper 0x77ab960503659711498a4c0bc99a84e8d0a47589 at nonce 85, made a self-transfer of 8 DCF and an approval at nonces 86 and 87, and executed at nonce 88, this transaction, status 1 at block 44290970 index 20, timestamp 1732453676; nonce 89 only sweeps the proceeds. The two earlier transactions touch DCF but neither sends to the pair, so this is the earliest transaction of the campaign that executes the defect. Mechanics reproduced from the receipt: fifteen nested BSC-USD borrows, nine DODO flashLoan calls and six PancakeSwap flash swaps, fund an 80,435,691.245080307237888143 BSC-USD buy that leaves the pair holding 35.171529414641592714 DCF; the attacker then sells 82.756539699156688738 DCF, whose 4.137826984957834436 fee leg is swapped back into the pair and lifts its balance to 39.309356399599427150, just over the deadAmount of 39.309356357099427151, so burnPair fires and leaves the pair with 42,499,999,999 wei of DCF; the fee swap alone extracted 8,521,346.645853764783089690 BSC-USD at the manipulated price and the following sell of 78.618712714198854302 DCF took 72,612,978.985490861981525879 more. Code history: DCF was created by a top-level creation from 0xa1f0254f01809ae58cc8a4e776ce1f2580c3f855, not an attacker address, in 0x71e7a766a9a8587e1fc4f1112d2646f2255d7562d6eaef1ebd2db3c22cc8e96e at block 44228584 index 135; the runtime hash 0x5a1265d17dd177b01a67f042cf26bd866bddbe7c75cec5734a0666f3ef4b89f0 holds at blocks 44228584, 44250000 and 44290969 and the address is empty at 44228583, giving 187,163 s or 2.17 days. Loss: the pair's BSC-USD balance fell 698634.425616096796822251 -> 0.039351777270094825 and its DCF 4074.442371848803073636 -> 78.618712756698854301; the exploit contract ended the transaction holding 442,028.607465892649035455 BSC-USD, the figure the seed row reports. Boundary test applied: deadCfg is a divisor the owner can only set non-zero, and for any divisor an attacker sizes the transfer to burn the entire pair reserve, so this is a code defect and not a configuration."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x71e7a766a9a8587e1fc4f1112d2646f2255d7562d6eaef1ebd2db3c22cc8e96e"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe8cd91d9135d98988b8ab8197d70d7fd0ece57b79c5149e40fbd4e574b7234a0"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://lunaray.medium.com/dcf-hack-analysis-dbcd3589c6fc"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2025-03/DCFToken_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 699333.02,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "698634.386264319526727426",
+        "usd": 699333.02
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-03/DCFToken_exp.sol",
+    "https://lunaray.medium.com/dcf-hack-analysis-dbcd3589c6fc"
+  ],
+  "notes": [
+    "Buys from the pair revert unless sender or recipient is whitelisted; the exploit drained the pair's DCF by buying to 0x16600100b04d17451a03575436b4090f6ff8f404, whitelisted by setWhite after deployment, so that exemption grant is the reset.",
+    "Loss is the pair's net USDT outflow (the attacker's flash-loaned buys net out within the tx); the pair's DCF went to the whitelisted address or was burned and is not valued separately. Flash-loan premiums and the DCF fee path's deposit into the DCT pair are not deducted."
+  ]
 }

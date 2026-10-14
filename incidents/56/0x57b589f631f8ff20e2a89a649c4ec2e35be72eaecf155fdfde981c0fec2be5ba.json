@@ -1,178 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x57b589f631f8ff20e2a89a649c4ec2e35be72eaecf155fdfde981c0fec2be5ba",
-  "protocol": {
-    "name": "LocalTrader",
-    "slug": "localtrader"
-  },
+  "protocol": "LocalTrader",
   "name": "LocalTrader price-manager missing access control",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x57b589f631f8ff20e2a89a649c4ec2e35be72eaecf155fdfde981c0fec2be5ba",
-      "blockNumber": 28460898,
-      "transactionIndex": 129,
-      "timestamp": 1684841942
-    },
-    "attackerAddresses": [
-      "0xd771dfa8fa59bd2d1251a0481fca0cf216276dd7"
-    ]
-  },
-  "summary": "The LocalTrader price-manager implementation exposed ownership and token-price setters without effective access control. A fresh EOA changed both values, acquired the exchange's LCT inventory for a negligible BNB payment, and exchanged the LCT against the protocol's LCT/WBNB liquidity.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 118978.37210738067,
-      "valuationTimestamp": 1684841942,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-5",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "379.322744715235189932",
-        "usdValue": 118978.37210738067,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1684841863,
-          "unitPriceUsd": 313.66,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-5",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss uses the LocalTrader exchange 0xce3e12bd77dd54e20a18cb1b94667f3e697bea06 and LCT/WBNB pair 0x64b266cd63ff3239e6491d6c2c58a5b8552c8724 as one victim set. The exchange receives 0.000000000032650797 BNB and sends 32,650,797 LCT; the final swap sends exactly the same LCT into the pair and removes 379.322744715267840729 WBNB. LCT is internal to the victim set and cancels rather than requiring an illiquid-token valuation. Subtracting the linked BNB input gives 379.322744715235189932 BNB of exact underlying depletion. Archive exchange balances reproduce its leg. The final receipt reproduces the pair leg; unrelated transactions in the same block supply 117.026153119475717607 WBNB net, so the pair's archive balance reconciles as 835.992277421314929535 + 117.026153119475717607 - 379.322744715267840729 = 573.695685825522806413 WBNB. The three approval transactions have zero victim flow but remain inside the complete consecutive-nonce campaign. The closest preceding DefiLlama BNB observation is $313.66 at 1684841863, 79 seconds before the anchor. Exact loss is $118,978.37210738067, replacing the seed's rounded $120,445 estimate.",
-    "realizedAt": 1684842879
-  },
+  "summary": "The LocalTrader price-manager proxy left storeConstructor unprotected, so anyone could overwrite its feed, admin, owner and LCT price. The attacker took ownership, set the price to 1 wei, bought the exchange's whole LCT inventory for a negligible BNB payment and dumped it into the LCT/WBNB pool.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x303554d4d8bd01f18c6fa4a8df3ff57a96071a41",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x312dc37075646c7e0dba21df5bdfe69e76475fdc",
-        "codeHash": "0xa091662f4f9f91cd90e8a5ad946d482ffeaee2456a14dc581cd2a66ebd8348b9"
-      },
-      "deployment": {
-        "timestamp": 1683799838,
-        "blockNumber": 28114122,
-        "transactionHash": "0x1e46e9672ca858be8c2d145eaba6cca49f2b8d34b6c5cd66cf8102d5b8d18258",
-        "transactionIndex": 79,
-        "creatorAddress": "0xdc02a3b51d86d7a19ad24082c0c82affe8412913"
-      },
-      "ageReset": {
+      "address": "0x303554d4d8bd01f18c6fa4a8df3ff57a96071a41",
+      "code": "0x312dc37075646c7e0dba21df5bdfe69e76475fdc",
+      "reset": {
         "kind": "deployment",
-        "description": "The price-manager proxy was directly created with its EIP-1967 implementation slot selecting 0x312dc37075646c7e0dba21df5bdfe69e76475fdc. The slot and selected 3,367-byte implementation runtime remain unchanged through the pre-incident state, and the proxy emits no canonical pre-incident Upgraded event. Proxy deployment is therefore the latest age reset for the implicated implementation."
-      },
-      "codeAgeSeconds": 1042104,
-      "failureModeId": "failure:localtrader-price-manager-missing-access-control",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x1e46e9672ca858be8c2d145eaba6cca49f2b8d34b6c5cd66cf8102d5b8d18258"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x57b589f631f8ff20e2a89a649c4ec2e35be72eaecf155fdfde981c0fec2be5ba"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-05/LocalTrader_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-05/LocalTrader2_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://twitter.com/numencyber/status/1661213691893944320"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T12:23:19Z",
-      "note": "Reviewed the fresh sender's complete nonce-0-through-6 history, all seven successful transactions and receipts, the two implicated victim balances, final-swap call trace, published analysis, both commit-pinned technical reproductions, direct proxy creation receipt, EIP-1967 implementation history, implementation runtime, canonical upgrade logs, and the independently preceding BNB price. The anchor succeeds at BNB Chain block 28460898 index 129, timestamp 1684841942. It calls price-manager proxy 0x303554d4d8bd01f18c6fa4a8df3ff57a96071a41 through selector 0xb5863c10, which delegates to 0x312dc37075646c7e0dba21df5bdfe69e76475fdc; the next transaction calls selector 0x925d400c through the same proxy and implementation. The pinned reproductions establish that the two unprotected setters change ownership and the LCT price used by exchange 0xce3e12bd77dd54e20a18cb1b94667f3e697bea06. The third transaction pays the exchange 32,650,797 wei BNB and receives exactly 32,650,797 LCT. Three successful LCT approvals with no victim asset flow follow, then nonce 6 sends the same LCT amount into pair 0x64b266cd63ff3239e6491d6c2c58a5b8552c8724 and withdraws 379.322744715267840729 WBNB, which the router unwraps and sends to the EOA as the same native amount. Sender nonce is zero before the anchor and remains seven through block 28500000, bounding the complete campaign. Treating the exchange and LCT/WBNB pair as one incident victim set cancels the internal 32,650,797-LCT movement. Subtracting the 0.000000000032650797-BNB external input leaves exact underlying depletion of 379.322744715235189932 BNB. Archive exchange balances move from zero to 32,650,797 wei BNB and from 32,650,798.7462 to 1.7462 LCT, exactly reproducing the purchase. The final-swap receipt reproduces the pair leg. Other transactions in block 28461208 contribute 117.026153119475717607 WBNB net, reconciling archive pair balances exactly: 835.992277421314929535 + 117.026153119475717607 - 379.322744715267840729 = 573.695685825522806413 WBNB. The proxy was directly created by 0xdc02a3b51d86d7a19ad24082c0c82affe8412913 in 0x1e46e967...8258 at block 28114122 index 79, timestamp 1683799838. Proxy code is absent and the implementation slot is zero one block earlier; the creation and pre-incident states both select 0x312dc37075646c7e0dba21df5bdfe69e76475fdc. Its 3,367-byte runtime hashes to 0xa091662f4f9f91cd90e8a5ad946d482ffeaee2456a14dc581cd2a66ebd8348b9 at proxy creation and immediately before the incident, with no canonical pre-incident upgrade. Code age is 1684841942 - 1683799838 = 1,042,104 seconds. The closest preceding DefiLlama BNB point is $313.66 at 1684841863, 79 seconds before the anchor, valuing exact loss at $118,978.37210738067 and replacing the seed's rounded $120,445 estimate."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1e46e9672ca858be8c2d145eaba6cca49f2b8d34b6c5cd66cf8102d5b8d18258"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x57b589f631f8ff20e2a89a649c4ec2e35be72eaecf155fdfde981c0fec2be5ba",
-        "0xbea605b238c85aabe5edc636219155d8c4879d6b05c48091cf1f7286bd4702ba",
-        "0x49a3038622bf6dc3672b1b7366382a2c513d713e06cb7c91ebb8e256ee300dfb",
-        "0xb50b100f139d5ea71f1bb0187271195cf0ff2d1b714dc001d1cc436bb6643151",
-        "0xf7d558407b6e1259d6bdf27bb9e99d58dced001dd4e782c0dc97eb9e70f2237d",
-        "0x0611accca2dd8a66906601768bf3843a281d6049673573ffc1c440bb2d4acece",
-        "0x042b8dc879fa193acc79f55a02c08f276eaf1c4f7c66a33811fce2a4507cea63"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1684841900/coingecko:binancecoin?searchWidth=4h",
-      "observedAt": 1788006199
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 119012.51,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "379.322744715267840729",
+        "usd": 119012.51
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-05/LocalTrader2_exp.sol",
-    "dfhl:src/test/2023-05/LocalTrader_exp.sol",
-    "seed:localtrader:2023-05-23:localtrader-lctexchange-missing-access-control"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/LocalTrader_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/LocalTrader2_exp.sol",
+    "https://twitter.com/numencyber/status/1661213691893944320"
+  ],
+  "notes": [
+    "storeConstructor overwrote the feed, admin, owner and price slots in the anchor itself, so earlier admin and price changes on the proxy do not reset the age; the proxy's deployment does.",
+    "The LCT taken from the exchange and dumped into the LCT/WBNB pair is valued at the BNB the dump realised (rule 15): the sale took about 40% of the pair's WBNB, far below LCT's pre-dump mark."
+  ],
+  "campaign": [
+    "eip155:56:0xbea605b238c85aabe5edc636219155d8c4879d6b05c48091cf1f7286bd4702ba",
+    "eip155:56:0x49a3038622bf6dc3672b1b7366382a2c513d713e06cb7c91ebb8e256ee300dfb",
+    "eip155:56:0x042b8dc879fa193acc79f55a02c08f276eaf1c4f7c66a33811fce2a4507cea63"
   ]
 }

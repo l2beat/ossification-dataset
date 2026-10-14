@@ -1,146 +1,72 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x674f74b30a3d7bdf15fa60a7c29d96a402ea894a055f624164a8009df98386a0",
-  "discovery": [
-    "dfhl:src/test/2022-11/MEV_0ad8_exp.sol",
-    "seed:mevbot-0x0ad8:2022-11-08:mev-bot-0x0ad8-unprotected-arbitrary-call"
-  ],
-  "protocol": {
-    "name": "MEV bot 0x0ad8",
-    "slug": "mevbot-0x0ad8"
-  },
+  "protocol": "MEV bot 0x0ad8",
   "name": "MEV bot 0x0ad8 unprotected arbitrary call",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x674f74b30a3d7bdf15fa60a7c29d96a402ea894a055f624164a8009df98386a0",
-      "blockNumber": 15926097,
-      "transactionIndex": 133,
-      "timestamp": 1667919911
-    },
-    "attackerAddresses": [
-      "0xae39a6c2379bef53334ea968f4c711c8cf3898b6"
-    ]
-  },
-  "summary": "The bot exposed a public entry point that executed caller-supplied calldata with no access control, letting the attacker make it pull 91,638 USDC out of a companion contract that had approved it.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 91638.112249,
-      "valuationTimestamp": 1667919911,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "91638.112249",
-        "usdValue": 91638.112249,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1667919911,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt records one USDC transfer of 91,638.112249 from companion contract 0x211b6a1137bf539b2750e02b9e525cf5757a35ae to the attacker."
-  },
+  "summary": "The bot's public entry 0x090f88ca executed caller-supplied calldata with no access control. The attacker, then copycats, made it call transferFrom on tokens that the operator's wallets had approved to the bot, pulling their USDC, WETH, DAI and renBTC.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x0ad8229d4bc84135786ae752b9a9d53392a8afd4",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x0ad8229d4bc84135786ae752b9a9d53392a8afd4",
-        "codeHash": "0xe8540b2ba858b31c82ae36d7c5dfa7abfe25693978992dcbfb353a4a27dfdfd6"
-      },
-      "deployment": {
-        "timestamp": 1588825530,
-        "creatorAddress": "0xd5b5b26521665cb37623dca0e49c553b41dbf076",
-        "blockNumber": 10016963,
-        "transactionHash": "0xa20b9c9e75be410d50fdb990a0b5bf0aafc43626bb19b536163584134fc8afda",
-        "transactionIndex": 2
-      },
-      "ageReset": {
+      "address": "0x0ad8229d4bc84135786ae752b9a9d53392a8afd4",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly executed bot exposed the arbitrary external-call path at deployment and its runtime remained byte-identical through exploitation."
-      },
-      "codeAgeSeconds": 79094381,
-      "failureModeId": "failure:mevbot-0ad8-unprotected-arbitrary-call",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xa20b9c9e75be410d50fdb990a0b5bf0aafc43626bb19b536163584134fc8afda"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x674f74b30a3d7bdf15fa60a7c29d96a402ea894a055f624164a8009df98386a0"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-11/MEV_0ad8_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Supremacy_CA/status/1590337718755954690"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-03T10:21:43Z",
-      "note": "Reviewed the successful Ethereum receipt and call trace, the pinned DeFiHackLabs reproduction, the creation receipt, and historical runtime code. The attacker directly called the bot with nested transferFrom calldata; the bot invoked USDC and transferred the companion's full 91,638.112249 USDC balance to the attacker despite no authorization from the companion in this transaction. The bot was created directly at 10016963:2 by 0xd5b5b26521665cb37623dca0e49c553b41dbf076; code was absent one block earlier and runtime hash 0xe8540b2b...dfd6 is identical at deployment and immediately before exploitation."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa20b9c9e75be410d50fdb990a0b5bf0aafc43626bb19b536163584134fc8afda"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 290779.95,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "182016.947857",
+        "usd": 181882.63
+      },
+      {
+        "symbol": "ETH",
+        "amount": "43.884884478427152303",
+        "usd": 63134.72
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "45728.408780788414154822",
+        "usd": 45712.72
+      },
+      {
+        "token": "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
+        "symbol": "renBTC",
+        "amount": "0.00257689",
+        "usd": 49.88
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/MEV_0ad8_exp.sol",
+    "https://twitter.com/Supremacy_CA/status/1590337718755954690"
+  ],
+  "notes": [
+    "Victims are the two wallets with standing allowances to the bot (0x211b6a11, 0x3d71d79c). The campaign is every bot execution with a third-party pull (trace_filter over blocks 15.9M-16.3M); before the anchor no account called 0x090f88ca directly and the allowances (set in 2020) were intact.",
+    "ETH is WETH pulled from 0x3d71d79c."
+  ],
+  "campaign": [
+    "eip155:1:0x040e465d91ef9cfcd74ab1b302d76e5fff93c9e85f0113d606795a60ac6e6dce",
+    "eip155:1:0x8cfc44589c485a8938eba95fcb04756c3c6cc8fdc06e4df7f163ecc2591aff2b",
+    "eip155:1:0x841f3f1063b6a7eaf3d2f90060738dd8246d9a59a662f538aa8a0936322d1451",
+    "eip155:1:0xb8606c2c070720ede115cf5cc3516759467a91f7bb0b67c81b539a7a65f36454",
+    "eip155:1:0xa9b39fb269f8f1c54b9d651d45196b78117e8d5ae44cf8346aa8708f988f4b89",
+    "eip155:1:0x987d85e5c49af7aed0cfe127f740497d85d28c0b2d085a8f67fee01f9682018e",
+    "eip155:1:0x3e6a4c501bb7a45f8ea3361000d30eaba768a7e4c04b9cf95758f47a108f213e",
+    "eip155:1:0xea6091abe136ff0ca3b607609c3b9e5643ce7e1e12295d45fd333390d8acb3f9",
+    "eip155:1:0x6bf26b5e7c4ea1d1cbdb8a61d37c1399b57a3ddf659965d8701e119a07ec92a7",
+    "eip155:1:0x669298f335fcc439c1cc01844c4315df3f646fdbf107ca4822e40818be983cdb",
+    "eip155:1:0xe221510b4834be03d6b32b4e1886b4cf81b02f2d93f12e69f614d53be4b1c48f",
+    "eip155:1:0x2dd1d8242134618b245d70fb6f2cd63cf26f4b6d178573b372c3b7b0e5efcc57",
+    "eip155:1:0xd50a5330bf232817c4625ec8f0f8b1b227f1dbc0fc394eecadfb31ac490e7617",
+    "eip155:1:0xf8e4986af16e7cc0e9f1594337ad42584966842eab0f6a720e18174cc1b211f0",
+    "eip155:1:0x168af8c1a2828b0f4c9947835b2a25f84a7a6c8f7f311e76f28c3b0dafd288a5",
+    "eip155:1:0x330ab23535fbc3ca201cb265eae0e151e76491a402ed0468a7f98721bb931d55",
+    "eip155:1:0xcac1313aec0492769d851381f301d6be506fec58931d987f27a2b5fc9dfbc7ce",
+    "eip155:1:0x241bef5c0212f16e56ec4edab48293f1423b0968dda0d4bb262e30da8d2ac4ee",
+    "eip155:1:0xf475b18aa95c5c568040416c8c1ed055149a36412f51074ac7462e228375c309"
+  ]
 }

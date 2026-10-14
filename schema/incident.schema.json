@@ -1,785 +1,129 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Onchain exploited-code-age incident",
-  "description": "One measured EVM exploit with age reset by code or causal configuration changes and onchain loss evidence.",
+  "title": "Exploit incident",
+  "description": "Claims about one exploit. The file path incidents/<chainId>/<exploitTx>.json names the earliest exploit transaction; onchain facts are derived into dist/.",
   "type": "object",
-  "required": [
-    "$schema",
-    "id",
-    "protocol",
-    "name",
-    "incident",
-    "summary",
-    "loss",
-    "targets",
-    "sources",
-    "verification"
-  ],
+  "required": ["$schema", "protocol", "name", "summary", "targets", "loss"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "const": "../../schema/incident.schema.json" },
-    "id": {
-      "type": "string",
-      "pattern": "^eip155:[1-9][0-9]*:0x[0-9a-f]{64}$",
-      "description": "Stable incident identity: eip155:<chainId>:<selected incident transaction hash>."
-    },
-    "protocol": { "$ref": "#/$defs/protocol" },
+    "protocol": { "type": "string", "minLength": 1 },
     "name": { "type": "string", "minLength": 1 },
-    "incident": { "$ref": "#/$defs/incident" },
-    "summary": { "type": "string", "minLength": 1, "description": "The defect: the function and the invariant it violates." },
-    "loss": { "$ref": "#/$defs/loss" },
+    "summary": { "type": "string", "minLength": 1, "description": "The defect and how it was exploited." },
     "targets": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/target" }
+      "items": { "$ref": "#/$defs/target" },
+      "description": "Executed contracts carrying the defect; the one with the latest reset sets the age."
     },
-    "sources": {
-      "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/source" }
-    },
-    "discovery": {
+    "loss": { "$ref": "#/$defs/loss" },
+    "campaign": {
       "type": "array",
       "uniqueItems": true,
       "items": {
-        "type": "string",
-        "pattern": "^(?:adjudication|dfhl|seed|web):[^\\s]+$"
+        "anyOf": [
+          { "type": "string", "pattern": "^eip155:[1-9][0-9]*:0x[0-9a-f]{64}$" },
+          { "$ref": "#/$defs/bundle" }
+        ]
       },
-      "description": "Research-ledger candidate ids this incident resolves. Declares the discovery lead a record answers so research/candidates.json can mark it covered; carries no evidentiary weight."
+      "description": "Further exploit transactions merged into this incident: transaction ids, or bundles for large copycat tails."
     },
-    "verification": { "$ref": "#/$defs/incidentVerification" },
+    "refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^(https?://\\S+|eip155:[1-9][0-9]*:0x[0-9a-f]{64})$" }
+    },
     "notes": {
       "type": "array",
-      "minItems": 1,
       "items": { "type": "string", "minLength": 1 },
-      "description": "Incident-level caveats not represented by a more specific field."
+      "description": "Reasons for choices a reader could question."
     }
   },
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "verification": {
-            "properties": { "tier": { "const": "reviewed" } },
-            "required": ["tier"]
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "incident": {
-            "properties": {
-              "exploit": { "required": ["transactionHash", "blockNumber", "transactionIndex", "timestamp"] }
-            }
-          },
-          "loss": { "$ref": "#/$defs/reviewedLoss" },
-          "verification": {
-            "required": ["reviewSourceIds"],
-            "properties": {
-              "reviewSourceIds": { "$ref": "#/$defs/reviewSourceIds" }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "verification": {
-            "properties": { "tier": { "const": "provisional" } },
-            "required": ["tier"]
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "targets": {
-            "items": {
-              "properties": {
-                "verification": {
-                  "properties": { "curveEligible": { "const": false } }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  ],
   "$defs": {
-    "address": {
-      "type": "string",
-      "pattern": "^0x[0-9a-f]{40}$"
-    },
-    "hash": {
-      "type": "string",
-      "pattern": "^0x[0-9a-f]{64}$"
-    },
-    "sourceId": {
-      "type": "string",
-      "pattern": "^source-[1-9][0-9]*$"
-    },
-    "nullableAddress": {
-      "oneOf": [{ "$ref": "#/$defs/address" }, { "type": "null" }]
-    },
-    "protocol": {
+    "address": { "type": "string", "pattern": "^0x[0-9a-f]{40}$" },
+    "hash": { "type": "string", "pattern": "^0x[0-9a-f]{64}$" },
+    "target": {
       "type": "object",
-      "required": ["name", "slug"],
+      "required": ["address", "reset"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        "address": { "$ref": "#/$defs/address", "description": "Execution address, supplying storage and authority." },
+        "code": { "$ref": "#/$defs/address", "description": "Delegated code with the defect: implementation, facet, module or library. Omitted when the address runs its own code." },
+        "reset": { "$ref": "#/$defs/reset" }
       }
     },
-    "incident": {
+    "reset": {
+      "description": "The latest change before the exploit that established the vulnerable code or state.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "tx"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "deployment" }, "tx": { "$ref": "#/$defs/hash" } },
+          "description": "tx created the target address."
+        },
+        {
+          "type": "object",
+          "required": ["kind", "tx"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "upgrade" }, "tx": { "$ref": "#/$defs/hash" } },
+          "description": "tx made the system run the target code: a proxy, beacon, diamond, router or registry now points to it."
+        },
+        {
+          "type": "object",
+          "required": ["kind", "tx", "address"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "config" },
+            "tx": { "$ref": "#/$defs/hash" },
+            "address": { "$ref": "#/$defs/address" },
+            "slot": { "type": "string", "pattern": "^0x[0-9a-f]+$" },
+            "call": { "type": "string", "pattern": "^0x[0-9a-f]{8}(?:[0-9a-f]{64})*$" }
+          },
+          "oneOf": [{ "required": ["slot"] }, { "required": ["call"] }],
+          "description": "tx changed the storage slot, or the view call result, of address."
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "genesis" } },
+          "description": "The code has been in place since block zero."
+        }
+      ]
+    },
+    "bundle": {
       "type": "object",
-      "required": ["chainId", "exploit", "attackerAddresses"],
+      "required": ["chainId", "count", "from", "to", "selection"],
       "additionalProperties": false,
       "properties": {
         "chainId": { "type": "integer", "minimum": 1 },
-        "exploit": {
-          "$ref": "#/$defs/incidentAnchor"
-        },
-        "attackerAddresses": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/address" }
-        }
-      }
-    },
-    "incidentAnchor": {
-      "type": "object",
-      "required": ["transactionHash", "timestamp"],
-      "additionalProperties": false,
-      "properties": {
-        "transactionHash": { "$ref": "#/$defs/hash" },
-        "blockNumber": { "type": "integer", "minimum": 0 },
-        "transactionIndex": { "type": "integer", "minimum": 0 },
-        "timestamp": { "type": "integer", "minimum": 1 }
-      }
+        "count": { "type": "integer", "minimum": 1 },
+        "from": { "type": "integer", "minimum": 0 },
+        "to": { "type": "integer", "minimum": 0 },
+        "selection": { "type": "string", "minLength": 1 }
+      },
+      "description": "count transactions in blocks from..to, reproducible from the selection rule."
     },
     "loss": {
       "type": "object",
-      "required": ["kind", "assets", "confidence", "notes"],
+      "required": ["usd", "assets"],
       "additionalProperties": false,
       "properties": {
-        "kind": {
-          "enum": ["gross-assets-lost", "net-loss", "permanently-locked", "unspecified"]
-        },
-        "usd": {
-          "type": "object",
-          "required": ["amount", "valuationTimestamp", "method", "sourceIds"],
-          "additionalProperties": false,
-          "properties": {
-            "amount": { "type": "number", "minimum": 1000 },
-            "valuationTimestamp": { "type": "integer", "minimum": 1 },
-            "method": {
-              "enum": ["incident-price", "realised-proceeds", "stablecoin-par", "reported", "unspecified", "other"]
-            },
-            "sourceIds": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": { "$ref": "#/$defs/sourceId" }
-            }
-          }
-        },
-        "minimumUsd": {
-          "type": "object",
-          "required": ["amount", "basis", "sourceIds"],
-          "additionalProperties": false,
-          "properties": {
-            "amount": { "type": "number", "minimum": 1000 },
-            "basis": { "enum": ["asset-valuation", "reported-lower-bound", "other"] },
-            "sourceIds": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": { "$ref": "#/$defs/sourceId" }
-            }
-          },
-          "description": "Explicit lower bound used to establish inclusion when an exact USD valuation is unavailable; omit when loss.usd exists."
-        },
-        "assets": {
-          "type": "array",
-          "items": {
-            "oneOf": [
-              { "$ref": "#/$defs/assetComponent" },
-              { "$ref": "#/$defs/proseAssetDescription" }
-            ]
-          }
-        },
-        "confidence": { "enum": ["high", "medium", "low", "unknown"] },
-        "notes": { "type": "string", "minLength": 1 },
-        "realizedAt": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Timestamp at which the campaign's loss was realised, when that is later than the incident anchor. Bounds how late a contemporaneous valuation may be; must not precede incident.exploit.timestamp."
-        }
-      },
-      "anyOf": [
-        { "required": ["usd"] },
-        {
-          "required": ["minimumUsd"],
-          "properties": { "assets": { "minItems": 1 } }
-        },
-        {
-          "properties": { "kind": { "const": "unspecified" } }
-        }
-      ]
-    },
-    "reviewedLoss": {
-      "type": "object",
-      "properties": {
-        "kind": { "enum": ["gross-assets-lost", "net-loss", "permanently-locked"] },
-        "usd": {
-          "properties": {
-            "method": { "enum": ["incident-price", "realised-proceeds", "stablecoin-par", "reported", "other"] },
-            "sourceIds": { "minItems": 1 }
-          }
-        },
-        "minimumUsd": {
-          "properties": {
-            "sourceIds": { "minItems": 1 }
-          }
-        },
-        "assets": {
-          "items": { "$ref": "#/$defs/assetComponent" }
-        },
-        "confidence": { "enum": ["high", "medium"] }
+        "usd": { "type": "number", "minimum": 1000 },
+        "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } }
       }
     },
-    "assetComponent": {
+    "asset": {
       "type": "object",
-      "required": ["asset", "amount", "usdValue", "valuation", "sourceIds"],
       "additionalProperties": false,
+      "anyOf": [{ "required": ["token"] }, { "required": ["symbol"] }],
       "properties": {
-        "asset": {
-          "type": "object",
-          "required": ["chainId", "tokenAddress", "symbol"],
-          "additionalProperties": false,
-          "properties": {
-            "chainId": { "type": ["integer", "null"], "minimum": 1 },
-            "tokenAddress": { "$ref": "#/$defs/nullableAddress" },
-            "symbol": { "type": ["string", "null"], "minLength": 1 }
-          },
-          "anyOf": [
-            { "properties": { "tokenAddress": { "$ref": "#/$defs/address" } } },
-            { "properties": { "symbol": { "type": "string" } } }
-          ]
-        },
-        "amount": {
-          "oneOf": [
-            { "type": "null" },
-            { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$" }
-          ]
-        },
-        "usdValue": { "type": ["number", "null"], "minimum": 0 },
-        "valuation": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "required": ["method", "timestamp", "unitPriceUsd", "sourceIds"],
-              "additionalProperties": false,
-              "properties": {
-                "method": { "enum": ["incident-price", "realised-proceeds", "stablecoin-par", "reported", "other"] },
-                "timestamp": { "type": "integer", "minimum": 1 },
-                "unitPriceUsd": { "type": ["number", "null"], "minimum": 0 },
-                "sourceIds": {
-                  "type": "array",
-                  "minItems": 1,
-                  "uniqueItems": true,
-                  "items": { "$ref": "#/$defs/sourceId" }
-                }
-              }
-            }
-          ]
-        },
-        "sourceIds": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/sourceId" }
-        }
-      }
-    },
-    "proseAssetDescription": {
-      "description": "Unparsed asset prose on provisional records; reviewed incidents must use assetComponent.",
-      "type": "object",
-      "required": ["description", "sourceIds"],
-      "additionalProperties": false,
-      "properties": {
-        "description": { "type": "string", "minLength": 1 },
-        "sourceIds": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/sourceId" }
-        }
-      }
-    },
-    "deploymentAnchor": {
-      "description": "Anchor fields not yet established onchain are omitted, never null.",
-      "type": "object",
-      "required": ["timestamp"],
-      "additionalProperties": false,
-      "properties": {
-        "kind": { "const": "system-genesis" },
-        "timestamp": { "type": "integer", "minimum": 1 },
-        "blockNumber": { "type": "integer", "minimum": 0 },
-        "transactionHash": { "$ref": "#/$defs/hash" },
-        "transactionIndex": { "type": "integer", "minimum": 0 },
-        "creatorAddress": { "$ref": "#/$defs/address" },
-        "creatorProof": { "$ref": "#/$defs/createNonceProof" }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": { "kind": { "const": "system-genesis" } },
-            "required": ["kind"]
-          },
-          "then": {
-            "required": ["blockNumber"],
-            "properties": {
-              "blockNumber": { "const": 0 },
-              "transactionHash": false,
-              "transactionIndex": false,
-              "creatorAddress": false,
-              "creatorProof": false
-            }
-          }
-        },
-        {
-          "if": { "required": ["creatorProof"] },
-          "then": { "required": ["blockNumber", "transactionHash", "transactionIndex", "creatorAddress"] }
-        }
-      ]
-    },
-    "createNonceProof": {
-      "type": "object",
-      "required": ["type", "nonce", "witnessLogIndex", "eventTopic"],
-      "additionalProperties": false,
-      "properties": {
-        "type": { "const": "create-nonce" },
-        "nonce": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-        "witnessLogIndex": { "type": "integer", "minimum": 0 },
-        "eventTopic": { "$ref": "#/$defs/hash" }
-      }
-    },
-    "ageResetAnchor": {
-      "description": "With kind deployment the reset is the deployment: anchor fields and mechanism derive from `deployment` and are omitted, keeping only kind and an optional description. Other kinds anchor the change themselves; fields not yet established are omitted, never null.",
-      "type": "object",
-      "required": ["kind"],
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "enum": ["deployment", "implementation-change", "module-change", "configuration-change", "unknown"]
-        },
-        "timestamp": { "type": "integer", "minimum": 1 },
-        "blockNumber": { "type": "integer", "minimum": 0 },
-        "transactionHash": { "$ref": "#/$defs/hash" },
-        "transactionIndex": { "type": "integer", "minimum": 0 },
-        "logIndex": { "type": "integer", "minimum": 0 },
-        "mechanism": { "$ref": "#/$defs/ageResetMechanism" },
-        "description": { "type": "string", "minLength": 1 }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": { "kind": { "const": "deployment" } },
-            "required": ["kind"]
-          },
-          "then": {
-            "properties": {
-              "timestamp": false,
-              "blockNumber": false,
-              "transactionHash": false,
-              "transactionIndex": false,
-              "logIndex": false,
-              "mechanism": false
-            }
-          },
-          "else": { "required": ["timestamp", "mechanism"] }
-        },
-        {
-          "if": {
-            "properties": { "kind": { "const": "configuration-change" } },
-            "required": ["kind"]
-          },
-          "then": {
-            "properties": {
-              "mechanism": {
-                "properties": { "type": { "enum": ["storage-write", "view-call"] } },
-                "required": ["type"]
-              }
-            },
-            "required": ["description"]
-          }
-        }
-      ]
-    },
-    "ageResetMechanism": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": ["type", "address"],
-          "additionalProperties": false,
-          "properties": {
-            "type": { "const": "deployment" },
-            "address": { "$ref": "#/$defs/address" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["type", "address", "eventTopic", "codeAddressLocation"],
-          "additionalProperties": false,
-          "properties": {
-            "type": { "const": "event" },
-            "address": { "$ref": "#/$defs/address" },
-            "eventTopic": { "$ref": "#/$defs/hash" },
-            "codeAddressLocation": {
-              "oneOf": [
-                { "type": "null" },
-                { "type": "string", "pattern": "^(topic[1-3]|data-word-(0|[1-9][0-9]*))-address$" }
-              ]
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["type", "address", "storageSlot", "valueBefore", "valueAfter"],
-          "additionalProperties": false,
-          "properties": {
-            "type": { "const": "storage-write" },
-            "address": { "$ref": "#/$defs/address" },
-            "storageSlot": { "type": "string", "pattern": "^0x[0-9a-f]+$" },
-            "valueBefore": { "type": "string", "pattern": "^0x[0-9a-f]*$" },
-            "valueAfter": { "type": "string", "pattern": "^0x[0-9a-f]*$" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["type", "address", "callData", "valueBefore", "valueAfter"],
-          "additionalProperties": false,
-          "properties": {
-            "type": { "const": "view-call" },
-            "address": { "$ref": "#/$defs/address" },
-            "callData": { "type": "string", "pattern": "^0x[0-9a-f]{8}(?:[0-9a-f]{64})*$" },
-            "valueBefore": { "type": "string", "pattern": "^0x(?:[0-9a-f]{64})+$" },
-            "valueAfter": { "type": "string", "pattern": "^0x(?:[0-9a-f]{64})+$" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["type", "address"],
-          "additionalProperties": false,
-          "properties": {
-            "type": { "const": "metamorphic-redeployment" },
-            "address": { "$ref": "#/$defs/address" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["type"],
-          "additionalProperties": false,
-          "properties": {
-            "type": { "enum": ["documented", "unknown"] }
-          }
-        }
-      ]
-    },
-    "target": {
-      "type": "object",
-      "required": [
-        "id",
-        "executionAddress",
-        "relationship",
-        "deployment",
-        "ageReset",
-        "codeAgeSeconds",
-        "failureModeId",
-        "evidence",
-        "verification"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^target-[1-9][0-9]*$" },
-        "executionAddress": { "$ref": "#/$defs/address" },
-        "relationship": {
-          "enum": ["direct", "proxy", "beacon-proxy", "minimal-proxy", "diamond", "module-router", "library", "unknown"]
-        },
-        "codeArtifact": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": false,
-          "properties": {
-            "address": { "$ref": "#/$defs/address" },
-            "codeHash": { "$ref": "#/$defs/hash" }
-          }
-        },
-        "deployment": { "$ref": "#/$defs/deploymentAnchor" },
-        "ageReset": { "$ref": "#/$defs/ageResetAnchor" },
-        "codeAgeSeconds": { "type": "integer", "minimum": 0 },
-        "failureModeId": { "type": "string", "minLength": 1 },
-        "evidence": { "$ref": "#/$defs/targetEvidence" },
-        "verification": { "$ref": "#/$defs/targetVerification" }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "verification": {
-                "properties": { "tier": { "const": "reviewed" } },
-                "required": ["tier"]
-              }
-            }
-          },
-          "then": {
-            "required": ["codeArtifact"],
-            "properties": {
-              "deployment": {
-                "if": {
-                  "properties": { "kind": { "const": "system-genesis" } },
-                  "required": ["kind"]
-                },
-                "then": { "required": ["timestamp", "blockNumber"] },
-                "else": {
-                  "required": ["timestamp", "blockNumber", "transactionHash", "transactionIndex", "creatorAddress"]
-                }
-              },
-              "ageReset": {
-                "if": {
-                  "properties": { "kind": { "const": "deployment" } },
-                  "required": ["kind"]
-                },
-                "else": {
-                  "required": ["kind", "timestamp", "blockNumber", "transactionHash", "transactionIndex", "mechanism"]
-                }
-              },
-              "codeArtifact": {
-                "required": ["address", "codeHash"]
-              },
-              "relationship": {
-                "enum": ["direct", "proxy", "beacon-proxy", "minimal-proxy", "diamond", "module-router", "library"]
-              },
-              "failureModeId": {
-                "pattern": "^failure:[a-z0-9]+(?:[-:][a-z0-9]+)*$"
-              },
-              "evidence": {
-                "properties": {
-                  "identitySourceIds": { "minItems": 1 },
-                  "ageSourceIds": { "minItems": 1 }
-                }
-              },
-              "verification": {
-                "required": ["reviewSourceIds"],
-                "properties": {
-                  "reviewSourceIds": { "$ref": "#/$defs/reviewSourceIds" }
-                }
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "verification": {
-                "properties": { "curveEligible": { "const": true } },
-                "required": ["curveEligible"]
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "verification": {
-                "properties": { "tier": { "const": "reviewed" } }
-              },
-              "ageReset": {
-                "properties": {
-                  "kind": { "enum": ["deployment", "implementation-change", "module-change", "configuration-change"] },
-                  "mechanism": {
-                    "properties": {
-                      "type": { "enum": ["deployment", "event", "storage-write", "view-call", "metamorphic-redeployment"] },
-                      "address": { "$ref": "#/$defs/address" }
-                    },
-                    "allOf": [
-                      {
-                        "if": { "properties": { "type": { "const": "event" } }, "required": ["type"] },
-                        "then": {
-                          "properties": {
-                            "codeAddressLocation": {
-                              "type": "string",
-                              "pattern": "^(topic[1-3]|data-word-(0|[1-9][0-9]*))-address$"
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "verification": {
-                "properties": { "tier": { "const": "provisional" } },
-                "required": ["tier"]
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "verification": {
-                "properties": { "curveEligible": { "const": false } }
-              }
-            }
-          }
-        }
-      ]
-    },
-    "targetEvidence": {
-      "type": "object",
-      "required": ["identitySourceIds", "ageSourceIds"],
-      "additionalProperties": false,
-      "properties": {
-        "identitySourceIds": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/sourceId" }
-        },
-        "ageSourceIds": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/sourceId" }
-        }
-      }
-    },
-    "targetVerification": {
-      "type": "object",
-      "required": ["tier", "curveEligible", "limitations"],
-      "additionalProperties": false,
-      "properties": {
-        "tier": {
-          "enum": ["provisional", "reviewed"],
-          "description": "provisional = artifact identity or age history awaits research; reviewed = target identity and complete age history reviewed."
-        },
-        "curveEligible": {
-          "type": "boolean",
-          "description": "At most one target per incident supplies the knot; the others are reviewed evidence."
-        },
-        "limitations": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        },
-        "reviewSourceIds": { "$ref": "#/$defs/reviewSourceIds" }
-      }
-    },
-    "source": {
-      "oneOf": [
-        { "$ref": "#/$defs/onchainSource" },
-        { "$ref": "#/$defs/onchainTransactionSetSource" },
-        { "$ref": "#/$defs/postMortemSource" },
-        { "$ref": "#/$defs/priceDataSource" },
-        { "$ref": "#/$defs/sourceCodeSource" },
-        { "$ref": "#/$defs/reviewNoteSource" }
-      ]
-    },
-    "onchainSource": {
-      "type": "object",
-      "required": ["id", "type", "chainId", "transactionHash"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^source-[1-9][0-9]*$" },
-        "type": { "const": "onchain-transaction" },
-        "chainId": { "type": "integer", "minimum": 1 },
-        "transactionHash": { "$ref": "#/$defs/hash" }
-      }
-    },
-    "onchainTransactionSetSource": {
-      "type": "object",
-      "required": ["id", "type", "chainId", "transactionHashes"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^source-[1-9][0-9]*$" },
-        "type": { "const": "onchain-transaction-set" },
-        "chainId": { "type": "integer", "minimum": 1 },
-        "transactionHashes": {
-          "type": "array",
-          "minItems": 2,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/hash" }
-        }
-      }
-    },
-    "postMortemSource": {
-      "type": "object",
-      "required": ["id", "type", "url"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^source-[1-9][0-9]*$" },
-        "type": { "const": "post-mortem" },
-        "url": { "type": "string", "format": "uri" }
-      }
-    },
-    "priceDataSource": {
-      "type": "object",
-      "required": ["id", "type", "provider", "url", "observedAt"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/sourceId" },
-        "type": { "const": "price-data" },
-        "provider": { "type": "string", "minLength": 1 },
-        "url": { "type": "string", "format": "uri" },
-        "observedAt": { "type": "integer", "minimum": 1 }
-      }
-    },
-    "sourceCodeSource": {
-      "type": "object",
-      "required": ["id", "type", "repository", "commit", "path"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^source-[1-9][0-9]*$" },
-        "type": { "const": "source-code" },
-        "repository": { "type": "string", "format": "uri" },
-        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-        "path": { "type": "string", "minLength": 1 }
-      }
-    },
-    "reviewNoteSource": {
-      "type": "object",
-      "required": ["id", "type", "note"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^source-[1-9][0-9]*$" },
-        "type": { "const": "review-note" },
-        "reviewer": { "type": "string", "minLength": 1 },
-        "reviewedAt": { "type": "string", "format": "date-time" },
-        "note": { "type": "string", "minLength": 1 }
-      }
-    },
-    "reviewSourceIds": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": { "$ref": "#/$defs/sourceId" }
-    },
-    "incidentVerification": {
-      "type": "object",
-      "required": ["tier", "limitations"],
-      "additionalProperties": false,
-      "properties": {
-        "tier": {
-          "enum": ["provisional", "reviewed"],
-          "description": "provisional = incident classification or loss evidence needs review; reviewed = exploit anchor, root cause, and loss evidence reviewed."
-        },
-        "limitations": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        },
-        "reviewSourceIds": { "$ref": "#/$defs/reviewSourceIds" }
+        "chainId": { "type": "integer", "minimum": 1, "description": "Only when it differs from the incident chain." },
+        "token": { "$ref": "#/$defs/address" },
+        "symbol": { "type": "string", "minLength": 1 },
+        "amount": { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$" },
+        "usd": { "type": "number", "minimum": 0 }
       }
     }
   }

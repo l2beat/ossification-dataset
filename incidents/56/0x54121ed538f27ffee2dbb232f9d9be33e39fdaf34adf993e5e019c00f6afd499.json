@@ -1,173 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x54121ed538f27ffee2dbb232f9d9be33e39fdaf34adf993e5e019c00f6afd499",
-  "protocol": {
-    "name": "UvToken",
-    "slug": "uvtoken"
-  },
+  "protocol": "UvToken",
   "name": "UvToken Eco Staking pool caller-supplied pledge contract",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x54121ed538f27ffee2dbb232f9d9be33e39fdaf34adf993e5e019c00f6afd499",
-      "blockNumber": 22529657,
-      "transactionIndex": 1,
-      "timestamp": 1666846955
-    },
-    "attackerAddresses": [
-      "0xf3e3ae9a40ac4ae7b17b3465f15ecf228ef4f760",
-      "0x99d4311f0d613c4d0cd0011709fbd7ec1bf87be9"
-    ]
-  },
-  "summary": "The UvTokenWallet Eco Staking pool 0x5ecfda78754ec616ed03241b4ae64a54d6705a1a pays withdrawals from a caller-supplied pledge contract address. Its withdraw function (selector 0xc81daf6e, arguments user and pledge) asks that address for the user's amount through selector 0x95b81c68 and has UVT vault 0x36f277165c8b1b80cc3418719badb1864e2687bc transfer that amount, without checking the address against the pool's registered pledges. The attacker passed its own contract, which reported 100,449,018.65 UVT, received that from the vault and sold it for 5,011.175 WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1454293.100024811,
-      "valuationTimestamp": 1666846955,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x196eb1d21c05cc265ea0a1479e924e7983467838",
-          "symbol": "UVT"
-        },
-        "amount": "100449018.652509565091128557",
-        "usdValue": 1454293.100024811,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1666846955,
-          "unitPriceUsd": 0.0144779224280503,
-          "sourceIds": [
-            "source-1",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Vault 0x36f27716 transferred exactly 100,449,018.652509565091128557 UVT (log 0x16) to attacker contract 0x99d4311f. In the same transaction the contract sold all of it: 5,052,410.919669585 UVT via the UV/USDT pair 0xb33797e8 and USDT/WBNB pair 0x16b9a828, and 95,396,607.732839968 UVT via the UV/WBNB pair 0xc7e067e4, and the EOA received 3,932.977781469900 + 1,078.197229814380 = 5,011.175011284280665818 WBNB (logs 0x21 and 0x27). That disposal moved the UVT price, so the drained UVT is valued at its realised proceeds: 5,011.175011284280665818 WBNB x 290.21 USD (DefiLlama WBNB at 1666846948). The 0.5 WBNB the attacker spent on 313.819 UVT it staked beforehand is not part of the proceeds. SlowMist reports 5,011 BNB moved to Tornado Cash (the EOA forwarded 5,011.641 BNB to 0xbc1ac845e889a8795e7f22569aa073aeb3071ef6, which made 51 Tornado router deposits). DefiLlama lists 1.5M USD.",
-    "realizedAt": 1666846955
-  },
+  "summary": "The UvToken staking pool's withdraw (0xc81daf6e) took a caller-supplied pledge address, asked it for the user's amount and had the registry-authorised UVT vault pay that amount without checking the address. The attacker staked a little UVT, passed its own contract reporting about 100M UVT, received them from the vault and dumped them for WBNB.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5ecfda78754ec616ed03241b4ae64a54d6705a1a",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5ecfda78754ec616ed03241b4ae64a54d6705a1a",
-        "codeHash": "0x7faaad70d367268dac1417be9b38ae51fe4a8d08035c0dff601ccd86a737b4a7"
-      },
-      "deployment": {
-        "timestamp": 1666602598,
-        "blockNumber": 22449236,
-        "transactionHash": "0xe01ecfc2b1ce3986bee6945687458acb058340e6a77460f8cf0a65fd780a4e75",
-        "transactionIndex": 44,
-        "creatorAddress": "0xa43a8952595cb381a8f70d261ebffbccd60a781c"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1666602817,
-        "blockNumber": 22449309,
-        "transactionHash": "0x38fe0569e911f6dd96db15016b61b611ebef0b9a50df68d3ca9f81018bc20a8a",
-        "transactionIndex": 133,
-        "logIndex": 276,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x43216378d11d0f74066d53691db1197e027d9c30",
-          "callData": "0x2896f60b0000000000000000000000005ecfda78754ec616ed03241b4ae64a54d6705a1a",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "Deployer setController(pool, true) (0xe0dba60f) on the vault's controller registry 0x43216378: isAvailable(pool) turns true at this block. The vault's transfer entry 0x7e39d2f8 requires isAvailable(msg.sender), so the pool could not pay out before this write. Later pool configuration, createPledge for 0x99677f42, 0x83276a4f and 0x3d7d66fb at blocks 22449376-22449382, is not needed: a debug_traceCall of withdraw from an address that never staked, with a code-overridden pledge address, succeeds."
-      },
-      "codeAgeSeconds": 244138,
-      "failureModeId": "failure:uvtoken-staking-unvalidated-pledge-contract",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The pool, pledge and vault contracts are unverified on BscScan; the defect is established from the anchor call trace and a state-override debug_traceCall, not from source."
-        ],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x5ecfda78754ec616ed03241b4ae64a54d6705a1a",
+      "reset": {
+        "kind": "config",
+        "tx": "0x38fe0569e911f6dd96db15016b61b611ebef0b9a50df68d3ca9f81018bc20a8a",
+        "address": "0x43216378d11d0f74066d53691db1197e027d9c30",
+        "call": "0x2896f60b0000000000000000000000005ecfda78754ec616ed03241b4ae64a54d6705a1a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x54121ed538f27ffee2dbb232f9d9be33e39fdaf34adf993e5e019c00f6afd499"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe01ecfc2b1ce3986bee6945687458acb058340e6a77460f8cf0a65fd780a4e75"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x38fe0569e911f6dd96db15016b61b611ebef0b9a50df68d3ca9f81018bc20a8a"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://www.odaily.news/newsflash/303069"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1666846955/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790652376
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:27:50Z",
-      "note": "Target: pool 0x5ecfda78 created by 0xa43a8952595cb381a8f70d261ebffbccd60a781c in 0xe01ecfc2 (22449236:44, ts 1666602598); eth_getCode empty at 22449235, hashes to 0x7faaad70...b4a7 (13,831 bytes) at 22449236 and 22529656; EIP-1967 implementation slot zero. Pool txlist (77 direct txs): creation, createPledge x3 (22449376, 22449379, 22449382), 72 stake calls (0x1a198215) and one withdraw 0xc81daf6e (0xcd135d2c at 22513058 by 0xcbe3f519 with registered pledge 0x99677f42); no other admin selector. The vault's registry 0x43216378 (same creator, 22278352) returns isAvailable(pool) = 0 at 22449308 and 1 at 22449309 (tx 0x38fe0569, index 133, log 276). Age = 1666846955 - 1666602817 = 244,138 s (244,357 s from deployment). debug_traceCall at block 22529656, from 0x1111...1111 to the pool with calldata 0xc81daf6e(0x1111...1111, 0x2222...2222) and a stateOverride giving 0x2222...2222 code that returns 1e18: the pool calls 0x2222.0x95b81c68(0x1111), reads the vault's UVT balance, calls vault.0x7e39d2f8(0x1111, 1e18) with no revert. The same call from a third address reverts, so only msg.sender == user is enforced. Earliest exercise: the pool's only earlier withdrawal is the registered-pledge call 0xcd135d2c. Every pool payout is a UVT Transfer out of vault 0x36f27716; BscScan tokentx for the vault over 22449236-22529700 lists only three outgoing transfers: 60,533 TToken to the deployer (22453133), 4.166666666666666 UVT to 0xcbe3f519 (the registered-pledge withdrawal 0xcd135d2c at 22513058) and the anchor's 100,449,018.65 UVT."
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:27:50Z",
-      "note": "Anchor: EOA 0xf3e3ae9a40ac4ae7b17b3465f15ecf228ef4f760 (funded 0.996 BNB at 22529320) deployed 0x99d4311f0d613c4d0cd0011709fbd7ec1bf87be9 (22529623) and called 0x2dad7182 in 0x54121ed5 (22529657:1, ts 1666846955, status 1, 38 logs). debug_traceTransaction(callTracer): wrap 0.5 BNB and buy 313.819176231757844376 UVT, pool.0x1a198215(0x99d4311f, 0x11031dae18f7a1cf98, pledge 0x3d7d66fb) stakes it, then pool.0xc81daf6e(0x99d4311f, 0x99d4311f) calls back 0x99d4311f.0x95b81c68 which returns 0x5316e8365cdb7e277524ed (100,449,018.652509565091128557 UVT); vault 0x36f27716 checks 0x43216378.isAvailable(pool) = true and transfers that amount (UVT log 0x16). The UVT is sold through PancakeSwap router 0x10ed43c7 and the EOA receives 0xd53507f670014b359f + 0x3a72fe0bfb805cb13b wei WBNB. Next the EOA unwraps it (0x66966dd7) and sends 5,011.64107879928 BNB to 0xbc1ac845 (0xb20302fd), whose 51 calls to Tornado router 0x0d5550d5 total 5,011 BNB. UvToken 0x196eb1d2 has 18 decimals."
-    }
-  ],
-  "discovery": [
-    "web:2022-10-27:uvtoken"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 1454293.1,
+    "assets": [
+      {
+        "token": "0x196eb1d21c05cc265ea0a1479e924e7983467838",
+        "symbol": "UVT",
+        "amount": "100449018.652509565091128557",
+        "usd": 1454293.1
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://www.odaily.news/newsflash/303069"
+  ],
+  "notes": [
+    "setController(pool, true) on registry 0x43216378 let the vault pay the pool's calls. The later createPledge calls are not needed: a state-override debug_traceCall of withdraw with an unregistered pledge address succeeds.",
+    "UVT is valued at the attacker's realised 5,011.175 WBNB (DefiLlama 290.21 USD) because the same-transaction dump crashed its price (rule 15); the 313.8 UVT the attacker staked first is negligible.",
+    "Pool, pledge and vault are unverified; the defect is read from the call trace."
+  ]
 }

@@ -1,246 +1,48 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0x31957ecc43774d19f54d9968e95c69c882468b46860f921668f2c55fadd51b19",
-  "protocol": {
-    "name": "BonqDAO",
-    "slug": "bonqdao"
-  },
+  "protocol": "BonqDAO",
   "name": "BonqDAO TellorPriceFeed accepts the latest Tellor report unvalidated",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0x31957ecc43774d19f54d9968e95c69c882468b46860f921668f2c55fadd51b19",
-      "blockNumber": 38792978,
-      "transactionIndex": 85,
-      "timestamp": 1675276158
-    },
-    "attackerAddresses": [
-      "0xcacf2d28b2a5309e099f0c6e8c60ec3ddf656642",
-      "0xed596991ac5f1aa1858da66c67f7cfa76e54b5f1"
-    ]
-  },
-  "summary": "BonqDAO's TellorPriceFeed.price() is the single expression uint256(bytes32(oracle.getCurrentValue(queryId))). It returns the most recent value any Tellor reporter has submitted for the wALBT query id, with no dispute window, no staleness bound, no deviation limit and no sanity range, even though TellorFlex lets anyone become a reporter by staking 10 TRB and Tellor's own consumer guidance requires reading through getDataBefore() behind a delay buffer. Trove.borrow() sizes the mint from ITokenPriceFeed.tokenPrice(wALBT), which resolves through ConvertedPriceFeed 0x7d4c36c7 to that feed, so a self-submitted price is accepted as collateral valuation. The attacker staked 10 TRB, reported wALBT at 5,000,000,000 USD, and minted 100,514,098.34 BEUR against 0.1 wALBT; 108 seconds later the second leg reported a near-zero price and liquidated 33 third-party wALBT troves. The invariant violated is that collateral valuation must not be settable by the borrower.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1744418.550449469,
-      "valuationTimestamp": 1675276158,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-7",
-        "source-8",
-        "source-9"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x35b2ece5b1ed6a7a99b83508f8ceeab8661e0632",
-          "symbol": "WALBT"
-        },
-        "amount": "113813985.110093645631281541",
-        "usdValue": 1209882.6435724688,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1675276158,
-          "unitPriceUsd": 0.01063035129120674,
-          "sourceIds": [
-            "source-7",
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-4",
-          "source-8",
-          "source-9"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x338eb4d394a4327e5db80d08628fa56ea2fd4b81",
-          "symbol": "BEUR"
-        },
-        "amount": "100514098.340794949900000000",
-        "usdValue": 534535.906877,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1675276158,
-          "unitPriceUsd": 0.005318019220195817,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Quantities are exact and taken from Transfer logs. WALBT: netting the WALBT transfers of the liquidation transaction 0xa02d0c3d... gives 114,672,341.367535192076347775 WALBT leaving troves, of which 13.259732562723399770 is the attacker's own seed in his trove 0x5343c5d0af82b89df164a9e829a7102c4edb5402 and 858,342.997708983721666464 stayed in the CommunityLiquidationPool 0xeec2266a0ea9d1970fe692273839dbbb6a9ae598; 113,813,985.110093645631281541 WALBT taken from 33 third-party troves reached the attacker, who withdrew 113,813,998.369826208354681311 (that sum plus his seed) in 0x7e292f9b.... BEUR: 100,514,098.340794949900000000 was minted from address zero in the anchor, 514,097.340794949900000000 of it as the borrowing fee to BONQStaking and 100,000,000 to the attacker, against 0.1 WALBT of collateral. USD basis is realised proceeds, not spot: the attacker's own selling moved both prices and neither position could have been sold at the quoted mark. Marking 113.8M WALBT at the DefiLlama observation of 0.10532615800872938 USD would give 11,987,589 USD, and the BEUR headline of 100.5M is the source of the ~120M USD figure in press coverage; neither was realisable. The WALBT component is valued at what the attacker actually got for it: he bridged 113,813,997.369826208354681311 wALBT to Ethereum as ALBT in 0xf2687809... (1 wALBT bridge fee) and sold about 29.8M of it through the 0x Exchange Proxy between blocks 16536020 and 16544037 for exactly 756.020062792199460300 ETH (756.003839783902276312 ETH across 27 successful transfers from the 0x FlashWallet plus 16.223008297183988 WETH; four further attempts reverted and moved nothing) and 20,511.905002 USDT, which at the DefiLlama ETH observation nearest the incident timestamp (1573.1999679714593 USD) is 1,209,882.64 USD. The BEUR component is valued at the 534,535.906877 USDC the attacker realised on Polygon by selling 558,407.700135617870000000 BEUR into the BEUR/DAI and BEUR/USDC pools across five swaps in blocks 38793403-38793555; USDC is taken at par. The unit prices in the components are those realised totals divided by the full stolen quantities, so they are realisation rates, not market prices. The remaining 84,000,000 ALBT and about 98.1M BEUR were never converted; the 84M ALBT moved to attacker wallets 0x9210fa17ae138914fa04a161e694d73c9f3502c7 and 0x9ec88aac7a7735769a86114a6396d67ecaa0bd4e and is excluded because no realisation for it is evidenced onchain. Flash loans were not used; the 10 TRB Tellor stake, the 0.1 WALBT and the 13.259732562723399770 WALBT seeds are attacker-supplied inputs and are excluded. Nothing was recovered.",
-    "realizedAt": 1675376219
-  },
+  "summary": "BonqDAO's TellorPriceFeed.price() returned Tellor's latest wALBT report via getCurrentValue(), with no dispute delay, staleness or deviation check, although anyone staking 10 TRB can report. The attacker reported a huge wALBT price and minted 100M BEUR against 0.1 wALBT, then reported a near-zero price and liquidated 33 other wALBT troves.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa1620af6138d2754f7250299dc9024563bd1a5d6",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa1620af6138d2754f7250299dc9024563bd1a5d6",
-        "codeHash": "0x8a02063d58648a1939959e06ceb5feff59f46ab54ad9f939702e3f85bf5168cf"
-      },
-      "deployment": {
-        "timestamp": 1670428691,
-        "blockNumber": 36542739,
-        "transactionHash": "0xd24188e40b0ec49ba75837183503a219ad84737049cedfe83cf4b5c5ab34be55",
-        "transactionIndex": 51,
-        "creatorAddress": "0xc74bed4d5b1110458d954e772272bc05859b81bd"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "TellorPriceFeed has immutable oracle, token and queryId and no proxy or upgrade path; the 934-byte runtime is byte-identical at its creation block and at block 38792977."
-      },
-      "codeAgeSeconds": 4847467,
-      "failureModeId": "failure:tellor-current-value-read-without-dispute-window",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The artifact also became active in the configuration the trove reads 14 seconds after deployment, when TokenToPriceFeed 0x20d50159aff262f953c8913ec859cac13a010b8a first mapped wALBT to ConvertedPriceFeed 0x7d4c36c7 at block 36542746, timestamp 1670428705. That registration basis would give 4,847,453 s instead of 4,847,467 s. Three later NewTokenPriceFeed events for wALBT (last at block 36902690) re-set only the MCR and redemption-fee parameters and kept the same feed address."
-        ],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0xa1620af6138d2754f7250299dc9024563bd1a5d6",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4ec381af46e23e7ffcc6dc6fb47d3368ec79016a4a9e0d1384a205e79ea33532",
+        "address": "0x20d50159aff262f953c8913ec859cac13a010b8a",
+        "call": "0x9878cbb300000000000000000000000035b2ece5b1ed6a7a99b83508f8ceeab8661e0632"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x31957ecc43774d19f54d9968e95c69c882468b46860f921668f2c55fadd51b19"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Anchor: 0x31957ecc43774d19f54d9968e95c69c882468b46860f921668f2c55fadd51b19 on Polygon, block 38792978 index 85, timestamp 1675276158, receipt status 0x1. It is the earliest successful transaction of the campaign that executes the defect: the attacker EOA 0xcacf2d28b2a5309e099f0c6e8c60ec3ddf656642 sent the same 0xa11ce20c call to its helper 0xed596991ac5f1aa1858da66c67f7cfa76e54b5f1 at blocks 38792651 and 38792864 and both reverted (isError=1); everything before that in the EOA's 26-transaction history is funding and token staging. Defect, read from the verified deployed source and reproduced in the anchor's callTracer trace: TellorPriceFeed 0xa1620af6138d2754f7250299dc9024563bd1a5d6 is 41 lines of Solidity 0.8.17 whose whole pricing body is 'function price() public view returns (uint256) { return uint256(bytes32(oracle.getCurrentValue(queryId))); }'. Its immutables read back at block 38792977 as oracle=TellorFlex 0x8f55d884cad66b79e1a131f6bcb0e66f4fd84d5b, token=wALBT 0x35b2ece5b1ed6a7a99b83508f8ceeab8661e0632, queryId=0x12906c5e9178631dba86f1f750f7ab7451c61e6357160eb890029b9eac1fb235. There is no dispute window, no staleness bound, no deviation cap and no range check; Tellor's own consumer guidance is getDataBefore(queryId, block.timestamp - buffer), which this contract does not use. Causal chain observed in the trace: Trove clone 0x4248fd3e2c055a02117eb13de4276170003ca295 (delegating to Trove implementation 0xdc12de6f80bdc1aa053618c8a8d921b0a240ce7a) STATICCALLs TokenToPriceFeed 0x20d50159aff262f953c8913ec859cac13a010b8a selector 0x84ba3f69, which STATICCALLs ConvertedPriceFeed 0x7d4c36c79b89e1f3ea63a38c1ddb16ef8c394bc8 price(), which STATICCALLs 0xa1620af6 price() -> TellorFlex.getCurrentValue. The frame returns 0x1027e72f1f12813088000000 = 5,000,000,000e18, divided by the Chainlink EUR/USD leg 0x96923e13b9e7c4eb853d9c37ee32e2293ee872b8 (1.091852e18) to 4,579,375,226.679073720614149170 EUR per wALBT. 0xa1620af6 appears in 35 frames of the anchor. In the same transaction the attacker deployed reporter clone 0xbaf48429b4d30bdfad488508d3b528033331fe8a, moved it 10 TRB, called TellorFlex depositStake and submitValue, then borrowed. TokenToPriceFeed's mapping for wALBT resolved to 0x7d4c36c7 at block 38792977 and ConvertedPriceFeed.priceFeed() is immutably 0xa1620af6. Boundary test: the constructor takes (_oracle, _token, _queryId) and there is no value of any of them at which price() becomes correct, because the function performs no validation at all on the value it returns. Pointing the feed at a different Tellor deployment or a different query id changes which permissionless report is trusted, not whether it is trusted, and any Tellor instance lets anyone report after staking 10 TRB. The TokenToPriceFeed registration that made this feed the wALBT oracle is configuration and is recorded as context only; it does not repair the code. This is missing external-interaction validation in deployed EVM code, not a configured parameter the code applies as designed. The dataset's converse example is Shoebill, where the same contract prices other tokens correctly and only one stored unit constant is wrong; here every configuration is wrong. Target and code history: relationship direct, executionAddress = codeArtifact.address = 0xa1620af6138d2754f7250299dc9024563bd1a5d6. Created by top-level CREATE from EOA 0xc74bed4d5b1110458d954e772272bc05859b81bd (codesize 0) in transaction 0xd24188e40b0ec49ba75837183503a219ad84737049cedfe83cf4b5c5ab34be55 at block 36542739 index 51, timestamp 1670428691 confirmed with eth_getBlockByNumber. eth_getCode returns nothing at block 36542738 and a 934-byte runtime at 36542739 and at 38792977, both hashing to 0x8a02063d58648a1939959e06ceb5feff59f46ab54ad9f939702e3f85bf5168cf. The contract has no proxy, no admin and only immutable state, so there is no upgrade mechanism to scan. Code age 1675276158 - 1670428691 = 4,847,467 s (56.10 days). Scanning TokenToPriceFeed 0x20d50159 for NewTokenPriceFeed (topic 0x9f13c8c0d83723df8dd2e34f8a39d343529d3f799a507a7db48830002247d08f) from its creation block 36542609 to 38792977 returns 11 logs, four of them for wALBT (blocks 36542746, 36902635, 36902661, 36902690) and all four selecting the same feed 0x7d4c36c7, so the artifact was continuously active from 14 seconds after deployment. Loss: quantities are exact from Transfer logs. The anchor mints 100,514,098.340794949900000000 BEUR from address zero against 0.100000000000000000 wALBT of collateral, sending 514,097.340794949900000000 to BONQStaking 0xb1b72b3579b03dfdcff3195486277605e55cf703 as the borrowing fee and 100,000,000 to the attacker helper. Leg two, 0xa02d0c3d16d6ee0e0b6a42c3cc91997c2b40c87d777136dedebe8ee0f47f32b1 at block 38793029 (108 s later), reports wALBT at 100000000000 wei = 1e-7 USD from a second staked reporter 0xb5c0ba8ed0f4fb9a31fccf84b9fb3da639a1ede5 and liquidates 33 third-party troves; netting its WALBT transfers gives 114,672,341.367535192076347775 leaving troves, of which 858,342.997708983721666464 remains in CommunityLiquidationPool 0xeec2266a0ea9d1970fe692273839dbbb6a9ae598 and 113,813,985.110093645631281541 lands in the attacker's trove 0x5343c5d0af82b89df164a9e829a7102c4edb5402 on top of his own 13.259732562723399770 seed, for the 113,813,998.369826208354681311 withdrawn in 0x7e292f9b087baf681cf47fd00c91af368e369292b8c2c20c5a857c21c786d8db. Valuation basis is realised proceeds, stated because the attacker's own selling moved both prices. DefiLlama quotes wALBT at 0.10532615800872938 USD at the incident timestamp, which would mark the stolen collateral at 11,987,589 USD, and the 100.5M BEUR headline is where the ~120M USD press figure comes from; neither was sellable. What was actually realised: on Polygon, five swaps in blocks 38793403-38793555 sold 558,407.700135617870000000 BEUR into the BEUR/DAI and BEUR/USDC pools for exactly 534,535.906877 USDC, taken at par. On Ethereum the attacker burned 113,813,997.369826208354681311 wALBT to the AllianceBlock bridge in 0xf2687809103406a0609e0a82a039882643286a4f306e48f798d89ebef6b46604, unlocked the same ALBT in 0xdd6dd9726a1ad07412b9bf2ae407d2e030f29394703f43ec18859ba8d8368349, and sold roughly 29.8M of it through the 0x Exchange Proxy between blocks 16536020 and 16544037. Summing every internal transfer from the 0x FlashWallet 0x22f9dcf4647084d6c31b2765f6910cd85c178c18 to the attacker EOA gives exactly 756.003839783902276312 ETH across 27 successful transactions - four further attempts (0x5a98daca, 0xe3f37084, 0xb67b45fb, 0xa426652a) reverted with receipt status 0x0 and are excluded - plus 16.223008297183988 WETH in 0xa214a85fc182d602565e79f1b29993ceaa3dd652228869a56c545ce8d7fcd216 and 20,511.905002 USDT in 0xdfae52beec7471490274e92001ec119e17507ab950a01360553b87d1d5975d44; at the DefiLlama ETH observation nearest the incident timestamp (1573.1999679714593 USD) that is 1,209,882.64 USD. Deliberately excluded to avoid double counting: 12.976620 ETH the attacker got by re-selling that USDT, and 326.001548 ETH he got by routing the bridged 534,481.5465 USDC through DAI into WETH. Excluded as unevidenced: the remaining 84,000,000 ALBT moved to 0x9210fa17ae138914fa04a161e694d73c9f3502c7 and later 0x9ec88aac7a7735769a86114a6396d67ecaa0bd4e, and the roughly 98.1M BEUR never converted. Excluded as attacker-supplied inputs: the 10 TRB stakes and the 0.1 and 13.259732562723399770 wALBT trove seeds. Total realised 1,744,418.55 USD. No flash loan was used and nothing was recovered."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xd24188e40b0ec49ba75837183503a219ad84737049cedfe83cf4b5c5ab34be55"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xa02d0c3d16d6ee0e0b6a42c3cc91997c2b40c87d777136dedebe8ee0f47f32b1"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://medium.com/@omniscia.io/bonq-protocol-incident-post-mortem-4fd79fe5c932"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-02/BonqDAO_exp.sol"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1675276158/coingecko:ethereum",
-      "observedAt": 1787684700
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction-set",
-      "chainId": 137,
-      "transactionHashes": [
-        "0x7e292f9b087baf681cf47fd00c91af368e369292b8c2c20c5a857c21c786d8db",
-        "0x0cb3844369a75d73eeba497a8239757471a3345e7af23d0cc82e8ccacecf61ac",
-        "0x96ca82ea36e42cc16303d309b2d6c9e2bcecc492f0932107148980d256b0d50a",
-        "0xfe8a28fff366bb324bd7577a27227aaaee8e44602a1a6cefec882726a1a100df",
-        "0x3aa772ac5aa3e4925e999023e0f5e1d0a6467e45354ce19def67aff8a81ef35f",
-        "0x4431f744b8ad86eb0f5f39bc1097d6f990fc8cd2951afe8ef43d1764aeaa28a1",
-        "0xf2687809103406a0609e0a82a039882643286a4f306e48f798d89ebef6b46604"
-      ]
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0xdd6dd9726a1ad07412b9bf2ae407d2e030f29394703f43ec18859ba8d8368349",
-        "0xdfae52beec7471490274e92001ec119e17507ab950a01360553b87d1d5975d44",
-        "0xd6b0830ae9defa8d5e001992eadaa7fd4b66d8cab4d8e4ea090cfe179fad3c77",
-        "0xa44dff468672e4e2d29ededefc400dacaf523152a52f0a6f495e7a66061962b8",
-        "0x46fd03bafabb7198ee21f2e444d1bc57f0522f3cd17b1cb859a8eee04d797f46",
-        "0x2fcc985932a46f8daa866d045912ace00102813568455a7d9097ad3189ab2363",
-        "0xbee9c373e1e158934ac5a027cb0a4192e3ae2803aa0e6adab7c7b47b4e3d97bf",
-        "0x18c3fbbd28442eb4d96c9751eb5aec782b018e5b67e2a0b147f4f35395a18362",
-        "0xd8afa0aa68b2d1b253ce5011909e3752049f597e1997d33c5edd84ee8e9b0865",
-        "0x5fc86c4c24414417a929fbb0e6d96d2fdd74af2e7902823c431ae195fbc0fb5b",
-        "0x44c59149607c17dc5505aaae2d924b4ef27d274fab83d4300f6484bb3f1cf255",
-        "0xb776560ddab2965cc9f25435a9fe59ef32ee215969c4f07225abeb40b0f533fc",
-        "0x87a60637d010a03333d28e86e652aa81e0c2611701dfa687b7c623e82c3955c7",
-        "0xbd0975582bb8668d66db747b0dca17b275cfdc601be8d6062768910756f619b5",
-        "0x76ecae8b27f48c7bd489feb499ee7cc05d06df0df062a2fe418029c9cf0f6696",
-        "0x35da4c55876e3ae60c9a243c4bae1479e502982d5a2abd71d53868e0a30dfdc2",
-        "0xd4471dfce6161527a89a0b90d954c4a012208fdcef99a02d2dcf11d2288c6044",
-        "0x718e6903945cfde2e3a7171a2b24734710efbeb926a4873aea11ed7ac39353b3",
-        "0x6902c060177d6d5cc4df0c09723787be3849a362b4d38b7a9dc8784867e81961",
-        "0x66605bd9661e78091ad930da2c2917972bb65fd2f78ceb35f9e6efeb03c603a9",
-        "0xea7b2fcce894a69f04f522bd867fa79f9b99431849d91d99bc978400f4abc3ea",
-        "0xadb20bc57193b5efbfbfc7dc0709febb06e1dddd16e1d28c3a92c73a0bab2620",
-        "0xa214a85fc182d602565e79f1b29993ceaa3dd652228869a56c545ce8d7fcd216",
-        "0x6763c81218e8a91f4ea02c99ae40153ac4dc2fbc4232b183f5943fb82fae5b85",
-        "0xc4d069ae831f329bd68cfb54a014e3a92b0073dd099673f45846d0afe3a7167b",
-        "0xbaca559347b864f06da4464d0e18afd968e7cbfe34847a69baf5f24642a0e373",
-        "0x7d2e20102d31f353a85b58e2e8a5bb3e8ae610207d8cf35a5f7b1ba1f1d42877",
-        "0x39eaf6146fd483b34f297a81f511e98c6e8898eea68d4dc2bd4d4d1bc9009ac3",
-        "0x37ee34bbe693089d100fe6034dabf974283ac82bf0bc91d70849733d96517472",
-        "0x0c3f426e999704f1e0a171581b50a8544bee19aeb54f6c96e82bbb7b78f585c7"
-      ]
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-02/BonqDAO_exp.sol",
-    "seed:bonqdao:2023-02-01:bonqdao-tellor-oracle-price-manipulation",
-    "web:2023-02-02:bonqdao-allianceblock"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 1744418.55,
+    "assets": [
+      {
+        "token": "0x35b2ece5b1ed6a7a99b83508f8ceeab8661e0632",
+        "symbol": "WALBT",
+        "amount": "113813985.110093645631281541",
+        "usd": 1209882.64
+      },
+      {
+        "token": "0x338eb4d394a4327e5db80d08628fa56ea2fd4b81",
+        "symbol": "BEUR",
+        "amount": "100514098.340794949900000000",
+        "usd": 534535.91
+      }
     ]
   },
+  "refs": [
+    "https://medium.com/@omniscia.io/bonq-protocol-incident-post-mortem-4fd79fe5c932",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/BonqDAO_exp.sol",
+    "eip155:137:0xf2687809103406a0609e0a82a039882643286a4f306e48f798d89ebef6b46604",
+    "eip155:1:0xdd6dd9726a1ad07412b9bf2ae407d2e030f29394703f43ec18859ba8d8368349"
+  ],
   "notes": [
-    "The seed inventory named TellorFlex 0x8f55d884cad66b79e1a131f6bcb0e66f4fd84d5b as the victim contract and aged the row from it. TellorFlex behaved exactly as designed: it accepted a staked reporter's submission. The defect is on the consumer side, in BonqDAO's own TellorPriceFeed, so the target and the age were moved there.",
-    "The campaign has two legs in the same block range. The anchor 0x31957ecc mints against a self-reported high price; 0xa02d0c3d, 51 blocks later, reports a low price and liquidates 33 third-party troves. Both execute the same defect in the same feed, so they are one incident with one loss."
+    "TellorPriceFeed is immutable; the system started reading it when TokenToPriceFeed mapped wALBT to ConvertedPriceFeed 0x7d4c36c7, which wraps it, 14 s after its deployment. Three later wALBT settings kept that feed and changed only MCR and redemption fee, which sized but did not enable the borrow.",
+    "Valued at realisation (rule 15): attacker 0xcacf2d28 sold 558,408 BEUR for 534,535.91 USDC in five Polygon swaps (blocks 38793403-38793555) and, after bridging the wALBT (refs), 29.8M ALBT for 756.02 ETH and 20,511.91 USDT in 0x swaps on Ethereum (blocks 16536020-16544037). The unsold rest adds nothing.",
+    "TellorFlex worked as designed; the defect is BonqDAO's consumer feed. No other reporter submitted wALBT values before the anchor besides the protocol's two."
+  ],
+  "campaign": [
+    "eip155:137:0xa02d0c3d16d6ee0e0b6a42c3cc91997c2b40c87d777136dedebe8ee0f47f32b1"
   ]
 }

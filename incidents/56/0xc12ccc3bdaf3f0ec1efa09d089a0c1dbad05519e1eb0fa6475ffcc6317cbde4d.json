@@ -1,189 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d",
-  "protocol": {
-    "name": "Will",
-    "slug": "will-trading"
-  },
+  "protocol": "Will",
   "name": "Will trading zero-margin order forced into public expired settlement",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d",
-      "blockNumber": 39979797,
-      "transactionIndex": 0,
-      "timestamp": 1719497763
-    },
-    "attackerAddresses": [
-      "0xb6911dee6a5b1c65ad1ac11a99aec09c2cf83c0e",
-      "0x63b4de190c35f900bb7adf1a13d66fb1f0d624a1"
-    ]
-  },
   "summary": "The WILL short-trading contract's placeSellOrder accepts margin 0, giving closeTime = block.timestamp, and sells contract-held (staked) WILL for USDT. Anyone can then call updateExpiredOrders, which books 1.8x the shorted USDT for buy-back, and settleExpiredPositions, which spends that contract USDT on WILL at the live pool price with a caller-chosen minTokensToReceive. The attacker opened an instantly expired order, pumped WILL, and made the contract buy back at the inflated price before dumping.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 45429.486804908,
-      "valuationTimestamp": 1719497775,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "45429.486804908004411522",
-        "usdValue": 45429.486804908,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1719497775,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Attacker contract net USDT gain across both campaign transactions (source-1 and source-7). The victim's gross depletion is 2,722,729.9 WILL (staked user tokens) against a 13,854.51 USDT net gain (71,306.38 USDT attacker order deposit plus 70,899.62 USDT sale proceeds minus 128,351.49 USDT settlement spend); the dumped WILL crashed the pair price (0.0878 to 0.0077 USDT per WILL), so a pre-exploit spot valuation of that WILL is not realisable and the attacker's realised USDT gain is used instead. The PoC header's ~52,777 USD profit is not reproduced by the receipts.",
-    "realizedAt": 1719497775
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x566777ed780dbbe17c130ae97b9fbc0a3ab829df",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1719312771,
-        "blockNumber": 39918426,
-        "transactionHash": "0xd09f4c45b39c2a14d077a600b7ef3425a2fc54405dfc3ee4ed900093f96ee53f",
-        "transactionIndex": 15,
-        "creatorAddress": "0xac016cb9dc0b28e0a93502a2ac69b12e8b217c34"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1719397731,
-        "blockNumber": 39946623,
-        "transactionHash": "0x61edf8c6bc9936f48b07007ab3a1c4eb86a915e1298bc65e9fcd3b76422f8441",
-        "transactionIndex": 23,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x566777ed780dbbe17c130ae97b9fbc0a3ab829df",
-          "storageSlot": "0x000000000000000000000000000000000000000000000000000000000000000b",
-          "valueBefore": "0x0000000000000000000000006228e8a7f249d56b7e42e3241df76a658cced5af",
-          "valueAfter": "0x0000000000000000000000001aaa8e1fd2f4137bbf83bd40d08746ce2862ed55"
-        },
-        "description": "setPairAddress replaced pairAddress (slot 11), a codeless address set at block 39918546 on which getReserves() and therefore placeSellOrder revert, with the canonical PancakeSwap WILL/USDT pair created at block 39946063. The first sell order follows at block 39946751; this change made the zero-margin order and expired-settlement path operational."
-      },
-      "codeAgeSeconds": 100032,
-      "failureModeId": "failure:will-trading-zero-margin-expired-settlement",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-8",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
-      },
-      "codeArtifact": {
+      "address": "0x566777ed780dbbe17c130ae97b9fbc0a3ab829df",
+      "reset": {
+        "kind": "config",
+        "tx": "0x61edf8c6bc9936f48b07007ab3a1c4eb86a915e1298bc65e9fcd3b76422f8441",
         "address": "0x566777ed780dbbe17c130ae97b9fbc0a3ab829df",
-        "codeHash": "0xeed23f4703f417441e1a51226fdfc7ed4b5c9e79722fe59e10d9a129488cfc81"
+        "slot": "0xb"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc12ccc3bdaf3f0ec1efa09d089a0c1dbad05519e1eb0fa6475ffcc6317cbde4d"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-06/Will_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:24:25Z",
-      "note": "Reviewed anchor, root cause and earliest use. debug_traceTransaction(callTracer): source-1 (block 39979797, index 0, sender 0xb6911dee6a5b1c65ad1ac11a99aec09c2cf83c0e -> attack contract 0x63b4de190c35f900bb7adf1a13d66fb1f0d624a1) calls placeSellOrder (0xff1e086c) with usdtAmount 71306383727753036557151, margin 0, minUsdtReceived 0; receipt logs 1/4/5/7 show 71306.38 USDT in from the attacker and 3,251,758.565 WILL sold by the victim for 70,899.62 USDT, then logs 13/16 the attacker buying 3,284,690.998 WILL for 88,417.77 USDT. sellOrders(10) at block 39979801 returns margin 0 and closeTime = openTime = 1719497763. Source-7 (block 39979801, index 0) calls updateExpiredOrders (0x46241a7b) then settleExpiredPositions(0) (0xc2fd00b8): log 1 spends 128,351.49 victim USDT (1.8 x 71,306.38) for 529,028.66 WILL (log 4), and logs 9/10/12 sell the attacker's WILL for 205,153.64 USDT. Earliest use: eth_getLogs SellOrderPlaced(uint256,address,uint256) (topic 0x3c78e727a06e65afa4117213b256b65ef0272a93d27cabb81636f7f1de534f5b) on the victim, blocks 39918426..39990000, gives orders 0-10; sellOrders(0..9) all have nonzero margin (0.1-44.7 USDT) and closeTime >= 1719640426, so none had expired before source-1, and activeOrders/isActive show no order processed by updateExpiredOrders before it. Etherscan txlist of the victim (263 txs) has no direct updateExpiredOrders or settle call before block 45911482. Order 10 is the attacker's."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd09f4c45b39c2a14d077a600b7ef3425a2fc54405dfc3ee4ed900093f96ee53f"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified 'trading' source at https://bscscan.com/address/0x566777ed780dbbe17c130ae97b9fbc0a3ab829df#code; reproduce Etherscan V2 contract.getsourcecode chainid=56. Compiler v0.8.24+commit.e11b9ed9, optimizer 200 runs, not a proxy. SHA-256 of the returned SourceCode (UTF-8, no trailing newline): 345aa51f7e43e95649e94c8c89b3ab96fc22aa3eaec0da5a519c85f4a0e1298b. Inspect placeSellOrder (no minimum margin; closeTime = block.timestamp + margin*1e10/(usdtAmount*578)), updateExpiredOrders (public; expiredNotClosedUSDT = 1.8 x usdtShorted of expired orders) and settleExpiredPositions (public; router swap of expiredNotClosedUSDT USDT->token with caller minTokensToReceive). getReserves() reads IUniswapV2Pair(pairAddress) (slot 11)."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:24:25Z",
-      "note": "Reviewed loss. eth_call USDT(0x55d398326f99059ff775485246999027b3197955).balanceOf(attack contract): 159724152910328277211793 at block 39979796, 0 at 39979797, 205153639715236281623315 at 39979801; net 45429486804908004411522 (18 decimals). Receipts of source-1 and source-7 contain every attacker USDT movement (71306383727753036557151 and 88417769182575240654642 out, logs 1 and 13 of source-1, 205153639715236281623315 in); the pre-funded balance was the attacker's own, with no flash loan. Victim balances: USDT 40.502686019193324391 -> 13895.017206048197690278 and WILL 3252083.773457281455646903 -> 529353.863985304659715325 between blocks 39979796 and 39979801. Pair 0x1aaa8e1fd2f4137bbf83bd40d08746ce2862ed55 reserves (USDT, WILL): 95051.79/1082853.05 at 39979796 and 28318.75/3662226.38 at 39979801; an unrelated trade between blocks 39979797 and 39979800 took 7,449.04 USDT from the pair. USDT on BSC is valued at par."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xefe58a14fc0022872262678b358aaae64a26fe2389d09093eb14752ea99415e9"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:24:25Z",
-      "note": "Reviewed artifact identity and age history. eth_getCode(victim) empty at 39918425; keccak256 of runtime 0xeed23f4703f417441e1a51226fdfc7ed4b5c9e79722fe59e10d9a129488cfc81 at deployment block 39918426 and at 39979796. Source-4 receipt: status 1, top-level creation, index 15, by 0xac016cb9dc0b28e0a93502a2ac69b12e8b217c34 (also WILL token creator, 0xd4a6c02b39ff9e5ade22289b9323bcf27dbb4c2d2bd04edc4f731ec7823ba005 at 39918315). No proxy, delegatecall or selfdestruct in source-5. Victim Etherscan txlist before the exploit has these owner calls: setPairAddress 0xdad2bd8f9f13cddca41bcd0bb472ed70ace7eecb0306a69dfef444cf84a19594 (block 39918546, 0x6228e8a7f249d56b7e42e3241df76a658cced5af), changeOwner 0x8764ee6d2add6183c6415e8916f2f1aefee2d8997602ad7036d923fb74a31217 (to 0x22426735463321c0e2f17396f4d59367a5d530a5), source-9 setPairAddress, changeOwner 0x51f82a48c566fe9f44a5bfcc0e9c9a1499c160bac0cc017373fcb408eb3c7b3b (to 0x92fe75eb73583ef08f36e7afde2a930fc8eaa8b8), and withdrawToken 0xa262f243976e4327a624ae1d508783ea0af939b9bf57ec86f529b4fcda196202; no setTokenAddress, setBatchSize, interest or tax change. eth_getStorageAt(victim, 11): 0 at 39918545; 0x6228e8a7... at 39918546 and 39946622; 0x1aaa8e1f... at 39946623 and 39979796. 0x6228e8a7... has empty code at 39918546, 39930000 and 39946622 (nonce 0), so the high-level getReserves() in placeSellOrder reverts; the canonical pair (PancakeFactory 0xca143ce32fe78f1f7019d7d551a6402fc5350c73 getPair(WILL,USDT)) was created at 39946063 in 0x42603541f10c56ba5a277f9593a17933962146cb62cb3db07346c6cb9f649d18. The first SellOrderPlaced is at block 39946751, after source-9. Source-9 is therefore the latest change establishing the exploitable state; age 100032 s (deployment basis would give 184992 s). Staking deposits only change loss size."
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x61edf8c6bc9936f48b07007ab3a1c4eb86a915e1298bc65e9fcd3b76422f8441"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 45429.486804908,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "45429.486804908004411522",
+        "usd": 45429.486804908
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2024-06/Will_exp.sol",
-    "seed:will-trading:2024-06-27:will-trading-settles-expired-orders-at-pool-spot-price"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-06/Will_exp.sol"
+  ],
+  "notes": [
+    "setPairAddress replaced pairAddress (slot 11), a codeless address set at block 39918546 on which getReserves() and therefore placeSellOrder revert, with the canonical PancakeSwap WILL/USDT pair created at block 39946063. The first sell order follows at block 39946751; this change made the zero-margin order and expired-settlement path operational.",
+    "Loss is the USDT the attacker deposited in the anchor (order and pair purchase) netted as a round trip against what it took back in the settlement transaction. The contract's WILL depletion is not valued separately: the attacker's own dump crashed WILL, and the WILL token tax wallet received the rest."
+  ],
+  "campaign": [
+    "eip155:56:0xefe58a14fc0022872262678b358aaae64a26fe2389d09093eb14752ea99415e9"
   ]
 }

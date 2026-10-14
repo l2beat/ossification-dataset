@@ -1,197 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xb5cfa3f86ce9506e2364475dc43c44de444b079d4752edbffcdad7d1654b1f67",
-  "protocol": {
-    "name": "GradientMakerPool",
-    "slug": "gradientmakerpool"
-  },
+  "protocol": "GradientMakerPool",
   "name": "GradientMakerPool heterogeneous-unit LP share accounting",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xb5cfa3f86ce9506e2364475dc43c44de444b079d4752edbffcdad7d1654b1f67",
-      "blockNumber": 22765114,
-      "transactionIndex": 9,
-      "timestamp": 1750657343
-    },
-    "attackerAddresses": [
-      "0x1234567a98230550894bf93e2346a8bc5c3b36e3",
-      "0x58117e82fa6522703493878f27c85c1702fedcca",
-      "0xcb4059bb021f4cf9d90267b7961125210cedb792"
-    ]
-  },
-  "summary": "GradientMarketMakerPool added raw GRAY token units and wei-denominated ETH when minting LP shares, then used those shares pro rata against the whole pool. The live GRAY/WETH pair constrained the deposit ratio but did not convert the two assets to a common value unit, so a deposit that was valid at the market ratio received shares as though each GRAY wei and ETH wei were economically interchangeable.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 6743.210529916518,
-      "valuationTimestamp": 1750657320,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "3.010899131704627093",
-        "usdValue": 6747.665826080606,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1750657320,
-          "unitPriceUsd": 2241.08,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The direct pool's archive ETH balance falls from 3.027810499442493292 at block 22765113 to 0.016911367737866199 at block 22765114, an exact gross reserve depletion of 3.010899131704627093 ETH. In the same receipt it retains 3.010899131704627094 GRAY as consideration. Immediately before the receipt, the sole credible GRAY market, canonical Uniswap V2 pair 0x0846f55387ab118b4e59eee479f1a3e8ea4905ec, held 261,545.090101530069672838 GRAY and 172.690952204762289631 WETH. The exact reserve-implied credit is (3.010899131704627094 * 172.690952204762289631) / 261,545.090101530069672838 = approximately 0.001988012995559277896495942208041284852218098342934136728762105924489847668692228748688376255407217518 ETH. Gross depletion less that credit is approximately 3.008911118709067815103504057791958715147781901657065863271237894075510152331307771251311623744592782 ETH. At the independently preceding $2,241.08 ETH mark, gross outflow is exactly $6,747.66582608060568558044, the GRAY credit is approximately $4.455296164087986508279126163597162656608935834382835140094180345255707813352780004110546258468007035, and net loss is approximately $6,743.210529916517699072160873836402837343391064165617164859905819654744292186647219995889453741531992. Morpho's 3-WETH flash principal is returned with zero token fee. A linked Uniswap trade spends 0.664800798545598825 WETH for 1,000 GRAY; 50 GRAY goes to the token contract, 950 is deposited, 946.989100868295372906 is returned to the helper, and the pool keeps the stated 3.010899131704627094-GRAY credit. The helper later transfers its returned GRAY to the attacker EOA for disposal; neither that activity nor any later transaction returns ETH or GRAY to the victim pool. The seed's $5,000 figure was attacker-proceeds scale rather than the pool's exact net impairment."
-  },
+  "summary": "GradientMarketMakerPool minted LP shares on the raw sum of GRAY token units and wei of ETH and redeemed them pro rata against the pool's separate ETH and GRAY totals. A deposit at the pair's ratio, mostly GRAY by unit count, received shares worth far more ETH than it brought, and an immediate withdrawal took other providers' ETH.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc",
-        "codeHash": "0xaeda58f71818db612db2367f173161eb34af7d9adae04a60587cc39bfbe0f89b"
-      },
-      "deployment": {
-        "timestamp": 1750630439,
-        "blockNumber": 22762888,
-        "transactionHash": "0xa3bff2b36fbace5f11ab8730747dc946dab23145b7b9e4333637830ca1fcb13c",
-        "transactionIndex": 232,
-        "creatorAddress": "0xedb6e78008bace6ddc169fccbddcfc371c6f3c8c"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1750632263,
-        "blockNumber": 22763039,
-        "transactionHash": "0x2b4d546e1bcbfe6c86348e9d4fe340aea994510ab66c4cdcef68160dc6e9162c",
-        "transactionIndex": 76,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc",
-          "storageSlot": "0x35a35a0941ccfe30d19d7cda394e8682691c0bd19cb185f20ca3325520fac70a",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000846f55387ab118b4e59eee479f1a3e8ea4905ec"
-        },
-        "description": "The first GRAY provideLiquidity call persistently bound the GRAY pool entry to canonical Uniswap V2 pair 0x0846f55387ab118b4e59eee479f1a3e8ea4905ec. Later deposits, withdrawals, orderbook inventory movements and reward funding did not change the pair binding, registry, ownership or implicated share-accounting code."
-      },
-      "codeAgeSeconds": 25080,
-      "failureModeId": "failure:gradient-pool-raw-heterogeneous-unit-share-accounting",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xa3bff2b36fbace5f11ab8730747dc946dab23145b7b9e4333637830ca1fcb13c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb5cfa3f86ce9506e2364475dc43c44de444b079d4752edbffcdad7d1654b1f67"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-06/GradientMakerPool_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-01T19:32:27Z",
-      "note": "Reviewed the complete loss receipt and call trace; exact archive ETH, WETH and GRAY balances and every transfer for the pool, both transaction-created helpers, attacker EOA, Uniswap pair, token contract and Morpho financing source; the direct pool's entire top-level transaction history before and after the receipt; attacker-adjacent nonce 0 through nonce 5 and later activity; verified source and ABI; all GRAY pool binding, registry, ownership and liquidity events; factory getters and independent market indexes; deployment receipt; and direct runtime history. The trace calls provideLiquidity(address,uint256,uint256) and withdrawLiquidity(address,uint256) directly on 0x37ea5f691bce8459c66ffceeb9cf34ffa32fdadc. Verified source first constrains the deposit to the bound pair's live reserve ratio, but then mints shares from tokenAmount + msg.value and later redeems those shares pro rata against totalToken and totalEth. Those raw 18-decimal quantities are not a common economic unit, and the ratio check does not make one GRAY economically equal to one ETH; this unit-mixing share invariant is the selected code failure. The standard pair, router, GRAY tax and Morpho supply market data, inventory movement or financing and are not separate causal targets. The victim's ETH balance equation is 3.027810499442493292 + 0.632090074270700494 - 3.642989205975327587 = 0.016911367737866199. Its GRAY equation is 0 + 950 - 946.989100868295372906 = 3.010899131704627094. The runtime is absent one block before source-4, is 11,729 bytes at creation, and has the identical hash 0xaeda58f71818db612db2367f173161eb34af7d9adae04a60587cc39bfbe0f89b at creation, source-5 and anchor minus one; it has no proxy or implementation slot. Source-5 changes only the GRAY pools mapping's uniswapPair member from zero to 0x0846f55387ab118b4e59eee479f1a3e8ea4905ec. The complete pre-incident call census finds no setRegistry, ownership transfer or later pair/config write. Thus the persistent GRAY activation is 1,750,657,343 - 1,750,632,263 = 25,080 seconds old. Uniswap V2 and SushiSwap V2 getters plus all four canonical Uniswap V3 fee tiers return only source-8's Uniswap V2 pair or zero at anchor minus one; Dexscreener and GeckoTerminal independently enumerate the same sole GRAY market. The post-incident pool call history is empty. The attacker later swept and disposed of the helper's returned GRAY without a victim return."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa3bff2b36fbace5f11ab8730747dc946dab23145b7b9e4333637830ca1fcb13c"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2b4d546e1bcbfe6c86348e9d4fe340aea994510ab66c4cdcef68160dc6e9162c"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1750657342/coingecko:ethereum",
-      "observedAt": 1788291147
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x164df9ffaf0b5406b5ce229764babc6d045a1eaf4b13b0db931e317dbcaaa2d7",
-        "0xb5cfa3f86ce9506e2364475dc43c44de444b079d4752edbffcdad7d1654b1f67",
-        "0xdd7dc06511fd686bf08bdd12b84cdc812471058f91aa1cd2d9a082056c9061df",
-        "0xc68f673ac67420ef31ade43dba59a994b3675cb5ca5af391dc061281a5a4707d",
-        "0x6d33aa1371f10d41ce7cff23a1ecd40785c3bbb7526b9c6a93689302a2fbcdb2",
-        "0x9cd6c268b698dc8820db51ea1c08bf7b085436c2aedd43a95fcb13654e4ad463",
-        "0x1dd527c792a91752f90b7e6a0c1bab836dd99f3c85cdc90898b13fac6a244c90"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0a2d35ea7a0a9a429d8e2ace41d0e6d7133c45205a2fe09d90c45fcd8fdb192e"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x6cdfc3078e8abab12d922bc010576a03e7468443768f653b5df9a95d06c774c5",
-        "0x0fffb1b7f0555fb641b53080ac3d88f632e7a9b8e1fb1389037e463610eb7fef",
-        "0x209f39a20e97a2437b83f5f3fafd3847eb43479daef5008738ae387df4214ede"
-      ]
-    }
+  "campaign": [
+    "eip155:1:0x3b57c01d52db5c5d489462828757c86827b1e0acd03f22661ed84ffe4a2c339b",
+    "eip155:1:0x9d70b956bcd948c9f174c8dd87f95c7454a10467ef816b2761ef425a3b1f6110"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 6767.8,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "3.019516111236838802",
+        "usd": 6767.8
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-06/GradientMakerPool_exp.sol"
+  ],
+  "notes": [
+    "The first provideLiquidity for GRAY bound the pool to its Uniswap V2 pair, but any first depositor writes the same deterministic pair, so it is pool state, not a reset; the age runs from deployment.",
+    "The GRAY the pool kept in the exploit is not netted against its ETH outflow (rule 14)."
+  ]
 }

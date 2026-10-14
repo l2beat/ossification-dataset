@@ -1,204 +1,56 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xc0b7e490caac2b8cfa5e62d1b28a5e7dba7600e623c71352acbc9b23c2b65b7c",
-  "protocol": {
-    "name": "USPD",
-    "slug": "uspd"
-  },
+  "protocol": "USPD",
   "name": "USPD StabilizerNFT unprotected initializer on a freshly deployed proxy",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xc0b7e490caac2b8cfa5e62d1b28a5e7dba7600e623c71352acbc9b23c2b65b7c",
-      "blockNumber": 23375795,
-      "transactionIndex": 7,
-      "timestamp": 1758027731
-    },
-    "attackerAddresses": [
-      "0x083379bdac3e138cb0c7210e0282fbc466a3215a",
-      "0x4c4eacbe5d5232698d12c379be14a0e561001c21",
-      "0x7c97313f349608f59a07c23b18ce523a33219d83",
-      "0xa3d2616ee942b36648eaa55976ee7b761bd2a21b",
-      "0xac075b9bf166e5154cc98f62ee7b94e5345cc090",
-      "0xc2a0ad4bd62676692f9dca88b750bec98e526c42"
-    ]
-  },
-  "summary": "The StabilizerNFT ERC-1967 proxy was deployed without its initializer being run, leaving the audited implementation’s unprotected initialize() callable by anyone. Twelve seconds after deployment an attacker called it, took the admin and upgrader roles, briefly swapped in an implementation of their own and swapped back so the proxy looked untouched. Seventy-nine days later they used the upgrader role to install purpose-built implementations that minted unbacked USPD and drained stETH from position escrows plus USDC from the USPD/USDC pool.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1049844.910352753,
-      "valuationTimestamp": 1764871703,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-8"
-      ]
-    },
-    "realizedAt": 1764871703,
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
-          "symbol": "stETH"
-        },
-        "amount": "236.842877402051689989",
-        "usdValue": 746936.0536067531,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1764871703,
-          "unitPriceUsd": 3153.719722543291,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "302908.856746",
-        "usdValue": 302908.856746,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1764871703,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The anchor transaction is the compromise; the assets left 79.2 days later in the drain transaction 0xa7cab072bf0453301a0ab1b06c49a9405d115824fc617fb42cba9b70f3b893c2 at block 23941343, which is what loss.realizedAt records and what the valuation timestamps use. That receipt shows three stETH transfers from position escrows directly to the attacker and an exact USDC transfer from the USPD/USDC pool through the proxy. DefiLlama’s nearest stETH observation to the drain is at 1764872102. The repaid Balancer WETH flash loan, the unbacked USPD issuance and residual LP tokens are excluded. Nothing was recovered."
-  },
+  "summary": "The StabilizerNFT ERC-1967 proxy was deployed without running its unprotected initialize(). Twelve seconds later the attacker called it, took the admin and upgrader roles and hid them behind a swapped-back implementation; 79 days later it upgraded the proxy to mint unbacked USPD, drained stETH from escrows and sold USPD for the pool's USDC.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x1346b4d6867a382b02b19a8d131d9b96b18585f2",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x11a880b0c9d50b4aef7527d458497e60fa602429",
-        "codeHash": "0x0c405e7e57de129779742d36f1134ffff8ad343401265f16c93698c0a6f70998"
-      },
-      "deployment": {
-        "timestamp": 1758027719,
-        "blockNumber": 23375794,
-        "transactionHash": "0x3477bb4cb7cfcd12664ca224ad8468cfe2168fa1e779333c847a02bea1623d23",
-        "transactionIndex": 224,
-        "creatorAddress": "0xba5ed099633d3b313e4d5f7bdc1305d3c28ba5ed"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1758027719,
-        "blockNumber": 23375794,
-        "transactionHash": "0x3477bb4cb7cfcd12664ca224ad8468cfe2168fa1e779333c847a02bea1623d23",
-        "transactionIndex": 224,
-        "logIndex": 524,
-        "mechanism": {
-          "type": "event",
-          "address": "0x1346b4d6867a382b02b19a8d131d9b96b18585f2",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The proxy’s first Upgraded event, log 524 of its own creation transaction, selected the audited implementation 0x11a880b0c9d50b4aef7527d458497e60fa602429. That implementation is still selected when the anchor transaction delegate-calls its initialize() twelve seconds later."
-      },
-      "codeAgeSeconds": 12,
-      "failureModeId": "failure:uspd-stabilizernft-unprotected-initializer",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x1346b4d6867a382b02b19a8d131d9b96b18585f2",
+      "code": "0x11a880b0c9d50b4aef7527d458497e60fa602429",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x3477bb4cb7cfcd12664ca224ad8468cfe2168fa1e779333c847a02bea1623d23"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xc0b7e490caac2b8cfa5e62d1b28a5e7dba7600e623c71352acbc9b23c2b65b7c"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://rekt.news/uspd-rekt"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-uspd-hack-december-2025"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T14:30:00Z",
-      "note": "Re-anchored from the drain to the compromise. The trace of 0xc0b7e490ca shows the proxy delegate-calling StabilizerNFT.initialize on the audited implementation 0x11a880b0c9d50b4aef7527d458497e60fa602429, which grants DEFAULT_ADMIN_ROLE and the upgrader role to 0xc2a0ad4bd62676692f9dca88b750bec98e526c42 and emits Initialized(version 1); the attacker then upgrades to its own 0xac075b9bf1 and, through that, back to 0x11a880b0 so the proxy looks untouched. The defect is therefore in victim code that predates all adversarial control and executes in the anchor, which is what makes this target curve-eligible where the drain transaction would not be: that transaction runs only the attacker implementations 0x4c4eacbe5d and 0xa3d2616ee9. The proxy emitted exactly four Upgraded events before the drain: the audited implementation at log 524 of its creation block 23375794, the two inside this anchor, and the final attacker selection at block 23939725. Age therefore runs from the creation-block Upgraded to the anchor and is 12 seconds. Loss is measured at the drain, 79.2 days later, which loss.realizedAt records."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3477bb4cb7cfcd12664ca224ad8468cfe2168fa1e779333c847a02bea1623d23"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa7cab072bf0453301a0ab1b06c49a9405d115824fc617fb42cba9b70f3b893c2"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe6715708c0e3b2b3a0a10ab1b25785b8d04db09ef71196c5ea313d8a0676f823"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1764871703/coingecko:staked-ether",
-      "observedAt": 1787575707
-    }
-  ],
-  "discovery": [
-    "seed:uspd:2025-12-04:uspd-stabilizernft-clandestine-proxy-initialization"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 1055999.31,
+    "assets": [
+      {
+        "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "symbol": "stETH",
+        "amount": "236.842877402051689993",
+        "usd": 746936.05
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "309130.420334",
+        "usd": 309063.26
+      }
     ]
   },
+  "refs": [
+    "https://rekt.news/uspd-rekt",
+    "https://www.halborn.com/blog/post/explained-the-uspd-hack-december-2025",
+    "eip155:1:0xe6715708c0e3b2b3a0a10ab1b25785b8d04db09ef71196c5ea313d8a0676f823"
+  ],
   "notes": [
-    "The incident anchor is the clandestine initialization twelve seconds after deployment, which is the earliest transaction executing the defect; the loss is the drain 79.2 days later."
+    "The proxy’s first Upgraded event, log 524 of its own creation transaction, selected the audited implementation 0x11a880b0c9d50b4aef7527d458497e60fa602429. That implementation is still selected when the anchor transaction delegate-calls its initialize() twelve seconds later.",
+    "Campaign: the drain 0xa7cab072, two later re-mints through the hijacked proxy, and eight sales of unbacked USPD/cUSPD into the USPD/USDC pool. Loss is the stETH taken from position and stabilizer escrows plus all USDC the pool lost; unbacked USPD, LP tokens and the repaid Balancer flash loan are excluded.",
+    "Anchor is the clandestine initialization 12 s after deployment (rule 12); the same actor later front-ran the proxy's initialization on Arbitrum and Polygon, but no assets left on those chains."
+  ],
+  "campaign": [
+    "eip155:1:0xa7cab072bf0453301a0ab1b06c49a9405d115824fc617fb42cba9b70f3b893c2",
+    "eip155:1:0x1b0abacc54f9f3eacc8ff3fcc4d3c12cd653fbac26d80cb4e4a776d9bc200a9b",
+    "eip155:1:0xd02134b1dc0b63814e6a00ce2a363ce1c0849ffce3fa9da6cab06b84717a1083",
+    "eip155:1:0xeeae0d532cef17fad674c2e9f07d31fced27f71ab39ea6a88c5dd5181746c4c1",
+    "eip155:1:0x172c55ae57534f7f77ae8c4b115c60788799b17a7d9b98f68c214e7a4da715a7",
+    "eip155:1:0x9fb0697bb353e98e91c497a95f15a8259ac1227467b25b197f2e874d0cc40ee3",
+    "eip155:1:0x1c274a1d9215f064dff68713ea4f76bb07d9eca196ea15d68f0e537461dec435",
+    "eip155:1:0x04afce03fd9a2754729d8031f80d4c90b640b1dd2cb73073f63c06f107878d0d",
+    "eip155:1:0x07506f9772998391642e822dad5798e24d309b805e6e10988438dbe47505c6a0",
+    "eip155:1:0x5082a6f4f1d5904b3524adacd401b9c1805c1485dd63e6c70092765c7cb6baa3",
+    "eip155:1:0x73c39d5d9104d6968a41042c11837de60592bd55ebd5b3544d48ca23e61551e8"
   ]
 }

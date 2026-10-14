@@ -1,129 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xffbbd492e0605a8bb6d490c3cd879e87ff60862b0684160d08fd5711e7a872d3",
-  "protocol": {
-    "name": "ResupplyFi",
-    "slug": "resupplyfi"
-  },
+  "protocol": "ResupplyFi",
   "name": "ResupplyFi zero exchange-rate solvency bypass",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xffbbd492e0605a8bb6d490c3cd879e87ff60862b0684160d08fd5711e7a872d3",
-      "blockNumber": 22785461,
-      "transactionIndex": 0,
-      "timestamp": 1750902839
-    },
-    "attackerAddresses": [
-      "0x6d9f6e900ac2ce6770fd9f04f98b7b0fc355e2ea"
-    ]
-  },
-  "summary": "ResupplyPair inverted the collateral oracle price with integer division but accepted a zero result. After the attacker inflated an empty CurveLend vault's share price above 1e36, the calculated exchange rate rounded to zero and the pair's LTV calculation treated a 10 million reUSD loan against one wei of collateral as solvent.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 10000000,
-      "valuationTimestamp": 1750902839,
-      "method": "reported",
-      "sourceIds": [
-        "source-4"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Resupply's post-mortem reports $10 million of reUSD bad debt, matching the exact 10,000,000 reUSD borrow executed in the anchored transaction."
-  },
+  "summary": "ResupplyPair inverted the collateral oracle price with integer division and accepted a zero result. The attacker inflated the nearly empty CurveLend vault's share price by donation so the exchange rate rounded to zero, then borrowed 10 million reUSD against one wei of collateral and swapped it out of the reUSD/scrvUSD Curve pool.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6",
-        "codeHash": "0x07ff4715d4817fbc145fc665754eb8811704043ead8c05f8ba3edca26664d961"
-      },
-      "deployment": {
-        "timestamp": 1750897127,
-        "blockNumber": 22784988,
-        "transactionHash": "0x852eca15a9fd352817346915f7bc8817d46de349bd7a8fc6ee73c7b66ec9ab41",
-        "transactionIndex": 174,
-        "creatorAddress": "0x5555555524de7c56c1b20128dbeaace47d2c0417"
-      },
-      "ageReset": {
+      "address": "0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6",
+      "reset": {
         "kind": "deployment",
-        "description": "The vulnerable exchange-rate inversion and solvency logic are part of the pair's immutable direct runtime, activated when the new crvUSD-wstUSR market was deployed."
-      },
-      "codeAgeSeconds": 5712,
-      "failureModeId": "failure:resupply-zero-exchange-rate-solvency-bypass",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x852eca15a9fd352817346915f7bc8817d46de349bd7a8fc6ee73c7b66ec9ab41"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xffbbd492e0605a8bb6d490c3cd879e87ff60862b0684160d08fd5711e7a872d3"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-06/ResupplyFi_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x852eca15a9fd352817346915f7bc8817d46de349bd7a8fc6ee73c7b66ec9ab41"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://paragraph.com/@resupply/resupply-crvusd-wstusr-market-post-mortem"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/resupplyfi/resupply",
-      "commit": "69ce192a28deb453ce17a7594503fe48212885a9",
-      "path": "src/protocol/pair/ResupplyPairCore.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:00:35Z",
-      "note": "Reviewed the live Ethereum transaction, receipt and call trace, the pair's CREATE2 deployment trace, pre-exploit runtime, verified source, exact commit-matching source snapshot, protocol post-mortem, and reported bad debt. The exploit transaction creates the attack contract, which calls borrow(10,000,000e18,0,receiver) on 0x6e90c85a495d54c6d7e1f3400fef1f6e59f86bd6. During that call the pair's configured oracle returns 2000000000000000000001998001998001998; the pair's own 1e36/price operation rounds to zero and its own LTV multiplication therefore passes solvency. The empty configured vault makes the oracle input manipulable, but the defect is the pair runtime's accepted zero rate and unsafe solvency use. The target is a full direct runtime with no DELEGATECALL or SELFDESTRUCT, created in the recorded deployment transaction and unchanged through the exploit. Resupply reports $10 million of reUSD bad debt, matching the exact onchain borrow amount."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The USD amount uses the protocol's reported face value of the reUSD bad debt."
-    ],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 9815832.83,
+    "assets": [
+      {
+        "token": "0x0655977feb2f289a4ab78af67bab0d17aab84367",
+        "symbol": "scrvUSD",
+        "amount": "9339517.43877404485908748",
+        "usd": 9815832.83
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/ResupplyFi_exp.sol",
+    "https://paragraph.com/@resupply/resupply-crvusd-wstusr-market-post-mortem",
+    "https://github.com/resupplyfi/resupply/blob/69ce192a28deb453ce17a7594503fe48212885a9/src/protocol/pair/ResupplyPairCore.sol"
+  ],
+  "notes": [
+    "The exchange-rate inversion and solvency logic are in the pair's own immutable runtime; the pair was deployed and registered (registry mint rights) in the same transaction.",
+    "Loss is what the reUSD/scrvUSD Curve pool paid out for the unbacked reUSD; the minted reUSD it received is not netted (rule 14). Resupply's post-mortem reports $10M of reUSD bad debt."
+  ]
 }

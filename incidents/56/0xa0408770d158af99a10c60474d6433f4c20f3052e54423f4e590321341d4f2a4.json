@@ -1,158 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xa0408770d158af99a10c60474d6433f4c20f3052e54423f4e590321341d4f2a4",
-  "protocol": {
-    "name": "TGBS",
-    "slug": "tgbs"
-  },
-  "name": "TGBS public _burnBlock()",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xa0408770d158af99a10c60474d6433f4c20f3052e54423f4e590321341d4f2a4",
-      "blockNumber": 36725820,
-      "transactionIndex": 116,
-      "timestamp": 1709710075
-    },
-    "attackerAddresses": [
-      "0xff1db040e4f2a44305e28f8de728dabff58f01e1"
-    ]
-  },
-  "summary": "A public state-changing token function allowed an arbitrary caller to reduce the TGBS balance held by its PancakeSwap pair, breaking the pair's reserve accounting and depleting its WBNB reserve.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 153877.7678413062,
-      "valuationTimestamp": 1709709892,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "377.419655738898226050",
-        "usdValue": 153877.7678413062,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1709709892,
-          "unitPriceUsd": 407.71,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The incident receipt shows 1,235.242777623808307005 WBNB entering PancakeSwap TGBS/WBNB pair 0x779a0e4799488d2fcac65f5fb8eb65dbbf08ce43 and 1,612.662433362706533055 WBNB leaving it, for exact net depletion of 377.419655738898226050 WBNB. Archive balances fall from 381.978233513290349616 WBNB before the incident block to 4.558577774392123566 WBNB after it, reproducing the receipt result. The same sender's preceding transaction 0xe02c6f4b38ac1063154bea7fd37ec3b61190b2ed17522dc99eca3e4caecc0827 has no WBNB or TGBS transfer into or out of this pair and is excluded from the single-transaction campaign. Gross pair depletion nets all WBNB inputs in the incident receipt; financing fees, gas, and later recovery are not deducted. The closest preceding DefiLlama BNB observation is $407.71 at 1709709892, 183 seconds before the incident."
-  },
+  "protocol": "TGBS",
+  "name": "TGBS _burnPool catch-up burns pair balance",
+  "summary": "TGBS burned 0.3% of its pair's TGBS on each transfer while _burnBlock lagged the block number, advancing it only 1,200 blocks per burn. After the owner set _burnBlock to 1, the attacker flash-borrowed WBNB, bought TGBS and made 1,600 one-wei self-transfers, each burning pair TGBS and syncing, then sold back into the inflated price.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xedecfa18cae067b2489a2287784a543069f950f4",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xedecfa18cae067b2489a2287784a543069f950f4",
+      "reset": {
+        "kind": "config",
+        "tx": "0x8f568ebeb63deaa705b9341c5ebcc9532683ef4d24cdbb95ff60ea633e57af4d",
         "address": "0xedecfa18cae067b2489a2287784a543069f950f4",
-        "codeHash": "0xf583f884e1cae893cdc9ff073714238410dcf3ae0468477a662edd6a4db875ac"
-      },
-      "deployment": {
-        "timestamp": 1707481555,
-        "blockNumber": 35984440,
-        "transactionHash": "0xafffc4ef57adee128d73edcccb25551f201053c9e452af0c0754d797eca027c6",
-        "transactionIndex": 54,
-        "creatorAddress": "0xd9d9eb8988ed6a10a9246287ce0d938e618a17ff"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "TGBS is directly deployed. Its 16,737-byte runtime is absent one block before creation and has code hash 0xf583f884e1cae893cdc9ff073714238410dcf3ae0468477a662edd6a4db875ac at deployment and immediately before the incident; both EIP-1967 code-selection slots are zero. The public pair-balance mutation exists in that deployed runtime and does not depend on a later configuration change."
-      },
-      "codeAgeSeconds": 2228520,
-      "failureModeId": "failure:tgbs-public-pair-balance-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "slot": "0x9"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa0408770d158af99a10c60474d6433f4c20f3052e54423f4e590321341d4f2a4"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Phalcon_xyz/status/1765285257949974747"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-03/TGBS_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T10:54:42Z",
-      "note": "Reviewed the successful incident receipt and call trace, verified deployed source, commit-pinned technical reproduction, direct creation receipt, archive runtime code, EIP-1967 slots, pair identity and balances, the sender's immediately preceding transaction, and the preceding price observation. The anchor is successful at block 36725820 index 116, timestamp 1709710075, and its trace reaches direct TGBS contract 0xedecfa18cae067b2489a2287784a543069f950f4. The pair 0x779a0e4799488d2fcac65f5fb8eb65dbbf08ce43 reports token0 WBNB and token1 TGBS before the incident. The deployed source and transaction logs establish that an unrestricted token state transition reduced the pair-held TGBS balance and broke its reserve accounting. In the receipt, the pair receives 1,235.242777623808307005 WBNB and sends 1,612.662433362706533055 WBNB, exactly 377.419655738898226050 WBNB of gross net depletion. Its archive WBNB balance moves from 381.978233513290349616 before block 36725820 to 4.558577774392123566 after the block, the same difference. The sender's only earlier transaction in the bounded block window is 0xe02c6f4b...0827 at block 36725537; its receipt has zero WBNB and zero TGBS flow to or from the pair, so it is not part of the loss boundary. The target was directly created by 0xd9d9eb8988ed6a10a9246287ce0d938e618a17ff in 0xafffc4ef...27c6 at block 35984440 index 54, timestamp 1707481555. Code is absent one block earlier, and the 16,737-byte runtime hashes to 0xf583f884e1cae893cdc9ff073714238410dcf3ae0468477a662edd6a4db875ac at creation and immediately before the incident. Both EIP-1967 slots are zero. Deployment is therefore the latest age reset, 1709710075 - 1707481555 = 2,228,520 seconds. The closest preceding DefiLlama point is BNB $407.71 at 1709709892, making the exact WBNB depletion worth $153,877.7678413062 and replacing the seed's rounded $150,000 estimate."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xafffc4ef57adee128d73edcccb25551f201053c9e452af0c0754d797eca027c6"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1709710000/coingecko:binancecoin?searchWidth=4h",
-      "observedAt": 1788000882
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-03/TGBS_exp.sol",
-    "seed:tgbs:2024-03-06:tgbs-public-burnblock"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 156864.42,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "386.327497242067951743",
+        "usd": 156864.42
+      }
     ]
   },
+  "refs": [
+    "https://twitter.com/Phalcon_xyz/status/1765285257949974747",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-03/TGBS_exp.sol"
+  ],
   "notes": [
-    "Replaces the seed's rounded $150,000 estimate with exact gross WBNB pair depletion valued at the closest preceding BNB price."
+    "Reset is the owner's setBurnBlock(1) about an hour before the anchor (after setBurnBlock(0) at block 36708087). Before that _burnBlock tracked the block number, so a transfer could trigger at most one 0.3% burn; set to 1, it let one transaction trigger thousands. Deployment alone was not exploitable.",
+    "Campaign: copycat 0xd070490b repeated the 1,601-burn loop 72 blocks later. Later txs by the stake-fee address 0x1eab3b72 and 0xec819380 triggered burns but drew no WBNB and are excluded.",
+    "Loss is gross WBNB pair depletion in both txs at DefiLlama BNB $406.04; TGBS burned from the pair is not counted separately."
+  ],
+  "campaign": [
+    "eip155:56:0x961ac6a22a74fb1001081c54f98ad135ebd3e608fce2126e9b2b5aea2c10737b"
   ]
 }

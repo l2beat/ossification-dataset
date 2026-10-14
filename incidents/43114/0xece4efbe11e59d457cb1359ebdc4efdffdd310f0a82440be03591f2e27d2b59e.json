@@ -1,325 +1,117 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:43114:0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e",
-  "protocol": {
-    "name": "DeltaPrime",
-    "slug": "deltaprime"
-  },
-  "name": "DeltaPrime Avalanche unvalidated LFJ reward pair",
-  "incident": {
-    "chainId": 43114,
-    "exploit": {
-      "transactionHash": "0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e",
-      "blockNumber": 52927411,
-      "transactionIndex": 2,
-      "timestamp": 1731310543
-    },
-    "attackerAddresses": [
-      "0xda81cdbe6748fa4c3177c1f6bdcdbca904000b2a",
-      "0x2d81eca9c72ea059f126a37ec205601487217a16",
-      "0x055be51bd3541c2c8f5219f5b78212b01a49bdae",
-      "0xd3d535141831f6bd8b7df92e2ae0463d60af2413"
-    ]
-  },
-  "summary": "TraderJoeV2AvalancheFacet.claimReward(address,uint256[]) accepts an arbitrary LFJ pair address without checking that the LFJ factory created it, then trusts that pair's hook and rewarder. It snapshots the Prime Account's WAVAX balance, calls the caller-supplied pair's claim(), and pays out the difference to msg.sender with no solvency check. The malicious rewarder calls back into the Prime Account's wrapped-native facet to wrap borrowed native AVAX between the before and after snapshots, so pool debt drawn through swapDebtParaSwap is reclassified as reward and transferred out.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4125532.164674277,
-      "valuationTimestamp": 1731310543,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-5",
-        "source-6",
-        "source-7",
-        "source-8",
-        "source-9",
-        "source-10"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
-          "symbol": "WAVAX"
-        },
-        "amount": "74420.190026835772433671",
-        "usdValue": 2336793.9668426435,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731310543,
-          "unitPriceUsd": 31.4,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
-          "symbol": "USDC"
-        },
-        "amount": "860088.776389",
-        "usdValue": 860036.3109736403,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731310543,
-          "unitPriceUsd": 0.999939,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0x152b9d0fdc40c096757f570a51e494bd4b943e50",
-          "symbol": "BTC.b"
-        },
-        "amount": "6.34401755",
-        "usdValue": 512710.8103559,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731310543,
-          "unitPriceUsd": 80818,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
-          "symbol": "USDt"
-        },
-        "amount": "259926.541496",
-        "usdValue": 260186.468037496,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731310543,
-          "unitPriceUsd": 1.001,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
-          "symbol": "WETH.e"
-        },
-        "amount": "49.675622190954455477",
-        "usdValue": 155804.6084645972,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1731310543,
-          "unitPriceUsd": 3136.44,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Components are the exact depletion of DeltaPrime's Avalanche lending pools, summed from the Transfer logs of the six exploit transactions and the loot sweep: WavaxPool 0xd26e504fc642b96751fd55d3e68af295806542f5 -74420.190026835772433671 WAVAX, UsdcPool 0x2323dac85c6ab9bd6a8b5fb75b0581e31232d12b -860088.776389 USDC, BtcPool 0x475589b0ed87591a893df42ec6076d2499bb63d0 -6.34401755 BTC.b, UsdtPool 0xd222e10d7fe6b7f9608f14a8b5cf703c74efbca1 -259926.541496 USDt and WethPool 0xd7feb276ba254cd9b34804a986ce9a8c3e359148 -49.675622190954455477 WETH.e. The attacker's loot address 0xd3d535141831f6bd8b7df92e2ae0463d60af2413 holds 74183.842277799231529158 WAVAX, 860088.776389 USDC, 6.34401755 BTC.b, 259926.541496 USDt and 49.675622190954455477 WETH.e after the sweep, plus 110 native AVAX; a further 110 native AVAX went to the generalised front-runner 0x5135b55b35822d4d4df66deaf52edef613112c8e that landed the sweep, and per methodology that builder-style payment is not deducted. The 220 native AVAX are already inside the WAVAX quantity that left the pool and are not listed separately. All Balancer flash loans are repaid within their transactions and are not loss. This record covers the Avalanche leg only; the Arbitrum leg of the same campaign is the separate incident eip155:42161:0x6a2f989b5493b52ffc078d0a59a3bf9727d134b403aa6e0bf309fd513a728f7f, whose loss is now an independent onchain reconstruction of about 754 thousand USD from its own five Arbitrum pools, so the two records are disjoint and may be summed. CertiK measured about 4.1 million USD on Avalanche and about 753 thousand USD on Arbitrum against DeltaPrime's rounded 4.75 million USD campaign total.",
-    "realizedAt": 1731310635
-  },
+  "protocol": "DeltaPrime",
+  "name": "DeltaPrime claimReward unvalidated LFJ pair",
+  "summary": "DeltaPrime's TraderJoeV2 facet claimReward(pair, ids) accepted any LFJ pair and paid the Prime Account's balance increase of the pair hook's reward token to the owner with no solvency check. The attacker's fake pair re-entered wrapNativeToken to wrap borrowed native AVAX or ETH mid-claim, so pool loans were paid out as rewards.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa9b975c11f6afce142799cebb80f078f1be4c8f6",
-      "relationship": "diamond",
-      "codeArtifact": {
-        "address": "0x2fcd23e6104a55132a81710382aa16ddbd3b58f2",
-        "codeHash": "0xdf2e5256531110c06cf1b94d14166140c5f868d1dd0f7b086437ea0936ec7953"
-      },
-      "deployment": {
-        "timestamp": 1731310535,
-        "blockNumber": 52927407,
-        "transactionHash": "0x3e27bc627d5ff97c9a4d4e3f507a9b17234976e306d95be2da7c85c60714b6e7",
-        "transactionIndex": 2,
-        "creatorAddress": "0x3ea9d480295a73fd2af95b4d96c2aff88b21b03d"
-      },
-      "ageReset": {
-        "kind": "module-change",
-        "timestamp": 1730982196,
-        "blockNumber": 52771206,
-        "transactionHash": "0x1c24e72a6d761614ad18ac5ec466dc369591395ffdd6f5684c3064520e199121",
-        "transactionIndex": 2,
-        "logIndex": 11,
-        "mechanism": {
-          "type": "event",
-          "address": "0x2916b3bf7c35bd21e63d01c93c62fb0d4994e56d",
-          "eventTopic": "0x8faa70878671ccd212d20771b795c50af8fd3ff6cf27f4bde57e5d4de0aeb673",
-          "codeAddressLocation": "data-word-5-address"
-        },
-        "description": "DiamondCut on SmartLoanDiamondBeacon 0x2916b3bf7c35bd21e63d01c93c62fb0d4994e56d replaced the route for selector 0xb2af870a (claimReward(address,uint256[])) with TraderJoeV2AvalancheFacet 0x2fcd23e6104a55132a81710382aa16ddbd3b58f2, the defect-bearing artifact, alongside 0x2001ff29 and 0x08a766eb. This is the last of seven pre-exploit cuts touching that selector out of 161 DiamondCut events on the beacon, and beacon.implementation(0xb2af870a) still returns that facet at block 52927410. The beacon is shared by every DeltaPrime Prime Account, so the defect was live for all of them from this cut onward; the attacker's own Prime Account 0xa9b975c11f6afce142799cebb80f078f1be4c8f6 was merely instantiated against the already-defective route eight seconds before the exploit and does not reset the artifact age."
-      },
-      "codeAgeSeconds": 328347,
-      "failureModeId": "failure:deltaprime-unvalidated-lfj-reward-pair",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-11",
-          "source-15"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-15"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0xa9b975c11f6afce142799cebb80f078f1be4c8f6",
+      "code": "0x2fcd23e6104a55132a81710382aa16ddbd3b58f2",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1c24e72a6d761614ad18ac5ec466dc369591395ffdd6f5684c3064520e199121"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T18:30:00Z",
-      "note": "Reviewed the Avalanche anchor receipt and trace, the five further exploit receipts and the loot sweep, all 161 pre-exploit DiamondCut events on SmartLoanDiamondBeacon 0x2916b3bf7c35bd21e63d01c93c62fb0d4994e56d, the facet deployment and historical runtimes, the five lending pools' balances, DeltaPrime's post-mortem, Verichains' analysis and CertiK's incident analysis. The anchor 0xece4efbe11e59d457cb1359ebdc4efdffdd310f0a82440be03591f2e27d2b59e is status 1 at block 52927411 index 2, timestamp 1731310543, sent by 0xda81cdbe6748fa4c3177c1f6bdcdbca904000b2a to orchestrator 0x2d81eca9c72ea059f126a37ec205601487217a16. It is the earliest defect-executing success of the campaign; the two preceding transactions only deploy the fake LFJ pair 0x055be51bd3541c2c8f5219f5b78212b01a49bdae (block 52927399) and the orchestrator (block 52927407). Prime Account 0xa9b975c11f6afce142799cebb80f078f1be4c8f6, a SmartLoanDiamondProxy created through DeltaPrime factory 0x3ea9d480295a73fd2af95b4d96c2aff88b21b03d, resolves selector 0xb2af870a through beacon.implementation and DELEGATECALLs TraderJoeV2AvalancheFacet 0x2fcd23e6104a55132a81710382aa16ddbd3b58f2; beacon.implementation(0xb2af870a) returns that facet at block 52927410. The execution context, Prime Account 0xa9b975c11f6afce142799cebb80f078f1be4c8f6, was created by an internal CREATE from DeltaPrime factory 0x3ea9d480295a73fd2af95b4d96c2aff88b21b03d inside transaction 0x3e27bc627d5ff97c9a4d4e3f507a9b17234976e306d95be2da7c85c60714b6e7 at block 52927407 index 2, timestamp 1731310535, and that account creation is the deployment anchor recorded for the target. The defect-bearing facet itself was created by top-level CREATE from 0x5ee7673ba06a87f125d14f2c009ec2c4de02728c in 0x8e8cafa68a2f16dec4d7167b26cc3cf4413d43dc068b36d2a12cb7c9f48d204a at block 52646165 index 0, with no code at 52646164, and its 20-kilobyte runtime hashes to 0xdf2e5256531110c06cf1b94d14166140c5f868d1dd0f7b086437ea0936ec7953 at the deployment block, at the activating cut block 52771206 and at block 52927410. Seven pre-exploit cuts touch selector 0xb2af870a; the last is log index 11 of transaction 0x1c24e72a6d761614ad18ac5ec466dc369591395ffdd6f5684c3064520e199121 at block 52771206 index 2, timestamp 1730982196, a Replace action whose facetAddress in data word 5 is 0x2fcd23e6104a55132a81710382aa16ddbd3b58f2 and whose selector list is 0x2001ff29, 0x08a766eb, 0xb2af870a. That cut is the last code change to the defect-bearing artifact; on re-review I re-decoded the receipt and confirmed log index 11 is emitted by the beacon with topic 0x8faa70878671ccd212d20771b795c50af8fd3ff6cf27f4bde57e5d4de0aeb673 and carries 0x2fcd23e6104a55132a81710382aa16ddbd3b58f2 in data word 5, and that none of the 161 pre-exploit DiamondCut events after it re-routes selector 0xb2af870a. The age is therefore anchored to that shared facet activation rather than to the attacker-instantiated Prime Account, because the beacon route is what carried the defect for every DeltaPrime account: codeAgeSeconds = 1731310543 - 1730982196 = 328347 seconds (3.80 days). The Prime Account creation remains the deployment anchor for the execution context; the earlier 8-second figure was the age of the attacker's own account, not of the defective code. Loss: the five DeltaPrime pools lose exactly 74420.190026835772433671 WAVAX, 860088.776389 USDC, 6.34401755 BTC.b, 259926.541496 USDt and 49.675622190954455477 WETH.e across the six exploit transactions and the sweep, and the loot address 0xd3d535141831f6bd8b7df92e2ae0463d60af2413 goes from zero to 74183.842277799231529158 WAVAX, 860088.776389 USDC, 6.34401755 BTC.b, 259926.541496 USDt, 49.675622190954455477 WETH.e and 110 native AVAX. The Arbitrum leg of this campaign is recorded separately as eip155:42161:0x6a2f989b5493b52ffc078d0a59a3bf9727d134b403aa6e0bf309fd513a728f7f; that record now carries an independent onchain reconstruction of its own five Arbitrum pools (about 754 thousand USD) instead of the rounded cross-chain 4.75 million USD figure, so the two losses are disjoint. Both legs were re-anchored to their beacon facet activations in this same pass."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0x1c24e72a6d761614ad18ac5ec466dc369591395ffdd6f5684c3064520e199121"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0x8e8cafa68a2f16dec4d7167b26cc3cf4413d43dc068b36d2a12cb7c9f48d204a"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 43114,
-      "transactionHashes": [
-        "0x26ea5a8bdb6fe3f653fed1d4bca4d3111f02c1231c816d68d82c1b0a7a0bad97",
-        "0x955529c6572ae6f5862336489cb856a29e0acfbe3cad12b26c1ec90bdbe49b1b",
-        "0x9bfae345170dddb301b4fa0abf95f262b61a6e6c9a1f8e354fcdf4cc6a1c7a35",
-        "0x4e356413704aa0b7c80a215a4591ec557b388fb694abe3aa0ce3d123bcbbdb69",
-        "0xd12126ad608c223814d53c763264a65e74783bd3e050a6ae26d816baae69a6bf",
-        "0x419ed99a7ae5993eb34799b5e9678e1b476ddba6c095d866ed6c1cfa7e4257c9"
-      ]
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731310543/avax:0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731310543/avax:0x152b9d0fdc40c096757f570a51e494bd4b943e50",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731310543/avax:0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-9",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731310543/avax:0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1731310543/avax:0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-11",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-11/DeltaPrime_exp.sol"
-    },
-    {
-      "id": "source-12",
-      "type": "post-mortem",
-      "url": "https://www.deltaprime.io/blogs/news/deltaprime-post-mortem-reimbursement-plan-07-12-2024"
-    },
-    {
-      "id": "source-13",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/resources/blog/deltaprime-incident-analysis"
-    },
-    {
-      "id": "source-14",
-      "type": "post-mortem",
-      "url": "https://blog.verichains.io/p/deltaprime-exploit-analysis"
-    },
-    {
-      "id": "source-15",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0x3e27bc627d5ff97c9a4d4e3f507a9b17234976e306d95be2da7c85c60714b6e7"
-    }
-  ],
-  "discovery": [
-    "seed:delta-prime:2024-11-11:delta-prime-november"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 4879583.82,
+    "assets": [
+      {
+        "token": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+        "symbol": "WAVAX",
+        "amount": "74420.190026835772433671",
+        "usd": 2336793.97
+      },
+      {
+        "token": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+        "symbol": "USDC",
+        "amount": "860088.776389",
+        "usd": 860036.31
+      },
+      {
+        "token": "0x152b9d0fdc40c096757f570a51e494bd4b943e50",
+        "symbol": "BTC.b",
+        "amount": "6.34401755",
+        "usd": 512710.81
+      },
+      {
+        "chainId": 42161,
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "271614.819122",
+        "usd": 271614.82
+      },
+      {
+        "token": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+        "symbol": "USDt",
+        "amount": "259926.541496",
+        "usd": 260186.47
+      },
+      {
+        "chainId": 42161,
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "2.96703344",
+        "usd": 239735.12
+      },
+      {
+        "chainId": 42161,
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "66.619545304650988218",
+        "usd": 208898.24
+      },
+      {
+        "token": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
+        "symbol": "WETH.e",
+        "amount": "49.675622190954455477",
+        "usd": 155804.61
+      },
+      {
+        "chainId": 42161,
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "50060.231512018705280417",
+        "usd": 31035.86
+      },
+      {
+        "chainId": 42161,
+        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+        "symbol": "DAI",
+        "amount": "2769.105063733408190911",
+        "usd": 2767.61
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:43114:0x26ea5a8bdb6fe3f653fed1d4bca4d3111f02c1231c816d68d82c1b0a7a0bad97",
+    "eip155:42161:0x6a2f989b5493b52ffc078d0a59a3bf9727d134b403aa6e0bf309fd513a728f7f",
+    "eip155:43114:0x955529c6572ae6f5862336489cb856a29e0acfbe3cad12b26c1ec90bdbe49b1b",
+    "eip155:43114:0x9bfae345170dddb301b4fa0abf95f262b61a6e6c9a1f8e354fcdf4cc6a1c7a35",
+    "eip155:43114:0x4e356413704aa0b7c80a215a4591ec557b388fb694abe3aa0ce3d123bcbbdb69",
+    "eip155:42161:0x401c40998e9798a24bb69edc8fddd06b8c3e49c210b8c551ea17802ac439c8b5",
+    "eip155:43114:0xd12126ad608c223814d53c763264a65e74783bd3e050a6ae26d816baae69a6bf",
+    "eip155:42161:0x26405f8da2058592090a73c66a369960867976a84f975f41acb01280b88dc2f6",
+    "eip155:42161:0x660caa598f93a0ef8a8687e1ca4e6cd1bf365191066c13fc4e4f1fb51bc9e541",
+    "eip155:42161:0xa60af008199161d528296668426f15bd4a39e2d6b5a3acb0f97be47a7b097968",
+    "eip155:42161:0x1f16c51871daa9d31d50f1a2976aec6bc88625d8fa9fa148e454e6d98b635ee5",
+    "eip155:42161:0x9efe855cd3783462207ff8a3d94dc17a74e2b2f00bf1b4c8a7e0135dae83ab5c",
+    "eip155:42161:0x94cf7f33fa1cec194419174c50060c82ef80d82b80b5c4b003e6c0617378ac17",
+    "eip155:42161:0xb5208f0b98c186a4f4ea59aff74e3c8bc4b7a039be96fc033b5f754b9af86c34",
+    "eip155:42161:0xa61df706f69ae1dabc920cbd22a58491f90edfa1cf523d77fa24812a98ecf4e5",
+    "eip155:42161:0x0f7c67397c2da683f7c66d507313e7010557c534f03464e687ee4b46bd14f9af",
+    "eip155:42161:0x1b5764ce9b3132e317fa0e2e6d4919267c581106c16f04da9bf451de24e5c5de",
+    "eip155:42161:0x8513a1cd6618f17bc6eec436e72cc1c95bd3c337db48fcedf992dd4f0a9db097"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-11/DeltaPrime_exp.sol",
+    "https://medium.com/@DeltaPrimeDefi/deltaprime-post-mortem-reimbursement-plan-07-12-2024-2d654912715b",
+    "https://www.certik.com/resources/blog/deltaprime-incident-analysis",
+    "https://blog.verichains.io/p/deltaprime-exploit-analysis"
+  ],
+  "notes": [
+    "The attacker created each Prime Account seconds before using it, so the age runs from the DiamondCut that routed claimReward to this facet on the shared SmartLoanDiamondBeacon (rule 11). Earlier facet versions had the same unchecked claimReward; the latest route change is used.",
+    "Merged: 22 s after the anchor the same attacker repeated the exploit on Arbitrum (beacon 0x62cf82fb, facet 0xd6002c3f routed by DiamondCut 0xdf204ce6, age 328007 s); those transactions are in the campaign and their pool depletion carries chainId 42161.",
+    "Loss is the net outflow of DeltaPrime's lending pools; Balancer flash loans and the WAVAX/WETH the attacker recycled from its fake pair net out within each transaction, and loot sweeps from attacker contracts are not counted."
+  ]
 }

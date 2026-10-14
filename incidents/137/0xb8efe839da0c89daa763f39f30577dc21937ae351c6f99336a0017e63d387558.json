@@ -1,188 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0xb8efe839da0c89daa763f39f30577dc21937ae351c6f99336a0017e63d387558",
-  "protocol": {
-    "name": "Market.xyz",
-    "slug": "market-xyz"
-  },
+  "protocol": "Market.xyz",
   "name": "Market.xyz transient Curve LP collateral price",
-  "summary": "The miMATIC market accepted a Curve/Beefy LP collateral value read while the Curve pool was inside remove_liquidity, allowing loans against a transiently inflated virtual price.",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0xb8efe839da0c89daa763f39f30577dc21937ae351c6f99336a0017e63d387558",
-      "blockNumber": 34716801,
-      "transactionIndex": 91,
-      "timestamp": 1666562948
-    },
-    "attackerAddresses": [
-      "0x4206d62305d2815494dcdb759c4e32fca1d181a0",
-      "0xeb4c67e5be040068fa477a539341d6aef081e4eb",
-      "0xea3538d282a23b2235d77c3e1d3dfe7806035630",
-      "0x8e351192bf808974371e7aadbc2d875cdc12ad0a",
-      "0x8d1e7ce7dbb14afb8782eaea8010938cc457115e"
-    ]
-  },
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 235000,
-      "valuationTimestamp": 1666562948,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
-          "symbol": "miMATIC"
-        },
-        "amount": "235000",
-        "usdValue": 235000,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1666562948,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The sole successful loss receipt sends 249,000 and 66,000 miMATIC from market 0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943 and returns 65,000 and 15,000 through two linked self-liquidations: exact depletion is 315,000 - 80,000 = 235,000 miMATIC. Its archive balance falls from 250,027.800262910883221624 to 15,027.800262910883221624, and no other transaction in the block touches that reserve. Seized mmooCurvestMATIC-MATIC-4 collateral-market shares remain with the borrower helpers as consideration; the 95,000-miMATIC in-receipt sale and the EOA's retained 140,000 miMATIC are downstream disposition, not separate losses. The imported $180,000 estimate measured proceeds rather than gross victim depletion.",
-    "realizedAt": 1666562948
-  },
+  "summary": "Market.xyz priced its Beefy mooCurve stMATIC-MATIC collateral through a Curve LP oracle reading the pool's get_virtual_price with no reentrancy check. While remove_liquidity paid out MATIC, the attacker re-entered, borrowed miMATIC against the inflated collateral value, then self-liquidated after the price normalised.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xb6622fe99121bf83df5c172344ed382b894482c5",
-        "codeHash": "0x8a7477aa5248f09cdb0b1fbf21dba5e50f165d8180f7b33c37eaacacd2d7c0bc"
-      },
-      "deployment": {
-        "timestamp": 1663320379,
-        "blockNumber": 33172698,
-        "transactionHash": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9",
-        "transactionIndex": 29,
-        "creatorAddress": "0x52ca19e22f8d8a1d63c1beee3fc882a9d41cdfa2"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1663320379,
-        "blockNumber": 33172698,
-        "transactionHash": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9",
-        "transactionIndex": 29,
-        "logIndex": 131,
-        "mechanism": {
-          "type": "event",
-          "address": "0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943",
-          "eventTopic": "0xd604de94d45953f9138079ec1b82d533cb2160c906d1076d1f7ed54befbca97a",
-          "codeAddressLocation": "data-word-1-address"
-        },
-        "description": "The CREATE2 proxy's creation receipt emitted its only pre-incident NewImplementation event, selecting 0xb6622fe99121bf83df5c172344ed382b894482c5. Slot 0 retained that implementation through the incident, and the implementation runtime hash is unchanged from activation through the pre-incident block."
-      },
-      "codeAgeSeconds": 3242569,
-      "failureModeId": "failure:market-xyz-transient-curve-lp-collateral-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+      "address": "0x75a06c8e0e4a8c5b1677a3e5c4e57bfed1c21022",
+      "reset": {
+        "kind": "config",
+        "tx": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9",
+        "address": "0x627742aafe82eb5129dd33d237ff318ef5f76cbc",
+        "slot": "0xcf824a0ca4cc0c4497a9a1e3fe58f604cb95129aa22c14d060519005f9a0cdbe"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xb8efe839da0c89daa763f39f30577dc21937ae351c6f99336a0017e63d387558"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 137,
-      "transactionHashes": [
-        "0xafa01fc8639d7aeca0796243e1a2763d52db9ac7827aae4cdf7738c764e22ff6",
-        "0x3d5727e788bcedebb19bb03c578ba53e779782c6a699447b3018167431192076",
-        "0xe00c6e4ae21ca1b88e183570e69ab0d993c9e169cf1ed4f3a9254b7933a5bdc3",
-        "0x42c85ca0a9be31b55eccbcb0fff2e1212d0e2385286a63cc657112644fa0a16c",
-        "0xdf38646e50c0d753d139f3c05424a6ba291dee484d72746b4d0e22c40be00fc7",
-        "0xc82d6fdf7196a47d32e7ef6027fc8a94ba97262ae02070a49b0829382e4811f2",
-        "0xd7f132322c73f2781bbf10832cd9f72f888d2a6f456e9e22601a51d44c6931b9",
-        "0x03ae2a4f53c24a4aafbab5b939656dfefcefa27298eb06fdc879892680f5fd99",
-        "0x771018d8a59ef5cc3e99eb753ae9d2dcf3f51eefa0e23cd1664100778cc8dc1b"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xba4e34c910d14c00258a55c7564e1266426edb53e1d01861edc211a893675da9"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x09a352fca6a69e0af6c58c3e8c083abffae1562b9a3b447015b6f9545c0dcc14"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-10/Market_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://quillaudits.medium.com/decoding-220k-read-only-reentrancy-exploit-quillaudits-30871d728ad5"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-30T18:28:02Z",
-      "note": "Reviewed the loss receipt and call trace, all miMATIC transfers touching the reserve in the incident block, archive balances, sender nonce history, helper end state, proxy CREATE2 trace and receipt, complete NewImplementation event history, slot 0, and historical proxy and implementation runtimes. The receipt sends 249,000 and 66,000 miMATIC from the market and returns 65,000 and 15,000 through liquidateBorrow calls; the exact net and whole-block archive delta are both -235,000 miMATIC. The outer helper was created by sender nonce 7; nonce 8 reverted, nonce 9 is the sole successful victim-depleting transaction, and nonce 10 onward only approves, swaps or bridges already-counted assets. Three temporary borrower/liquidator helpers are created inside nonce 9 and all four helpers end with zero native balance. The borrower helpers retain 33,137.673702040536102940 and 27,839.470466966386699980 mmooCurvestMATIC-MATIC-4 collateral-market shares. Proxy 0x3dc7e6ff0fb79770fa6fb05d1ea4deacce823943 was CREATE2-created by factory 0x52ca19e22f8d8a1d63c1beee3fc882a9d41cdfa2 in source-3 at block 33,172,698 index 29, timestamp 1,663,320,379. It is absent one block earlier; its 652-byte runtime hashes to 0xbf5b1b895e84d1580fdd0f9d040cbe20971f64240c2d2a70e0b27feafd54148f at creation and pre-incident. Creation log 131 is the only pre-incident NewImplementation event and selects implementation 0xb6622fe99121bf83df5c172344ed382b894482c5 in data word 1. Slot 0 has that implementation at creation and pre-incident. The implementation was deployed in source-4 at block 31,039,070 index 20, is absent one block earlier, and its 23,649-byte runtime hashes to 0x8a7477aa5248f09cdb0b1fbf21dba5e50f165d8180f7b33c37eaacacd2d7c0bc at deployment, activation and pre-incident. The activation reset is therefore 3,242,569 seconds before the incident."
-    }
-  ],
-  "discovery": [
-    "seed:market-xyz:2022-10-23:market-xyz-read-only-reentrancy-on-curve-lp-pricing",
-    "dfhl:src/test/2022-10/Market_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 241871.04,
+    "assets": [
+      {
+        "token": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
+        "symbol": "miMATIC",
+        "amount": "243060.42675570789725591",
+        "usd": 241871.04
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/Market_exp.sol",
+    "https://quillaudits.medium.com/decoding-220k-read-only-reentrancy-exploit-quillaudits-30871d728ad5"
+  ],
+  "notes": [
+    "The defect is the Curve LP oracle 0x75a06c8e reached via the pool's MasterPriceOracle; the cTokens run stock code. The latest change the exploit needed is the comptroller listing of the drained miMATIC market in its creation tx, after the oracle registration and the mooCurve collateral listing.",
+    "Loss is the miMATIC market's net outflow per tx: borrows minus the self-liquidation repayments in the anchor, plus two copycat borrows by 0xe3671a41 repeating the reentrant borrow. Seized collateral shares are the attacker's own deposit and are not victim assets."
+  ],
+  "campaign": [
+    "eip155:137:0x303c770b81d8866693aa341774eaa2cd5dc3a5f1d2ad855b9d6f0c10b5c36d5d",
+    "eip155:137:0x218053540e04de8698fc7e7bf1b59f1dcb655280a09d2e8ee7ee5aaa609369f3"
+  ]
 }

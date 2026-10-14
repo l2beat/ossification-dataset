@@ -1,234 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xc3f70057e261af554c6acf6a372389899f0c2d7d1ebd27311e39525dee88fb39",
-  "protocol": {
-    "name": "Zoth",
-    "slug": "zoth"
-  },
+  "protocol": "Zoth",
   "name": "Zoth ZeUSD router opened unslippaged USDC deposits",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xc3f70057e261af554c6acf6a372389899f0c2d7d1ebd27311e39525dee88fb39",
-      "blockNumber": 21953340,
-      "transactionIndex": 29,
-      "timestamp": 1740848051
-    },
-    "attackerAddresses": [
-      "0x806d9d1f1b80107a294393c76258b69b441565f0",
-      "0xcbaef06fa73955eedd3dc476b43058431fdd6c4e"
-    ]
-  },
-  "summary": "Fifty-one minutes before the exploit, a ZeUSD_Router upgrade removed whitelistedOnly from mintWithStable. The router mints ZeUSD equal to the deposited USDC amount, while WMSubVault swaps that USDC into wM on Uniswap V3 with amountOutMinimum 0, and on redemption swaps wM back with the same zero bound. With a flash loan, the attacker bought the wM/USDC 0.01% pool's wM, added its own liquidity at an extreme price, and deposited 330,979 USDC for 7,669 wM, receiving 327,619 ZeUSD. It then burned that ZeUSD after resetting the pool, so the vault sold 330,979 of its pre-existing wM to repay the attacker in USDC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 323303.593943,
-      "valuationTimestamp": 1740848051,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x437cc33344a0b27a429f795ff6b469c72698b291",
-          "symbol": "wM"
-        },
-        "amount": "323303.593943",
-        "usdValue": 323303.593943,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1740848051,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Exact net wM depletion of WMSubVault proxy 0x3854702034855287be0fb4a040580cb89621290b in source-1. The vault also kept a 3,294.916450 USDC residual from its redemption swap, so its net value loss is about 320,008.68 USD. The attacker kept 286,902.019393 USDC. wM (wrapped M, a T-bill-backed USD stablecoin) is valued at par; DefiLlama has no historical quote. The attacker also minted 39,593,862 ZeUSD from a second 40,000,000 USDC deposit that bought 6.40 wM. It burned all of it in 0xe2644468d47e and 0x5266da8b96a0 (blocks 21959608/21959612) without redeeming, so no loss is counted for it.",
-    "realizedAt": 1740848051
-  },
+  "summary": "ZeUSD_Router mints ZeUSD equal to deposited USDC while WMSubVault swaps that USDC to wM, and back on redemption, on Uniswap V3 with amountOutMinimum 0. An upgrade dropped the router's whitelist; the attacker then flash-borrowed USDC, skewed the wM/USDC pool, minted ZeUSD cheaply and burned it after resetting the pool, so the vault sold its depositors' wM to pay it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6283f77db630d6fe69a454ef6cf626e98b117c9b",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xe257495224eb1bd710ff18c3758c8a87cde46137",
-        "codeHash": "0x2a8e3c077150874f6d2228e7f8dc8435bbf346d1bb99ecd73e001887bda79b7b"
-      },
-      "deployment": {
-        "timestamp": 1733384807,
-        "blockNumber": 21334894,
-        "transactionHash": "0xb20679ca1d00c1bd4ce3a692f149b4f295a679a331f63a4e542e6b791afb8d8d",
-        "transactionIndex": 223,
-        "creatorAddress": "0x3604582f56565d7060d73829ffb9ebd579218dca"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1740844967,
-        "blockNumber": 21953083,
-        "transactionHash": "0x9d8f077865c220213df91c112016fe335153340133534b81192ad48bf4a408e6",
-        "transactionIndex": 76,
-        "logIndex": 198,
-        "mechanism": {
-          "type": "event",
-          "address": "0x6283f77db630d6fe69a454ef6cf626e98b117c9b",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The UUPS upgrade to ZeUSD_Router 0xe2574952 dropped whitelistedOnly from mintWithStable. The previous implementation 0x1e53b208 reverted the same deposit with NotWhitelisted(attacker), so this change let anyone mint ZeUSD at face value against the zero-bound subvault swap."
-      },
-      "codeAgeSeconds": 3084,
-      "failureModeId": "failure:zoth-zeusd-router-public-stable-mint-face-value",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x6283f77db630d6fe69a454ef6cf626e98b117c9b",
+      "code": "0xe257495224eb1bd710ff18c3758c8a87cde46137",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x9d8f077865c220213df91c112016fe335153340133534b81192ad48bf4a408e6"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x3854702034855287be0fb4a040580cb89621290b",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x41d9db45dd3ec3eea036ee4176e1b9f941e6da45",
-        "codeHash": "0xec42deb55c8d09a4029caf8d9eaddd7afde3769eb596c1ea18931eeb2741d137"
-      },
-      "deployment": {
-        "timestamp": 1738830599,
-        "blockNumber": 21786274,
-        "transactionHash": "0x2181d4be3b9845d89c69c84507b0c6668873ee887bb535165501475c44a9f66d",
-        "transactionIndex": 268,
-        "creatorAddress": "0x3604582f56565d7060d73829ffb9ebd579218dca"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1739689823,
-        "blockNumber": 21857382,
-        "transactionHash": "0x2fd059e4c0b64976612f636e902286016e86640d6fe394f470a918f2be6677e7",
-        "transactionIndex": 78,
-        "logIndex": 199,
-        "mechanism": {
-          "type": "event",
-          "address": "0x3854702034855287be0fb4a040580cb89621290b",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The last pre-exploit upgrade selected WMSubVaultUpgradeable 0x41d9db45, whose handleDeposit and handleWithdraw swap with amountOutMinimum 0."
-      },
-      "codeAgeSeconds": 1158228,
-      "failureModeId": "failure:zoth-wmsubvault-zero-amount-out-minimum",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: the zero-bound swap was reachable only by whitelisted depositors until target-1's later router upgrade opened mintWithStable to the public, so the exploitable combination dates from target-1."
-        ],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x3854702034855287be0fb4a040580cb89621290b",
+      "code": "0x41d9db45dd3ec3eea036ee4176e1b9f941e6da45",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x2fd059e4c0b64976612f636e902286016e86640d6fe394f470a918f2be6677e7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xc3f70057e261af554c6acf6a372389899f0c2d7d1ebd27311e39525dee88fb39"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9d8f077865c220213df91c112016fe335153340133534b81192ad48bf4a408e6"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2fd059e4c0b64976612f636e902286016e86640d6fe394f470a918f2be6677e7"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb20679ca1d00c1bd4ce3a692f149b4f295a679a331f63a4e542e6b791afb8d8d"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2181d4be3b9845d89c69c84507b0c6668873ee887bb535165501475c44a9f66d"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. Source-1 (block 21953340, index 29): attacker contract 0xcbaef06fa73955eedd3dc476b43058431fdd6c4e takes a 63,000,000 USDC flashLoanSimple from Aave 0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2 (receipt log 261). It buys 7,951,990.433032 wM from Uniswap V3 wM/USDC pool 0x970a7749ecaa4394c8b2bf5f2471f41fd6b79288 (logs 274/275) and mints a single-range position through NonfungiblePositionManager 0xc36442b4a4522e871399cd717abdd847ab11fe88 (0x88316456, ticks 156488..160135). It then calls router proxy 0x6283f77db630d6fe69a454ef6cf626e98b117c9b mintWithStable(wM, USDC, amount) (0xd95b2d2b) twice. The router DELEGATECALLs 0xe257495224eb1bd710ff18c3758c8a87cde46137 and calls subvault proxy 0x3854702034855287be0fb4a040580cb89621290b handleDeposit (0xbdc631d4; impl 0x41d9db45dd3ec3eea036ee4176e1b9f941e6da45). The subvault calls SwapRouter02 0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45 exactInputSingle (0x04e45aaf) with amountOutMinimum 0 (sixth word of the params). 330,979.456815 USDC buys 7,669.463037 wM (logs 283/284) and ZeUSD 0x7dc9748da8e762e569f9269f48f69a1a9f8ea761 mints 327,618.873449 (log 289); 40,000,000 USDC buys 6.399835 wM (logs 292/293) and mints 39,593,862 ZeUSD (log 298). The attacker removes its liquidity, sells the wM back (logs 302-307), and burns 327,618.873449 ZeUSD (log 309). The subvault's handleWithdraw then sells 330,979.456815 of its wM for 330,964.578696 USDC (logs 313/314) and pays 327,669.662246 USDC to the attacker (log 317). Source-7: the zero bound is in verified WMSubVaultUpgradeable 0x41d9db45 ('amountOutMinimum: 0, // In production, use oracle'), and ZeUSD_Router._mint mints metadata.zeusdMinted from the deposited amount after handleDeposit returns true. Age: EIP-1967 slot of the router is 0x1e53b208e80482c631e650118e24dd29a6e15d11 at 21953082 and 0xe2574952 at 21953083 and 21953339. Etherscan getLogs Upgraded (topic 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b) on the router returns 9 events, the last pre-exploit being source-2 (block 21953083, index 76, log 198, sent by deployer 0x3604582f56565d7060d73829ffb9ebd579218dca via upgradeToAndCall 0x4f1ef286). The previous implementation's mintWithStable carries whitelistedOnly and the new one does not. eth_call of the exploit's first 0xd95b2d2b calldata from the attacker contract reverts NotWhitelisted(0xcbaef06f...) (selector 0xdf17e316) at block 21953082, and gets past access checks (reverts only 'STF', no balance) from the attacker and from 0x...dEaD at 21953339. Router implementation runtime is empty at 21953081; keccak 0x2a8e3c077150874f6d2228e7f8dc8435bbf346d1bb99ecd73e001887bda79b7b (14897 bytes) at 21953082 and 21953339. The subvault slot is 0x7e3b91d82dad2999bf61d8df72731648552945eb at 21857381 and 0x41d9db45 at 21857382 and 21953339. Its 7 Upgraded events end with source-3 (block 21857382, index 78, log 199), and 0x41d9db45 runtime keccak 0xec42deb55c8d09a4029caf8d9eaddd7afde3769eb596c1ea18931eeb2741d137 is unchanged from creation block 21857381. Both proxies are top-level creations by 0x3604582f (source-4, block 21334894, index 223; source-5, block 21786274, index 268). Earliest exercise: all 57 subvault token-transfer transactions (Etherscan tokentx, blocks 21852723..21953340) were paired per tx; the only swap returning under 0.98 per unit either way is source-1. The attacker's earlier txs (contracts 0x079f78f6..., 0x8fcc2fdc..., setup calls at 21951722..21953336) emit no logs.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:43:37Z"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:43:37Z",
-      "note": "Verified sources via Etherscan V2 contract.getsourcecode, chainid=1, v0.8.23+commit.f704f362. ZeUSD_Router 0xe257495224eb1bd710ff18c3758c8a87cde46137, standard-JSON SourceCode SHA-256 (exact returned string) 878498fceaad5d8443ecb04e4eb0d51ebcd1a226102bd7205cfd1ffd6ca05dd6: mintWithStable modifiers nonReentrant, whenNotPaused, notBlacklisted, validAmount; _mint calls subvault handleDeposit, then zeusdToken.mint(recipient, metadata.zeusdMinted) from collateralVault.validateAndPrepareDeposit(..., amount, ...). Previous router 0x1e53b208e80482c631e650118e24dd29a6e15d11 has whitelistedOnly on mintWithStable. WMSubVaultUpgradeable 0x41d9db45dd3ec3eea036ee4176e1b9f941e6da45, SourceCode SHA-256 3fcb3dbc691552bd6efb1e78119c2eeb78277dd67a5a1c009e95f0244db5fb55: contracts/subVaults/WMSubVault.sol lines 294 and 341 set amountOutMinimum: 0. The post-incident implementation 0x1bab53c4c0743006a925ee4a2007b24184e13485 (upgrade block 21966476) uses MIN_OUTPUT = 9950."
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "note": "Reviewed loss. Source-1 receipt, WMSubVault 0x38547020 wM (6 decimals) in: 7669.463037 (log 283) + 6.399835 (log 292); out: 330979.456815 (log 314); net -323303.593943. USDC in: 40330979.456815 (log 281) + 330964.578696 (log 313); out: 330979.456815 (log 284) + 40000000 (log 293) + 327669.662246 (log 317); net +3294.916450. The attacker's flash loan (logs 261/320, 63,031,500 USDC repaid) and its own deposits are not loss. The attacker EOA forwards 286902.019393 USDC in 0x00f807697b0a... (block 21953391) and burns 39593862 ZeUSD at blocks 21959608/21959612; its ZeUSD balance is 0 today.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:43:37Z"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6",
-      "source-8"
+  "loss": {
+    "usd": 323303.593943,
+    "assets": [
+      {
+        "token": "0x437cc33344a0b27a429f795ff6b469c72698b291",
+        "symbol": "wM",
+        "amount": "323303.593943",
+        "usd": 323303.593943
+      }
     ]
   },
-  "discovery": [
-    "web:2025-03-01:zoth-collateral-incident"
+  "notes": [
+    "The router upgrade dropped whitelistedOnly from mintWithStable; a fork replay of the anchor with the previous implementation 0x1e53b208 reverts. The sub-vault's zero-bound swaps date from its last pre-exploit upgrade, so the exploitable combination dates from the router upgrade.",
+    "Net wM depletion of the sub-vault, wM (wrapped M, a T-bill-backed USD stablecoin) at par since DefiLlama has no quote; the vault's 3,294.92 USDC residual gain is not netted. The 39,593,862 ZeUSD minted against 6.40 wM was burned by Zoth's admin without redemption, so it adds no loss.",
+    "Out of scope: Zoth's March 21, 2025 loss came from a compromised admin key upgrading a proxy (privileged action), a separate event outside the cohort."
   ]
 }

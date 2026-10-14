@@ -1,171 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:250:0x39825ff84b44d9c9983b4cff464d4746d1ae5432977b9a65a92ab47edac9c9b5",
-  "protocol": {
-    "name": "Deus Finance",
-    "slug": "deus-finance"
-  },
+  "protocol": "Deus Finance",
   "name": "DEI lender Solidex LP oracle balance-based collateral valuation",
-  "incident": {
-    "chainId": 250,
-    "exploit": {
-      "transactionHash": "0x39825ff84b44d9c9983b4cff464d4746d1ae5432977b9a65a92ab47edac9c9b5",
-      "blockNumber": 37115797,
-      "transactionIndex": 2,
-      "timestamp": 1651113614
-    },
-    "attackerAddresses": [
-      "0x701428525cbac59dae7af833f19d9c3aaa2a37cb",
-      "0x1f56ccfe85dc55558603230d013e9f9bfe8e086c"
-    ]
-  },
-  "summary": "The deployed contract that computes the collateral price is the Solidex DEI/USDC LP oracle at 0x8129026c585bcfa530445a6267f9389057761a00, which DeiLenderSolidex 0x8d643d954798392403eea19db8108f595bb8b730 consults for every solvency decision. Its getOnChainPrice() (selector 0xbd2a9d2c) values one LP unit as (IERC20(USDC).balanceOf(pair) + IERC20(DEI).balanceOf(pair) * pair.getAmountOut(1e18, DEI)) / pair.totalSupply() against the Solidly stable pair 0x5821573d8f04947952e76d94f3abc6d7b43bf8d0, and getPrice() (selector 0x51a0fd38) accepts a Muon-signed price only after cross-checking it against that same quantity. Every input is the pair's instantaneous raw token balance, not a synced reserve, a cumulative-price observation, or an independent feed, so a plain token transfer into the pair inflates the price and the donation is recoverable in the same transaction. The oracle validates nothing about manipulability: no TWAP window, no reserve/balance reconciliation, no deviation bound, and no bound on how far the quote may move within one block. In the anchor transaction the attacker flash-borrowed roughly 143 million USDC from about twenty Solidly pairs, pushed the DEI/USDC pair from 9,965,063.905675 USDC and 9,556,010.307554660495240937 DEI to 153,146,534.178753 USDC and 5,045.910201204745134760 DEI, which lifted the oracle's LP unit price from 2,000,822.763556768631327287 to 20,936,736.548805047505034720 USD, and borrowed 17,246,885.701212305622476302 DEI against 0.929182265419947290 Solidex deposit tokens genuinely worth about 1.86 million USD. No parameter value makes this code correct: the pair, token and Muon-verifier addresses are configuration, but every configuration of them still prices the LP from balances the caller can move inside the transaction.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 15740419.941626,
-      "valuationTimestamp": 1651113614,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 250,
-          "tokenAddress": "0x04068da6c83afcfa0e13ba15a6696662335d5b75",
-          "symbol": "USDC"
-        },
-        "amount": "15740419.941626",
-        "usdValue": 15740419.941626,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1651113614,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "realizedAt": 1651117552,
-    "notes": "The anchor minted 17,246,885.701212305622476302 unbacked DEI to the attacker. Because that quantity is larger than the entire DEI/USDC pool and the attacker's own selling set the price, the loss is measured as realised proceeds rather than a spot mark on DEI: within 66 minutes the attacker sold 15,818,000 DEI into the Solidly pair 0x5821573d8f04947952e76d94f3abc6d7b43bf8d0 for 4,748,593.702757 + 4,258,677.329129 + 2,811,448.853343 + 1,928,951.245729 + 803,884.255646 = 14,551,555.386604 USDC, and redeemed 1,501,091.6098773733 DEI through the DEUS redemption contract 0x9bd5cc542bc922e95ba41c0702555e830f2c1cb4 for 792,000.0 + 396,864.555022 = 1,188,864.555022 USDC, a total of 15,740,419.941626 USDC valued at par. A 500,322.5909182056 DEI round trip through 0xfa9eacdc763500ba4ab6ba2bfcf154d5a4b19ed7 returned 495,601.431539 USDC against 496,363.193858 USDC sent and is excluded as a wash. Flash-loan fees of roughly 329,148.62 USDC paid to the lending Solidly pairs inside the anchor are financing cost and do not reduce gross depletion. The lender keeps the attacker's 0.929182265419947290 Solidex deposit tokens, worth 1,859,129.03 USD at the unmanipulated oracle price of 2,000,822.763556768631327287 USD per unit that the same oracle returned 43 minutes earlier in transaction 0xdb5c3a873ae601eeec0a83d015f90d6e58858945df31372cf940bad7ee20194a; that retained collateral is a recovery and is not netted here, which is why published estimates of about 13.0 to 13.4 million USD sit below this gross figure."
-  },
+  "summary": "The Solidex DEI/USDC LP oracle used by DeiLenderSolidex priced LP collateral from the Solidly pair's live token balances and getAmountOut quote, and checked the Muon-signed price only against that same on-chain value. With flash-borrowed USDC the attacker pushed the pair, inflating its LP collateral's value, borrowed 17.2M unbacked DEI and sold it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8129026c585bcfa530445a6267f9389057761a00",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8129026c585bcfa530445a6267f9389057761a00",
-        "codeHash": "0x5567a54c63bff46b853d238758e9098a21af323fd77e1dfce7619800831a0674"
-      },
-      "deployment": {
-        "timestamp": 1650544216,
-        "blockNumber": 36620275,
-        "transactionHash": "0xff6d38f9a1641ce0930ef8d3cec2506498e80d935addb88cb21add03bd485991",
-        "transactionIndex": 1,
-        "creatorAddress": "0xfe351f5ed699fd5ea80b906f89dfdad2f885a46c"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The oracle runtime is immutable: 6,840 bytes with no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT opcode, byte-identical at its deployment block and at the block immediately before the exploit."
-      },
-      "codeAgeSeconds": 569398,
-      "failureModeId": "failure:solidex-lp-oracle-pair-balance-spot-valuation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x8129026c585bcfa530445a6267f9389057761a00",
+      "reset": {
+        "kind": "config",
+        "tx": "0x24d5e3339aef3cff6e7567671109d257c2fb1dfb1a0291f74b3cba301f58e41e",
+        "address": "0x8d643d954798392403eea19db8108f595bb8b730",
+        "slot": "0x7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0x39825ff84b44d9c9983b4cff464d4746d1ae5432977b9a65a92ab47edac9c9b5"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T15:20:00Z",
-      "note": "Re-anchored this seed row. The snapshot's exploitTx 0x33e48143c6ea17476eeabfa202d8034190ea3f2280b643e2570c54265fe33c98 is not the exploit at all: on Fantom it is an Anyswap Swapin on fUSDT 0x049d68029688eabf473097a2fc38ef61633a3c7a minting 125,000 fUSDT, sent by the Multichain MPC 0xc564ee9f21ed8a2d8e7e76c085740d5e4c5fafbe, with 32,914 gas and two logs. It appears in the record only because the DeFiHackLabs proof of concept passes that hash as the bytes32 txhash argument of usdc.Swapin() to conjure test USDC on a fork. The real campaign was found by scanning DeiLenderSolidex 0x8d643d954798392403eea19db8108f595bb8b730 logs over blocks 37093376-37224448: exactly two Borrow(address,address,uint256,uint256) events (topic 0xc1561b330e73faa7d5d1ac03c968d8f359b0191ccdb9cc002cf7d8eb6ae038cb) occur, an ordinary 101 DEI borrow and the exploit, 17,419,354.5582 DEI of debt drawn from 0x1f56ccfe85dc55558603230d013e9f9bfe8e086c to 0x701428525cbac59dae7af833f19d9c3aaa2a37cb in 0x39825ff84b44d9c9983b4cff464d4746d1ae5432977b9a65a92ab47edac9c9b5, status 1 at block 37115797 index 2, timestamp 1651113614. That matches the proof of concept, which warps to 1651113560 and borrows 17,246,885,701,212,305,622,476,302 wei of DEI, exactly the amount minted to the attacker in the anchor. The callTracer trace shows a flash borrow of USDC from roughly twenty Solidly pairs, borrow(address,uint256,uint256,uint256,bytes,(uint256,address,address)[]) selector 0xc0bf02e5 on the lender, and the lender calling oracle 0x8129026c585bcfa530445a6267f9389057761a00 selector 0x51a0fd38 with price 20,923,953,265,992,870,251,804,289 and timestamp 1651113560; that oracle call reads lp.totalSupply(), USDC.balanceOf(lp), lp.getAmountOut(1e18, DEI) and DEI.balanceOf(lp) on pair 0x5821573d8f04947952e76d94f3abc6d7b43bf8d0 and returns the caller's price after checking it against its own getOnChainPrice() of 20,936,736,548,805,047,505,034,720. The unmanipulated comparison comes from the campaign's own dry run 0xdb5c3a873ae601eeec0a83d015f90d6e58858945df31372cf940bad7ee20194a at block 37113405, where the identical oracle read returned 2,000,822,763,556,768,631,327,287 from balances of 9,965,063.905675 USDC and 9,556,010.307554660495240937 DEI over a total supply of 9.756131815335875832; the exploit block figures are 153,146,534.178753 USDC and 5,045.910201204745134760 DEI over 9.752404893337175331, a 10.46x inflation. The defect is therefore in the oracle's own arithmetic, not in a lender parameter: the lender's oracle address is configuration and a sound oracle would make the lender correct, while no configuration of this oracle stops it pricing an LP unit from balances the caller can move and take back inside one transaction. Only the oracle is claimed as a target. Code history: binary search over eth_getCode places first code for the oracle at block 36620275; that block holds three transactions and 0xff6d38f9a1641ce0930ef8d3cec2506498e80d935addb88cb21add03bd485991 at index 1 has no `to` and a receipt contractAddress of 0x8129026c585bcfa530445a6267f9389057761a00, created top level by 0xfe351f5ed699fd5ea80b906f89dfdad2f885a46c, timestamp 1650544216, unrelated to the attacker. Its 6,840-byte runtime hashes to 0x5567a54c63bff46b853d238758e9098a21af323fd77e1dfce7619800831a0674 at blocks 36620275, 36620276 and 37115796, contains no DELEGATECALL, CALLCODE, CREATE, CREATE2 or SELFDESTRUCT opcode and issues no DELEGATECALL in the trace, so deployment is the last code change and the age is 569,398 seconds. Loss was reconstructed from USDC Transfer logs to the attacker EOA between the anchor and block 37200000: 14,551,555.386604 USDC out of the Solidly pair across five sales of 15,818,000 DEI and 1,188,864.555022 USDC out of the DEUS redemption contract 0x9bd5cc542bc922e95ba41c0702555e830f2c1cb4 against 1,501,091.6098773733 burned DEI, 15,740,419.941626 USDC in total, last realised at block 37117503, timestamp 1651117552."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0xff6d38f9a1641ce0930ef8d3cec2506498e80d935addb88cb21add03bd485991"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-04/deus_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 250,
-      "transactionHashes": [
-        "0x5dbf8f20c651e8cb4dd3a7fe9693679362c70dbb67563b0d580c0ed2ffa5e1b8",
-        "0x20be55f6282dfb7102cf81b036708618460d5e08f7bff4de3aa884ae515689de",
-        "0x4e2c18e46cca727b231606338329f1dddeb44fe0f49a68c33f31e59ee931b03b",
-        "0x44e811b0f48a27b6f410429c74f685234ced254e903e2bf78b3d3e0caec0c2c3",
-        "0x602751aeb636f3514039e518ac2f8378a945b648c5ddec8cffce64dc9e9b3af5",
-        "0xeedd27e1202b9cc845843795a65af6a29a6cc9e3d6089836484108dab9aad9fb",
-        "0x371730f46086b8cccd942133e9c44dc66dcb86605b8bc78d993a58a3d34a3d19"
-      ]
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 250,
-      "transactionHash": "0xdb5c3a873ae601eeec0a83d015f90d6e58858945df31372cf940bad7ee20194a"
-    }
-  ],
-  "discovery": [
-    "seed:deus-finance:2022-04-28:deus-deilendersolidex-spot-price-collateral-valuation",
-    "web:2022-04-28:deus-finance-second-2022-incident"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Fantom has no Etherscan v2 explorer API, so contract source is unavailable and the root cause rests on the executed call trace, the deployed runtime, the oracle's observed reads and the DeFiHackLabs reproduction; the deployment anchor was located by eth_getCode binary search plus a per-transaction receipt scan of the deployment block rather than by an explorer creation endpoint.",
-      "The campaign's earlier dry-run transactions 0xf8f9e6ced9cb6e1a0e824ed68045eb9f9f4a52ce44f9bad570f4d7cc6a734bcb, 0xdb5c3a873ae601eeec0a83d015f90d6e58858945df31372cf940bad7ee20194a and 0xcee5d99518d142189696069d71e34f8634c87e4006fbc70cfed05bc32aa0cc49 already execute the same oracle code on an unmanipulated pair; the anchor is the first transaction in which the defect actually mispriced the collateral, 2,585 seconds later, which is immaterial against a 569,398 second code age.",
-      "Later borrows against the same lender by unrelated addresses are separate campaigns and are not counted in this loss."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 15740419.94,
+    "assets": [
+      {
+        "token": "0x04068da6c83afcfa0e13ba15a6696662335d5b75",
+        "symbol": "USDC",
+        "amount": "15740419.941626",
+        "usd": 15740419.94
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-04/deus_exp.sol",
+    "eip155:250:0x5dbf8f20c651e8cb4dd3a7fe9693679362c70dbb67563b0d580c0ed2ffa5e1b8",
+    "eip155:250:0x20be55f6282dfb7102cf81b036708618460d5e08f7bff4de3aa884ae515689de",
+    "eip155:250:0x4e2c18e46cca727b231606338329f1dddeb44fe0f49a68c33f31e59ee931b03b",
+    "eip155:250:0x602751aeb636f3514039e518ac2f8378a945b648c5ddec8cffce64dc9e9b3af5",
+    "eip155:250:0xeedd27e1202b9cc845843795a65af6a29a6cc9e3d6089836484108dab9aad9fb",
+    "eip155:250:0x44e811b0f48a27b6f410429c74f685234ced254e903e2bf78b3d3e0caec0c2c3",
+    "eip155:250:0x371730f46086b8cccd942133e9c44dc66dcb86605b8bc78d993a58a3d34a3d19"
+  ],
   "notes": [
-    "The seed inventory row recorded exploit transaction 0x33e48143c6ea17476eeabfa202d8034190ea3f2280b643e2570c54265fe33c98, which is a Multichain fUSDT Swapin used only as a bytes32 argument inside the DeFiHackLabs proof of concept, and derived its 2022-04-28T15:20:46Z date and 23.9-day code age from that transaction. Both are corrected here."
+    "The oracle was deployed earlier, but the lender only started reading it when its owner 0xef6b0872 called setOracle (slot 7, previously empty after the old oracle 0x7d907cf1); that price-source switch is the latest change the exploit needed (rules 10-11).",
+    "Unbacked DEI has no usable price, so the loss is what the attacker realised: USDC from five sales into the Solidly DEI/USDC pair and two redemptions at the DEUS redemption contract 0x9bd5cc54 (the refs), at par. A DEI/USDC LP round trip is excluded; the attacker's 0.93 Solidex LP left as collateral is not netted.",
+    "Separate incident from the March 2022 lender/oracle (0xec1fc572/0x5ceb2b03): different deployments fixed and redeployed in between. No other borrow through a contract caller minted material DEI before or after the anchor."
   ]
 }

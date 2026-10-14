@@ -1,184 +1,469 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0x35f50851c3b754b4565dc3e69af8f9bdb6555edecc84cf0badf8c1e8141d902d",
-  "protocol": {
-    "name": "Telcoin",
-    "slug": "telcoin"
-  },
+  "protocol": "Telcoin",
   "name": "Telcoin CloneableProxy re-initialisation",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0x35f50851c3b754b4565dc3e69af8f9bdb6555edecc84cf0badf8c1e8141d902d",
-      "blockNumber": 51546496,
-      "transactionIndex": 68,
-      "timestamp": 1703525020
-    },
-    "attackerAddresses": [
-      "0x10e5c8d3537856f141272e1c39befdab4dd8bde0",
-      "0xdb4b84f0e601e40a02b54497f26e03ef33f3a5b7"
-    ]
-  },
-  "summary": "Telcoin wallet CloneableProxies were created without their initializer being run, so the OpenZeppelin _initialized flag stayed clear and the master’s initialize(address,bytes) remained callable by anyone. The attacker re-initialised each unused wallet, pointing its beacon slot at a module of their own, and had the wallet delegatecall that module to transfer out its TEL.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1250000,
-      "valuationTimestamp": 1703525020,
-      "method": "reported",
-      "sourceIds": [
-        "source-2",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0xdf7837de1f2fa4631d716cf2502f8b230f1dcc32",
-          "symbol": "TEL"
-        },
-        "amount": "3470866212.40",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39",
-          "symbol": "LINK"
-        },
-        "amount": "37.080124317370778845",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The quantities are exact: netting the 22 transactions the attacker sent to its module between blocks 51546496 and 51553000 gives 3470866212.40 TEL and 37.080124317370778845 LINK moving out of Telcoin wallet proxies into attacker control. The USD figure is the reported one because marking that quantity at the pre-incident spot price is not realisable: TEL fell from 0.002358 to 0.0008175 within five minutes of the drain as the attacker sold, and 3.47 billion TEL at the pre-crash price would be about USD 8.2 million against a realised figure that contemporaneous reporting puts at USD 1.2 to 1.25 million. The components therefore carry quantity only and the USD total is the reported realisation. Nothing was recovered."
-  },
+  "summary": "Telcoin wallets are EIP-1167 clones of a CloneableProxy master whose initialize(address,bytes) stays callable when the wallet's own initializer overwrote the proxy's initialized flag in slot 0. The attacker, then copycats, re-initialised unused wallets with a module of their own that transferred out their TEL and MATIC.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x56bcadff30680ebb540a84d75c182a5dc61981c0",
-      "relationship": "minimal-proxy",
-      "codeArtifact": {
-        "address": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
-        "codeHash": "0x437cf994ff7853d88834fd709d4977e63e8c43b03bba15e9dda5070cfa1ca58d"
-      },
-      "deployment": {
-        "timestamp": 1637664652,
-        "blockNumber": 21704647,
-        "transactionHash": "0x1a31cb6f417d30fe8769328b3412bfb0d70247a82009ef28dfab5730c82acd05",
-        "transactionIndex": 59,
-        "creatorAddress": "0x4cf353974155a600f87d73222f9df0548e2b740e"
-      },
-      "ageReset": {
+      "address": "0x12681610b7d7d15f86d79041c356fd8b3fdcdf0e",
+      "code": "0xab4604386dcfff398f0ad560d656539731365cdd",
+      "reset": {
         "kind": "deployment",
-        "description": "The wallet is an EIP-1167 minimal proxy whose runtime, 0x363d3d373d3d3d363d7310d0e9755c67ab37089acb4f51e8b4ee407fe8535af43d82803e903d91602b57fd5bf3, hardcodes the master 0x10d0e9755c67ab37089acb4f51e8b4ee407fe853 and cannot be repointed. The clone creation by the CloneFactory 0x4cf353974155a600f87d73222f9df0548e2b740e is therefore the change that put that code into service for this execution context, and the proxy emitted no Upgraded event before the exploit."
-      },
-      "codeAgeSeconds": 65860368,
-      "failureModeId": "failure:telcoin-cloneableproxy-uninitialised-reinit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5",
-          "source-7"
-        ]
+        "tx": "0x602fee0f758c2f036a1aa89a52ca9f8e7329790c86044433eb4b0fddd4f53d99"
+      }
+    },
+    {
+      "address": "0xdbdaaab41448c7b8a84cf4071b4a771d053e5d22",
+      "code": "0x11519a077116b20dedc99d2920b4fd2202d63654",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x28d9a47e3a967c4ebb38e8986894568bed2435b37a70c0e70348685de6d8cadf"
+      }
+    },
+    {
+      "address": "0x9dd2a8f90b9249bdad826a6cede0e9ef4e018b3e",
+      "code": "0x6c66fe44aa95ef954f5fb87407447ced8001192c",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x05c619b07e3847bb9daf7b24e512627de48d0b504f4f1d57729ef2d233dabe38"
+      }
+    },
+    {
+      "address": "0x243ece9001ac157948baaff93be0c30ba0f4a76d",
+      "code": "0xf9af2a3c6da1f4e19ffd32470d26cb52cd16987d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc9f8a03ece43848c14f5c0e61da6c4fa8ef07702645311da542561ce554fea71"
+      }
+    },
+    {
+      "address": "0x890cace699d6c78a474661f81bcb8876fbe07b20",
+      "code": "0xf6418344bdb00a770c8344e3867335599f24c9e5",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x3588a3f877508b7152fd370fecb4787ebb51f14946a72674d4a9a3ff075b3da9"
+      }
+    },
+    {
+      "address": "0x4108897b6a0f54f1d8bd8e00782dda6d6c78d1ab",
+      "code": "0x7aa6785fb6fcab9a5898084ad4f53d42127057ec",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x38ff4940c8e22e7f1fc3d10620da3ce5119854c0ea5aa88ea32603273173f486"
+      }
+    },
+    {
+      "address": "0x7c6b23efb51b232da2bf8875883f51d76585b518",
+      "code": "0x1df988feb643b8475384ef373154ba8279ee8b0a",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc3e03634082023535d002ebde2d1e3f39a997dfd79472d0befb3cd44806999c6"
+      }
+    },
+    {
+      "address": "0xac87b68254736690b9f12a8379ba2387f447d6b7",
+      "code": "0xf9af2a3c6da1f4e19ffd32470d26cb52cd16987d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x808d4c5d6b816d65ac855423934f8f38a264ae86eafc6f3e35f1236c397acc48"
+      }
+    },
+    {
+      "address": "0x8127c5163820d02db40deb789c0b5c4c296e8cdd",
+      "code": "0x030fe61305ec1f8f19c82b8db21cdc7f65d4567e",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xbf30969648cbf2f48346bebb4b7a6926f8b4a10cf59f3bb16d50a0d0a2bac336"
+      }
+    },
+    {
+      "address": "0x552dbd04a58bf37abbfd7b0473ced7abdebe1dad",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xbc6e2db842941df828fb35313f707ec628ef8087e42c5331b11facd93a87422c"
+      }
+    },
+    {
+      "address": "0xae523a9c2a7af393e6387364931848cf7ea20b63",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x2f8d07c780c21092b7d356533799be97aedaa8eef2dbb8128718c16bb18782aa"
+      }
+    },
+    {
+      "address": "0xd0e10ac87c48606320236cea0c46dcc4ef1418c3",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x3194ae895f034597969c9c4d359dcb13c26930536c25d0253de81cc216c41acc"
+      }
+    },
+    {
+      "address": "0xede15f6cd8b9c28ca6380fd793bd3aefb249cf87",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x273164b6d1c0f70ffd0773c87f43334c1b49dc0d7b93119ae581b49d6ddc6e36"
+      }
+    },
+    {
+      "address": "0xa093115b97d1b9850914b31c0f112c038575d53a",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc1ba4b14637c5e84633001f8b477e25daf1249183e233a8f445021db3a78d5c8"
+      }
+    },
+    {
+      "address": "0x51a268bd4c4e9240578e500cb643d5757400fb5a",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xfe855d2c90f807606bfd1ae7e36b1732ae0f37a7f137dffd7fbb93186f612347"
+      }
+    },
+    {
+      "address": "0x5716eceb4bcd3e3721c4eb9d261fb66de1e23add",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x5c84d81b253efb720ad8c05cf76f8fe22040209a93c32bb59bfe0aa0009a1828"
+      }
+    },
+    {
+      "address": "0x8e09ad317ad37923c6eb43735745800fd6c0411d",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x2d09535c8bbf161f3b4ef808cec61e4bff67840e8951538f1162d0aad9dd4ef9"
+      }
+    },
+    {
+      "address": "0x3b88b88fb9e73cbba066dbfcde5fcabe029c10d6",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x508e7436afea9266bf1fd5cf43fcf2c8fb5cc3c1419c0e638657bd9d6f225aa6"
+      }
+    },
+    {
+      "address": "0x250742d8300a5178b7704004d2225cd7e307d5c8",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x381f8764dc6149f8f919d3a7350fc151c2716b71127b423c100578db276df50e"
+      }
+    },
+    {
+      "address": "0x0c5e0902daa4d1a954ee1339c66bf259c78a5500",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x236db85e5d28929e8c169290e8b50c16410b0db00376e30068ad3ef81138d135"
+      }
+    },
+    {
+      "address": "0x4c850754ac8d66498a5063e6d602a38e936bd505",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4be9a8b772a589315b4ed0cfb1321b21a3656d961bee33ebec94eb1da0661d72"
+      }
+    },
+    {
+      "address": "0x965b86b964a0a84bc02ebe13424233bc9aaed1fa",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x80a83715ce8f118dd50e95645110b0a984dded820e25faec44d953434e7abf72"
+      }
+    },
+    {
+      "address": "0x2e48306f89d0848f758303db3a8763d89292d3ce",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x156442d3c05ac931204f549570d577305703eeb7822e788091073df5b203e189"
+      }
+    },
+    {
+      "address": "0x60fd26e36994da4951ac49da81122b72a896f024",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x3349b0ef961a655e62860cbe19287f9b64c85dd386c1cd95bb1ed64ad1799fa7"
+      }
+    },
+    {
+      "address": "0xd56df51ba7f6ef77eda08108bf6c6680b4ef3fd3",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x1523d9b38f184bf99cfda3dea5d976a76a6d5ba52e0f5bf8a62cb6dd0464e970"
+      }
+    },
+    {
+      "address": "0x1bd5e4bc8bea0bbab940971dd9ddc1821dfdc892",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x23363205c7c989d8d06be1b56f38763a2a66e4b59191ce46e250860f446e1250"
+      }
+    },
+    {
+      "address": "0x7d09ebeb47aace89a50bb66b7cc5939d846200aa",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf682ff999896cfe3de546b463b91d26cccd424136d4bc962253e654f61c54c66"
+      }
+    },
+    {
+      "address": "0x0d561a273220fa343feda6f5d07518f12e2e3c26",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xe4a11a650345a7c6f063f4d33e34b2372250452dad0d4be27b0bc30231527472"
+      }
+    },
+    {
+      "address": "0x75097604a46bcc1237af78f864c9efb674347879",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x7033f8a10820d36beb891edf0210fcef954c5e24d09635ac7cfd047babec2b19"
+      }
+    },
+    {
+      "address": "0xc62a32c7d6a204df889e7d073c9a4ae837b6fd48",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf8893c84fd2a41a928a48a681ecc50b9a1612f2f954f8894fd7884a9e31b059c"
+      }
+    },
+    {
+      "address": "0x17b048e834d42fabe586df4ac4b804dc22b34087",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xdb775ca9a344ed6cf227a3a23c1193e46c43aec9b9d153eba5a5c9446ddd9b29"
+      }
+    },
+    {
+      "address": "0x86a027f342803f6b3db7d7b5d11c7f79d3284ebc",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x83e3c121bec1f77b881438eef79f3207751842a1e7879ef9a8e662429182973e"
+      }
+    },
+    {
+      "address": "0x19c0db445d47f188e7a240af97c3fcd860954c4d",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xe938c8aaf3fcd38eed531cd8989bbb583b64b8941905ae474f3bbea9f032efa7"
+      }
+    },
+    {
+      "address": "0x5dd173e398e401b6ed8791445cf632d8c98957e3",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc71840bd4a9fa015ef03ffd58360fe60e0e16bb20d53a3f9e1355bc43962721a"
+      }
+    },
+    {
+      "address": "0x61647ff79ae8d1c444690db9e81c6929b31b5596",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x2dedfb86ef3e7a3fe7d0105392c4e2982b51bdab354eebc9e96755dd01fc880a"
+      }
+    },
+    {
+      "address": "0xa5c32e35dc2c51bcc4aa5ea50af132f47b41c649",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc9e8520ce4888ae1c03309c49a1f0b0ac12da7d6132bc7e813fa7046e144e3c0"
+      }
+    },
+    {
+      "address": "0xf44c3d146d904f90d96a344430c388c252bb9b05",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xd29d1f99618bb17887531fce818389c8ad75e4641cf8a204089919ac047725ad"
+      }
+    },
+    {
+      "address": "0xe0ac9cf649ad0f68f1b95de7fe4553aff7978b3b",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xfc4dca4e87e279fd228314283364ba41673fcf9ef4bd1dc506b90a850109c448"
+      }
+    },
+    {
+      "address": "0x191c6ca4429860c9d029230c4d7538cd7d643734",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x1d4fd1d1da5d6a183c381ab140c644db723a31680c7b373e9f704e1f8e05f3a9"
+      }
+    },
+    {
+      "address": "0xd2fa0cf181405f30bfd9e81f0ef16b853e33f9ac",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4677197cd51c63a6413c1c1f9dc85c2352018aede71b4dcef3bb434c68b893a1"
+      }
+    },
+    {
+      "address": "0x56bcadff30680ebb540a84d75c182a5dc61981c0",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x1a31cb6f417d30fe8769328b3412bfb0d70247a82009ef28dfab5730c82acd05"
+      }
+    },
+    {
+      "address": "0x808fbb64a72551516d1afac0e330cbea635009ef",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xbbca3b56890569d841b5e7e011e5554678aaa458cbbb53b07d8eed35f08e9833"
+      }
+    },
+    {
+      "address": "0x62ee30edf609278734de4e710f21bb07a907d610",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x611e7607c0bdd1b8f7496c9cf65c5b1acbfdd3144860f11d0fd67f9888774c35"
+      }
+    },
+    {
+      "address": "0xa6e803dccf90e5dd8791974fdba36c03214bbcb6",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xb69232e60751aeee65e94a6aabcc0f5c27d5dfd12f8c74fc432896a696732a2a"
+      }
+    },
+    {
+      "address": "0xc656169c38cbc224ff53d9c01e58df2661f1b10b",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x43d97059a0e29a4dc69b0b5baafed7a1d3572f20e07aa4a5597697746451eb52"
+      }
+    },
+    {
+      "address": "0x5e2a6f73a085e85bc7e175d42ef11b266678145c",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x54024cc7b6d6b1bd9d24db74adf0527360a14c90427a5ee4f008bebb09c835c0"
+      }
+    },
+    {
+      "address": "0x91e0ff1734425d1cf9068bbd031e9ebbd38e63c0",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x0aa88c7fb2b96aeb2fe7f11e20e61e2b74af337b94bd3041fef9f588d4598e02"
+      }
+    },
+    {
+      "address": "0x00ec6875426249050626e332234458ab8cfa4554",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x87771d3f8abed37e277b1b58e2296a17d4d17b517103c86d91abf40ec8f30f7f"
+      }
+    },
+    {
+      "address": "0xb12150c0d9e5f48048df85b6494540c668657017",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x472bd990bf4e2630bbf506b5a6427e9dda5f22a6e4bfb66ebdfbe1c6e1726266"
+      }
+    },
+    {
+      "address": "0x4e2a34226b1b386af53ee0755410b07bb0acd828",
+      "code": "0x10d0e9755c67ab37089acb4f51e8b4ee407fe853",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x303daf75aaaaea89255059ca331538c30044c5af155c7391470311cf4b0cfc00"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x35f50851c3b754b4565dc3e69af8f9bdb6555edecc84cf0badf8c1e8141d902d"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://blocksecteam.medium.com/telcoin-security-incident-in-depth-analysis-d1945e22818f"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-12/Telcoin_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x1a31cb6f417d30fe8769328b3412bfb0d70247a82009ef28dfab5730c82acd05"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T13:20:00Z",
-      "note": "The anchor is the first of 22 transactions the attacker sent to its module 0x10e5c8d3537856f141272e1c39befdab4dd8bde0, each re-initialising Telcoin wallet clones and sweeping their TEL. The wallet is a minimal proxy of the master 0x10d0e9755c67ab37089acb4f51e8b4ee407fe853, whose 45-byte runtime pins that master, so the clone creation at block 21704647 by the CloneFactory 0x4cf353974155a600f87d73222f9df0548e2b740e is the age basis and the exploited code is 762.3 days old. Neither the factory nor the transaction sender that deployed it is an attacker address. The master itself delegatecalls the address in the wallet’s EIP-1967 beacon slot, which held 0x3f443c31dab3dab882f9fe621f97b74c3c14837d before the exploit and which the re-initialisation overwrote; the defect that made that possible, the unrun initializer, is in victim code that predates all adversarial control and executes in the anchor. Every other drained wallet is a clone of the same master and would group to the same code hash, so one target represents them all. Quantities are netted onchain; the USD figure is the reported realisation because the attacker’s own selling moved TEL 65 percent within five minutes."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 137,
-      "transactionHashes": [
-        "0x022150fa5b660c1f4f6f911dbd8ca0d483c2876ce784c8ea1e2a57f60de5eac9",
-        "0x09391f982c3281f21a8e35ba879d1827f10995eda236e70868b085a8e5d39442",
-        "0x0b2c7e34152d3b71bf79c2e048c78004581c21c519562374f2af7f3deab1c0c3",
-        "0x1b99e0826e4d23e77321e811a276138ab3da2bb0284f76ed15f49c61dbecfbed",
-        "0x1d3215c0c0e6946f3d37a2dc4a22d8b6b55e1aec10b000a75933ec2fab91140a",
-        "0x2562bb2f2b727d9987af4e77c253934889ffc9cb1b23f46c28b20f289e6ad42c",
-        "0x25249535d5a4b3d0941cb0ffa2a128b081edcb8ddb97c2d46272e351dfa63fc5",
-        "0x2b5cb8c339088a0e773c458a08327d0939f97b7b258c483146b3551eb217d4ec",
-        "0x35f50851c3b754b4565dc3e69af8f9bdb6555edecc84cf0badf8c1e8141d902d",
-        "0x7e37cb018d60c570ad28c8a854bb0bcc93b3f0718b863571ede983f30f7e1211",
-        "0x87adc66f233582e0c48f3dbe27dd38905d4e7201e84268cfcb50738606ba2162",
-        "0x8a6cb45686c9aaef9f2950f1202ca8ced7929ad9f5174da96bdd06eb98b7cbb2",
-        "0x911abcc4067fdf6a993644623d9d8b5f9ca94c9dd805eb5fa90be2d26ab4b7c6",
-        "0x919034799171c1dace0b4c0d0ce29e810ea8077a80109622a897d112f6fe4be6",
-        "0x9812b65a70d7d5d81ab205e6d9c3ff0d162d987dfd2fde3e7b503ec977f5670f",
-        "0x9f15cd029676ec339ad9a3c1528b7f54591c1a4c6d8ad9f7baf9ba89f4c1349a",
-        "0xcc5a0f711dfb4cce3c615535ba4d4efe55723876e750284be9df361ed24aab4c",
-        "0xde55e877784385db0060d96de547b5d30aecd01c3fb4c8958fef2096b6792fc3",
-        "0xee4e25d690d56aa77446e18422ba26ffb6d4ca3531b81ae3fbc478330a3ab7c0",
-        "0xf479febaffb9be360b1568220e6f1b0332c7f5e8a61f058c4bbec99cd570f90c"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-26T08:03:41Z",
-      "note": "Clone basis retained under the case-by-case rule: the wallet clone's own initializer flag remained unset and it held the TEL later swept, so that instance state made the shared master exploitable."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 2662307.69,
+    "assets": [
+      {
+        "token": "0xdf7837de1f2fa4631d716cf2502f8b230f1dcc32",
+        "symbol": "TEL",
+        "amount": "4519277799.49",
+        "usd": 2650041.08
+      },
+      {
+        "symbol": "MATIC",
+        "amount": "12961.5996",
+        "usd": 11697.43
+      },
+      {
+        "token": "0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39",
+        "symbol": "LINK",
+        "amount": "37.080124317370778845",
+        "usd": 569.18
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://blocksecteam.medium.com/telcoin-security-incident-in-depth-analysis-d1945e22818f",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/Telcoin_exp.sol"
+  ],
+  "notes": [
+    "Every one of the 50 wallet clones the anchor re-initialised is a target (41 clones of master 0x10d0e975, 9 of identical-code masters); each was vulnerable from its creation, so the youngest clone's creation sets the age (rules 8, 11).",
+    "TEL is valued at what was realised (rule 15): the attacker's 1,325,656 MATIC and 37.51 ETH (via 319M TEL bridged to Ethereum), 0x092d6b3e's 1,288,711.81 USDT, and the smaller copycats' 58.1M TEL at the recovered $0.00145.",
+    "The copycat bundle comes from TEL Transfer logs out of clones in blocks 51,540,000-51,620,000 (no clone drains after 51,572,165); wallets moved through their own 0x9d55b53f execute path are normal use and excluded."
+  ],
+  "campaign": [
+    "eip155:137:0x0b2c7e34152d3b71bf79c2e048c78004581c21c519562374f2af7f3deab1c0c3",
+    "eip155:137:0x022150fa5b660c1f4f6f911dbd8ca0d483c2876ce784c8ea1e2a57f60de5eac9",
+    "eip155:137:0x9f15cd029676ec339ad9a3c1528b7f54591c1a4c6d8ad9f7baf9ba89f4c1349a",
+    "eip155:137:0x1b99e0826e4d23e77321e811a276138ab3da2bb0284f76ed15f49c61dbecfbed",
+    "eip155:137:0x8a6cb45686c9aaef9f2950f1202ca8ced7929ad9f5174da96bdd06eb98b7cbb2",
+    "eip155:137:0x919034799171c1dace0b4c0d0ce29e810ea8077a80109622a897d112f6fe4be6",
+    "eip155:137:0x09391f982c3281f21a8e35ba879d1827f10995eda236e70868b085a8e5d39442",
+    "eip155:137:0xee4e25d690d56aa77446e18422ba26ffb6d4ca3531b81ae3fbc478330a3ab7c0",
+    "eip155:137:0xde55e877784385db0060d96de547b5d30aecd01c3fb4c8958fef2096b6792fc3",
+    "eip155:137:0x2562bb2f2b727d9987af4e77c253934889ffc9cb1b23f46c28b20f289e6ad42c",
+    "eip155:137:0x7e37cb018d60c570ad28c8a854bb0bcc93b3f0718b863571ede983f30f7e1211",
+    "eip155:137:0x911abcc4067fdf6a993644623d9d8b5f9ca94c9dd805eb5fa90be2d26ab4b7c6",
+    "eip155:137:0xf479febaffb9be360b1568220e6f1b0332c7f5e8a61f058c4bbec99cd570f90c",
+    "eip155:137:0x6ad2c90be38125d32698305dc16408d45d7b3490aa78495fcfaea1efecf8669c",
+    "eip155:137:0x87adc66f233582e0c48f3dbe27dd38905d4e7201e84268cfcb50738606ba2162",
+    "eip155:137:0xcc5a0f711dfb4cce3c615535ba4d4efe55723876e750284be9df361ed24aab4c",
+    "eip155:137:0x2b5cb8c339088a0e773c458a08327d0939f97b7b258c483146b3551eb217d4ec",
+    "eip155:137:0x1d3215c0c0e6946f3d37a2dc4a22d8b6b55e1aec10b000a75933ec2fab91140a",
+    "eip155:137:0x9812b65a70d7d5d81ab205e6d9c3ff0d162d987dfd2fde3e7b503ec977f5670f",
+    "eip155:137:0xfe61a5399c3770c5b7079283608e3aa0d8c594e1311dad2ca55c6cdaf5d91530",
+    "eip155:137:0x25249535d5a4b3d0941cb0ffa2a128b081edcb8ddb97c2d46272e351dfa63fc5",
+    {
+      "chainId": 137,
+      "count": 4718,
+      "from": 51548330,
+      "to": 51572165,
+      "selection": "Transactions in which TEL leaves an EIP-1167 clone of 0x10d0e9755c67ab37089acb4f51e8b4ee407fe853 after a contract called initialize(address,bytes) 0xd1f57894 on it, sent by copycats 0x092d6b3e7db61c477cec730926176a9869bb776b (719), 0xe4a5a778a860e334c1788327614b826e8c518d90 (3748), 0xbcfc83015845546e44efc11830a155399919266c (197), 0x1023375dc47f90628fb9cadc66a9257fe6a7e212 (33), 0xc7f0a8d0e1aadff8b6c1eb1437e6cefb7ee5fbd6 (16), 0xdfa0e64da6924bfc3889a556ce33b42816dc681d (5)"
+    }
+  ]
 }

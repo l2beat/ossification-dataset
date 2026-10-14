@@ -1,119 +1,146 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xb1f70464bd95b774c6ce60fc706eb5f9e35cb5f06e6cfe7c17dcda46ffd59581",
-  "protocol": {
-    "name": "Poly Network",
-    "slug": "poly-network"
-  },
+  "protocol": "Poly Network",
   "name": "Poly Network",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xb1f70464bd95b774c6ce60fc706eb5f9e35cb5f06e6cfe7c17dcda46ffd59581",
-      "blockNumber": 12996659,
-      "transactionIndex": 327,
-      "timestamp": 1628588920
-    },
-    "attackerAddresses": [
-      "0xc8a65fadf0e0ddaf421f28feab69bf6e2e589963"
-    ]
-  },
-  "summary": "EthCrossChainManager accepted an attacker-selected destination and method string from an authenticated cross-chain message. The string f1121318093 produced the selector of EthCrossChainData.putCurEpochConPubKeyBytes(bytes), allowing the attacker to replace the keeper public key and authorize later withdrawals.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 611000000,
-      "valuationTimestamp": 1628588920,
-      "method": "reported",
-      "sourceIds": [
-        "source-3",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [],
-    "confidence": "high",
-    "notes": "The approximately $611 million gross loss covers the Ethereum, BNB Chain, and Polygon withdrawals enabled by the keeper-key takeover. Poly Network reports more than $610 million stolen and Chainalysis reports $613 million across the three chains; $611 million preserves the contemporaneous incident estimate. The attacker later returned the assets, separately from exploit-time gross loss."
-  },
+  "summary": "EthCrossChainManager called any target contract with a selector derived from an attacker-chosen method name in a cross-chain message. The name f1121318093 hashed to EthCrossChainData.putCurEpochConPubKeyBytes, which the manager owned, so one message replaced the keeper public key; attacker-signed messages then unlocked LockProxy funds on Ethereum, BSC and Polygon.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x838bf9e95cb12dd76a54c9f9d2e3082eaf928270",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x838bf9e95cb12dd76a54c9f9d2e3082eaf928270",
-        "codeHash": "0x453bdc92fb3b5a86df479506ccd67704b05254ee11e6330fc5e97c6b2070328d"
-      },
-      "deployment": {
-        "timestamp": 1597301471,
-        "blockNumber": 10650091,
-        "transactionHash": "0x0a51dcb1acfd4f44b5198d344f88acd1887fc694c4ff67c8e2bb8be6e9f1ae77",
-        "transactionIndex": 92,
-        "creatorAddress": "0xac171e587438ec2bc9a9bc502633d0bfc850d612"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "This transaction deployed the direct EthCrossChainManager runtime containing the unrestricted destination and method-selector construction used by the selected transaction."
-      },
-      "codeAgeSeconds": 31287449,
-      "failureModeId": "failure:poly-network-selector-collision",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x838bf9e95cb12dd76a54c9f9d2e3082eaf928270",
+      "reset": {
+        "kind": "config",
+        "tx": "0x69841100ab5477449dae07c99a4745df014aec11daf01027d870fc1258d1aa3f",
+        "address": "0xcf2afe102057ba5c16f899271045a0a37fcb10f2",
+        "slot": "0x0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb1f70464bd95b774c6ce60fc706eb5f9e35cb5f06e6cfe7c17dcda46ffd59581"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0a51dcb1acfd4f44b5198d344f88acd1887fc694c4ff67c8e2bb8be6e9f1ae77"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T14:01:00Z",
-      "note": "Reviewed the selected transaction, its call trace and calldata, the deployment transaction, archive-node runtimes, the main campaign inflows on Ethereum, BNB Chain, and Polygon, Poly Network's post-mortem, and Chainalysis reporting. The selected successful transaction calls verifyHeaderAndExecuteTx on EthCrossChainManager 0x838bf9e95cb12dd76a54c9f9d2e3082eaf928270 directly. Its decoded cross-chain payload selects EthCrossChainData 0xcf2afe102057ba5c16f899271045a0a37fcb10f2 and method string f1121318093; the trace shows the manager calling putCurEpochConPubKeyBytes(bytes), replacing the keeper key. The manager was directly deployed at block 10650091:92 by 0xac171e587438ec2bc9a9bc502633d0bfc850d612. Its 19,242-byte runtime hashes to 0x453bdc92fb3b5a86df479506ccd67704b05254ee11e6330fc5e97c6b2070328d both at deployment and immediately before the selected transaction, and disassembly contains no DELEGATECALL, SELFDESTRUCT, CREATE, or CREATE2 opcode. Subsequent bridge withdrawals sent ten material assets to the Ethereum attacker address, five to the BNB Chain attacker address, and USDC.e in two Polygon transactions. The onchain withdrawals and independent reports support the $611 million same-bug campaign total."
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://medium.com/poly-network/honour-exploit-and-code-how-we-lost-610m-dollar-and-got-it-back-c4a7d0606267"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://www.chainalysis.com/blog/2022-defi-hacks/"
-    }
+  "campaign": [
+    "eip155:1:0xad7a2c70c958fcd3effbf374d0acf3774a9257577625ae4c838e24b0de17602a",
+    "eip155:1:0x5a8b2152ec7d5538030b53347ac82e263c58fe7455695543055a2356f3ad4998",
+    "eip155:1:0x3f55ff1fa4eb3437afe42f4fea57903e8e663bc3b17cb982f1c8d4c8f03a2083",
+    "eip155:1:0xa7c56561bbe9fbd48e2e26306e5bb10d24786504833103d3f023751bbcc8a3d9",
+    "eip155:1:0xc917838cc3d1edd871c1800363b4e4a8eaf8da2018e417210407cc53f94cd44e",
+    "eip155:1:0xe05dcda4f1b779989b0aa2bd3fa262d4e6e13343831cb337c2c5beb2266138f5",
+    "eip155:1:0xb12681d9e91e69b94960611b227c90af25e5352881907f1deee609b8d5e94d7d",
+    "eip155:1:0x06aca16c483c3e61d5cdf39dc34815c29d6672a77313ec36bf66040c256a7db3",
+    "eip155:1:0xc797aa9d4714e00164fcac4975d8f0a231dae6280458d78382bd2ec46ece08e7",
+    "eip155:1:0xd8c1f7424593ddba11a0e072b61082bf3d931583cb75f7843fc2a8685d20033a",
+    "eip155:56:0x534966864bda354628d4f1c66db45cbefcdda7433e9576e7664fea01bb05be9a",
+    "eip155:56:0xd59223a8cd2406cfd0563b16e06482b9a3efecfd896d590a3dba1042697de11a",
+    "eip155:56:0x4e57f59395aca4847c4d001db4a980b92aab7676bc0e2d57ee39e83502527d6c",
+    "eip155:56:0x50105b6d07b4d738cd11b4b8ae16943bed09c7ce724dc8b171c74155dd496c25",
+    "eip155:56:0xd65025a2dd953f529815bd3c669ada635c6001b3cc50e042f9477c7db077b4c9",
+    "eip155:56:0xea37b320843f75a8a849fdf13cd357cb64761a848d48a516c3cac5bbd6caaad5",
+    "eip155:137:0x8c8b43012773b8948cfb0c66f69bfa7513817e35052ace91e2ed7eb9e8cacb95",
+    "eip155:137:0x1d260d040f67eb2f3e474418bf85cc50b70101ca2473109fa1bf1e54525a3e01",
+    "eip155:137:0xfbe66beaadf82cc51a8739f387415da1f638d0654a28a1532c6333feb2857790"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 611844711.12,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "96389444.229984",
+        "usd": 96360652.44
+      },
+      {
+        "symbol": "ETH",
+        "amount": "28966.547019602621254092",
+        "usd": 91339611.46
+      },
+      {
+        "chainId": 56,
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "87603672.715427772753145424",
+        "usd": 87577505.26
+      },
+      {
+        "chainId": 137,
+        "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "symbol": "USDC",
+        "amount": "85089719.606239",
+        "usd": 85064303.07
+      },
+      {
+        "chainId": 56,
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "26629.159998706545651647",
+        "usd": 83818002.62
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "1032.12483694",
+        "usd": 47491124.83
+      },
+      {
+        "chainId": 56,
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "1023.880948564689526459",
+        "usd": 47059934.43
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "33431197.734821",
+        "usd": 33439178.65
+      },
+      {
+        "chainId": 56,
+        "symbol": "BNB",
+        "amount": "6613.440489806866981869",
+        "usd": 2361326.85
+      },
+      {
+        "token": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+        "symbol": "SHIB",
+        "amount": "259737345149.519786617235448706",
+        "usd": 1996354.35
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "43023.751365396442021965",
+        "usd": 1282963.57
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "673227.941533113298891801",
+        "usd": 673195.43
+      },
+      {
+        "token": "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
+        "symbol": "renBTC",
+        "amount": "14.47265047",
+        "usd": 664564.88
+      },
+      {
+        "token": "0x956f47f50a910163d8bf957cf5846d573e7f87ca",
+        "symbol": "FEI",
+        "amount": "616082.589988960251715574",
+        "usd": 616143.43
+      },
+      {
+        "chainId": 56,
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "32107854.114341286723103272",
+        "usd": 32099849.85
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://medium.com/poly-network/honour-exploit-and-code-how-we-lost-610m-dollar-and-got-it-back-c4a7d0606267",
+    "https://www.chainalysis.com/blog/2022-defi-hacks/"
+  ],
+  "notes": [
+    "The manager could only overwrite keepers once it owned EthCrossChainData; that ownership grant, made 64 blocks after the manager's deployment, gave the defective contract the power the exploit used and is the reset. Later writes to the data contract are keeper and epoch values the attack overwrote.",
+    "Campaign: every successful manager call after each chain's keeper replacement (Ethereum, BSC, Polygon), including one Ethereum relayer transaction that delivered an attacker-signed renBTC unlock. Sibling managers on BSC and Polygon are the same template.",
+    "Loss is gross LockProxy depletion; the assets the attacker returned are not subtracted. DefiLlama lacks BSC BUSD history, so BUSD is valued at the Binance USD market price."
+  ]
 }

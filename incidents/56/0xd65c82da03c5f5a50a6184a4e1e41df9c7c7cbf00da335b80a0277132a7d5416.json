@@ -1,189 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd65c82da03c5f5a50a6184a4e1e41df9c7c7cbf00da335b80a0277132a7d5416",
-  "protocol": {
-    "name": "DHC",
-    "slug": "dhc"
-  },
+  "protocol": "DHC",
   "name": "DHC award contract repeatable claim",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd65c82da03c5f5a50a6184a4e1e41df9c7c7cbf00da335b80a0277132a7d5416",
-      "blockNumber": 120055460,
-      "transactionIndex": 3,
-      "timestamp": 1788586488
-    },
-    "attackerAddresses": [
-      "0xd3a8d0a9f55cf679fff6f277e49afc95b49d2b07",
-      "0x226923d34a10f3d54b57b9f4b685e82c6cba968a"
-    ]
-  },
-  "summary": "The DHC award implementation behind proxy 0xe2a047aadbac51b0116af1ce91ebdae4b4202094 pays a claim (selector 0x43609f36) of a fixed 10% of an award's reward from the shared proxy DHC balance without marking the award as spent. A dust re-participation (selector 0xe3db9b54, amount 2 wei) makes the same claimed award claimable again, so anyone who creates and funds one award can claim it repeatedly. The attacker made 333 claims on five self-created awards (328 of them re-claims) and drained the proxy's pooled DHC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 71851.01670826237,
-      "valuationTimestamp": 1788586488,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x743f15f4d2481774d970f286f0ebad9c3daed6e9",
-          "symbol": "DHC"
-        },
-        "amount": "568370.746788580565935986",
-        "usdValue": 71851.01670826237,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1788586488,
-          "unitPriceUsd": 0.1264157543544181,
-          "sourceIds": [
-            "source-1",
-            "source-2",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Quantity is the award proxy's DHC balanceOf drop across block 120055460 (568371.829157042339390458 at block 120055459 to 1.082368461773454472 after transaction index 5). That equals the proxy's 333 outbound DHC transfers (770986.4460311507701734 DHC) minus the attacker's 333 inbound deposits (202615.699242570204261 DHC), within 23586 wei of reflection rounding, so attacker inputs are excluded. The dump moved the thin DHC/USDT price, so the drained DHC is valued at the attacker's realised USDT: gross sales of 32723.708074671970382493 + 48532.096783683429190177 + 576.0010148635625929 USDT from pair 0x4b92a34aa2beec3fcdffeb5251c1654ee004e5f4 and 19.210835043410999985 USDT from 60 DHC routed through WBNB, less the attacker's own 10000 USDT seed purchase of DHC, equal exactly the 71851.016708262373165555 USDT forwarded to the attacker EOA. The 10000 USDT DODO flash loan was repaid in the same transaction. USDT is valued at par. The figure is net of DHC transfer taxes and referral cuts paid out of the drained DHC, so it is conservative. DefiLlama has no DHC price.",
-    "realizedAt": 1788586488
-  },
+  "summary": "The DHC award implementation (unverified) pays a claim (0x43609f36) from the proxy's pooled DHC without marking the award spent, and a dust re-participation (0xe3db9b54) makes the same award claimable again. The attacker funded awards once with flash-bought DHC, re-claimed them hundreds of times and sold the DHC.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe2a047aadbac51b0116af1ce91ebdae4b4202094",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x5abb3fe2a02e5d4320862944cd3a0b8f6af28ce1",
-        "codeHash": "0x13ccc2e4995d23b6f58d944c5f4b878d3f1b58ad56cab772bda0356f65ba5e11"
-      },
-      "deployment": {
-        "timestamp": 1647345778,
-        "blockNumber": 16080032,
-        "transactionHash": "0x524374e419dc710e96d207f1b2e01767dd29b39946e2c3a43f6d93f2674c203b",
-        "transactionIndex": 201,
-        "creatorAddress": "0x007fa7f9b73d03655886c60e99064e8b8795f015"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1654320920,
-        "blockNumber": 18387015,
-        "transactionHash": "0xa9de093df5b184372f0786a4c0340e2ccabd8ca90ebaf2931516e18f35ba34fe",
-        "transactionIndex": 47,
-        "logIndex": 156,
-        "mechanism": {
-          "type": "event",
-          "address": "0xe2a047aadbac51b0116af1ce91ebdae4b4202094",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The twelfth and last pre-exploit Upgraded event (ProxyAdmin 0xdcbcbed0f7d658133f584edce93e24119db5e443 upgrade) selected award implementation 0x5abb3fe2a02e5d4320862944cd3a0b8f6af28ce1, which executed every exploit call."
-      },
-      "codeAgeSeconds": 134265568,
-      "failureModeId": "failure:dhc-award-repeatable-claim",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-6",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-7",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The award implementation is unverified; the missing spent-award guard is established from the exploit trace and a forked replay, not from source."
-        ],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0xe2a047aadbac51b0116af1ce91ebdae4b4202094",
+      "code": "0x5abb3fe2a02e5d4320862944cd3a0b8f6af28ce1",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xa9de093df5b184372f0786a4c0340e2ccabd8ca90ebaf2931516e18f35ba34fe"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd65c82da03c5f5a50a6184a4e1e41df9c7c7cbf00da335b80a0277132a7d5416"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x037771c05fe48def7d3f249879db97ed69f8ccd4405d0cc820983c4c9664cc51",
-        "0xb4c89845d95fd721e6931dd223e24e8b78a9de8c3b4428251a36d9213e44c496"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa9de093df5b184372f0786a4c0340e2ccabd8ca90ebaf2931516e18f35ba34fe"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x524374e419dc710e96d207f1b2e01767dd29b39946e2c3a43f6d93f2674c203b"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1edd6a09444006e6bd6c81b62b28941bcc2baa80e7ddba6f43547abeed741185"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/DHC_exp.sol"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x779f4cb7774ac2240ad36ffac35d106c86500becb65facbca8ee85bc7e84a77d"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:28:48Z",
-      "note": "Anchor: attacker EOA 0xd3a8d0a9f55cf679fff6f277e49afc95b49d2b07 (Etherscan V2 txlist: only 4 transactions, all block 120055460) created exploit contract 0x226923d34a10f3d54b57b9f4b685e82c6cba968a at index 2 (0x172c1aa9..., nonce 0), then called it at indices 3 (0xc0406226, source-1), 4 (0x9890220b) and 5 (0x84054d3d); all succeeded. debug_traceTransaction(callTracer) of source-1: after a 10000 USDT flash loan from 0x6098a5638d8d7e9ed2f952d35b2b67c34ec6b476 and a buy of 14017.519944821332 DHC, the contract calls the proxy (every call DELEGATECALLs 0x5abb3fe2a02e5d4320862944cd3a0b8f6af28ce1) with 0x7f200fee(reward 0x2f7d64a231c0d4801fe = 14016.519944821332 DHC) creating award 3211788586488, then 0xe3db9b54(3211788586488, 14016.52 DHC) (receipt log 44: 11877.599001241596501800 DHC into the proxy plus a referral cut to 0xf2fda1acaee42ba3d9b8bf761612b17061b6045f), then 0x43609f36(3211788586488) (log 46: 1401.6519944821331722 DHC out of the proxy). The next pair, 0xe3db9b54(3211788586488, 2) (log 48: 0 DHC in after reflection rounding) and 0x43609f36(3211788586488) (log 50: the same 1401.65 DHC out), is the first re-claim of an already-claimed award; source-1 repeats it for 101 claims on that award, then sells 66384.54569658301 DHC for 32723.708074671970382493 USDT. Index 4 makes 196 claims (160 more on award 3211788586488, 18 each on two new awards); index 5 makes 36 claims on two further awards and dumps. Proxy DHC per tx out/in: 141566.851442695450392200/11877.599001241596501800 (101/101 transfers), 628511.348532645741041800/190310.518181499142745300 (196/196), 908.246055809578739400/427.582059829465013900 (36/36). Causality: an anvil fork at block 120055459 replaying the four attacker transactions (impersonated EOA, same calldata) reproduces the drain to 1.082368461773454472 DHC and 71851.016820880579325777 USDT to the EOA (the 1.1e-4 USDT difference is from the omitted block indices 0-1). Earlier exercise: Etherscan V2 account.txlist for the proxy, blocks 0..120055459, has 6762 transactions; the last award calls (0x7f200fee/0xe3db9b54/0x43609f36) are at blocks 18383372/18383426/18383451 and the 166 successful direct 0x43609f36 calls name 166 distinct award ids. account.tokentx for the proxy over the same range (8586 DHC transfers, last block 117582879) shows every outbound DHC transfer in a transaction sent directly to the proxy, so no contract-mediated claim precedes source-1. Age: Etherscan getLogs Upgraded (topic 0xbc7cd75a...) on the proxy, blocks 0..120055460, returns 12 events; the last is block 18387015 tx index 47 log 156 (source-3, ProxyAdmin 0xdcbcbed0f7d658133f584edce93e24119db5e443 upgrade(0x99a88ec4) by owner 0x007fa7f9b73d03655886c60e99064e8b8795f015) with topic1 0x5abb3fe2...; the EIP-1967 implementation slot reads 0xc37a783a15e5d45fcec2889701035ad38ec18849 at block 18387014 and 0x5abb3fe2... at 18387015 and at 120055459. Implementation runtime: empty at block 18387011; keccak 0x13ccc2e4995d23b6f58d944c5f4b878d3f1b58ad56cab772bda0356f65ba5e11 at creation block 18387012 (source-5, index 34, creator 0x007fa7f9...) and at 120055459; the disassembly has no DELEGATECALL or SELFDESTRUCT. Proxy (source-4, block 16080032 index 201, same creator) runtime keccak 0xfc1ea81db44e2de921b958dc92da921a18968ff3f3465bd475fb86dd1af03986 at 16080032 and 120055459, empty at 16080031. Configuration: owner() is the EOA 0x007fa7f9... and the only owner call to the proxy after the upgrade is source-7 (block 18876223, 0x8de63db5(1)), which prestateTracer(diffMode) shows writing slot 0x77 from 0 to 1. The exploit reads slot 0x77, but the same forked replay with slot 0x77 overridden to 0 yields the identical drain and USDT, so that value is not necessary to the condition and does not reset the age. Other slots read by source-1 (0x6a=1000, 0x6b=10000, 0x72=321, 0x73=100, 0x74=950) were set before the upgrade. Loss: see loss notes; USDT transfer logs of sources 1-2 (flash loan in/out logs 27/477, buy log 28, sells logs 466/1457/1482, WBNB leg log 1486, payout log 1489 of 71851.016708262373165555 USDT to the EOA) reproduce the realised figure exactly."
-    }
-  ],
-  "discovery": [
-    "web:2026-09-05:dhc"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 71862.25,
+    "assets": [
+      {
+        "token": "0x743f15f4d2481774d970f286f0ebad9c3daed6e9",
+        "symbol": "DHC",
+        "amount": "568370.746788580565935986",
+        "usd": 71862.25
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:56:0x037771c05fe48def7d3f249879db97ed69f8ccd4405d0cc820983c4c9664cc51",
+    "eip155:56:0xb4c89845d95fd721e6931dd223e24e8b78a9de8c3b4428251a36d9213e44c496"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/DHC_exp.sol"
+  ],
+  "notes": [
+    "DHC has no market price; the drained DHC (net of the attacker's own award deposits) is valued at the USDT the attacker realised selling it, less its seed purchase (rule 15).",
+    "Slot 0x77 (set by 0x779f4cb7 after the upgrade) is not needed: replaying the anchor with it at 0 drains the same. The missing spent-award guard is inferred from the trace; the implementation is unverified."
+  ]
 }

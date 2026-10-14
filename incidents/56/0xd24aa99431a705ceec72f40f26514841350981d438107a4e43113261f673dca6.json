@@ -1,261 +1,116 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd24aa99431a705ceec72f40f26514841350981d438107a4e43113261f673dca6",
-  "protocol": {
-    "name": "Trade On Orion",
-    "slug": "tradeonorion"
-  },
+  "protocol": "Trade On Orion",
   "name": "Trade On Orion stake-release liability desynchronization",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd24aa99431a705ceec72f40f26514841350981d438107a4e43113261f673dca6",
-      "blockNumber": 39106263,
-      "transactionIndex": 19,
-      "timestamp": 1716866601
-    },
-    "attackerAddresses": [
-      "0x51177db1ff3b450007958447946a2eee388288d2",
-      "0xf8bfac82bdd7ac82d3aeec98b9e1e73579509db6",
-      "0xf7a8c237ac04c1c3361851ea78e8f50b04c76152",
-      "0x805d8c96d09f6500cdad501d5c754d2fbf186d7a"
-    ]
-  },
-  "summary": "OrionVault.requestReleaseStake() credited locked ORN directly back to the caller's internal asset balance and cleared the stake without reconciling an existing ORN liability. Repeating the stake-release and redeem cycle therefore left duplicate liability entries for the same asset. MarginalFunctionality.calcLiabilities() valued every entry from the same live balance, so a later positive ORN balance was counted several times as collateral and checkPosition() accepted large unsupported debits that the attacker withdrew. The deployed redeemAtomic path did require the recovered signature to equal order.sender; the seed row's signature-bypass classification was incorrect.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 818675.9625076636,
-      "valuationTimestamp": 1716870310,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-2",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "19843.686077960000000000",
-        "usdValue": 19843.68607796,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1716870310,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xe4ca1f75eca6214393fce1c1b316c237664eaa8e",
-          "symbol": "ORN"
-        },
-        "amount": "498921.62920826",
-        "usdValue": 718447.1460598944,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1716870310,
-          "unitPriceUsd": 1.44,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
-          "symbol": "XRP"
-        },
-        "amount": "62444.730331000000000000",
-        "usdValue": 32769.12113579887,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1716870310,
-          "unitPriceUsd": 0.52477,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "79.896159740000000000",
-        "usdValue": 47616.00923401037,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1716870310,
-          "unitPriceUsd": 595.9736912132389,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The loss is the exact campaign-attributable depletion of the Exchange proxy's external asset balances. In the final drain transaction, the proxy lost 19,844.686077960000000000 USDT net of the 4,000,000 USDT flash-funded deposit made inside that transaction, and sent 498,921.92920826 ORN, 62,444.730331000000000000 XRP and 79.896159740000000000 native BNB to attacker-controlled addresses. Before the drain, the same campaign had externally deposited 1.000000000000000000 USDT and 0.30000000 ORN into the proxy in the three transactions listed in source-7; excluding that attacker-supplied capital leaves the four asset components recorded above. The flash pair retained 10,400 USDT on repayment, so attacker proceeds were lower than victim depletion by that financing fee. No recovery is netted. The USD total uses stablecoin par and DefiLlama's token-specific incident-time prices of USD 1.44/ORN, USD 0.52477/XRP and USD 595.9736912132389/BNB. The widely reported approximately USD 645,000 estimate is not used because it does not reproduce the exact onchain quantities at contemporaneous prices.",
-    "realizedAt": 1716870310
-  },
+  "summary": "requestReleaseStake() credited staked ORN back to the exchange balance without reconciling the liabilities list. Cycling lockStake, a self-signed redeemAtomic and requestReleaseStake left stale ORN liability entries, so calcPosition counted a later positive ORN balance again as collateral and the attacker borrowed and withdrew every exchange asset.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe9d1d2a27458378dd6c6f0b2c390807aed2217ca",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xc662cea3d8d6660ca97fb9ff98122da69a199cd8",
-        "codeHash": "0x9ef75aa9a55328c6edd7b4f3b060d206c32ae4fd2110f9b4f0276f2ae511b64d"
-      },
-      "deployment": {
-        "timestamp": 1614529905,
-        "blockNumber": 5277059,
-        "transactionHash": "0x9104ac72be6e3b205e9a1244359665fe59355e2854c7a676dcdaa6bb32c4d3ba",
-        "transactionIndex": 2,
-        "creatorAddress": "0x33459acd9ca8493c0e0163eac92a928e293b2218"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1709657681,
-        "blockNumber": 36708376,
-        "transactionHash": "0x39a5a6b9e7e1435894165cbb410f2e76c3e69598cb2b57127e13d34a3299f308",
-        "transactionIndex": 120,
-        "logIndex": 307,
-        "mechanism": {
-          "type": "event",
-          "address": "0xe9d1d2a27458378dd6c6f0b2c390807aed2217ca",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The last of 29 pre-anchor EIP-1967 Upgraded events emitted by the Exchange proxy selects implementation 0xc662cea3d8d6660ca97fb9ff98122da69a199cd8. The EIP-1967 implementation slot still contains that address at block 39106262. Its runtime hash is 0x9ef75aa9a55328c6edd7b4f3b060d206c32ae4fd2110f9b4f0276f2ae511b64d at its deployment block 36708281, the selection block, sampled intermediate blocks and block 39106262, so this is the complete pre-anchor code boundary for the defect-bearing implementation."
-      },
-      "codeAgeSeconds": 7208920,
-      "failureModeId": "failure:orion-stake-release-liability-desynchronization",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-9"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6",
-          "source-10",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-9"
-        ]
+      "address": "0xe9d1d2a27458378dd6c6f0b2c390807aed2217ca",
+      "code": "0xc662cea3d8d6660ca97fb9ff98122da69a199cd8",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x39a5a6b9e7e1435894165cbb410f2e76c3e69598cb2b57127e13d34a3299f308"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd24aa99431a705ceec72f40f26514841350981d438107a4e43113261f673dca6"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x660837a1640dd9cc0561ab7ff6c85325edebfa17d8b11a3bb94457ba6dcae18c"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-05/Tradeonorion_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://blog.verichains.io/p/tradeonorion-incident-analysis"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x9104ac72be6e3b205e9a1244359665fe59355e2854c7a676dcdaa6bb32c4d3ba"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x39a5a6b9e7e1435894165cbb410f2e76c3e69598cb2b57127e13d34a3299f308"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x14c9ed5c14438dca2dfe4019897ab43ed12674d8bc3249a7e744c6a2d3995ddd",
-        "0x590fb6df10c1fd1a2bdd445e46b6b5be6fa5feb867f17acb254244ed9d1d272a",
-        "0x16b9a25fd7df9994306036d5307985a767bebb4d6bb33f29ece3d4bb91aa6c28",
-        "0x660837a1640dd9cc0561ab7ff6c85325edebfa17d8b11a3bb94457ba6dcae18c"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1716870310/bsc:0xe4ca1f75eca6214393fce1c1b316c237664eaa8e,bsc:0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe,coingecko:binancecoin,bsc:0x55d398326f99059ff775485246999027b3197955",
-      "observedAt": 1787655482
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T11:00:00Z",
-      "note": "Re-anchored from the final drain 0x660837a1640dd9cc0561ab7ff6c85325edebfa17d8b11a3bb94457ba6dcae18c to 0xd24aa99431a705ceec72f40f26514841350981d438107a4e43113261f673dca6, the first successful defect-executing transaction. Immediately before the preceding redeemAtomic call, the controlled account 0xf7a8c237ac04c1c3361851ea78e8f50b04c76152 had no ORN liability; that redeem changed its ORN balance from +0.10000000 to -0.10000000 and created one liability. The anchor then called requestReleaseStake() on the Exchange proxy, restored the balance to zero and left that same liability in storage. Later successful cycles produced two and then three entries for the same ORN asset, all of which calcLiabilities read against the same live balance; this is the state corruption used by the drain. Verified deployed source confirms requestReleaseStake writes assetBalances directly, while LibAtomic.doRedeemAtomic explicitly requires recover(order.signature) == order.sender, disproving the seed row's signature-bypass classification. The anchor and drain traces delegate first from proxy 0xe9d1d2a27458378dd6c6f0b2c390807aed2217ca to implementation 0xc662cea3d8d6660ca97fb9ff98122da69a199cd8; requestReleaseStake executes entirely in that implementation. The later redeem path also reaches LibAtomic 0x9560364b11512b52b5550444b8f9f552b4d8959b and MarginalFunctionality 0xc619cdc93f4e599511ca21b48b92116f2ab6e94a, but those libraries consume the liability invariant that the implementation first violates and are not separate defect-bearing targets. The proxy was deployed at block 5277059 by 0x33459acd9ca8493c0e0163eac92a928e293b2218. Its last of 29 pre-anchor Upgraded logs is log 307 of transaction 0x39a5a6b9e7e1435894165cbb410f2e76c3e69598cb2b57127e13d34a3299f308 at block 36708376 and selects 0xc662cea3d8d6660ca97fb9ff98122da69a199cd8; the pre-anchor EIP-1967 slot and stable historical runtime hash confirm that implementation remained active for 7,208,920 seconds. Loss is scoped by external proxy balance depletion across the coherent campaign: the final transaction's exact outgoing quantities net of its 4,000,000 USDT flash input, less the earlier attacker-funded deposits of 1 USDT and 0.3 ORN, with no duplicated reported estimate."
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8b06a45d12588e6b0f8a83ff1744173d3f79f7b484dab6fa54cfc0c9acd60f85"
-    }
-  ],
-  "discovery": [
-    "seed:tradeonorion:2024-05-28:exchange-redeematomic-signature-not-bound-to-order-sender"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-9"
+  "loss": {
+    "usd": 952608.27,
+    "assets": [
+      {
+        "token": "0xe4ca1f75eca6214393fce1c1b316c237664eaa8e",
+        "symbol": "ORN",
+        "amount": "498921.62920826",
+        "usd": 718447.15
+      },
+      {
+        "symbol": "BNB",
+        "amount": "79.89615974",
+        "usd": 47655.66
+      },
+      {
+        "token": "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
+        "symbol": "XRP",
+        "amount": "62444.730331",
+        "usd": 32769.12
+      },
+      {
+        "token": "0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd",
+        "symbol": "LINK",
+        "amount": "1741.19544456",
+        "usd": 31428.58
+      },
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "0.30346428",
+        "usd": 20537.25
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "19843.68607796",
+        "usd": 19792.49
+      },
+      {
+        "token": "0xba2ae424d960c26247dd6c32edc70b295c744c43",
+        "symbol": "DOGE",
+        "amount": "112610.78858282",
+        "usd": 18549.59
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "4.80897149",
+        "usd": 18478.05
+      },
+      {
+        "token": "0xadbaf88b39d37dc68775ed1541f1bf83a5a45feb",
+        "symbol": "COTI",
+        "amount": "86361.31319855",
+        "usd": 11433.12
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "11001.10931114",
+        "usd": 10970.01
+      },
+      {
+        "token": "0xbf7c81fff98bbe61b40ed186e4afd6ddd01337fe",
+        "symbol": "EGLD",
+        "amount": "237.88464124",
+        "usd": 9306.05
+      },
+      {
+        "token": "0x1ce0c2827e2ef14d5c4f29a091d735a204794041",
+        "symbol": "AVAX",
+        "amount": "198.36102638",
+        "usd": 7349.28
+      },
+      {
+        "token": "0x7083609fce4d1d8dc0c979aab8c869ea2c873402",
+        "symbol": "DOT",
+        "amount": "785.58886965",
+        "usd": 5891.92
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/Tradeonorion_exp.sol",
+    "https://blog.verichains.io/p/tradeonorion-incident-analysis",
+    "eip155:56:0x14c9ed5c14438dca2dfe4019897ab43ed12674d8bc3249a7e744c6a2d3995ddd",
+    "eip155:56:0x590fb6df10c1fd1a2bdd445e46b6b5be6fa5feb867f17acb254244ed9d1d272a",
+    "eip155:56:0x16b9a25fd7df9994306036d5307985a767bebb4d6bb33f29ece3d4bb91aa6c28",
+    "eip155:56:0x8b06a45d12588e6b0f8a83ff1744173d3f79f7b484dab6fa54cfc0c9acd60f85",
+    "eip155:56:0xa43712a739a2e5514c11e15b58667d76062e8684bfa7dfca1f502f0045c87070"
+  ],
+  "notes": [
+    "The anchor and 0x52cdb80f are the attacker's stake-release cycles that planted duplicate ORN liability entries; the drain by a second attacker EOA relied on them. The 13 earlier successful requestReleaseStake calls since 2021 were by accounts without an ORN liability, so none exercised the defect.",
+    "Loss is the exchange's outflow in the drain (every asset sent out, including 79.9 native BNB), net of the 4M USDT flash deposit and of the attacker's own 1 USDT and 0.3 ORN deposited in the referenced setup txs. The ORN token admin burned the attacker's ORN 1.5 h later; recoveries are not netted.",
+    "The Feb 2023 Orion record (eip155:56:0xfb153c57…) is a depositAsset reentrancy in an older implementation, a different vulnerability, so it is not merged."
+  ],
+  "campaign": [
+    "eip155:56:0x52cdb80f85bc6ba3856de4f5bf3d6eec68167d18fc0a0478e227cc3837aa1dd7",
+    "eip155:56:0x660837a1640dd9cc0561ab7ff6c85325edebfa17d8b11a3bb94457ba6dcae18c"
+  ]
 }

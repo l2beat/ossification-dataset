@@ -1,173 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:43114:0x4f37ffecdad598f53b8d5a2d9df98e3c00fbda4328585eb9947a412b5fe17ac5",
-  "protocol": {
-    "name": "Stars Arena",
-    "slug": "stars-arena"
-  },
+  "protocol": "Stars Arena",
   "name": "Stars Arena share-buy reentrancy",
-  "incident": {
-    "chainId": 43114,
-    "exploit": {
-      "transactionHash": "0x4f37ffecdad598f53b8d5a2d9df98e3c00fbda4328585eb9947a412b5fe17ac5",
-      "blockNumber": 36136406,
-      "transactionIndex": 0,
-      "timestamp": 1696656215
-    },
-    "attackerAddresses": [
-      "0xa2ebf3fcd757e9be1e58b643b6b5077d11b4ad7a"
-    ]
-  },
-  "summary": "The share-buy entry point (selector 0xe9ccf3a3) sent AVAX back to the caller before finalising share accounting, letting the attacker re-enter the weight-setting function (selector 0x5632b2e4) mid-call so that a single share could then be sold via sellShares() for ~266,000 AVAX.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 2964147.8284259983,
-      "valuationTimestamp": 1696654800,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": null,
-          "symbol": "AVAX"
-        },
-        "amount": "266103.97278",
-        "usdValue": 2964147.8284259983,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1696654800,
-          "unitPriceUsd": 11.139058907912627,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit trace records exactly 266,103.97278 AVAX transferred from the Stars Arena proxy through the attack contracts and then to the attacker EOA."
-  },
+  "summary": "The upgraded Stars Arena shares implementation refunded excess AVAX to the buyer through an unrestricted call before finishing the buy. The attacker's contract re-entered from the refund and called 0x5632b2e4 to set the pricing weight for its new subject, then sold its single share at the inflated price for most of the contract's AVAX.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa481b139a1a654ca19d2074f174f17d7534e8cec",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x8af92c23a169b58c2e5ac656d8d8a23fc725080f",
-        "codeHash": "0xac4a94e281c58208afd8fcad2cce3dfb7decc7520d981ccbf24b4db84f881414"
-      },
-      "deployment": {
-        "timestamp": 1695226965,
-        "blockNumber": 35435212,
-        "transactionHash": "0xa800c9e1a32501b6e4a31c78e8fc4e70cb6a166beb3411bcafc9d6f9387a5143",
-        "transactionIndex": 0,
-        "creatorAddress": "0xb7461cf331a3a940e69b9deea98fa43fd357f571"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1696511764,
-        "blockNumber": 36064514,
-        "transactionHash": "0x444a7fefbc65586f5d5e00c7575d22f3dffb2ce9874f5197656bf7b59c46b3bd",
-        "transactionIndex": 0,
-        "logIndex": 0,
-        "mechanism": {
-          "type": "event",
-          "address": "0xa481b139a1a654ca19d2074f174f17d7534e8cec",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The second and final pre-incident Upgraded event selected the vulnerable Stars Arena implementation."
-      },
-      "codeAgeSeconds": 144451,
-      "failureModeId": "failure:stars-arena-share-price-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0xa481b139a1a654ca19d2074f174f17d7534e8cec",
+      "code": "0x8af92c23a169b58c2e5ac656d8d8a23fc725080f",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x444a7fefbc65586f5d5e00c7575d22f3dffb2ce9874f5197656bf7b59c46b3bd"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0x4f37ffecdad598f53b8d5a2d9df98e3c00fbda4328585eb9947a412b5fe17ac5"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://slowmist.medium.com/a-deep-dive-into-the-stars-arena-attack-765649d7fc6a"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-10/StarsArena_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T12:30:55Z",
-      "note": "Reviewed the exploit receipt and call trace, the commit-pinned reproduction, the deployment transaction, the exploit-time implementation slot, the independent incident analysis, and a complete Upgraded-event query from deployment through the exploit. The exploit calls proxy 0xa481b139a1a654ca19d2074f174f17d7534e8cec, which delegates to 0x8af92c23a169b58c2e5ac656d8d8a23fc725080f. An external AVAX transfer during the share-buy path permits reentrancy into the weight-setting function before sellShares computes its payout. Two Upgraded events exist; the final event is log 0 of 0x444a7fefbc65586f5d5e00c7575d22f3dffb2ce9874f5197656bf7b59c46b3bd and selects the recorded implementation. The trace transfers exactly 266103.97278 AVAX from the proxy through the attack contracts to the attacker EOA."
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0x444a7fefbc65586f5d5e00c7575d22f3dffb2ce9874f5197656bf7b59c46b3bd"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/blog/stars-arena-incident-analysis"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/avalanche-2/market_chart/range?vs_currency=usd&from=1696569815&to=1696659815",
-      "observedAt": 1787574655
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0xa800c9e1a32501b6e4a31c78e8fc4e70cb6a166beb3411bcafc9d6f9387a5143"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 3064299.19,
+    "assets": [
+      {
+        "symbol": "AVAX",
+        "amount": "274332.962",
+        "usd": 3064299.19
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://slowmist.medium.com/a-deep-dive-into-the-stars-arena-attack-765649d7fc6a",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-10/StarsArena_exp.sol",
+    "https://www.certik.com/blog/stars-arena-incident-analysis"
+  ],
+  "notes": [
+    "Reset: the upgrade to 0x8af92c23, which replaced the code exploited on 5 October (a zero-share sell bug, a separate incident). No other large outflow from the proxy between the upgrade and the pause.",
+    "Gross loss is the AVAX that left the proxy, including the protocol and subject fees it paid out in the sale; the attacker received 266,103.97 AVAX and later returned about 90%, which is not netted."
+  ]
 }

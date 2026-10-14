@@ -1,145 +1,69 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1a7ee0a7efc70ed7429edef069a1dd001fbff378748d91f17ab1876dc6d10392",
-  "protocol": {
-    "name": "Hopelend",
-    "slug": "hopelend"
-  },
+  "protocol": "Hopelend",
   "name": "HopeLend empty-market liquidity index inflation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1a7ee0a7efc70ed7429edef069a1dd001fbff378748d91f17ab1876dc6d10392",
-      "blockNumber": 18377042,
-      "transactionIndex": 0,
-      "timestamp": 1697629739
-    },
-    "attackerAddresses": [
-      "0xa8bbb3742f299b183190a9b079f1c0db8924145b",
-      "0xc74b72bbf904bac9fac880303922fc76a69f0bb4"
-    ]
-  },
-  "summary": "The HopeLend pool is an Aave v3 fork whose liquidity index is computed from the reserve balance without a floor on an empty market. With one wei of hEthWBTC supply outstanding the attacker donated WBTC straight to the hEthWBTC reserve, inflating the index so that the rounding on burn returned far more underlying than had been supplied, and used the resulting collateral to borrow the WETH, USDT and USDC markets out.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 835550.6256910105,
-      "valuationTimestamp": 1697629739,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "528.004085822170762393",
-        "usdValue": 835550.6256910105,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1697629739,
-          "unitPriceUsd": 1582.47,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Netting the exploit receipt across the attacker EOA and its exploit contract leaves exactly one non-zero position, 528.004085822170762393 WETH; the WBTC donation, the USDT and USDC borrows and the flash-loan legs all net to zero because they were repaid inside the transaction. The variable debt the attacker leaves behind against those markets is not additionally counted, since the WETH figure already measures what left. A large share of this was taken by a MEV bot that front-ran the attacker rather than by the attacker; that is a redistribution among third parties and does not change the amount the protocol lost. Nothing was recovered by HopeLend."
-  },
+  "summary": "HopeLend, an Aave V3 fork, listed WBTC as collateral with an empty hEthWBTC market. The exploiter deposited a little WBTC, pumped the liquidity index with repeated flash loans whose premium accrues to the few suppliers, borrowed every other reserve against the inflated balance, and withdrew its WBTC through rayDiv rounding that burns fewer shares than owed.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x53fbcada1201a465740f2d64ecdf6fac425f9030",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x3a6d9bf8286a4ada77c15ecf82d4c0c0af95be74",
-        "codeHash": "0xe1da50c5d4bb7ea472f78a8212ca478962dd064f49aa70085b93be8303fbba7c"
-      },
-      "deployment": {
-        "timestamp": 1691388719,
-        "blockNumber": 17861190,
-        "transactionHash": "0x79ed6539033537d054fd7977d00e21918495f22ccaae7ca8823541758ff84ee2",
-        "transactionIndex": 61,
-        "creatorAddress": "0xe94a20ef25d067743b9d965a8d46c1c035489b7d"
-      },
-      "ageReset": {
+      "address": "0x53fbcada1201a465740f2d64ecdf6fac425f9030",
+      "code": "0x3a6d9bf8286a4ada77c15ecf82d4c0c0af95be74",
+      "reset": {
+        "kind": "config",
+        "tx": "0x486a3f7a518aefb7cc86e6fc6ef369413d86db238adcb70c5b00eefadce299df",
+        "address": "0x53fbcada1201a465740f2d64ecdf6fac425f9030",
+        "slot": "0xd0684f4db7c2f2e52cb69cf1a0bfb094fb45c257ee5dcc06511d6d99da0411e5"
+      }
+    },
+    {
+      "address": "0x25126f207db7dc427415ea640ce0187767403907",
+      "code": "0x1c2220437b068a8c124ac1d158f7f786fbea701e",
+      "reset": {
         "kind": "deployment",
-        "description": "The pool is an Aave-fork InitializableImmutableAdminUpgradeabilityProxy, which sets its implementation in the constructor and never emits Upgraded; the proxy emitted no Upgraded event at all between its creation block 17861190 and the exploit. Its EIP-1967 implementation slot is zero at block 17861189 and holds 0x3a6d9bf8286a4ada77c15ecf82d4c0c0af95be74 at block 18377041, so the proxy creation is the change that made the exploited implementation active."
-      },
-      "codeAgeSeconds": 6241020,
-      "failureModeId": "failure:aave-fork-empty-market-index-inflation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x91c61fb0ac7819d5183b8b46520fe2ff6c06018e0b90823bd3070607d99d41ce"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1a7ee0a7efc70ed7429edef069a1dd001fbff378748d91f17ab1876dc6d10392"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-10/Hopelend_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x79ed6539033537d054fd7977d00e21918495f22ccaae7ca8823541758ff84ee2"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T14:45:00Z",
-      "note": "The pool proxy emitted no Upgraded event between its creation block 17861190 and the exploit, and its EIP-1967 slot goes from zero at 17861189 to 0x3a6d9bf8286a4ada77c15ecf82d4c0c0af95be74 at its creation and still reads that at block 18377041, so the deployment is the change that made the exploited implementation active and the code is 72.2 days old. The proxy was created by the Aave-fork configurator factory 0xe94a20ef25d067743b9d965a8d46c1c035489b7d, sent by 0x17002566cc3508dfa3c0fa52fcbca990e42fd510, neither of which is an attacker address. The attacker EOA is a serial exploiter with 429 transactions; this one is its only HopeLend transaction. Loss is the single non-zero net position in the exploit receipt."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1697629739/ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      "observedAt": 1787647484
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 872997.75,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "175.41598299556488513",
+        "usd": 277590.53
+      },
+      {
+        "token": "0xc353bf07405304aeab75f4c2fac7e88d6a68f98e",
+        "symbol": "HOPE",
+        "amount": "844282.284002229528476039",
+        "usd": 268979.44
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "145522.220985",
+        "usd": 145522.22
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "123406.134999",
+        "usd": 123406.13
+      },
+      {
+        "token": "0xf5c6d9fc73991f687f158fe30d4a77691a9fd4d8",
+        "symbol": "stHOPE",
+        "amount": "220617.821736563540747967",
+        "usd": 57499.43
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-10/Hopelend_exp.sol"
+  ],
+  "notes": [
+    "The exploit needed WBTC usable as collateral: configureReserves set its LTV, borrowing and flash loans two blocks after the empty hEthWBTC market was initialised, so that market-listing config is the latest reset. Later interest-rate strategy changes touched other reserves only.",
+    "HOPE and stHOPE are valued at what the attacker realised: it swapped the stHOPE to HOPE and sold all HOPE for USDT about a third below the DefiLlama price; the proceeds are split pro rata by HOPE amount.",
+    "The anchor was sent by a MEV bot that copied the exploiter's transaction and kept the take; it is unaffiliated with HopeLend, so it anchors the incident. No further successful exploit transaction followed."
+  ]
 }

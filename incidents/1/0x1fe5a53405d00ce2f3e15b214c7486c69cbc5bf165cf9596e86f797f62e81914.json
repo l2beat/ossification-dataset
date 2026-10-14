@@ -1,186 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1fe5a53405d00ce2f3e15b214c7486c69cbc5bf165cf9596e86f797f62e81914",
-  "protocol": {
-    "name": "Eden Finance EFVault",
-    "slug": "efvault"
-  },
+  "protocol": "Eden Finance EFVault",
   "name": "EFVault v4 upgrade storage-layout collision",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1fe5a53405d00ce2f3e15b214c7486c69cbc5bf165cf9596e86f797f62e81914",
-      "blockNumber": 16696240,
-      "transactionIndex": 15,
-      "timestamp": 1677217811
-    },
-    "attackerAddresses": [
-      "0xa0959536560776ef8627da14c6e8c91e2c743a0a",
-      "0x8b5a8333ec272c9bca1e43f4d009e9b2fad5efc9"
-    ]
-  },
-  "summary": "The EFVault v4.0 implementation installed on the ENF USDC vault proxy inserted a new assetDecimal variable at the storage slot that v3.0 used for maxDeposit, without re-initialising it. assetDecimal therefore read the old 5,000,000 USDC maxDeposit value, and the new redeem() priced shares with assetsPerShare() = totalAssets * assetDecimal * 1e18 / totalSupply, inflating each share by roughly five million times. A depositor redeemed 676,562 share units (about 0.69 USDC of value) twice for 5.16m USDC withdrawn from the controller's strategies.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 5165727.639684612,
-      "valuationTimestamp": 1677217811,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "5160567.072612",
-        "usdValue": 5165727.639684612,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1677217972,
-          "unitPriceUsd": 1.001,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDC paid out by the vault controller 0xf491afe5101b2ee8abc1272fa8e2f85d68828396 in the two successful redeem calls (source-1 and source-5): 5,155,406.505541 USDC to the attacker-named receiver plus 5,160.567071 USDC withdrawal fee to 0x39f4ef6294512015ab54ed3ab32baa1794e8de70; the fee is part of depositor depletion and is not deducted. The attacker's fair entitlement for the 1,353,124 burned share units at pre-upgrade pricing is about 1.38 USDC and is not subtracted. Internal strategy unwinds (cUSDC, cDAI, Curve 3pool, COMP) are intermediate legs, not additional loss.",
-    "realizedAt": 1677218051
-  },
+  "summary": "The EFVault v4.0 implementation put a new assetDecimal variable on the storage slot v3.0 used for maxDeposit without re-initialising it, so assetsPerShare() scaled by the old 5M USDC cap and inflated each share about five million-fold. A small depositor redeemed tiny share amounts twice and withdrew the strategies' funds as USDC.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xbdb515028a6fa6cd1634b5a9651184494abfd336",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x80cb73074a6965f60df59bf8fa3ce398ffa2702c",
-        "codeHash": "0xcd1356a9f7b44dca4d0203398f129ae401679f6eba3b92e2a4a6b84536a18d71"
-      },
-      "deployment": {
-        "timestamp": 1665169355,
-        "blockNumber": 15698164,
-        "transactionHash": "0x50e9aca47ae06588112749142faff4c8a1cd043b277276f91332474ad1820540",
-        "transactionIndex": 131,
-        "creatorAddress": "0x86b94c96c3e6354e2d6bfc124bbae4425d3132f6"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1677216623,
-        "blockNumber": 16696143,
-        "transactionHash": "0xab86672eb5335264c4c4b75262630ae1fb8dcf2a68aaafe4bb9fc3232b886712",
-        "transactionIndex": 221,
-        "logIndex": 169,
-        "mechanism": {
-          "type": "event",
-          "address": "0xbdb515028a6fa6cd1634b5a9651184494abfd336",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Third and last pre-exploit Upgraded event: the project Safe 0x66945268093f28c28a2dce11a1640e06c070df7b, via ProxyAdmin 0xd06ef24eb2da8b3e5a042da39ec303dd9162e0a6 upgrade(proxy, impl), installed EFVault v4.0 0x80cb73074a6965f60df59bf8fa3ce398ffa2702c, whose layout places assetDecimal on the slot holding v3.0 maxDeposit. The EIP-1967 implementation slot still holds it at block 16696239."
-      },
-      "codeAgeSeconds": 1188,
-      "failureModeId": "failure:efvault-v4-assetdecimal-storage-collision",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0xbdb515028a6fa6cd1634b5a9651184494abfd336",
+      "code": "0x80cb73074a6965f60df59bf8fa3ce398ffa2702c",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xab86672eb5335264c4c4b75262630ae1fb8dcf2a68aaafe4bb9fc3232b886712"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1fe5a53405d00ce2f3e15b214c7486c69cbc5bf165cf9596e86f797f62e81914"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Source-1 is a direct EOA call by 0xa0959536560776ef8627da14c6e8c91e2c743a0a to proxy 0xbdb515028a6fa6cd1634b5a9651184494abfd336, redeem(uint256,address) selector 0x7bde82f2, shares 0xa52d2 = 676562, receiver 0x8b5a8333ec272c9bca1e43f4d009e9b2fad5efc9; receipt log 105 burns those 676562 units and logs 103/104 move 3440.359688 + 3436919.328971 USDC from controller 0xf491afe5101b2ee8abc1272fa8e2f85d68828396. Storage layout (OpenZeppelin upgradeable bases occupy slots 0..200): v3.0 0x582010c270ef877031e6b16554e51ca5bbda882e declares asset(201), depositApprover(202), controller(203), maxDeposit(204), maxWithdraw(205), paused(206); v4.0 0x80cb73074a6965f60df59bf8fa3ce398ffa2702c declares asset(201), depositApprover(202), controller(203), assetDecimal(204), maxWithdraw(205), maxDeposit(206), whiteList(207), paused(208) and assigns assetDecimal only in initialize(), which cannot rerun. eth_getStorageAt slot 204 = 0x48c27395000 (5e12, the v3 maxDeposit) at both blocks 16696142 and 16696239; slots 206-208 are 0 at 16696239. At block 16696239 controller.totalAssets(false) = 6880910594692 and totalSupply() = 6765625454275, so v4 assetsPerShare() = 6880910594692*5e12*1e18/6765625454275 and redeem returns shares*assetsPerShare/1e24 = 3440359688659 USDC base units for 676562 shares, exactly the controller outflow (maxWithdraw slot 205 = 5e12 did not bind). The defect is the v4 layout/initialisation mismatch with the live proxy storage, first reachable at the upgrade. Age: eth_getLogs Upgraded(address) topic0 0xbc7cd75a..2d3b on the proxy, blocks 0..16696240, returns three events: 0x21dbe7debd0ab102508cf03a055ece9056872e09 (block 15698164, creation), 0x582010c270ef877031e6b16554e51ca5bbda882e (block 15980084) and 0x80cb73074a6965f60df59bf8fa3ce398ffa2702c (block 16696143, tx index 221, log index 169, tx 0xab86672e..6712 from Safe signer 0xc3fd2bcb524af31963b3e3bb670f28ba14718244 through Safe 0x66945268093f28c28a2dce11a1640e06c070df7b execTransaction -> ProxyAdmin 0xd06ef24eb2da8b3e5a042da39ec303dd9162e0a6 upgrade(0xbdb5..d336, 0x80cb..702c); ProxyAdmin owner() = the Safe at block 16696239). EIP-1967 implementation slot = 0x80cb73.. and admin slot = 0xd06ef24e.. at block 16696239. Implementation code: empty at block 16690248, keccak 0xcd1356a9..8d71 at 16690249 (creation tx 0x1771c4d39781019f1cbc707292bcb0d4fd5b207d128ebdf0d45cb8f31c173afb by 0x86b94c96c3e6354e2d6bfc124bbae4425d3132f6), 16696143 and 16696239. Proxy code empty at 15698163 and keccak 0xfc1ea81d..3986 at 15698164 and 16696239; creation receipt 0x50e9aca4..0540 tx index 131 from 0x86b94c96.. with contractAddress = proxy. The upgrade was a project action through its Safe and ProxyAdmin, not attacker machinery. Earliest exercise: Etherscan V2 account.txlist for the proxy, blocks 16696143..16800000, lists only attacker redeem calls until 16726144: failed 0xd761f397.. (16696144), 0xeaa5d288.. (16696145), 0x645b6007.. (16696191), successful source-1 (16696240, index 15), failed 0xa58433c7.. (16696243), successful source-5 (16696260, index 1); later 0xde623977.. (16726144) by 0x592315d9.. failed. v4 onlyAllowed requires tx.origin == msg.sender while whiteList is zero, so the path cannot be reached through an internal call; source-1 is the first successful exercise.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:59:23Z"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Verified EFVault sources via Etherscan V2 contract.getsourcecode, chainid=1: 0x80cb73074a6965f60df59bf8fa3ce398ffa2702c (version 4.0, v0.8.3+commit.8d00100c; SHA-256 of returned SourceCode string 6a67c04d384d998c1a960ad9345b3ea2449c70138e5c14ac47a71ea8074151ab) and 0x582010c270ef877031e6b16554e51ca5bbda882e (version 3.0; SHA-256 17aeb56335a53c33706b9ab5f1e171eeb4fa1943d88b894c455895bfb4104af5). Compare contracts/core/Vault.sol state variable order and v4 redeem()/assetsPerShare()."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xab86672eb5335264c4c4b75262630ae1fb8dcf2a68aaafe4bb9fc3232b886712"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x31565843d565ecab7ab65965d180e45a99d4718fa192c2f2221410f65ea03743"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed gross loss from receipt Transfer logs of USDC 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 from controller 0xf491afe5101b2ee8abc1272fa8e2f85d68828396. Source-1 (block 16696240): log 103 3440359688 to fee recipient 0x39f4ef6294512015ab54ed3ab32baa1794e8de70, log 104 3436919328971 to 0x8b5a8333ec272c9bca1e43f4d009e9b2fad5efc9; burn log 105 676562 shares. Source-5 (block 16696260, same calldata): log 23 1720207383 fee, log 24 1718487176570 to the same receiver; burn log 25 676562. Total 5160567072612 base units (6 decimals) = 5160567.072612 USDC. The attacker EOA held 148236774 share units at block 16696239, accumulated through ordinary deposits before the upgrade; the 1353124 units burned were worth about 1.38 USDC at controller.totalAssets/totalSupply, not subtracted. No other successful redeem or withdraw on the proxy occurred between the upgrade and block 16800000.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:59:23Z"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1677217811/ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      "observedAt": 1790639931
-    },
-    {
-      "id": "source-8",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-02/EFVault_exp.sol"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x50e9aca47ae06588112749142faff4c8a1cd043b277276f91332474ad1820540"
-    }
+  "campaign": [
+    "eip155:1:0x31565843d565ecab7ab65965d180e45a99d4718fa192c2f2221410f65ea03743"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2",
-      "source-6"
+  "loss": {
+    "usd": 5165727.639684612,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "5160567.072612",
+        "usd": 5165727.639684612
+      }
     ]
   },
-  "discovery": [
-    "web:2023-02-24:efvault",
-    "dfhl:src/test/2023-02/EFVault_exp.sol"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/EFVault_exp.sol"
+  ],
+  "notes": [
+    "The reset is the project Safe's ProxyAdmin upgrade to v4.0 shortly before the exploit; the attacker's reverted redeem attempts in between extracted nothing.",
+    "Loss is the USDC the controller paid out in both redeems, including the withdrawal fee; strategy unwinds through Notional, Compound and Curve are intermediate legs. The attacker's roughly 1 USDC fair entitlement and its earlier 150 USDC deposit, mostly left in the vault, are not netted."
   ]
 }

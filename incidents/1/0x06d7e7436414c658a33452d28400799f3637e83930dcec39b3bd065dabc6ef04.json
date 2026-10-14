@@ -1,152 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
-  "protocol": {
-    "name": "Zoomer",
-    "slug": "zoomer"
-  },
-  "name": "Zoomer buyback spot-price accounting",
-  "summary": "The buyback contract valued incoming ZOOMER at the current pool spot price, allowing one transaction to exchange attacker-supplied tokens for most of the contract's ETH inventory.",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04",
-      "blockNumber": 19291250,
-      "transactionIndex": 56,
-      "timestamp": 1708702895
-    },
-    "attackerAddresses": [
-      "0xb0380b6d7a63e7cbf274c3b3c8838abbd6bd4abe",
-      "0xa4854022f4c16f0abc3fdec300427f6179a3043b"
-    ]
-  },
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 50195.68301858838,
-      "valuationTimestamp": 1708702805,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "17.148371112617906458",
-        "usdValue": 50195.68301858838,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1708702805,
-          "unitPriceUsd": 2927.14,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Within the sole loss receipt, the buyback sends 17.248371112617906458 ETH in five calls and receives five 0.02 ETH inputs, so gross victim depletion net of external input is 17.248371112617906458 - 0.1 = 17.148371112617906458 ETH. Its archive balance falls by exactly the same amount, from 17.300097602045297868 to 0.151726489427391410 ETH. It receives and retains 145,108,836 ZOOMER (four transfers of 30,265,400 plus one of 24,047,236), exactly matching its archive token increase; that attacker-supplied consideration is not a victim asset loss. The 90-second-preceding ETH price is 2,927.14 USD."
-  },
+  "protocol": "Zoomer",
+  "name": "Zoomer-collateral ETH loans priced at pool spot",
+  "summary": "An unverified ETH lending contract valued whitelisted token collateral at the Uniswap V2 spot reserves. The attacker flash-borrowed WETH, pumped ZOOMER from throwaway contracts, borrowed ETH against ZOOMER at the inflated price, dumped it and left the collateral behind; a second transaction repeated this with another whitelisted token.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
+      "reset": {
+        "kind": "config",
+        "tx": "0x32c48b5563ebc0b325e2f7498ad4337534e9c4034e520a7250c17e30e8362aa9",
         "address": "0x9700204d77a67a18ea8f1b47275897b21e5efa97",
-        "codeHash": "0xe756fd9aa6468e7ead764933d09571d8e10765fec9d889e4e60b0e7e15a40b72"
-      },
-      "deployment": {
-        "timestamp": 1708227827,
-        "blockNumber": 19252104,
-        "transactionHash": "0x8b06674a11aa38d6fe98e044919de82fa584e38c6075026d29d0551f0419f0e0",
-        "transactionIndex": 93,
-        "creatorAddress": "0x3e49da81338d87c22f2f2c16d2874de2ad28c581"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The buyback is a directly executed, non-proxy contract whose 17,526-byte runtime is absent before creation and unchanged from deployment through the pre-incident block."
-      },
-      "codeAgeSeconds": 475068,
-      "failureModeId": "failure:zoomer-buyback-spot-price-accounting",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "slot": "0x950bf29e1e2ae0f2a2839d3076102c0e2d06915fc00aec6b92169825966c80c7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x06d7e7436414c658a33452d28400799f3637e83930dcec39b3bd065dabc6ef04"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8b06674a11aa38d6fe98e044919de82fa584e38c6075026d29d0551f0419f0e0"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-30T06:18:03Z",
-      "note": "Reviewed the loss receipt and call trace, victim ETH and ZOOMER archive balances, all receipt transfers, sender and helper transaction histories, the creation receipt, historical runtime, and incident-time ETH price. Five transient helpers each call buyback 0x9700204d77a67a18ea8f1b47275897b21e5efa97 once. It sends 17.248371112617906458 ETH and receives 0.1 ETH plus 145,108,836 ZOOMER; the net ETH amount exactly equals its block 19291249-to-19291250 balance decrease, while the token amount exactly equals its retained balance increase. The sender's nonce 2 creates the top-level helper, nonce 3 creates an unrelated unused contract, nonce 4 is the only transaction that touches the victim, and nonce 5 returns 14 ETH to the funder; surrounding self-funding, later contract deployments, and proceeds movements do not touch the victim and are excluded. The victim is directly created by 0x3e49da81338d87c22f2f2c16d2874de2ad28c581 in transaction 0x8b06674a11aa38d6fe98e044919de82fa584e38c6075026d29d0551f0419f0e0 at block 19252104 index 93, timestamp 1708227827. Code is absent one block earlier; its 17,526-byte runtime hashes to 0xe756fd9aa6468e7ead764933d09571d8e10765fec9d889e4e60b0e7e15a40b72 at deployment and immediately before the incident, contains no DELEGATECALL, and the loss trace executes it directly. Code age is 1708702895 - 1708227827 = 475,068 seconds."
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1708702895/coingecko:ethereum?searchWidth=1h",
-      "observedAt": 1788070683
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-02/Zoomer_exp.sol"
-    }
+  "campaign": [
+    "eip155:1:0xb69981d437af7b9b705b3eb459df89d69901b5aff1cf2f99673372c873d50daf"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 61463.65,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "20.903156929888126281",
+        "usd": 61463.65
+      }
     ]
   },
-  "discovery": [
-    "seed:zoomer:2024-02-23:zoomer-buyback-contract-spot-price-manipulation",
-    "dfhl:src/test/2024-02/Zoomer_exp.sol",
-    "web:2024-02-24:zoomercoin"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/Zoomer_exp.sol"
+  ],
+  "notes": [
+    "The reset is the owner's setWhitelistedToken listing of ZOOMER as collateral: replaying the anchor on a fork with that mapping slot cleared reverts. The contract's selectors (setWhitelistedToken, repayLoan, liq, closeLoan) mark it as a lender, not a buyback.",
+    "Loss nets the 0.02 ETH loan fees the attacker paid in within each transaction; the ZOOMER and Kekec collateral left behind is not subtracted."
   ]
 }

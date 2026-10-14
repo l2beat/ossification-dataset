@@ -1,146 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x8dabb60a94e5124462e5f494a25c14bcd52f6f4d1f7c665a249496f4c6c24764",
-  "protocol": {
-    "name": "OLPC",
-    "slug": "olpc"
-  },
+  "protocol": "OLPC",
   "name": "OLPC pair-side burn multiplier collapses the OLPC/LABUBU reserve",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x8dabb60a94e5124462e5f494a25c14bcd52f6f4d1f7c665a249496f4c6c24764",
-      "blockNumber": 105326393,
-      "transactionIndex": 1,
-      "timestamp": 1781955063
-    },
-    "attackerAddresses": [
-      "0x18d6c39ae9e537f948aa2212d44d8c23944fc188",
-      "0x5cf9d217729fec8d08998b29e91216439791791b"
-    ]
-  },
-  "summary": "OLPCToken._update() sends every pair-to-user transfer down a branch that burns value * decimalsValue from the pair and then delivers value = 0 to the recipient. decimalsValue is an unbounded owner parameter that was raised from 1 to 7326680472586200649 on 2026-05-05, so any unprivileged caller could make the pair destroy 7.3e18 times the moved amount of its own OLPC. The attacker sent dust to the OLPC/LABUBU PancakePair and called skim() twenty times, collapsing the pair's OLPC balance from 51928294.25 to about 0.375, then pre-funded the pair with 8.1 OLPC and ran a Pancake supporting-fee swap with amountIn = 0, which prices that 8.1 OLPC against the collapsed reserve and released 688380.90 LABUBU.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1115903.6634121316,
-      "valuationTimestamp": 1781955063,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x3494dfe19b721dac6c5c8d7470c8f89548177777",
-          "symbol": "LABUBU"
-        },
-        "amount": "688380.902509080087370095",
-        "usdValue": 1115903.6634121316,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1781955063,
-          "unitPriceUsd": 1.6210555222330743,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The OLPC/LABUBU PancakePair 0xedb7dcb4cdfec957f8df5cbf5e94229a6cc9f365 lost 688380.902509080087370095 LABUBU in the single exploit transaction: its LABUBU balance falls from 720372.009849017508169693 at block 105326392 to 31991.107339937420799598 at block 105326393, and the pair's Swap event reports amount0Out 688380902509080087370095 with amount1In 8100000000000000000. Valuation is the realised proceeds of that same transaction rather than a spot price: DefiLlama has no LABUBU or OLPC observation, and both tokens trade only in the thin pools the attack moved. The attacker routed the LABUBU through the LABUBU/WBNB and WBNB/USDT pairs inside the exploit transaction and its BEP20-USDT balance rose from 0.105956839086043429 to 1115903.769368970807600681, a gain of 1115903.663412131721557252 USDT taken at par, which is 1.6210555222330743 USD per LABUBU removed from the pair and matches the 1115903.66 USDT figure in source-2. The attacker realised less than the pair lost because 124252.752903288956770302 LABUBU of the output was burned by LABUBU's own transfer tax on the way out. The pair also lost 51928285.776963524850939528 OLPC, burned to 0x000000000000000000000000000000000000dead by the defective hook, which is not valued: OLPC delivers zero tokens to any non-exempt buyer, so it has no realisable market price. No recovery or return took place."
-  },
+  "summary": "OLPCToken._update() burns value * decimalsValue from the PancakePair on every pair-to-user transfer and delivers nothing. With decimalsValue set to 7.3e18, the attacker sent dust to the OLPC/LABUBU pair and called skim() repeatedly, burning nearly all of the pair's OLPC, then sold 8.1 OLPC against the collapsed reserve for the pair's LABUBU.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x58815cdf9955121a6274680ab396a36fc9e00000",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x58815cdf9955121a6274680ab396a36fc9e00000",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa413fdf688398348ddf0246275c6fe3a98806670252e44bfe0acd50b4d50efa2",
         "address": "0x58815cdf9955121a6274680ab396a36fc9e00000",
-        "codeHash": "0x9022fd2677eda97f389be410120629ac4ed3e8f8e17f49a9cbdd8269bb95777d"
-      },
-      "deployment": {
-        "timestamp": 1777561306,
-        "blockNumber": 95574569,
-        "transactionHash": "0xee6839a2f2f9fdb238df3fd1e2115a423a3c9f0f300c11fe0f8689979c389490",
-        "transactionIndex": 65,
-        "creatorAddress": "0x1a493bb798d7c17441dd8dcaa1d11397872f5b2c"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Non-upgradeable token created by CREATE2 from the launcher 0x1a493bb798d7c17441dd8dcaa1d11397872f5b2c inside transaction 0xee6839a2f2f9fdb238df3fd1e2115a423a3c9f0f300c11fe0f8689979c389490. The runtime code hash is 0x9022fd2677eda97f389be410120629ac4ed3e8f8e17f49a9cbdd8269bb95777d at the deployment block 95574569, at block 96479712 and at block 105326392, and the EIP-1967 implementation slot is zero, so the executed runtime never changed. The state that made this runtime exploitable did change: decimalsValue reads 1 at blocks 95574569 and 96479711 and 7326680472586200649 from block 96479712, written by owner 0x9fe0f22556caff3f0b1c258f37b5b19228034d6b in transaction 0xa413fdf688398348ddf0246275c6fe3a98806670252e44bfe0acd50b4d50efa2. That is a configuration change, not an executable-code change, so it is recorded as context and not as the code-age basis."
-      },
-      "codeAgeSeconds": 4393757,
-      "failureModeId": "failure:olpc-pair-transfer-burn-multiplier-reserve-drain",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "call": "0x3c6aa9f1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8dabb60a94e5124462e5f494a25c14bcd52f6f4d1f7c665a249496f4c6c24764"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-06/OLPC_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xee6839a2f2f9fdb238df3fd1e2115a423a3c9f0f300c11fe0f8689979c389490"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa413fdf688398348ddf0246275c6fe3a98806670252e44bfe0acd50b4d50efa2"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T11:05:00Z",
-      "note": "Anchor kept. 0x8dabb60a is the only transaction of this campaign: the attacker EOA 0x18d6c39ae9e537f948aa2212d44d8c23944fc188 is EIP-7702 delegated to 0x5cf9d217729fec8d08998b29e91216439791791b (its code at block 105326392 is 0xef01005cf9d217729fec8d08998b29e91216439791791b) and the whole exploit runs in that one self-call; the surrounding transactions are the 7702 authorisations and the USDT cash-out. Mechanism read from the BscScan-verified OLPCToken source and reproduced in the trace: _update() takes the branch from == swapPair && to != swapPair && !isTaxExempt[to] and executes super._update(from, BURN_ADDRESS, value * decimalsValue) followed by value = 0, so a pair-to-user move of x burns x * decimalsValue from the pair and delivers nothing. The attacker transferred dust to the pair and called skim() twenty times; each skim burned roughly a tenth of the remaining pair balance (the first burn is 46735466.031935219630844445 OLPC) until the pair held about 0.375 OLPC, then sent 9 OLPC (8.1 after the 10 percent sell tax) and had the LABUBU-side bridge router 0x5db85d56da09f61bec51386f1602ccf5bf555cc0 call PancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens with amountIn 0, which derives the real input from balanceOf(pair) - reserve and paid out 688380.902509080087370095 LABUBU. That router and the tax-exempt receiver 0x0e3ca1c81b52ff4281d2cf5f7f2c693874783acb are LABUBU-project and third-party contracts, not attacker deployments, and only removed transfer tax from the path. Code history: the token is not upgradeable; its runtime hash 0x9022fd2677eda97f389be410120629ac4ed3e8f8e17f49a9cbdd8269bb95777d is identical at the deployment block 95574569, at block 96479712 and at block 105326392, its EIP-1967 implementation slot is zero, and it was created by CREATE2 from launcher 0x1a493bb798d7c17441dd8dcaa1d11397872f5b2c in transaction 0xee6839a2 (top-level sender 0x9fe0f22556caff3f0b1c258f37b5b19228034d6b), which also created the OLPC/LABUBU pair. The only change between deployment and the exploit is the parameter: decimalsValue is 1 at blocks 95574569 and 96479711 and 7326680472586200649 from block 96479712, set by owner 0x9fe0f22556caff3f0b1c258f37b5b19228034d6b in 0xa413fdf6 (2026-05-05T08:19:47Z), 4.72 days after deployment and 46.13 days before the exploit; owner() reads the zero address at block 105326392, so ownership had been renounced and the parameter could no longer be reverted. With the as-deployed decimalsValue of 1 the burn equals the amount moved and the reserve collapse is impossible, so the loss-enabling change is a configuration write and the target is reviewed but curve-ineligible. Loss is the 688380.902509080087370095 LABUBU the pair lost, valued at the 1115903.663412131721557252 USDT the attacker realised in the same transaction. Curve eligibility set by the orchestrator: the defective expression, which burns value*decimalsValue from the pair and delivers zero to the buyer, is present in the runtime as deployed, so the executable-code age is the 50.85 days since deployment. The owner’s later multiplier write changed the magnitude the defect could reach, not the code, and METHODOLOGY.md keeps parameter changes as configuration context rather than as an age basis or an exclusion ground. This matches the treatment of the Rubic record, where an availableRouters whitelisting made an already-defective routerCallNative reachable and the age still ran from that contract’s own deployment."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 1115903.66,
+    "assets": [
+      {
+        "token": "0x3494dfe19b721dac6c5c8d7470c8f89548177777",
+        "symbol": "LABUBU",
+        "amount": "688380.902509080087370095",
+        "usd": 1115903.66
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-06/OLPC_exp.sol"
+  ],
   "notes": [
-    "The OLPC runtime that burns a multiple of a pair-to-user transfer from the pair was deployed 50.85 days before the exploit and never changed. The owner’s setDecimalsValue(7326680472586200649) write at block 96479712, 4.72 days after deployment, raised the multiplier from 1 and is what made the defect profitable; per METHODOLOGY.md that parameter change is retained as configuration context and the deployment remains the executable-code age basis."
+    "Reset is the owner's setDecimalsValue(7326680472586200649), raising the burn multiplier from 1: with 1, a dust skim burns only dust, so the exploit needed this accounting parameter (rule 10). The token runtime itself never changed since deployment; ownership was renounced afterwards.",
+    "LABUBU has no DefiLlama price and the attacker's dump took about half of the LABUBU/WBNB pool's WBNB, so it is valued at the 1,115,903.66 USDT realised in the same transaction (rule 15). The 51.9M OLPC burned from the pair is not valued: OLPC could not be bought from the pair."
   ]
 }

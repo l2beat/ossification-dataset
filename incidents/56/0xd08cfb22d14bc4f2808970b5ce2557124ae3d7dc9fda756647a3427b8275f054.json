@@ -1,146 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd08cfb22d14bc4f2808970b5ce2557124ae3d7dc9fda756647a3427b8275f054",
-  "discovery": [
-    "dfhl:src/test/2022-08/DDC_exp.sol",
-    "seed:ddc-token:2022-08-28:ddc-handledeductfee-missing-access-control"
-  ],
-  "protocol": {
-    "name": "DDC Token",
-    "slug": "ddc-token"
-  },
+  "protocol": "DDC Token",
   "name": "DDC handleDeductFee missing access control",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd08cfb22d14bc4f2808970b5ce2557124ae3d7dc9fda756647a3427b8275f054",
-      "blockNumber": 20840080,
-      "transactionIndex": 18,
-      "timestamp": 1661699873
-    },
-    "attackerAddresses": [
-      "0x5b69f9c6cbb4958008eae46072886e6b9524fdef"
-    ]
-  },
-  "summary": "DDC's handleDeductFee(uint256,uint256,address,address) was callable by anyone and moved the fee amount out of an arbitrary holder, so the attacker deducted the whole DDC/USDT pair balance to themselves and sold it.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 110104.65584773128,
-      "valuationTimestamp": 1661699873,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "110104.655847731280923234",
-        "usdValue": 110104.65584773128,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1661699873,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt's USDT Transfer ledger shows 1.368537570861681076 USDT entering the DDC/USDT pair and 110,106.024385302142604310 USDT leaving it: 104,600.658160502419544245 USDT reached the attack contract and 5,505.366224799723060065 USDT went through the router to the fee recipient. Net pair depletion, and therefore gross victim loss after excluding the attacker's input, is 110,104.655847731280923234 USDT."
-  },
+  "summary": "DDC (a BananaSwap token) exposed handleDeductFee without access control; it debits _balances[from] for any address. The attacker called it with the DDC/USDT pair as from, moving the pair's DDC to the fee handlers, synced the pair and swapped a little DDC for nearly all of its USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x443195aa3a4357242a7427fc8ce5f20c1e71fcb1",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x443195aa3a4357242a7427fc8ce5f20c1e71fcb1",
-        "codeHash": "0x948012cb5ceb75519d3874caa50e57577a26643fdaf861102443c765344859e4"
-      },
-      "deployment": {
-        "timestamp": 1661693354,
-        "blockNumber": 20837907,
-        "transactionHash": "0xe924de2b3be163ce3a6fbb3081fa0a82f55c873f49ae4aee042a37d8d2e3f508",
-        "transactionIndex": 10,
-        "creatorAddress": "0x1a8def16f2b9a69743fb301f82bd61ddfa65f7f6"
-      },
-      "ageReset": {
+      "address": "0x443195aa3a4357242a7427fc8ce5f20c1e71fcb1",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct DDC runtime exposed handleDeductFee without caller authorization from deployment and remained byte-identical through exploitation."
-      },
-      "codeAgeSeconds": 6519,
-      "failureModeId": "failure:ddc-unprotected-handle-deduct-fee",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xe924de2b3be163ce3a6fbb3081fa0a82f55c873f49ae4aee042a37d8d2e3f508"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd08cfb22d14bc4f2808970b5ce2557124ae3d7dc9fda756647a3427b8275f054"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-08/DDC_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://immunebytes.com/blog/ddc-token-hack-aug-28-2022-detailed-analysis/"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-03T10:21:43Z",
-      "note": "Reviewed the successful BSC receipt and call trace, the pinned DeFiHackLabs reproduction, the DDC creation receipt, and historical runtime code. The trace calls handleDeductFee on DDC with the DDC/USDT pair as the debited address, then syncs and sells the removed DDC. DDC was created directly at 20837907:10 by 0x1a8def16f2b9a69743fb301f82bd61ddfa65f7f6; code was absent one block earlier and runtime hash 0x948012cb...59e4 is identical at deployment and immediately before exploitation. The receipt's USDT transfers reconcile as 1.368537570861681076 into the pair and 110,106.024385302142604310 out, measuring exact net pair depletion of 110,104.655847731280923234 USDT."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe924de2b3be163ce3a6fbb3081fa0a82f55c873f49ae4aee042a37d8d2e3f508"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 110152.12,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "110106.058775463082601258",
+        "usd": 110152.12
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:56:0x94ce5bd322ffe2e95da0bcfc943f9a80bc5f751a5307547736b703a5c82b9c41",
+    "eip155:56:0x70deffd1d1df07718c0594f11199c4dbb7fce804f50a2a7209efd7fa6c8bcd84",
+    "eip155:56:0x7bfe681a0a05f3744907df2c222ed2dc3d10d67378bbe7a3dbdb134dec17c1af",
+    "eip155:56:0x233aab210706b371cb5d9f24385520faf232a4fec26223904248ef9f0e14df36",
+    "eip155:56:0x4235107c97d615ac597813dfdac15757ca6309cdb082e54c5d625d77f0552554"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-08/DDC_exp.sol",
+    "https://immunebytes.com/blog/ddc-token-hack-aug-28-2022-detailed-analysis/"
+  ],
+  "notes": [
+    "The fee configuration set after deployment only routes the debited DDC to fee handlers; the unguarded debit works without it, so deployment is the reset.",
+    "Campaign: five follow-up handleDeductFee calls by the same attacker contract on the already-drained pair (dust USDT). Only USDT is counted; the pair's DDC was the lever, not separate value."
+  ]
 }

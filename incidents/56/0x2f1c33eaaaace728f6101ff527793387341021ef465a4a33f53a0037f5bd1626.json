@@ -1,160 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x2f1c33eaaaace728f6101ff527793387341021ef465a4a33f53a0037f5bd1626",
-  "protocol": {
-    "name": "EST",
-    "slug": "est-token"
-  },
+  "protocol": "EST",
   "name": "EST delayed sell-burn drained by skim loop",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x2f1c33eaaaace728f6101ff527793387341021ef465a4a33f53a0037f5bd1626",
-      "blockNumber": 89060337,
-      "transactionIndex": 78,
-      "timestamp": 1774626034
-    },
-    "attackerAddresses": [
-      "0xcf300de6f177ec10db0d7f756ced3ae2d2203bfd"
-    ]
-  },
-  "summary": "ESTToken records every taxed transfer into the pair as a sell in _pendingSellBurn. The next non-pair transfer then burns that amount, capped at 10% of the pair's EST balance, directly from the pair and calls sync(). Nothing ties that burn to tokens that stayed in the pair. The attacker bought EST through fee-excluded BNBDeposit and claimed EST from it. It then looped 'transfer EST to pair, skim() to BNBDeposit' about 150 times. Each iteration burned 10% of the pair's real EST reserve and synced, shrinking it to 0.1045 EST, and the attacker sold 18.74M EST for all of the pair's WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 94720.68044166411,
-      "valuationTimestamp": 1774626034,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "154.571495162546593567",
-        "usdValue": 94720.68044166411,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1774625819,
-          "unitPriceUsd": 612.7952656604397,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact net WBNB depletion of the EST/WBNB Pancake pair 0x74986cd86caf54961dd70eedcaf7cb3fe813c0b9 in the exploit transaction. The attacker's own WBNB, which enters the pair through BNBDeposit deposits and the 245400-WBNB round-trip buy, is netted as inflow. The Moolah flash loan is repaid in the same tx. The pair's EST side (moved to BNBDeposit or burned) is not valued separately. The attacker's net WBNB gain is 160.889451187958247246, which includes its own unwrapped BNB, so it is not used."
-  },
+  "summary": "ESTToken books every taxed transfer into the pair as a pending sell burn; the next non-pair transfer burns that amount, capped at 10% of the pair's EST, from the pair and syncs, even if the tokens were skimmed back out. The attacker looped transfer-to-pair and skim about 150 times, shrinking the pair's EST to dust, and sold EST for its WBNB.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xd4524be41cd452576ab9ff7b68a0b89af8498a91",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1774011421,
-        "blockNumber": 87695212,
-        "transactionHash": "0x405db74df6139ea55dae46076abbf53e3c84dadec6c0dee8c5645a92c7b4d1e0",
-        "transactionIndex": 65,
-        "creatorAddress": "0x5499e285ea95b602d8967e3646682cf5084511f2"
-      },
-      "ageReset": {
+      "address": "0xd4524be41cd452576ab9ff7b68a0b89af8498a91",
+      "reset": {
         "kind": "deployment",
-        "description": "The immutable ESTToken runtime holds the _pendingSellBurn pair-burn logic. The pair, fee exclusion of BNBDeposit and minSupply were fixed at construction. Later owner calls (two excludeFromFee for unrelated accounts, setFeeWallet, donate/withdraw dust) do not bear on the burn condition, so deployment supplies the age."
-      },
-      "codeAgeSeconds": 614613,
-      "failureModeId": "failure:est-pending-sell-burn-skim-reserve-drain",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0xd4524be41cd452576ab9ff7b68a0b89af8498a91",
-        "codeHash": "0xf875324885e2d54091e1d0ace393b557c9c1402c666d7824b64ddefcfc3a9a7d"
+        "tx": "0x405db74df6139ea55dae46076abbf53e3c84dadec6c0dee8c5645a92c7b4d1e0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2f1c33eaaaace728f6101ff527793387341021ef465a4a33f53a0037f5bd1626"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-03/EST_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, identity and age. The source-1 receipt (EIP-7702-delegated EOA 0xcf300de6f177ec10db0d7f756ced3ae2d2203bfd, Moolah 0x8f73b65b4caaf64fba2af91cc5d4a2a1318e5d8c flash loan of 250000 WBNB at log 314, repaid at log 1855) shows 34 BNBDeposit Deposit events (topic0 0x36af321e...). A 400-WBNB buy (log 933) delivers EST to BNBDeposit 0xe71547170c5ad5120992b85cf1288fab23d29a61; the buy must go to BNBDeposit because swapsEnabled() is false at block 89060336 and only fee-excluded recipients can buy. A 1-EST transfer to BNBDeposit (log 937) fires onTokenReceived, and ClaimToken pays the attacker 20569915.273855478 EST (log 938). A 245000-WBNB buy (log 940) also delivers to BNBDeposit. Then comes the loop, for example logs 1004-1015: ATK->PAIR 28103.719 EST (5% fee to feeWallet), skim sends it to BNBDeposit (log 1007), and the next ATK->PAIR transfer first executes the pending burn PAIR->0x0 26624.576 EST (log 1008 = pair balance 266245.762/10, the cap) and Sync (log 1009). The receipt has 152 EST burns from the pair and 187 pair->BNBDeposit EST transfers. Sync reserves go from 154.6659 WBNB / 1154268037.49 EST (log 326) to 245560.8908 WBNB / 0.10452833 EST (log 1847). The final ATK->PAIR 18744291.543 EST (log 1848) takes 245560.88945118798 WBNB out (log 1851), leaving 0.001372812699607067 WBNB. First use: eth_getLogs of EST Transfer with topic1 = pair over blocks 87695212..89400000 gives 1855 logs in 1308 txs; source-1 is the only tx with 3 or more pair->0x0 burns or pair->BNBDeposit transfers (152/187), so there is no earlier or later loop. Identity: eth_getCode is empty at block 87695211; keccak256 is 0xf875324885e2d54091e1d0ace393b557c9c1402c666d7824b64ddefcfc3a9a7d at blocks 87695212 and 89060336. Source-7 is a top-level creation by 0x5499e285ea95b602d8967e3646682cf5084511f2 whose receipt contractAddress is the target, tx index 65. There is no proxy. Admin review: Etherscan V2 txlist of the deployer (87690000..89060337) and of the owner after transferOwnership 0x33104a3ab1dd5ed3a0da9f07b55b02a88c2b0350d6b6e03e47aac15af000bc83 (0xaff63280e369f432724b8989eb677bdfdba25193). The only EST setters are excludeFromFee(0x3148aa0b444658976fbbfc81b938755985824339) and excludeFromFee(0x618c139ff1ce6c89a6c1c5368703017b974789dd), neither of which appears in the source-1 logs, plus four setFeeWallet calls (fee recipient only) and donate calls. The burn inputs uniswapV2Pair, ammPairs[pair], burnReceiver/depositContract = BNBDeposit (fee-excluded), totalFee 5 and minSupply 130000e18 are constructor or declaration values. BNBDeposit only supplies a fee-excluded buy recipient, skim sink and claim source; its claim stays within its 5x cap and it is not the defect-bearing artifact.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:15:06Z"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Loss: in the source-1 receipt, sum WBNB 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c Transfer logs touching pair 0x74986cd86caf54961dd70eedcaf7cb3fe813c0b9: 151 outflows and 70 inflows, net -154571495162546593567 wei. Cross-check: WBNB balanceOf(pair) is 154572867975246200634 at block 89060336 and 1372812699607067 at block 89060337. Valued at DefiLlama WBNB 612.7952656604397 USD (source-5).",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:15:06Z"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1774626034/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790622863
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Verified ESTToken source at https://bscscan.com/address/0xd4524be41cd452576ab9ff7b68a0b89af8498a91#code; reproduce with Etherscan V2 contract.getsourcecode, chainid=56. Compiler v0.8.31+commit.fd3a2265, optimizer on, 200 runs. The SHA-256 of the returned SourceCode string is ebad7e6d9ecd38aa23415a46107b1760a3a056e82a72f355e4a3390ebc00269d. In _transfer, a taxed transfer to an amm pair adds transferAmount to _pendingSellBurn. At the start of any later transfer whose from is not a pair, up to pairBalance/10 is subtracted from _tOwned[uniswapV2Pair], _tTotal is reduced and IUniswapV2Pair.sync() is called, with no check that the sold tokens remained in the pair."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x405db74df6139ea55dae46076abbf53e3c84dadec6c0dee8c5645a92c7b4d1e0"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 94720.68044166411,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "154.571495162546593567",
+        "usd": 94720.68044166411
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2026-03/EST_exp.sol",
-    "seed:est-token:2026-03-27:est-bnbdeposit-skim-desync"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-03/EST_exp.sol"
+  ],
+  "notes": [
+    "Immutable token; the pair, BNBDeposit's fee exclusion and minSupply were set at construction and later owner calls do not touch the burn path, so deployment sets the age.",
+    "Loss is the pair's net WBNB depletion in the transaction, with the attacker's WBNB entering through BNBDeposit netted as inflow; the pair's EST side is not valued separately.",
+    "No other transaction burned the pair's EST more than twice (pair-to-zero Transfer logs per transaction), so the anchor is the first and only exploit."
   ]
 }

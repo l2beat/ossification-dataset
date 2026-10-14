@@ -1,144 +1,65 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3bba4fb6de00dd38df3ad68e51c19fe575a95a296e0632028f101c5199b6f714",
-  "protocol": {
-    "name": "pNetwork",
-    "slug": "pnetwork"
-  },
+  "protocol": "pNetwork",
   "name": "pNetwork Burner convertAndBurn slippage sandwich",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3bba4fb6de00dd38df3ad68e51c19fe575a95a296e0632028f101c5199b6f714",
-      "blockNumber": 19917291,
-      "transactionIndex": 0,
-      "timestamp": 1716282527
-    },
-    "attackerAddresses": [
-      "0xe6dcf87256866e293b825708bf1f5df8f07519b3",
-      "0x1bcc8378943aaee2d99a4e73ddf6c01f62825844"
-    ]
-  },
-  "summary": "Burner.convertAndBurn() is permissionless and swaps the contract's accumulated USDT/WBTC into PNT through Uniswap V2 with a zero minimum-output, so the whole conversion could be sandwiched by pre-buying and re-selling PNT in the same transaction.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 6320.950352695166,
-      "valuationTimestamp": 1716282399,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "1.726285094628080033",
-        "usdValue": 6320.950352695166,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1716282399,
-          "unitPriceUsd": 3661.5912240480675,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "After the 70 WETH Balancer flash loan was repaid, the call trace records the helper unwrapping and transferring exactly 1.726285094628080033 ETH to the attacker EOA. Transaction gas is excluded."
-  },
+  "summary": "pNetwork's PNT fee Burner let anyone call convertAndBurn, which sold the contract's whole ETH, WBTC and USDT balances for PNT through Kyber with a minimum conversion rate of 1. The attacker flash-borrowed WETH, bought PNT on the Uniswap pair Kyber routed through, triggered the conversion at the inflated price and sold the PNT back.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4d4d05e1205e3a412ae1469c99e0d954113aa76f",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x4d4d05e1205e3a412ae1469c99e0d954113aa76f",
-        "codeHash": "0xdfb709fce48433e0e0c226f0077ab6dd17d2f668f70e077f0aa3ea504f26d68c"
-      },
-      "deployment": {
-        "timestamp": 1595842745,
-        "blockNumber": 10540795,
-        "transactionHash": "0x0f30caf7f1d11b5795d869edf87182693d3c42f23872ca06f6089d16db0a4e18",
-        "transactionIndex": 61,
-        "creatorAddress": "0x2a24a7a4beb9e6d0431c9bc1800045b8fc27a966"
-      },
-      "ageReset": {
+      "address": "0x4d4d05e1205e3a412ae1469c99e0d954113aa76f",
+      "reset": {
         "kind": "deployment",
-        "description": "The vulnerable conversion executes directly in Burner's immutable runtime. The address had no code immediately before the creation transaction, and its 4,973-byte runtime hash at deployment matches the pre-exploit hash."
-      },
-      "codeAgeSeconds": 120439782,
-      "failureModeId": "failure:pnetwork-permissionless-zero-min-output-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x0f30caf7f1d11b5795d869edf87182693d3c42f23872ca06f6089d16db0a4e18"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3bba4fb6de00dd38df3ad68e51c19fe575a95a296e0632028f101c5199b6f714"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-05/Burner_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:08:29Z",
-      "note": "Reviewed the selected exploit receipt and call trace, the commit-pinned reproduction, the Burner creation trace, and bytecode at the pre-deployment, deployment, and pre-exploit boundaries. The helper calls Burner's permissionless conversion directly; the target performs no delegatecall. The target runtime first appears in the recorded creation transaction and remains hash-identical through the block before the exploit. After repayment of the 70 WETH flash loan, the trace records exactly 1.726285094628080033 ETH transferred from the helper to the attacker EOA."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0f30caf7f1d11b5795d869edf87182693d3c42f23872ca06f6089d16db0a4e18"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1716282500/coingecko:ethereum",
-      "observedAt": 1787576909
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 6658.91,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "1.553202311489518237",
+        "usd": 5683.03
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.007168",
+        "usd": 508.88
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "331.71706",
+        "usd": 332.05
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "81.334349968559354116",
+        "usd": 81.3
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "43.675349",
+        "usd": 43.66
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "1.040585095871035078",
+        "usd": 9.99
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:1:0x83806aebe0bcd8a874afecaf9bf6bc3d239c4721ef8db5e2a9042772c11c259e"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/Burner_exp.sol"
+  ],
+  "notes": [
+    "Loss is the Burner's gross outflow (ETH, WBTC, USDT; the copycat's DAI, USDC, LINK), not the attacker's ETH profit. The PNT it burned or forwarded to unburnedDestination is its designed output and is excluded.",
+    "The 2020 convertAndBurn calls were plain EOA calls of a few dollars each without a sandwich; 0x83806aeb repeats the flash-loan sandwich."
+  ]
 }

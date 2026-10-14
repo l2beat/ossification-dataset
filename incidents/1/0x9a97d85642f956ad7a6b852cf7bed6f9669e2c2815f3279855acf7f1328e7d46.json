@@ -1,141 +1,44 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x9a97d85642f956ad7a6b852cf7bed6f9669e2c2815f3279855acf7f1328e7d46",
-  "protocol": {
-    "name": "Rubic",
-    "slug": "rubic"
-  },
+  "protocol": "Rubic",
   "name": "RubicProxy routerCallNative executes an arbitrary whitelisted call",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x9a97d85642f956ad7a6b852cf7bed6f9669e2c2815f3279855acf7f1328e7d46",
-      "blockNumber": 16260581,
-      "transactionIndex": 0,
-      "timestamp": 1671957071
-    },
-    "attackerAddresses": [
-      "0x001b91c794dfeecf00124d3f9525dd32870b6ee9",
-      "0x253dd81d642220267ccac1d8202c0b96a92b299e"
-    ]
-  },
-  "summary": "RubicProxy.routerCallNative() forwards caller-supplied calldata to a caller-supplied router address, checking only that the router is in availableRouters. The contract makes no distinction between a swap router and an ERC-20, so once USDC was added to that list any caller could pass USDC as the router and transferFrom(victim, attacker, amount) as the calldata, spending the unlimited approvals users had granted the proxy.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1508457.385172,
-      "valuationTimestamp": 1671957071,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "1508457.385172",
-        "usdValue": 1508457.385172,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1671957071,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploiter’s two transactions, at blocks 16260581 and 16260623, pull 1508457.385172 USDC from 49 distinct approval-holding addresses into the exploit contract 0x253dd81d642220267ccac1d8202c0b96a92b299e. Four further transactions in the same fifteen minutes drive the same defect from other senders against other collector contracts; several are consistent with whitehat rescue rather than theft, so they are not counted here and their amounts are not in this figure. Losses fall on individual approval holders, not on protocol-held funds. DefiLlama prices USDC at 1.00033 at the incident timestamp, so par is marginally conservative. Nothing was recovered by the protocol itself."
-  },
+  "summary": "RubicProxy.routerCallNative() forwards caller-supplied calldata to any address in availableRouters. USDC was on that list in both proxies (added by the admin to the first, set in the second's constructor), so the attacker passed USDC as router with transferFrom(user, attacker, amount) calldata and spent the approvals users had given the proxies.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x3335a88bb18fd3b6824b59af62b50ce494143333",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x3335a88bb18fd3b6824b59af62b50ce494143333",
+      "reset": {
+        "kind": "config",
+        "tx": "0x30679e7b6b410fb78368f5fb6e4c203e44d81c66ae9014c797e40856be1bbe66",
         "address": "0x3335a88bb18fd3b6824b59af62b50ce494143333",
-        "codeHash": "0xf85cac648771ec2734fad7a38d82ea27a63265046c9d58293c472b0209dbaa75"
-      },
-      "deployment": {
-        "timestamp": 1661247923,
-        "blockNumber": 15395828,
-        "transactionHash": "0xa0bbca2b64cd1b332cf9abda0e8c63d9da15fb3e4d7f3d21aa8259cdcf6befac",
-        "transactionIndex": 77,
-        "creatorAddress": "0x73763302b14bd0d8ee9eb7f02ccb5141388b79e2"
-      },
-      "ageReset": {
+        "slot": "0xc4e04b6bef9db26f5e5f05c0ed33f46432d34efaf8f5a2a0c394786799ae67d2"
+      }
+    },
+    {
+      "address": "0x33388cf69e032c6f60a420b37e44b1f5443d3333",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-upgradeable contract despite the name. The runtime code hash is 0xf85cac648771ec2734fad7a38d82ea27a63265046c9d58293c472b0209dbaa75 both at the deployment block 15395828 and at block 16260580, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit."
-      },
-      "codeAgeSeconds": 10709148,
-      "failureModeId": "failure:rubic-proxy-arbitrary-whitelisted-router-call",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x5b0aba29d356b8774b51c4c0801fcb94396105c3efac1783598a31886e54c2b7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9a97d85642f956ad7a6b852cf7bed6f9669e2c2815f3279855acf7f1328e7d46"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x6551b933b984342fd353d4b522aee7db500900e208dc1337b0c1f17647e36e56",
-        "0x9a97d85642f956ad7a6b852cf7bed6f9669e2c2815f3279855acf7f1328e7d46"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa0bbca2b64cd1b332cf9abda0e8c63d9da15fb3e4d7f3d21aa8259cdcf6befac"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T11:55:00Z",
-      "note": "Basis corrected. The v1 record aged this incident from the availableRouters whitelisting of USDC at block 15414652 and typed it as a configuration-change, which cannot carry an executable-code age. The defect is in RubicProxy’s own runtime: the anchor trace shows routerCallNative being handed router = USDC and calldata = transferFrom(victim, attacker, 1000000000000) and executing it against the victim’s unlimited approval. That contract is not upgradeable, its runtime code hash is identical at the deployment block 15395828 and at block 16260580 and its EIP-1967 slot is zero, so the age basis is its 2022-08-23 deployment and the exploited code is 123.9 days old. Its deployer 0x73763302b14bd0d8ee9eb7f02ccb5141388b79e2 is not an attacker. The whitelisting three days later is the configuration change that made the defect reachable and is retained as context, not as the age. Six transactions in the window drive the same path from five different senders; only the two from 0x001b91c794dfeecf00124d3f9525dd32870b6ee9 are counted, giving 1508457.385172 USDC from 49 approval holders."
-    }
+  "campaign": [
+    "eip155:1:0x6551b933b984342fd353d4b522aee7db500900e208dc1337b0c1f17647e36e56",
+    "eip155:1:0xdf5650ad316f2a366a1cac8121662b2398a32ab87427b66a3b68f345718ef80d",
+    "eip155:1:0xc97954d2e7e42c716a6d0465ccb6deb47d05c50055ddf45e8ad6aee28cce35f1"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 1509301.72,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1508790.455509",
+        "usd": 1509301.72
+      }
     ]
   },
   "notes": [
-    "Four further transactions at blocks 16260953, 16260999, 16261017 and 16261025 exercise the same defect from other senders against other collector contracts and are excluded from the loss because several are consistent with whitehat rescue."
+    "Both proxies are targets: the anchor drained approvals through each. The first got USDC as a router by addAvailableRouter after deployment, the second has had it since its constructor, so the second's deployment is the latest reset. Integrator fee settings only change fees, not feasibility.",
+    "Campaign from trace_filter of all calls the proxies made until their last use (third-party USDC transferFrom to a non-proxy). Three copycats kept the USDC; a fourth (0x2152fd37…, 100 USDC) was returned to its victim, a rescue. Other chains' proxies had no token among their routers."
   ]
 }

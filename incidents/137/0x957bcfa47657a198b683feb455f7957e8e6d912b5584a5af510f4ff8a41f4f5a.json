@@ -1,320 +1,78 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:137:0x957bcfa47657a198b683feb455f7957e8e6d912b5584a5af510f4ff8a41f4f5a",
-  "protocol": {
-    "name": "Fun.xyz",
-    "slug": "fun-xyz"
-  },
+  "protocol": "Fun.xyz",
   "name": "Fun.xyz retired CheckoutPool unauthenticated bridge()",
-  "incident": {
-    "chainId": 137,
-    "exploit": {
-      "transactionHash": "0x957bcfa47657a198b683feb455f7957e8e6d912b5584a5af510f4ff8a41f4f5a",
-      "blockNumber": 84291587,
-      "transactionIndex": 262,
-      "timestamp": 1773703207
-    },
-    "attackerAddresses": [
-      "0x6ff2be5d0e5b3974a818731e3ff6eeec8cd9d970",
-      "0x9a5fe6e6a27f7eace0782b89e6b216849d871e4f",
-      "0xb648db3bd2f7646d648570cf5765495d46011ae1",
-      "0xc513e4f5d7a93a1dd5b7c4d9f6cc2f52d2f1f8e7",
-      "0x972c516a2b6a7f9932d1470476e90fbdee6591cb"
-    ]
-  },
-  "summary": "Fun.xyz's retired first-generation CheckoutPool at 0x13046f51 exposes bridge(address,BridgeParams) with no caller authorisation - that runtime holds no operator variable at all - so the only remaining constraint on bridgeParams.target and bridgeParams.callData is the bridge-target and chain-id allowlist, and setAllowAll(true) had disabled it. Any address could therefore make the pool perform an arbitrary external call, violating the invariant that only the protocol operator selects the call a CheckoutPool makes on a checkout's behalf. Because the retired pool was still an allowed operator on CheckoutPaymaster, the attacker aimed that call at activateAndCall, which invoked the live CheckoutPool's onlyPaymaster execute() for a checkout the attacker had self-registered through the permissionless deposit() with params.targetAmount 85,730 USDC.e against 1 USDC.e held, and the pool paid the 85,729 USDC.e difference out of _POOL_EXCESS_.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 85760.77,
-      "valuationTimestamp": 1773703207,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-7",
-        "source-8",
-        "source-9",
-        "source-10",
-        "source-12"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-          "symbol": "USDC.e"
-        },
-        "amount": "85735.269319",
-        "usdValue": 85735.27,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1773703207,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7",
-          "source-12"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-          "symbol": "USDC"
-        },
-        "amount": "24.490243",
-        "usdValue": 24.49,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1773706013,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 137,
-          "tokenAddress": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-          "symbol": "WMATIC"
-        },
-        "amount": "9.891240460827629941",
-        "usdValue": 1.01,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1773706013,
-          "unitPriceUsd": 0.10182574743698113,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross depletion of the live CheckoutPool 0x1929347e, measured from its token balances and net of attacker-supplied deposits. Its USDC.e balance was 85,735.269319 before the campaign's first deposit at block 84290864 and zero after block 84292990; the attackers put 3.000000 USDC.e in through three deposit() calls and took 85,730.000000 out in the anchor transaction plus 8.269319 in the recurrence, so 85,735.269319 USDC.e of pre-campaign holdings were lost. _POOL_EXCESS_[USDC.e] fell 417,094.931356 -> 331,365.931356 across the anchor block, the protocol's own accounting of the 85,729 excess spent there. The recurrence at 84292990 by 0xc513e4f5 through contract 0x972c516a used the same defect and adds 24.490243 native USDC and 9.891240460827629941 WMATIC of net depletion. Stablecoins are valued at par, corroborated by DefiLlama observations of 1.0000018 and 0.9999971; WMATIC uses the DefiLlama mark at the recurrence. The seed inventory's 85,730 was the anchor transaction's gross transfer and did not net the attacker's own deposits or count the recurrence.",
-    "realizedAt": 1773706013
-  },
+  "summary": "A retired CheckoutPool's bridge() had no caller check and setAllowAll(true) had lifted its target allowlist, yet it stayed a CheckoutPaymaster operator. The attacker registered a checkout with an inflated targetAmount through the live pool's permissionless deposit(), then had the paymaster call the live pool's execute(), which paid it from pool excess.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x13046f513802de93f3fc48f0cdb2cb7df22ec01a",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x13046f513802de93f3fc48f0cdb2cb7df22ec01a",
+      "reset": {
+        "kind": "config",
+        "tx": "0xe8cfd76afd43e4495319926742e6134b7bb800174f20199cbfce242ccec7242f",
         "address": "0x13046f513802de93f3fc48f0cdb2cb7df22ec01a",
-        "codeHash": "0x1193648c11a1eed1ea42794c6aea96ca06f180aacc6f3ad70a7a9fb192d741f0"
-      },
-      "deployment": {
-        "timestamp": 1704916742,
-        "blockNumber": 52171657,
-        "transactionHash": "0x80b31e92985dd86e4fe3f5bf6be097f1959fea14d73494be3315dcebc1a715a2",
-        "transactionIndex": 28,
-        "creatorAddress": "0x1bd170ca224807ebbc2085d738e7a83451c69038"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1705513993,
-        "blockNumber": 52438354,
-        "transactionHash": "0xe8cfd76afd43e4495319926742e6134b7bb800174f20199cbfce242ccec7242f",
-        "transactionIndex": 182,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x13046f513802de93f3fc48f0cdb2cb7df22ec01a",
-          "storageSlot": "0x0000000000000000000000000000000000000000000000000000000000000002",
-          "valueBefore": "0x000000000000000000000000f419d4c884f261286201135a92a48d491ab25ebb",
-          "valueAfter": "0x000000000000000000000001f419d4c884f261286201135a92a48d491ab25ebb"
-        },
-        "description": "setAllowAll(true) by owner 0x1bd170ca set the _ALLOW_ALL_ flag packed at byte 20 of slot 2 alongside FORWARDER_FACTORY, 0x00 -> 0x01. Until that write the ungated bridge() still had to hit an allowlisted target and chain id, and _ALLOWED_BRIDGE_TARGETS_[0xd649ac38] and _ALLOWED_CHAIN_IDS_[1] were false at the exploit block; replaying the exploit calldata at block 84291586 with only this byte cleared reverts BridgeTargetNotAllowed(0xd649ac385efe8ce69ece9d2e61ae602e2893c586)."
-      },
-      "codeAgeSeconds": 68189214,
-      "failureModeId": "failure:funxyz-checkout-pool-v1-unauthenticated-bridge-call",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-11"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-11"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The runtime is unverified on Polygonscan; the absent operator gate was established from the dispatcher, the storage layout and an eth_call reproduction rather than from source."
-        ],
-        "reviewSourceIds": [
-          "source-11"
-        ]
+        "slot": "0x0000000000000000000000000000000000000000000000000000000000000002"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0xd649ac385efe8ce69ece9d2e61ae602e2893c586",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xd649ac385efe8ce69ece9d2e61ae602e2893c586",
+      "reset": {
+        "kind": "config",
+        "tx": "0x3fb544e1a625c712c04ffbd3e282aa349c9123bd08811e9dbec92b695f95d2b4",
         "address": "0xd649ac385efe8ce69ece9d2e61ae602e2893c586",
-        "codeHash": "0x16a16cc74c13050b57f887e3d13fa8b3ae29b7066f327153ddfafbb6aee57dac"
-      },
-      "deployment": {
-        "timestamp": 1705447984,
-        "blockNumber": 52410305,
-        "transactionHash": "0x572a5f5a1efc50e5a7a6498d34d1741a96129f7277eef6b82f8f5de102732d80",
-        "transactionIndex": 58,
-        "creatorAddress": "0x1bd170ca224807ebbc2085d738e7a83451c69038"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1705447984,
-        "blockNumber": 52410305,
-        "transactionHash": "0x3fb544e1a625c712c04ffbd3e282aa349c9123bd08811e9dbec92b695f95d2b4",
-        "transactionIndex": 59,
-        "logIndex": 239,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0xd649ac385efe8ce69ece9d2e61ae602e2893c586",
-          "storageSlot": "0x76758decc43055341caad3688f7275167d3ca759892600156810e8ee62b32b1e",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "setOperators([0x13046f51], true) one transaction after the paymaster's creation wrote _OPERATORS_[0x13046f51] = true at keccak(pad(0x13046f51) . pad(4)), emitting OperatorSet at log 239. The grant was never revoked before the exploit and is what let the retired pool's arbitrary call clear activateAndCall's onlyOperator modifier."
-      },
-      "codeAgeSeconds": 68255223,
-      "failureModeId": "failure:funxyz-checkout-paymaster-retained-operator-grant",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-5",
-          "source-11"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6",
-          "source-11"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: the operator grant at 1705447984 precedes the retired pool's setAllowAll(true) at 1705513993 by 66,009 seconds, so the exploitable combination only existed from the later write.",
-          "The paymaster's own code is not defective; activateAndCall is operator-gated as designed and the implicated state is the retained grant to a decommissioned contract."
-        ],
-        "reviewSourceIds": [
-          "source-11"
-        ]
+        "slot": "0x76758decc43055341caad3688f7275167d3ca759892600156810e8ee62b32b1e"
+      }
+    },
+    {
+      "address": "0x1929347e025d4f5f8d6b2bd2261e2f4efcacd215",
+      "reset": {
+        "kind": "config",
+        "tx": "0xad097726c19c3e76e1a14baee97f3dbecf32931a4cdc4361ae70bfaf3e890772",
+        "address": "0x1929347e025d4f5f8d6b2bd2261e2f4efcacd215",
+        "call": "0x16e4cbf9"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x957bcfa47657a198b683feb455f7957e8e6d912b5584a5af510f4ff8a41f4f5a"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-03/unverified_1304_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x80b31e92985dd86e4fe3f5bf6be097f1959fea14d73494be3315dcebc1a715a2"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0xe8cfd76afd43e4495319926742e6134b7bb800174f20199cbfce242ccec7242f"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x572a5f5a1efc50e5a7a6498d34d1741a96129f7277eef6b82f8f5de102732d80"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x3fb544e1a625c712c04ffbd3e282aa349c9123bd08811e9dbec92b695f95d2b4"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 137,
-      "transactionHash": "0x8837ceff23a013f0ec25d70eec63f36ff9dc3b72e59b3fcaea471b819afa5405"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773703207/polygon:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-      "observedAt": 1789463634
-    },
-    {
-      "id": "source-9",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773706013/polygon:0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-      "observedAt": 1789463634
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773706013/polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
-      "observedAt": 1789463634
-    },
-    {
-      "id": "source-11",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-09-15T09:22:00Z",
-      "note": "Anchor: transaction 0x957bcfa47657a198b683feb455f7957e8e6d912b5584a5af510f4ff8a41f4f5a at block 84291587 index 262, timestamp 1773703207, status 1, 7 logs. Trace: EOA 0x6ff2be5d -> attacker contract 0x9a5fe6e6 (created by that EOA at 84285261) -> 0x13046f51.bridge(0x9a5fe6e6, {target 0xd649ac38, spender 0x9a5fe6e6, callData activateAndCall(0x1929347e, execute(0x9a5fe6e6, ops)), bridgeReceivedAsset 0x2791bca1, min 0}) -> CheckoutPaymaster.activateAndCall -> live CheckoutPool 0x1929347e.execute -> USDC.e transfer 85,730.000000 to the attacker account 0xb648db3b (log 3636) -> EntryPoint 0x5ff137d4.handleOps; Executed(0x9a5fe6e6, 85730000000) at log 3640 and Bridged at log 3641. The retired pool held a checkout for 0x9a5fe6e6 with heldAsset 0x923f2683 (an attacker token), heldAmount 0 and targetChainId 1, registered through its permissionless deposit() at 84290865 and 84291554. Identity: CheckoutPaymaster 0xd649ac38 and CheckoutPool 0x1929347e are verified on Polygonscan and both carry '@author Fun.xyz'; the seed name unverified_1304 was a placeholder. The retired pool 0x13046f51 is unverified but shares the deployer 0x1bd170ca, the forwarder factory FORWARDER_FACTORY() = 0xf419d4c8, ENTRY_POINT() = 0x5ff137d4, the Bridged/Swapped/Executed/Deposited topics and the CheckoutPool selector set, so it is the first-generation deployment of the same codebase. Defect: on 0x13046f51 the getters operator() (0x570ca735), paymaster() (0x16e4cbf9) and timelockDuration() (0x2bbca157) all revert and the dispatcher exposes deposit(((bytes32,address,uint96,uint128,uint128),address,uint256)), swap(address,(address,address,bytes,address)), bridge(address,(address,address,bytes,address,uint256)) and executeWithPaymaster(address,address,uint256,UserOperation[]) with no setOperator; slot 2 packs FORWARDER_FACTORY with _ALLOW_ALL_ at byte 20, where the successor packs _ALLOW_ALL_ with paymaster at slot 5. The runtime therefore has no operator state and bridge() has no caller gate. eth_call of the observed 1092-byte bridge calldata at block 84291586 from 0x00000000000000000000000000000000deadbeef returns 0x (success); the same call with only slot 2's flag byte cleared by a state diff reverts 0x2eec4899 BridgeTargetNotAllowed(0xd649ac385efe8ce69ece9d2e61ae602e2893c586). _ALLOWED_BRIDGE_TARGETS_(0xd649ac38) and _ALLOWED_CHAIN_IDS_(1) are both false at 84291586, and isOperatorAllowed(0x13046f51) on the paymaster is true while isOperatorAllowed(0x1929347e) is false. Age, target-1: slot 2 goes 0x...00f419d4c884f261286201135a92a48d491ab25ebb -> 0x...01f419d4c884f261286201135a92a48d491ab25ebb in transaction 0xe8cfd76a at 52438354:182, calldata 0x4d7d9c01 + 0x01 (setAllowAll(true)) from owner 0x1bd170ca; the prestateTracer diff attributes exactly that slot transition to that transaction, and _ALLOW_ALL_() reads 0 at 52438353 and 1 at 52438354. Sampling slot 2 at 55408050, 55408051, 60000000, 70000000, 80000000 and 84291586 shows 0x...01 throughout, and it returns to 0x...00 at 84296253 (setAllowAll(false), the fix, followed by a second one at 84296265). Later code changes are ruled out: eth_getCode keccak is 0x1193648c11a1eed1ea42794c6aea96ca06f180aacc6f3ad70a7a9fb192d741f0 at both 52171657 and 84291586, code is absent at 52171656, the four EIP-1967 implementation/beacon/admin/rollback slots are zero, and the address's 21 external transactions contain only the creation, setForwarderFactory, three setAllowAll calls, withdrawAllErc20, deposits, swaps, executeWithPaymaster and bridge - no upgrade, diamond or module call. Since setAllowAll is onlyOwner and the owner 0x1bd170ca is an EOA, the external transaction list is exhaustive for that write. codeAgeSeconds = 1773703207 - 1705513993 = 68189214 (789.2 days); the seed's deployment basis of 796.1 days is superseded. Age, target-2: _OPERATORS_[0x13046f51] on the paymaster, slot keccak(pad(0x13046f51) . pad(4)) = 0x76758decc43055341caad3688f7275167d3ca759892600156810e8ee62b32b1e, goes 0 -> 1 in transaction 0x3fb544e1 at 52410305:59 (setOperators, OperatorSet at log 239), one transaction after the paymaster's creation at 52410305:58; it is still 1 at 84291586 and the address has only three OperatorSet logs ever (0x13046f51, 0xc7044e4a at 55372038, 0xed6dbff9 at 58719656). Its runtime hash 0x16a16cc74c13050b57f887e3d13fa8b3ae29b7066f327153ddfafbb6aee57dac is unchanged from 52410305 to 84291586. That reset is 66,009 seconds earlier than target-1's, so target-1 holds the knot. First exercise: the retired pool's Bridged topic 0x3c168566af6ff5eef5d33a219bfbbf7c0ebfa197917ac59f6e03fd7498af61c8 appears five times before the exploit - blocks 53801866, 54695690, 54699582, 54849153, 55360902 - every one sent by relayer EOA 0x61d048e5 with bridgeTarget 0x3a23f943 (Across SpokePool) and none reaching the paymaster; its Executed topic appears three times, all in January-February 2024 through executeWithPaymaster. No Bridged or Executed event on the retired pool falls between 55360902 (2024-04-02) and the exploit. 84291587 is therefore the first successful exercise of this path. Recurrence: transaction 0x8837ceff at 84292990, EOA 0xc513e4f5 through contract 0x972c516a, repeats the identical route with a Balancer flash loan and drains the residue; it is merged into this record rather than filed separately. Two further bridge() calls at 84292616 and 84293531 from the same EOA produced zero-value Executed activity. Loss: live CheckoutPool USDC.e balance 85,735.269319 at 84290864, 85,737.269319 at 84291586 after two 1.000000 attacker deposits, 7.269319 at 84291587, 0 at 84292990; native USDC 7,396.947502 -> 7,372.457259 and WMATIC 60,868.047369132447525836 -> 60,858.156128671619895895 across 84292990. Net of the three attacker deposits the victim lost 85,735.269319 USDC.e, 24.490243 USDC and 9.891240460827629941 WMATIC. _POOL_EXCESS_(USDC.e) fell 417,094.931356 -> 331,365.931356 in the anchor block, matching executionAmount 85,730.000000 minus heldAmount 1.000000. DefiLlama historical marks retrieved at 1789463634: USDC.e 1.0000018145976994 at 1773702900, USDC 0.9999971186812592 at 1773706019, WMATIC 0.10182574743698113 at 1773705544. Stablecoins valued at par give 85,735.27 + 24.49, WMATIC gives 1.01, total 85,760.77."
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction-set",
-      "chainId": 137,
-      "transactionHashes": [
-        "0x6f184d796ece031735207cbab19ba2e21f0ab7e1f454c02a8d8e5335db20877e",
-        "0xa17108f276821bf669dfd0db3c3e3c6fca33c784b0080cd2f8f8aea72ed425cf"
-      ]
-    }
+  "campaign": [
+    "eip155:137:0x979e0a9f1cca9e042b68df65ecc19b3339e5cbfe59fd8f50dfa663c6ed7cd297",
+    "eip155:137:0x8837ceff23a013f0ec25d70eec63f36ff9dc3b72e59b3fcaea471b819afa5405"
   ],
-  "discovery": [
-    "dfhl:src/test/2026-03/unverified_1304_exp.sol",
-    "seed:unverified-1304:2026-03-16:unverified-1304"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The retired pool 0x13046f51 is unverified on Polygonscan; its defect is established from the deployed runtime's dispatcher and storage layout plus eth_call reproduction, not from published source.",
-      "The drained contract, live CheckoutPool 0x1929347e, is not carried as a target: its execute() enforced onlyPaymaster as designed, and the checkout state it paid out was written by the attacker through deposit() 66 seconds before the exploit, so it is attack machinery rather than age-bearing victim state."
-    ],
-    "reviewSourceIds": [
-      "source-11"
+  "loss": {
+    "usd": 85770.5,
+    "assets": [
+      {
+        "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "symbol": "USDC.e",
+        "amount": "85740.093363",
+        "usd": 85740.25
+      },
+      {
+        "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "symbol": "USDC",
+        "amount": "27.083153",
+        "usd": 27.08
+      },
+      {
+        "token": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+        "symbol": "WPOL",
+        "amount": "21.998563796995249506",
+        "usd": 2.24
+      },
+      {
+        "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+        "symbol": "DAI",
+        "amount": "0.933283241393044373",
+        "usd": 0.93
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-03/unverified_1304_exp.sol",
+    "eip155:137:0x6f184d796ece031735207cbab19ba2e21f0ab7e1f454c02a8d8e5335db20877e",
+    "eip155:137:0xa17108f276821bf669dfd0db3c3e3c6fca33c784b0080cd2f8f8aea72ed425cf"
+  ],
+  "notes": [
+    "The live pool is a target: its execute() pays whatever targetAmount a permissionless deposit() registered, trusting only its paymaster. setPaymaster pointing it at the paymaster whose retired operator was open is the latest change the exploit needed (rule 10 role grant); before it this pool could not be reached.",
+    "The retired pool 0x13046f51 is unverified; its ungated bridge() follows from the runtime (no operator getter) and from the attacker calling it directly. The referenced setup transactions are the attacker's deposit() registrations, whose 1 USDC.e inputs are not netted (rule 14).",
+    "Campaign: copycat 0xc513e4f5 repeated the path, draining the live pool and two other paymaster operators (0xed6dbff9, 0xc7044e4a); its probe 0x1eb47582 moved nothing and is omitted."
+  ]
 }

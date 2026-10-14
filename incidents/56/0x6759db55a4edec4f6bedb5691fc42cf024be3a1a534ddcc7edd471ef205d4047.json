@@ -1,181 +1,73 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x6759db55a4edec4f6bedb5691fc42cf024be3a1a534ddcc7edd471ef205d4047",
-  "protocol": {
-    "name": "BRA Token",
-    "slug": "bra-token"
-  },
+  "protocol": "BRA Token",
   "name": "BRA pair self-transfer tax inflation",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x6759db55a4edec4f6bedb5691fc42cf024be3a1a534ddcc7edd471ef205d4047",
-      "blockNumber": 24655772,
-      "transactionIndex": 5,
-      "timestamp": 1673325640
-    },
-    "attackerAddresses": [
-      "0x67a909f2953fb1138bea4b60894b51291d2d0795",
-      "0x1fae46b350c4a5f5c397dbf25ad042d3b9a5cb07",
-      "0x6066435edce9c2772f3f1184b33fc5f7826d03e7"
-    ]
-  },
-  "summary": "BRA's _transfer() applied both buy and sell branches when the BRA/USDT pair transferred BRA to itself. With both 3% tax destinations configured to that pair, the function subtracted one tax but credited two, increasing the pair's BRA balance by 3% per skim(pair) call. Repeated skims created an unreserved BRA balance that the attacker swapped for the pair's USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 228296.595370773,
-      "valuationTimestamp": 1673325640,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "228296.595370773005266829",
-        "usdValue": 228296.595370773,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1673325640,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The BRA/USDT pair received 271,699.541664092338012248 USDT and paid 458,917.996365062737064211 USDT in the anchor transaction, then received 272,015.801163809386555704 USDT and paid 313,093.941833611992770570 USDT in the second campaign transaction. Its exact transaction-local reserve depletions were 187,218.454700970399051963 and 41,078.140669802606214866 USDT. Their sum, 228,296.595370773005266829 USDT, is valued at stablecoin par; downstream WBNB proceeds are attacker profit rather than the gross victim loss.",
-    "realizedAt": 1673326802
-  },
+  "summary": "BRA's _transfer applied both the buy and the sell tax branch when the BRA/USDT pair sent BRA to itself, deducting one tax but crediting two. With both tax destinations set to the pair, every skim(pair) grew the pair's BRA balance by 3%. Attackers looped skims, skimmed the unreserved BRA out and swapped it for the pair's USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x449fea37d339a11efe1b181e5d5462464bba3752",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x449fea37d339a11efe1b181e5d5462464bba3752",
-        "codeHash": "0xd34455bf7a3dde4a3a074f4924e457fa6e8cf5d0f4c979ee838863ff9085363a"
-      },
-      "deployment": {
-        "timestamp": 1665574777,
-        "blockNumber": 22110532,
-        "transactionHash": "0x2d114401ac77dd19e945b11a27477131206fbc52ed5c4542e9ae5bcfad1716b8",
-        "transactionIndex": 175,
-        "creatorAddress": "0xcbb1568753e0616d582c4b88d65d27d99e182dc6"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1673266184,
-        "blockNumber": 24636136,
-        "transactionHash": "0x50365066cfead95db90e0a7836a556cabf5fdf6310157fd34a37be7aeb811e4a",
-        "transactionIndex": 124,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x0ed9cf2af45916acefcd0390d32feb5e88e74ef6",
-          "callData": "0xc837430e",
-          "valueBefore": "0x000000000000000000000000d66d5a5aae741f5c070e2593226a88bc247fc07b",
-          "valueAfter": "0x0000000000000000000000008f4ba1832611f0c364de7114bbff92ba676adf0e"
-        },
-        "description": "setSellTaxTo() changed SellTaxTo from 0xd66d5a5aae741f5c070e2593226a88bc247fc07b to the BRA/USDT pair. BuyTaxTo had been set to the pair six blocks earlier, so this latest change completed the causal state in which a pair-to-pair transfer credited both taxes back to the pair."
-      },
-      "codeAgeSeconds": 59456,
-      "failureModeId": "failure:bra-pair-self-transfer-tax-inflation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-8",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-6",
-          "source-7",
-          "source-8",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x449fea37d339a11efe1b181e5d5462464bba3752",
+      "reset": {
+        "kind": "config",
+        "tx": "0x50365066cfead95db90e0a7836a556cabf5fdf6310157fd34a37be7aeb811e4a",
+        "address": "0x0ed9cf2af45916acefcd0390d32feb5e88e74ef6",
+        "call": "0xc837430e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x6759db55a4edec4f6bedb5691fc42cf024be3a1a534ddcc7edd471ef205d4047"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-01/BRA_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/BlockSecTeam/status/1612701106982862849"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-27T10:46:24Z",
-      "note": "Reviewed both campaign transactions, receipts and call traces; the token deployment and runtime history; every causal ConfigBRA getter transition; extracted verified source; and exact token flows. BRA hard-codes ConfigBRA 0x0ed9cf2af45916acefcd0390d32feb5e88e74ef6. In _transfer, pair-to-pair transfers independently enter both the buy and sell branches; finalAmount subtracts one taxAmount, while BuyTaxTo and SellTaxTo each receive that tax. BuyPer and SellPer were both 300, BuyTaxTo was set to pair 0x8f4ba1832611f0c364de7114bbff92ba676adf0e at block 24636130, and transaction 0x50365066cfead95db90e0a7836a556cabf5fdf6310157fd34a37be7aeb811e4a set SellTaxTo from 0xd66d5a5aae741f5c070e2593226a88bc247fc07b to that pair at block 24636136:124. The resulting self-transfer credited amount plus one net 3% tax to the pair; repeated skim(pair) calls compounded the excess BRA balance before the attacker swapped it for USDT. The pair's receipt-local USDT net outflow was 187,218.454700970399051963 in the anchor and 41,078.140669802606214866 in transaction 0x4e5b2efa90c62f2b62925ebd7c10c953dc73c710ef06695eac3f36fe0f6b9348, totaling 228,296.595370773005266829 USDT. BRA was created top-level by 0xcbb1568753e0616d582c4b88d65d27d99e182dc6 at block 22110532:175. Its 11,755-byte runtime first appears there and hashes to 0xd34455bf7a3dde4a3a074f4924e457fa6e8cf5d0f4c979ee838863ff9085363a both at creation and immediately before exploitation. The exploit executes that runtime directly. The latest causal reset is the SellTaxTo change 59,456 seconds before the anchor, not the older token deployment."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x4e5b2efa90c62f2b62925ebd7c10c953dc73c710ef06695eac3f36fe0f6b9348"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2d114401ac77dd19e945b11a27477131206fbc52ed5c4542e9ae5bcfad1716b8"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x50365066cfead95db90e0a7836a556cabf5fdf6310157fd34a37be7aeb811e4a"
-    },
-    {
-      "id": "source-8",
-      "type": "source-code",
-      "repository": "https://github.com/sanbir/evm-hack-registry",
-      "commit": "d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6",
-      "path": "2023-01-BRA_exp/sources/BRAToken_449FEA/BRAToken.sol"
-    }
+  "campaign": [
+    "eip155:56:0x4e5b2efa90c62f2b62925ebd7c10c953dc73c710ef06695eac3f36fe0f6b9348",
+    "eip155:56:0x7977b8cbf9e759c14c4675c14951be5399b8833cb11d84ef63accec81207fe75",
+    "eip155:56:0x4379de4dd496447de35364907d9635450d9e20882ad64a2f46e505e3b182d0f3",
+    "eip155:56:0xa98cc297f861bf9af983659324547171f3581bcc2dd7668b29ef9b81c9f4ea90",
+    "eip155:56:0xe5e45ae7cae9262b7a8697e34a37e0cc2c828f3c8f22c2283245bf22eaccbe0f",
+    "eip155:56:0x36bb42d1b3579da9abf56102b52c5ef1011e661dd09e007a06c9d2fce7699f7a",
+    "eip155:56:0xb281aaf0de831d35b21038e4f5ba769904b9bff7343a167e92d9d5ac4c257d21",
+    "eip155:56:0x2cba4ed236799df98a9e798b4c86df43c691f6cc8b49ad2868316a9c185507b5",
+    "eip155:56:0xe35292cac6a686f543980a9acbe54964238353850b4a611e0288fc8c6633ba95",
+    "eip155:56:0x4a3f8b3009554d1a97158bb64c3f1ea97315bef8de91c93b29d7db7624ead7ae",
+    "eip155:56:0x3f7bbd4a1de6b68eccd6a0f299b2bafad31bed0bf4f7a3612abf92ff2f0eb6fd",
+    "eip155:56:0x4b166a21c6968e33fc23d720714949589ce5f5a1f00c99188057023f7535997d",
+    "eip155:56:0xcb60ac55fd272257693d81924884eaea9c9aa5bf6a19994e85f9d42f7ff3d967",
+    "eip155:56:0x89924dbff413ac9fdde6672f0c14f9970857e68a61378a4251d4402747df65f5",
+    "eip155:56:0x14c7bb817644d5c0aaa1219ed49c44bf1aae48aa257d653c41091032dd440f73",
+    "eip155:56:0xf1e28958a33add2cac9ea7f2fd9c66954b29c03040b6c633a258f8ce42f0cd6a",
+    "eip155:56:0x9f844a1fd12ccc5ef06f070da2b21249ff3ea42a71ef1a22c01a4a40556252da",
+    "eip155:56:0x16c9a58507e8bdc64ebef7fd481507fe7d8d36626307d0a6628b249e99325028",
+    "eip155:56:0xd9b0f6fa3a389fce0a4a76b37fe8a0da7c592d2fd5b4f7d159852a6869aa72b6",
+    "eip155:56:0x54f785bb5a5fb0f456962a2c61d4ed5081fb5491b1e9b1f5442a48e3e6b8837d",
+    "eip155:56:0x3037189f271f190781417a65ae1d8a20ee0dca1e419f5dd73ae243c210b862c3",
+    "eip155:56:0x077830e65ea1f802d74c7764c92a2631ac1ee348aa33af9cb8c25cb0665edb18",
+    "eip155:56:0x44e03ca096b750fea730274b1b883504651eee1364b6d5407a1dcaaacb403b02",
+    "eip155:56:0xa25465e45e685173d79935ded9bd381d91e9f7426d47b63933cbd58b7250ad81",
+    "eip155:56:0xc61b73cd5f2b18cea63278ae533605f9c1eea50f27416c119e9eb93e6abce536",
+    "eip155:56:0x57af29878e1a403bd4a77310d8134184febb43a626d230e8e5bef79c7486bbd2",
+    "eip155:56:0x3ff5582ddab33387d24c75732ba09b9ff01ba25c736a619e1bb9a7827bf9b8aa",
+    "eip155:56:0xd16f48a363e80e33024b5e8f7c2c6176db1fe1c97202c182c22af81de42fbab6",
+    "eip155:56:0x6966ca5fd9a1b35d4e19ac983b11ceca62472a1f4f69a68e986e23d992f246a5",
+    "eip155:56:0x34971737509b3bb1248ac08aba2db669dd8d60feba8211198d38d79b267fea50",
+    "eip155:56:0xaa20b7ce92ec814bb1c3397df212c42fb67c932b0bb264791aa428080ea63fab",
+    "eip155:56:0x845b80bbca28c527a26716de5c5f2a978eeb740ae8b4e23e2c4fe27c080ca13e",
+    "eip155:56:0xb5db616345ec9fecf49648a51e23912d914ac0f031e29714715a857346d05da7",
+    "eip155:56:0x5d89a68b06be1892003c8d313a84c2c75c5dc42058d4bd41f75f7e3dd9e57ee8"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 274859.69,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "274713.449070013875641448",
+        "usd": 274859.69
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-01/BRA_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1612701106982862849",
+    "https://github.com/sanbir/evm-hack-registry/blob/d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6/2023-01-BRA_exp/sources/BRAToken_449FEA/BRAToken.sol"
+  ],
+  "notes": [
+    "setSellTaxTo pointed the sell-tax destination of the BRA config contract at the pair, six blocks after setBuyTaxTo did the same; only with both pointing at the pair did a pair self-transfer credit the extra tax back to it. Earlier tax-rate changes only scaled the gain.",
+    "Campaign: every BRA tx with three or more Transfer(pair, pair) events (skim loops; a normal buy emits one), blocks 22110532-40000000, keeping those in which the pair lost USDT. The pair's USDT depletion per transaction is the loss; the minted BRA is not counted separately."
+  ]
 }

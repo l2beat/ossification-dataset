@@ -1,229 +1,51 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x5b99165fb07881590fab962185b5dee877f2978fac83f5f76c88639edcba827d",
-  "protocol": {
-    "name": "Ronin Bridge",
-    "slug": "ronin-bridge"
-  },
+  "protocol": "Ronin Bridge",
   "name": "MainchainGatewayV3 cached operator weight left at zero collapses the withdrawal quorum",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x5b99165fb07881590fab962185b5dee877f2978fac83f5f76c88639edcba827d",
-      "blockNumber": 20468439,
-      "transactionIndex": 2,
-      "timestamp": 1722934139
-    },
-    "attackerAddresses": [
-      "0xc9a5643ed8e4cd68d16fe779d378c0e8e7225a54",
-      "0x60e1a5714ab98f4ba55811c45899fb425433bb65",
-      "0x1a56abf4fe95e21c1704cbd5ffc79ea1effa3cc1",
-      "0x4ab12e7ce31857ee022f273e8580f73335a73c0b",
-      "0x00001b0bcca9bc88774000692def9dd6452afb9f",
-      "0x02f3d3912f8bd97c4791970aa4cf96dedd05772c",
-      "0xfde0d1575ed8e06fbf36256bcdfa1f359281455a",
-      "0x6980a47bee930a4584b09ee79ebe46484fbdbdd0"
-    ]
-  },
-  "summary": "MainchainGatewayV3 implementation 0xfc274ec92bbb1a1472884558d1b5caac6f8220ee replaced the live read `_getTotalWeight() = IBridgeManager(BRIDGE_MANAGER).getTotalWeight()` with a cached `_totalOperatorWeight` that only `initializeV3()` populates, and `initializeV3` is `reinitializer(3)`. The upgrade that installed it ran `initializeV4(wethUnwrapper)` instead, so OpenZeppelin's `_initialized` jumped from 2 to 4 and `initializeV3` became permanently uncallable while the cache stayed at zero. `minimumVoteWeight()` = `(_num * _getTotalWeight() + _denom - 1) / _denom` therefore returns 0 for every value of the threshold parameters, and `_submitWithdrawal`'s verification loop evaluates `weight >= minimumWeight` after the first iteration with no floor on the quorum, so a single arbitrary signature from a non-operator satisfies it. Any caller could then mint themselves an arbitrary withdrawal receipt with an unused id and drain the gateway.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 11836288.016993068,
-      "valuationTimestamp": 1722934139,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "3998.634663464696217977",
-        "usdValue": 9847237.653981334,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1722934022,
-          "unitPriceUsd": 2462.65,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "1998064.518829",
-        "usdValue": 1989050.363011735,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1722934242,
-          "unitPriceUsd": 0.9954885561840877,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "realizedAt": 1722939227,
-    "notes": "Exact victim depletion reconstructed from receipts, not from reporting. Twelve `Withdrew` events fired on the gateway 0x64192819ac13ef72bf6b5ae239ac672b43a9af08 between the upgrade at block 20468438 and the pause at block 20468866, and no others; decoding their static `Transfer.Receipt` payloads gives 3,998.634663464696217977 ETH against mainchain token WETH 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 (paid out as native ETH, so the component is recorded as ETH) and 1,998,064.518829 USDC. `receipt.mainchain.addr` is an exploiter-controlled address in all twelve, so none of them delivered a genuine user's pending withdrawal. Four independent senders took part - 0xc9a5643ed8e4cd68d16fe779d378c0e8e7225a54 in nine small transactions, 0x1a56abf4fe95e21c1704cbd5ffc79ea1effa3cc1 for the 3,996.09375 ETH principal leg, 0x00001b0bcca9bc88774000692def9dd6452afb9f for 2.417311190756982670 ETH and 0xfde0d1575ed8e06fbf36256bcdfa1f359281455a for 1,998,046.875 USDC - and are treated as one coherent same-chain campaign against one execution context, as with other copycat campaigns in this dataset. The 3.996093266077821795 ETH builder payment to beaverbuild inside the principal transaction is a fee and is not netted out. On 2024-08-28 the searcher returned 3,995.74475000000379 ETH and 1,995,406.054405 USDC to the gateway through `receiveEther()` and a token transfer from 0xe1ca83d92317e4cfb506a1d12e82bf52ab597a10, and 785 ETH was paid to them as a bounty; per METHODOLOGY that recovery does not reduce gross victim depletion and is not netted here. The campaign closed with the last Withdrew at block 20468858 (1722939227), which is recorded as realizedAt."
-  },
+  "summary": "MainchainGatewayV3's new implementation reads a cached total operator weight that only initializeV3 sets, but the upgrade ran initializeV4, skipping it for good. The cached weight stayed zero, so minimumVoteWeight returned 0 and any signature passed withdrawal verification. MEV bots submitted withdrawal receipts naming themselves as recipients and drained the gateway.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x64192819ac13ef72bf6b5ae239ac672b43a9af08",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xfc274ec92bbb1a1472884558d1b5caac6f8220ee",
-        "codeHash": "0xf82fc255221b0ea5bcdb5ca916477d0fa50e5df0c7b236b5a0ef770613c3248e"
-      },
-      "deployment": {
-        "timestamp": 1655883630,
-        "blockNumber": 15006576,
-        "transactionHash": "0x8f2924a52e63564c9cb0b119d72dc8290daa39c59cbe02e7f1ab6b2160ac9aa4",
-        "transactionIndex": 194,
-        "creatorAddress": "0xaa1d342354d755ec515f40e7d5e83cb4184bb9ee"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1722934127,
-        "blockNumber": 20468438,
-        "transactionHash": "0x855dd3b1194e3b889f4667b6a0996220e350e034d35d3eab29b4f23bc205767e",
-        "transactionIndex": 127,
-        "logIndex": 497,
-        "mechanism": {
-          "type": "event",
-          "address": "0x64192819ac13ef72bf6b5ae239ac672b43a9af08",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Fifth and last pre-exploit Upgraded event on the gateway proxy, emitted inside the governor proposal relayed through MainchainBridgeManager 0xa71456fa88a5f6a4696d0446e690db4a5913fab0. Sub-call 1 of that proposal is upgradeToAndCall(0xfc274ec92bbb1a1472884558d1b5caac6f8220ee, initializeV4(0x8048b12511d9be6e4e094089b12f54923c4e2f83)); topic1 selects the implementation, which the EIP-1967 slot still holds at blocks 20468439 and 20468679."
-      },
-      "codeAgeSeconds": 12,
-      "failureModeId": "failure:ronin-mainchain-gateway-uninitialized-total-operator-weight",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The 12-second age measures the implementation that carries the defect, which is correct under METHODOLOGY but means this observation says nothing about code maturity: the artifact was defective from the block it became active and stayed defective until it was replaced."
-        ],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0x64192819ac13ef72bf6b5ae239ac672b43a9af08",
+      "code": "0xfc274ec92bbb1a1472884558d1b5caac6f8220ee",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x855dd3b1194e3b889f4667b6a0996220e350e034d35d3eab29b4f23bc205767e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5b99165fb07881590fab962185b5dee877f2978fac83f5f76c88639edcba827d"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8f2924a52e63564c9cb0b119d72dc8290daa39c59cbe02e7f1ab6b2160ac9aa4"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x855dd3b1194e3b889f4667b6a0996220e350e034d35d3eab29b4f23bc205767e"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x6491f922971341c2437e8a77320ab2e258d0493c8fe7cec6b60cb30a6ff1b3f5",
-        "0xc8e0141694aac94999da6432f375db44f0a379c8fa6777a8e1f5c1009feab025",
-        "0x4f519d09f6313c22864b7bec6f5f4a07f56b88a356bc3d0a06b659628766a536",
-        "0xbaf540fe846da0537c49d9e97c509abd1b9f336893763a04b479c0c3a65afd3e",
-        "0x368e8fc1a1fc9a1896616819b5393ff118954e5c964365f439ed66deba3cd5c8",
-        "0xb0c08ecdad943ad3830f610c287fc7289b59994f5a84e6658f3fe2582625ea06",
-        "0x5623319a8232e6d22aa7c652ecc120889d9a3c073fa9bee0bca8d4dece7680b1",
-        "0x77bb83dd9b25a0af12c0092993ddf1a2f54b77fbcd1dbf1bf33a965ec707268b",
-        "0xbce5b8548db486c561948e8a177c8ccaa72810f972cee3909ea50af015a60ad8",
-        "0xb0fc7fae9a3b9f210183f151c59fcb892faa6dbd0b7bd789f26b877147af8c41"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2619570088683e6cc3a38d93c3d98899e5783864e15525d5f5810c11189ba6cb"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1722934139/coingecko:ethereum",
-      "observedAt": 1787718344
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1722934139/ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      "observedAt": 1787718344
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T06:40:00Z",
-      "note": "Admitted after applying METHODOLOGY's boundary test explicitly in both directions. Against admission: had initializeV3() been run, the same bytecode would compute minimumVoteWeight() = 1540 and behave correctly, DefiLlama codes the incident as an uninitialized proxy, and the upgrade itself was a privileged governor action. For admission, and decisive: the parameters of this contract are the threshold pair, and _minimumVoteWeight(0) = (_num * 0 + _denom - 1) / _denom = 0 for every (_num, _denom) with _denom >= 1, so no parameter value makes the deployed code correct; _submitWithdrawal carries no floor on the quorum and evaluates weight >= minimumWeight only after the first ecrecover, so a zero quorum is accepted rather than rejected; and _totalOperatorWeight is not a configured parameter at all but an internal cache of a value MainchainBridgeManager already held authoritatively (getTotalWeight() stayed 2200 throughout). The remaining escape hatch is closed onchain: because initializeV4 is reinitializer(4) and ran in the upgrade, OZ's _initialized went 2 -> 4 without ever reaching 3, and cast call initializeV3() against the proxy at block 20468500 reverts with 'Initializable: contract is already initialized'. There was therefore no reachable state of the deployed system in which this artifact was correct, which distinguishes it from the excluded configuration cases (Shoebill's oracle priced other markets correctly with the same expression) and aligns it with the admitted initialization cases (USPD, Pike, Telcoin) and with METHODOLOGY's statement that initialization logic is executable-code logic. The exploit transactions used no privileged role. Onchain reproduction against the l2beat Ethereum RPC: minimumVoteWeight() returns 1540 at block 20468437 and 0 at 20468438, 20468439 and 20468679, while IBridgeManager.getTotalWeight() stayed 2200; the EIP-1967 implementation slot of proxy 0x64192819ac13ef72bf6b5ae239ac672b43a9af08 is 0x72e28a9009ad12de019bff418cd210d4bbc3d403 at block 20468437 and 0xfc274ec92bbb1a1472884558d1b5caac6f8220ee from 20468438 through 20468679, and the artifact runtime hashes to 0xf82fc255221b0ea5bcdb5ca916477d0fa50e5df0c7b236b5a0ef770613c3248e at blocks 20468438, 20468439 and 20468678. The proxy emitted exactly five Upgraded events over its whole life (blocks 15006576, 15039388, 17030381, 18417558, 20468438) and the fifth is log 497 of transaction 0x855dd3b1, so the recorded lastCodeChange is the latest pre-exploit change; the proxy itself was created by top-level CREATE from 0xaa1d342354d755ec515f40e7d5e83cb4184bb9ee, which is not an exploiter. Anchor selection: the anchor is the earliest successful transaction that executes the defect, which is the first post-upgrade Withdrew, one block and twelve seconds after the upgrade. Its callTracer trace is EOA 0xc9a5643e -> helper 0x60e1a5714ab98f4ba55811c45899fb425433bb65 -> gateway proxy submitWithdrawal (0x4d0d6673) -> DELEGATECALL to 0xfc274ec92bbb1a1472884558d1b5caac6f8220ee -> exactly one STATICCALL to the ecrecover precompile -> 13851752129284625 wei paid to 0xc9a5643e. A single ecrecover is the signature of the collapsed quorum: a control trace of the last pre-upgrade Withdrew 0x9f3ff50a466df901eb3b598e402d801e4f1dd1e297f8f5abcd8b2126dc0f4d0b at block 20468330 contains sixteen ecrecover calls, the loop breaking at 1600 >= 1540. Every one of the twelve post-upgrade Withdrew transactions shows the same single ecrecover and none of their recovered signers is in the 22-operator set. The anchor's decoded receipt is id 162970, kind 1, mainchain (0xc9a5643ed8e4cd68d16fe779d378c0e8e7225a54, WETH, chainId 1), ronin chainId 2020, ERC20 quantity 13851752129284625, so the exploiter named itself as the recipient of a forged receipt. Loss is the sum of the twelve receipts, 3998.634663464696217977 ETH and 1998064.518829 USDC, valued at DefiLlama's nearest observations of USD 2462.65 at 1722934022 and USD 0.9954885561840877 at 1722934242, giving USD 11,836,288.02 against a DefiLlama headline of USD 12 million. The bridge was paused at block 20468866 by PauseEnforcer 0xe514d9deb7966c8be0ca922de8a064264ea6bcd4 and the fix, implementation 0xd6c4986bbe09f2ddb262b4611b0ba06891be605e installed at block 20638773, restored minimumVoteWeight() to 1540."
-    }
-  ],
-  "discovery": [
-    "web:2024-08-06:ronin-bridge-second-incident"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 11836288.016993068,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "3998.634663464696217977",
+        "usd": 9847237.653981334
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1998064.518829",
+        "usd": 1989050.363011735
+      }
     ]
   },
+  "refs": [],
   "notes": [
-    "The anchor is not the widely reported transaction. Reporting anchors the incident on 0x2619570088683e6cc3a38d93c3d98899e5783864e15525d5f5810c11189ba6cb at block 20468679, the 3,996.09375 ETH leg, but seven smaller Withdrew events with the same collapsed quorum precede it, the earliest one block after the upgrade. That transaction remains in the record as a loss and root-cause source.",
-    "The other target that could be argued for is MainchainBridgeManager 0xa71456fa88a5f6a4696d0446e690db4a5913fab0, which relayed the proposal. It is not defect-bearing: it executed a validly signed governor proposal, and the proposal's own contents were also not wrong in any parameter sense - the omission was of an initializer call that the new implementation required and that the same transaction made permanently unreachable."
+    "The anchor is the first of the twelve Withdrew events between the upgrade and the pause, one block after the upgrade, not the widely reported 3,996 ETH leg. Replayed against the pre-upgrade state, every one of the twelve reverts on signature checks, so none was a genuine user withdrawal.",
+    "The searchers returned the funds for a bounty weeks later; per rule 5 a return after a bounty offer does not make the takes a rescue, and recoveries are not subtracted.",
+    "MainchainBridgeManager relayed the upgrade proposal but carries no defect; the omission was the skipped initializer, so the upgrade sets a 12-second age."
+  ],
+  "campaign": [
+    "eip155:1:0x6491f922971341c2437e8a77320ab2e258d0493c8fe7cec6b60cb30a6ff1b3f5",
+    "eip155:1:0xc8e0141694aac94999da6432f375db44f0a379c8fa6777a8e1f5c1009feab025",
+    "eip155:1:0x4f519d09f6313c22864b7bec6f5f4a07f56b88a356bc3d0a06b659628766a536",
+    "eip155:1:0xbaf540fe846da0537c49d9e97c509abd1b9f336893763a04b479c0c3a65afd3e",
+    "eip155:1:0x368e8fc1a1fc9a1896616819b5393ff118954e5c964365f439ed66deba3cd5c8",
+    "eip155:1:0xb0c08ecdad943ad3830f610c287fc7289b59994f5a84e6658f3fe2582625ea06",
+    "eip155:1:0x2619570088683e6cc3a38d93c3d98899e5783864e15525d5f5810c11189ba6cb",
+    "eip155:1:0x5623319a8232e6d22aa7c652ecc120889d9a3c073fa9bee0bca8d4dece7680b1",
+    "eip155:1:0x77bb83dd9b25a0af12c0092993ddf1a2f54b77fbcd1dbf1bf33a965ec707268b",
+    "eip155:1:0xbce5b8548db486c561948e8a177c8ccaa72810f972cee3909ea50af015a60ad8",
+    "eip155:1:0xb0fc7fae9a3b9f210183f151c59fcb892faa6dbd0b7bd789f26b877147af8c41"
   ]
 }

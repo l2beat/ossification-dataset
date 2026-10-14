@@ -1,134 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xef386a69ca6a147c374258a1bf40221b0b6bd9bc449a7016dbe5240644581877",
-  "protocol": {
-    "name": "StepHero NFTs",
-    "slug": "stephero-nfts"
-  },
+  "protocol": "StepHero NFTs",
   "name": "StepHeroNFTs referral-claim reentrancy",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xef386a69ca6a147c374258a1bf40221b0b6bd9bc449a7016dbe5240644581877",
-      "blockNumber": 46843424,
-      "transactionIndex": 6,
-      "timestamp": 1740111790
-    },
-    "attackerAddresses": [
-      "0xfb1cc1548d039f14b02cff9ae86757edd2cdb8a5"
-    ]
-  },
   "summary": "claimReferral(address) sent the caller's accrued BNB referral commission before reducing its recorded balance, so the attack contract's receive hook could reenter and claim the same self-referral commission repeatedly.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 89963.58,
-      "valuationTimestamp": 1740111790,
-      "method": "incident-price",
-      "sourceIds": ["source-1", "source-5", "source-6"]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "138",
-        "usdValue": 89963.58,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1740111781,
-          "unitPriceUsd": 651.91,
-          "sourceIds": ["source-5"]
-        },
-        "sourceIds": ["source-1", "source-6"]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the exact native BNB balance decrease of the StepHeroNFTs contract in the exploit transaction: it received 1,000 BNB through buyAsset() and paid 1,138 BNB through the reentrant claimReferral() calls. The attack contract retained 137.9 BNB after paying a separate 0.1 BNB Pancake V3 flash-loan fee; financing cost does not reduce victim depletion. BNB is valued at DefiLlama's nearest price at or before the incident."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9823e10a0bf6f64f59964be1a7f83090bf5728ab",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x9823e10a0bf6f64f59964be1a7f83090bf5728ab",
-        "codeHash": "0x9288358e6bac0ae24a75ecaf6fc92c04cd0c15c3d36564838fea442b3b1f0596"
-      },
-      "deployment": {
-        "timestamp": 1630397030,
-        "blockNumber": 10502132,
-        "transactionHash": "0x7f99673be78f26504ce9f52cdc6b9ad65bf7e0d24a93889b77bc4627aed82426",
-        "transactionIndex": 232,
-        "creatorAddress": "0x7c1620dabfac63ba40ae2bb453dd5d5f65d19102"
-      },
-      "ageReset": {
+      "address": "0x9823e10a0bf6f64f59964be1a7f83090bf5728ab",
+      "reset": {
         "kind": "deployment",
-        "description": "The defect-bearing StepHeroNFTs runtime was created directly in this transaction and remained byte-identical through the pre-exploit block; the exploit trace executes it directly without a target-originated delegatecall."
-      },
-      "codeAgeSeconds": 109714760,
-      "failureModeId": "failure:stephero-referral-claim-reentrancy",
-      "evidence": {
-        "identitySourceIds": ["source-1", "source-2", "source-3", "source-6"],
-        "ageSourceIds": ["source-4", "source-6"]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": ["source-6"]
+        "tx": "0x7f99673be78f26504ce9f52cdc6b9ad65bf7e0d24a93889b77bc4627aed82426"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xef386a69ca6a147c374258a1bf40221b0b6bd9bc449a7016dbe5240644581877"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://blog.solidityscan.com/stepheronfts-hack-analysis-d151ae008597/"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-02/StepHeroNFTs_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x7f99673be78f26504ce9f52cdc6b9ad65bf7e0d24a93889b77bc4627aed82426"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1740111790/coingecko:binancecoin",
-      "observedAt": 1787938569
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T17:45:00Z",
-      "note": "Reviewed the exploit receipt and full call trace, commit-pinned reproduction, technical analysis, deployment receipt, historical runtime, and native balance changes. The attack funds buyAsset() with 1,000 BNB through buyer contract 0x8f327e60fb2a7928c879c135453bd2b4ed6b0fe9, then main contract 0xb4c32404de3367ca94385ac5b952a7a84b5bdf76 reenters claimReferral(address) from its receive hook. StepHeroNFTs 0x9823e10a0bf6f64f59964be1a7f83090bf5728ab receives exactly 1,000 BNB and sends exactly 1,138 BNB during the transaction, for a 138 BNB gross depletion; the main contract wraps and repays 1,000.1 BNB to the flash pool and forwards 137.899999999999999999 BNB to the attacker EOA. The defect-bearing address is a direct 15,099-byte runtime created at block 10502132, transaction index 232. Its hash is 0x9288358e6bac0ae24a75ecaf6fc92c04cd0c15c3d36564838fea442b3b1f0596 at deployment and pre-exploit block 46843423, and the exploit trace contains no target-originated DELEGATECALL. Code age is 109,714,760 seconds."
-    }
+  "loss": {
+    "usd": 90368.04,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "138.69",
+        "usd": 90368.04
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x14ca527f00556fd00d56de6d6bee83bf5301ee655a77c9be6020d0b350a7ba91"
   ],
-  "discovery": [
-    "dfhl:src/test/2025-02/StepHeroNFTs_exp.sol",
-    "seed:stephero-nfts:2025-02-21:stepheronfts-self-referral-claimreferral"
+  "refs": [
+    "https://blog.solidityscan.com/stepheronfts-hack-analysis-d151ae008597/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-02/StepHeroNFTs_exp.sol"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": ["source-6"]
-  }
+  "notes": [
+    "The defect-bearing StepHeroNFTs runtime was created directly in this transaction and remained byte-identical through the pre-exploit block; the exploit trace executes it directly without a target-originated delegatecall.",
+    "Gross loss is the contract's native BNB depletion: 138 BNB in the anchor (1,000 BNB in through buyAsset(), 1,138 BNB out through reentrant claimReferral() calls) plus 0.69 BNB in the copycat. The 0.1 BNB flash-loan fee is attacker financing, not victim depletion.",
+    "0x14ca527f by a different EOA (0x97d8170e) repeats the same buyAsset/claimReferral reentrancy 87 minutes later and takes the last 0.69 BNB; the contract's internal-transaction history since deployment shows no earlier multi-payout claim."
+  ]
 }

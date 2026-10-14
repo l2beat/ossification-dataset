@@ -1,146 +1,203 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:43114:0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d",
-  "protocol": {
-    "name": "Defrost Finance",
-    "slug": "defrost-finance"
-  },
-  "name": "Defrost LSWUSDC reentrancy",
-  "incident": {
-    "chainId": 43114,
-    "exploit": {
-      "transactionHash": "0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d",
-      "blockNumber": 24003941,
-      "transactionIndex": 0,
-      "timestamp": 1671794865
-    },
-    "attackerAddresses": [
-      "0x7373dca267bdc623dfba228696c9d4e8234469f6"
-    ]
-  },
-  "summary": "LSWUSDC computed deposit shares from its temporarily reduced assets during an ERC-3156 flash loan and allowed deposit() from the borrower callback. The callback therefore minted excess shares before flashLoan() restored the principal through a second accounting deposit, letting the attacker redeem more USDC than supplied.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 173637.629135,
-      "valuationTimestamp": 1671794865,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 43114,
-          "tokenAddress": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
-          "symbol": "USDC"
-        },
-        "amount": "173637.629135",
-        "usdValue": 173637.629135,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1671794865,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt gives the attacker cluster a net 173,637.629135 USDC after all LSWUSDC and Trader Joe flash-loan principal and fees are repaid. Transfers between the attacker EOA and helper are internal to the cluster."
-  },
+  "protocol": "Defrost Finance",
+  "name": "Defrost LSWUSDC flash-loan deposit reentrancy",
+  "summary": "LSWUSDC.flashLoan() withdrew the loan from Aave before the borrower callback and had no reentrancy guard, and deposit() priced shares off getTotalAssets(), which the outstanding loan depressed. A borrower could deposit inside the callback, mint excess shares, repay the loan and redeem them for more USDC than it supplied.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xff152e21c5a511c478ed23d1b89bb9391be6de96",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xff152e21c5a511c478ed23d1b89bb9391be6de96",
-        "codeHash": "0xb1aca4a8d95f1d28a7037b32c6d31e9561c9b99dd9b7dbdd9308e3a0281732ff"
-      },
-      "deployment": {
-        "timestamp": 1663037518,
-        "blockNumber": 19817058,
-        "transactionHash": "0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413",
-        "transactionIndex": 2,
-        "creatorAddress": "0x3cd5854fe3a13707b7882d8290d3cae793a7751a"
-      },
-      "ageReset": {
+      "address": "0xff152e21c5a511c478ed23d1b89bb9391be6de96",
+      "reset": {
         "kind": "deployment",
-        "description": "LSWUSDC is a direct contract whose runtime is identical at deployment and immediately before the exploit. Its runtime contains no SELFDESTRUCT, and the exploit trace executes flashLoan(), deposit(), and redeem() directly without delegating LSWUSDC execution."
-      },
-      "codeAgeSeconds": 8757347,
-      "failureModeId": "failure:defrost-lswusdc-flashloan-deposit-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0xc6fb8217e45870a93c25e2098f54f6e3b24674a3083c30664867de474bf0212d"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://metatrust.io/blogs/post/defrost-finance-event-analysis"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-12/Defrost_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-27T18:55:46Z",
-      "note": "Reviewed the exploit receipt and call trace, deployment transaction, runtime at deployment and pre-exploit, disassembly, commit-pinned reproduction, and technical incident analysis. The trace calls flashLoan(), re-enters deposit() from onFlashLoan(), and then redeems the inflated shares on direct contract 0xff152e21c5a511c478ed23d1b89bb9391be6de96. Its 23,572-byte runtime hashes to 0xb1aca4a8d95f1d28a7037b32c6d31e9561c9b99dd9b7dbdd9308e3a0281732ff at deployment block 19817058 and pre-exploit block 24003940, contains no SELFDESTRUCT, and does not delegate its execution in the exploit. Deployment transaction 0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413 occurred at 19817058:2, timestamp 1663037518, giving age 8,757,347 seconds. Receipt-level USDC transfers leave the attacker EOA/helper cluster with exactly 173,637.629135 USDC after repayment; the external analysis independently reports $173,637 of proceeds."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 43114,
-      "transactionHash": "0xc9873aaede77195cbf5604be044ff155ff67ce6024e65958a95c6c771c12d413"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2022-12/Defrost_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 198253.93,
+    "assets": [
+      {
+        "token": "0x625e7708f30ca75bfd92586e17077590c60eb4cd",
+        "symbol": "aAvaUSDC",
+        "amount": "198075.267615",
+        "usd": 198253.93
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:43114:0x963849af42062d12be68bbf3a433f1af3fa9c32e7cd973719fb1ff7e2a91a90a",
+    "eip155:43114:0xdf51a2758837c4b3c50410e813f80615691107ae86a5f6efb222c5ad22a22f15",
+    "eip155:43114:0x702c155e4e22d99896978593a1a92ec921113e1e2c4b6141a4666170c1936bc5",
+    "eip155:43114:0xf9224d2b06385072b613ecdcf886e27084801be07aefd9e3b293ea306a35aba7",
+    "eip155:43114:0x8c94f5a758133f0d58462dc7ade5e0f2ca390da539935ff912a77ee207f8def2",
+    "eip155:43114:0x93e350ddaa56a47e15dd781986b15680280e48db3c31912e028834aef356e204",
+    "eip155:43114:0x0626e8630bb03feaf789bb2e5d4c03a135b0fa7e56bdcd7ccc294b620a80e690",
+    "eip155:43114:0x4a4d8b5cbc8fb8e5a51dca2ad5bc31211ee7f9e0b1ae9bbc187272fa82f5c766",
+    "eip155:43114:0x3bccdcae9802ed9d7e7f799539f95bd60e235af56dd2eb6d651be092e5bade27",
+    "eip155:43114:0x9835831b233b6141f1d0f6e98c1977a33a551db7f4517a6815c5d3e280c71900",
+    "eip155:43114:0x97724f57e00b60c4c4aec12b344eb4f4557bc97d4eef0892f1698eb03dfbffca",
+    "eip155:43114:0xe64e00f44ee6b05ae5cf54e32c9e6ba9d90e53282383fbbd1b8aa899249501dc",
+    "eip155:43114:0xe2cca5737f759e5d69753c69ef8eba55bbca8008652767e7837eea03f384f316",
+    "eip155:43114:0x494b2c8400aaa41d635c1a4d966710095c16d33ba69a7a1ce15165eaa473f6f9",
+    "eip155:43114:0x0294d9a260d02f49fe5c1b93092a459c6cad919f0d4f898111f5c279467a6499",
+    "eip155:43114:0xda4a918f55a84f6b0ab9238b41faaa88c9492de396fd4f106df8c1e9ec4b2217",
+    "eip155:43114:0x7baeb823d3a95fd7c57cbb75d23fd5c0e438326718fd4769d3029fa79a50450d",
+    "eip155:43114:0x4bed3f2004a0a435185449227c39e8bbf0e82fd0876dd17a8522511f4aff901c",
+    "eip155:43114:0x11bbb6f30c2d1d1f12c9f3a86ae26b9e2a9e348fe9cf51eba0d05c1e599bb181",
+    "eip155:43114:0x1f686d4d1e56eac547958878ded5f40b5b7aec6ad95929c1a9c4e7666b930e2e",
+    "eip155:43114:0xe309ba815af01dc8870352bac9dc9de7980554dc282f05caa5a31ed4ec3dbd36",
+    "eip155:43114:0x7078a962b780b00cdddf3ee50924a13dd403aea8f0e3d86eb6878bf77533f920",
+    "eip155:43114:0x4d5c71bcb5a5a62813e0fb5cce5d0dabae4b8555bd120001edf917ae2368a1c3",
+    "eip155:43114:0xe51e6eaf61ff2c748b090c3a29b3c50da5a53429a1b9b077101d95f7378499e7",
+    "eip155:43114:0xd72427823ec1ad8dad60c962a092ab4d5d6b9febcd91805505d685a5c26d2c91",
+    "eip155:43114:0xe53a90c540395504c342fc1fb0d13f5cf47216053c3fa38118f95802c3e8080d",
+    "eip155:43114:0x1f1f12707cf2bbf3c4afa2f5dba4a2423ed9ecc21e3fc5649b59c03d2e19d9de",
+    "eip155:43114:0xd72b5226c9ac2966dd94e78e1cdadece2f017df7300d43a761f06d86cadb6c5c",
+    "eip155:43114:0x48b248d7c9f7051a2becc182e2a41400a2c9ff6193624695cb953fc23d4d9d6d",
+    "eip155:43114:0x5a1314cf3dbc4a56f339b4e7c0a4352a09ab549d9c063f5a14a66a7a0325ebb8",
+    "eip155:43114:0xc846b8c9e045cccd5e3a1ace0567bd475a36988a96ba76b2bc936cfe35263d74",
+    "eip155:43114:0x3c776f6a2c2564c776d47dcdd787f026c2a7c6865c8182b4bca65f39595f4bc3",
+    "eip155:43114:0xf07029c4a6c6495dca00ed3d9167b2726e84b1afbeed898957f1574d7e3e6df6",
+    "eip155:43114:0x6eae6fbb85900f8f4af3350a336b4c51b5fc008c60fc3b99fd5a85ea91b6365d",
+    "eip155:43114:0x2516a6ef4d8955c4189632929c17cd680f48820e3dc2126625ebfabc6330333e",
+    "eip155:43114:0x9a314722f8d8e02787ffe2652a27cf1e426f5c0ae49462110a11aac9e772e5fd",
+    "eip155:43114:0x81c7b37e3213aa091b56cd6ba83b4edea40391762dd7c243166d22a44cb3aa9e",
+    "eip155:43114:0x720467fd67f8db693ff83ebfe68e0198dd8171e722aca1e671bdd81d4ae3a19c",
+    "eip155:43114:0xd9dfd6a7c3adf856c4d845ece1a69de56abd190fa675027c33cc7f0a116078aa",
+    "eip155:43114:0x4a3e2b817732cf2e3f4aa97d6b13e2a062a5b0e3c67bb32824d99e63199a2ddd",
+    "eip155:43114:0xf12f36e5ff083c20b68f3d8c7f4de0dae02240338532482c201de1d253ac0c01",
+    "eip155:43114:0xec9fab7be8753f7fc186bbb3c3e2372f7decf9041c51d838903a64b4a4e3d5e8",
+    "eip155:43114:0xe6acedf017b3a55ee6b6e5a817219ac29d71bf5ec2edb1d0ecc1ce93651ac15d",
+    "eip155:43114:0xb156e1c723c7620f1682efe25ce84ce6b12fe5cdbecf231ac7e58bad6e9f5222",
+    "eip155:43114:0x66e7792c1f34631b602c4120c40fca7568fde7886c947531c4c6e1e4d85fe7e3",
+    "eip155:43114:0x3a8edca6a345aa2bacf82eb3bf129b415c86fbd23706478e426379aabe63bdd8",
+    "eip155:43114:0xcdd32ab0d05dff98a2eefc6d9342abf3a60dae0a77f63b6f1197fd1e7ebc084e",
+    "eip155:43114:0x98f76eb43338345a301b62b3436e8a954f0d1a8ab5387281e9f9e2d9a1357bb8",
+    "eip155:43114:0x9d8af73c77cd68e81a1cf837db453194e0937aea6603712256b6104b2472398d",
+    "eip155:43114:0x8b79b3887bba7dc3b90114addbcc04cafdba700c479c21c033a24e2260acab38",
+    "eip155:43114:0x7ece4959b31a92da082a4223f6783a9066fb1ba029124832b598e19493af157b",
+    "eip155:43114:0x60a4b47b00f4a27a28da68259b074d8a9790dc8b74c789d51ca7d9e6ea45df4d",
+    "eip155:43114:0xef0fd9b1c33302385ce31ae61d83a59d9184e6f08187e42cddb117edb1836118",
+    "eip155:43114:0xfdd82b74763c7be7fc4806c72d6d96eebdad3f35c6c6cda49d84f964ad2e47dc",
+    "eip155:43114:0xf23e4874845a7928d693ec7f24925f3259510210bb516ad323b5eceeff29798d",
+    "eip155:43114:0x208c030171317e00660b0be743b4c5186d95e9df93042e16000ff55eb5ee1af0",
+    "eip155:43114:0xf94de81984105e27da0ed88ca3f9bc99796e3624d0de6645d02d000c2041a184",
+    "eip155:43114:0x8c8ec59a394e8255c5106680d5fea3ac25b7a3bb585fd611ca388d42a82ffe83",
+    "eip155:43114:0x23000b3ef268cae0b8f8ea60540dab92ee8bdd2acfaa43dec655dd9520172aea",
+    "eip155:43114:0xed8b1e9bdfd8a705eb734ec6cc3024adb3e43cf0c4c4209ec4dc5e439196d713",
+    "eip155:43114:0x1698869005a75e81cf3be1c325b7189c1cf56c4446e923351185e4775e2befce",
+    "eip155:43114:0xd35a41a816640fe802680b583804537eb30a76989d6baf604b694d6f6a1dd9bc",
+    "eip155:43114:0x357b85701d29642d4fffa673b520f695883fd827d3dd9d1f0285c0e2bf477198",
+    "eip155:43114:0x90eef24cd58ebd85b81e60442a7a12e925ff22535c89dd1a6039ec7f890c2a72",
+    "eip155:43114:0x3f8cd3fd9159ba74488074940a96ff99e9aaffa198986baef20eea7740f4ccde",
+    "eip155:43114:0xf5c55ccb2e9e58962b84933bb273bf53a3896d5182db1aca64ae3889a2c19923",
+    "eip155:43114:0xd17eef5ec01c1495b50d7ebdda7053367179574fd1341c210896d0a0ccda6472",
+    "eip155:43114:0x37490469cd79708cb9e86b7e9976d2eab12045bd2d5097bb9356fc55a2216183",
+    "eip155:43114:0x7c0dba7ebf91171d7393e1385187ad94e3c7219f866ae79778cace6f7f69e73b",
+    "eip155:43114:0xfe2148b403a7058a9bfb4fc99f578925a432bb0d21ce5b54926d95a23716b7cf",
+    "eip155:43114:0xabe98932f60cc322586eebf6af267ccda65a06bc5658f2e695c0ae118fa1ae47",
+    "eip155:43114:0x1418c36c0486e1d5e20f3d1103016173f74c3542a36ed39b572d3cec898feaec",
+    "eip155:43114:0x4a84732f58e3bce41bad7f024290dc10d11b6583e058f5ef75299f9814bd7223",
+    "eip155:43114:0xa18b13b7373fdd50e8ea73c043787977f92ebb3be4f1f0a212a15b1a106b5767",
+    "eip155:43114:0x35d0ed9da2481ef37fd1bf94ac0018d8266f84347041d313f7ba3219fb29d8f6",
+    "eip155:43114:0x373d53434843d9a45006823b91694b3514b5cc67b1a1d0e5957c4a5913e1da2a",
+    "eip155:43114:0xf52a9f67fb4b51bc17f13def7793c755003696ae6076496f101252137e4e4d1e",
+    "eip155:43114:0xf7f3860f4ef106a0865396c112fb918b59a6fe0fc8b90a154fd05bf6de2ba830",
+    "eip155:43114:0x852077eaf71a82f43a6ea7f86bb4eb16e92e3926038ac6d119b1975b34ec927d",
+    "eip155:43114:0xecbbe8f9647ebb6722c4b1851968795d5de2162f040ee4069e72d04e5ee8de9f",
+    "eip155:43114:0xf28465e25f4718463db2c5d17dd8d40d8ad12475998d002a1a59f91fddf7c760",
+    "eip155:43114:0xe02868e9547d7719991d459c67241942d7583003c95aeb01d3304b0c1dbbc1e1",
+    "eip155:43114:0xa879d2c257876e5dfb483eae686e2f332f9786ec8b56fcc4107fb8255570d05e",
+    "eip155:43114:0xe008f325449db4fdae23dbf1260050353e3ac5763a8b45059fc94919b9d7b1f4",
+    "eip155:43114:0x6d35dc6da2150b8f7ac7eb0cd1fe56c82c97aa4b7dd9d0965d903d2877a3dea6",
+    "eip155:43114:0xbfb9761361e7a6dc4070e38f80ca2ad5b58bd793253215183882345458c0ede9",
+    "eip155:43114:0x7d41b618f5b3b6e092d31e97e65e6feb0ab43ed372fb110ca1ea1fbc1d7e274d",
+    "eip155:43114:0x51b836bb83c64fea831944b065e6b1414aa7c2e5cb6c6a8a67cb2f003703005d",
+    "eip155:43114:0xff2198a7cc7b2bf3e1ff908375f7076c5ba1a3d8bcb4a5526cb45e542fcd48ff",
+    "eip155:43114:0x222b72e5d3abcb38e5a139d6939b29e9fa145d497cab2419043f1962302fe781",
+    "eip155:43114:0xd757cc0d27f2ac29ecc5eda051b0a1baab15075c7485e6f1e3c4798e06e5f6ec",
+    "eip155:43114:0x83dfc09be7d2f9dbab091ec87c3328abe681e916f2c24b5ee7d21535955e0687",
+    "eip155:43114:0xb250452c68363b131a118b4836b11929161b22688b2963a2c8d1d7a95f78895e",
+    "eip155:43114:0x16b16a2a5e39ef2269d49815e96fbded3c2897d4a98936cad59f03a0c815d62c",
+    "eip155:43114:0x2e7487a4044333d5fc435cc11fb6762228e8aab6e16de4c7244cdb86f6a6e1f1",
+    "eip155:43114:0x2a76cfc09f8aac6861373e2e409e890c65346d3007978723d316b5d8ddf639ac",
+    "eip155:43114:0x473ad54e4dc226c2a67b1b4fb39a4fbe470fa7d3b06a0dd30392c35434511fb7",
+    "eip155:43114:0x40c625028c61e9db39551869136faa1b4ddd2782107cfce726c7646d7150acc9",
+    "eip155:43114:0x472352373e72080f99745a3bd98f88159798b59748a815b31c0c45babe22fcf4",
+    "eip155:43114:0xe7f942de2c9fc53a91e0fca5e6d3fdd52bfe9cb16ff05bf2af80322e1b3d8e3b",
+    "eip155:43114:0xf73b443f00ad40875c79a95e76fbf0af84a73dcf92187ad4df03f58614a1735e",
+    "eip155:43114:0x32bed6554d3a80382d5ec28f7856f1bf023a26e515b2d581e5b4171ef9a1f02f",
+    "eip155:43114:0x0913a83f970d5ec2601def32c4f2249c6a1ea6e1d03907a5d90b4b3990f8c879",
+    "eip155:43114:0x8bdb26a49bccbd081ca6dd93a8bf9fcc28e1521754e18f0e6173b52b1af83c57",
+    "eip155:43114:0xddac241f255d3ec6d36318f5d9af0296df73226db817f2df02297fd727b886fe",
+    "eip155:43114:0x3b16140ec1b5a0309e9640c5e694db57cbb85a7775af68bcc38c0de15a83e700",
+    "eip155:43114:0x5b1ba908f2eebadd69c66d94a0f5c3f8983daecea36867d98228e6f37ca7ca90",
+    "eip155:43114:0x2bf0810ec2bb68c357d7949472941d08f4941a97574b0809a4338509cacdc053",
+    "eip155:43114:0x80790568d96dcbbe80982446b4c1c21a3523dcb007ec7e5637eafe5472b3e487",
+    "eip155:43114:0x14a5f40d7d46670fb04e79ef7b869cbdfdf2257e23ba18b7eb0ee56405272d09",
+    "eip155:43114:0x5e1ee91abad40ad323bc17a28f32dca273f922ee260162e632725be00c5e9ec1",
+    "eip155:43114:0xac03650e6d1f594e2d91941b08fa01920463d5503531a33ee1b5217d25b72b8b",
+    "eip155:43114:0x51d102e0d9d91d5e5a3798a0484164da82f3c5f2f11b21512ab46e72059266cd",
+    "eip155:43114:0x2fc01880f251c58d69c93971d25229ae8adbc4ae81f97eb228f274143739d75a",
+    "eip155:43114:0x889b98824ca4f9e4f6f5ff1c1f1e2e16b6102238ae85addb94d470aa3ca19e1d",
+    "eip155:43114:0xc3d7c5122a494f416950ef8606f568885e5b5adfda583a0f7b2bcc0cdd2c248c",
+    "eip155:43114:0x2515173fd61656e87c044edfe11f1025a06a9201c52961fa4b9e1cda5d53359c",
+    "eip155:43114:0x64c973f14d6e9b549b2424547ce7cf05861c0cdea02ebe772570afc48851bf11",
+    "eip155:43114:0x0cd85578bdaa60be45883852817dc2af0cf05121875686dfd62facb3a21cacd0",
+    "eip155:43114:0x4d684d911eb14af685a32da85026eb6abe7bd8dd9b7c7f1039bff1ca774eb2ae",
+    "eip155:43114:0xf0d54e688e5c71f33f8c6fe700cdbe23fc573964e7f722bfdc5992364a9bc9be",
+    "eip155:43114:0xbd618e5ed94335eac1036ea48c98ec62fa93fee8a1557dc48f58cd8bc5f7bef9",
+    "eip155:43114:0xcc707879b5b4248d27c96d26798e1e8fccc45b1ac729079c4a8585ae28b38e8d",
+    "eip155:43114:0x59f86f57fe610fc2f6b527000aaf3431ed35b2ea12ad743013e8926c49c93ec6",
+    "eip155:43114:0xe18c09d329526a0f9368f86488191bfc5e64fcb2ed84d3abfad26d44949ad62a",
+    "eip155:43114:0x72efd7971b0a0a510a35de6339ed48edb2f98582ff3ef87d16eadeb606fa8741",
+    "eip155:43114:0x88c307f86d76dab02a2e7c28a0432706c25137b1d873af5ce5657eb190aff8b5",
+    "eip155:43114:0xa1c1451ebb7b9ab1f5e6d8f5c348b6873104619ad43ad1b37a92ebeac8aa37cd",
+    "eip155:43114:0xa74a738942862893edb03cf931238babc83128200ff26df47412f57535110150",
+    "eip155:43114:0x31875f110308e9cf5ed123e13023571f2922d72941b5c27305189aa6f6b52aec",
+    "eip155:43114:0x513c8f1bf25f8c21fdaa8ea6058023f62320d83a5bf2126804e354c7f0f37cc2",
+    "eip155:43114:0xd730caf200ad6de1cb5cb26cb59140ca3fa613af172e4e6ba0530c0c7028266f",
+    "eip155:43114:0x375d9ecfcf75225e324c8a3559558b63df1e11b49391f1ee12ec4c7d40a1c858",
+    "eip155:43114:0xe9ca289e68b8a371ad6705df720b87a70d25fbdd87bef1a6d93d35f79ce14248",
+    "eip155:43114:0xa89a047619efb82e15fd3824d35414735d0775aaa09868185fcc047f866622d4",
+    "eip155:43114:0xc911374503e5aacc4539a14188a7d7129ab05bfc8d26f95d823c0b9a5f590283",
+    "eip155:43114:0x54b81afca9c44851eefc6caa1c011e7bd7bfb73c2d3520652b1e13b5f53d9c5a",
+    "eip155:43114:0x1ae5713ecc3aa99ca915a7ca5725eff2790ed02c1a4a9f7e708630749dcfaf2a",
+    "eip155:43114:0x535de7b2098e804a811473646b90a8bd5fc68ffcf83428841d851aea6ba76ca2",
+    "eip155:43114:0xe912d5527956bcc31900b15d80e92fd2e41dec015df67efb56ef525b8be4b198",
+    "eip155:43114:0xdb27347272adbfa842d830d07db1ab6c0ab500fa3a97d20c8324cdb7c067328e",
+    "eip155:43114:0x27e5a308ec173bdb061cec61973d0086b127ad2a7633736fca0108f34f61899f",
+    "eip155:43114:0x5aa5649593842cca7475f10034748213996eeb09e34dce3f8e1f96d8de3847e3",
+    "eip155:43114:0xca90335efe9b7cf9a1180c9c902e7c85628d1627c623e4c6c72fda23e842b304",
+    "eip155:43114:0xbcc40a739adcb355a70b1b8ba7b1a6c6411ff363bdb1bac8fec041a9b0dfb859",
+    "eip155:43114:0xfa781dca52bbaa681d8cd3fa09c178ec421e580de6a2532af8317f3294b5a281",
+    "eip155:43114:0x2bf473afa5e4622665a7b93a003a25a7e939feb185db9d63073bcd6a3744c989",
+    "eip155:43114:0xf3cea5a0aa94a588c18634aac2cbfb21b2340e01b936d6e7c20d201891fc7634",
+    "eip155:43114:0xbd3bfc8005df71c50beece63eef2e7f6896f8de83cc3e0ec5f1ab8579b20a85b",
+    "eip155:43114:0xfa6ce3c39acdc7b6273071046c5ac4f0d320b8c0244577c1ac609a3faaed65ff",
+    "eip155:43114:0x10028a8b89cc824955fe7bc6531ed4cc76762e6fec0a6a98dbd849be1b7382b0",
+    "eip155:43114:0x3c0300bf8b2357d180bb1949941aa0d3ac7be39fae1be3728e8d20a34c999d56",
+    "eip155:43114:0xf6260400a98a0f48ba4cade656fb45ba0d0cf62cca95b321c4dbed3cede154c4",
+    "eip155:43114:0x0d320fd600e27263159a8e45aa37872c1f45d6ebd408157ea4e2fd79934cd437",
+    "eip155:43114:0xe2c7a1afde2fdc2ed5ac5cbf82d84513bc74d06510050ce7f2aaba0409416a15",
+    "eip155:43114:0xb4bdfff832d6c7e23a181678c0c8c849b3f16504d417479842cd191143093247",
+    "eip155:43114:0x9e21764e09d8209894eb3bca6908ef08b796ec720418bc5cf6f50a01ef4681dc",
+    "eip155:43114:0x641cad4ee896143a91de5beeb8891d08a5382074e8312d9e68a391120ee2eb8d",
+    "eip155:43114:0x21fb85c3da6ebb90e44e3183a599a0c52e7cff7ab3dcef43618d4c6b9a08d7ba",
+    "eip155:43114:0x213b8249fb7d77c4a105dc3ddb78ed80d386903ac7650b3b495834855b6dbe18",
+    "eip155:43114:0x08c8c1db6f192ad08c3d032546923d3bfe7a3ea62dcbac228571ef07b3d7ad9c",
+    "eip155:43114:0x9a38cb88d5ae3a0e0f9a24d47636785f73d66542004575d1b0a9a9adf085e53c",
+    "eip155:43114:0xb8bfb2caac77d57ca19a85ff3b790b54ab849ea95907de01922e589a9dfebefc",
+    "eip155:43114:0x819bd84388f7320e9110887403899ae972b01e4e8a33989aaf129e45a934e0d2",
+    "eip155:43114:0xce48451863d83b697483e432ca78f3ed1a42e90a62c4eaed2d23bacb9d315ebc",
+    "eip155:43114:0xaeef423c059d033600fd89a53ec0f8fa777831da7075b49b0341a334a112e835"
+  ],
+  "refs": [
+    "https://metatrust.io/blogs/post/defrost-finance-event-analysis",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/Defrost_exp.sol"
+  ],
+  "notes": [
+    "Campaign: every later FlashLoan on the vault (166 txs to 2023-02-05 by the original attacker and six copycat senders, none the deployer) withdrew more than it put back; the anchor is the vault's first FlashLoan.",
+    "Loss is the vault's net aAvaUSDC (its Aave position) depletion per transaction, summed; the attacker's flash-loan fees paid to Trader Joe are not subtracted.",
+    "SetPoolLimitation and AddAuthorization after deployment set leverage bounds and an operator; flashLoan() and deposit() did not depend on them, so deployment sets the age."
+  ]
 }

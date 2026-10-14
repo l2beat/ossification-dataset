@@ -1,134 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x03d363462519029cf9a544d44046cad0c7e64c5fb1f2adf5dd5438a9a0d2ec8e",
-  "protocol": {
-    "name": "Beefy Moo CAKE CTX vault",
-    "slug": "beefy-moocakectx"
-  },
-  "name": "Beefy StrategySyrup unsettled-reward share pricing",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x03d363462519029cf9a544d44046cad0c7e64c5fb1f2adf5dd5438a9a0d2ec8e",
-      "blockNumber": 22832428,
-      "transactionIndex": 60,
-      "timestamp": 1667770238
-    },
-    "attackerAddresses": [
-      "0x35700c4a7bd65048f01d6675f09d15771c0facd5"
-    ]
-  },
-  "summary": "StrategySyrup.balanceOf() omitted accrued MasterChef and SmartChef rewards even though deposit() materialized them, while the vault minted shares from that pre-deposit balance before calling deposit(). The attacker could therefore deposit 50,000 CAKE at the stale low share price, trigger settlement of rewards earned by prior depositors, and immediately withdraw a pro-rata share of those rewards.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 147945.50803644783,
-      "valuationTimestamp": 1667770238,
-      "method": "incident-price",
-      "sourceIds": ["source-1", "source-5", "source-6"]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
-          "symbol": "CAKE"
-        },
-        "amount": "29913.717660761050982637",
-        "usdValue": 147945.50803644783,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1667769978,
-          "unitPriceUsd": 4.945741272089143,
-          "sourceIds": ["source-5"]
-        },
-        "sourceIds": ["source-1", "source-6"]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the exact excess CAKE redeemed from the vault: the helper deposited 50,000 CAKE, withdrew 79,913.717660761050982637 CAKE, and repaid the 50,000 CAKE Venus borrow. It then deposited the 29,913.717660761050982637 CAKE surplus back into the vault for 16,787.443968823239623346 new shares, preserving its claim and the existing holders' dilution rather than recovering their loss. Attacker-supplied BUSD and CTK and financing costs are excluded. CAKE is valued at DefiLlama's nearest price at or before the incident."
-  },
+  "protocol": "Beefy",
+  "name": "Beefy Moo CAKE CTK vault: StrategySyrup unsettled-reward share pricing",
+  "summary": "StrategySyrup.balanceOf() omitted CAKE rewards pending in MasterChef, while deposit() claimed them; the vault priced new shares from the balance before calling deposit(). The attacker deposited 50,000 flash-borrowed CAKE at the stale share price, let the deposit and a harvest settle about 53,800 CAKE of prior depositors' rewards, and withdrew its pro-rata share.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xc2562dd7e4caee53df0f9cd7d4dddaa53bcd3d9b",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xc2562dd7e4caee53df0f9cd7d4dddaa53bcd3d9b",
-        "codeHash": "0x87d18de8060b268a22cbb9baad56d97a81fdcbb761e87081802c4b6d406e6bc2"
-      },
-      "deployment": {
-        "timestamp": 1603824340,
-        "blockNumber": 1717347,
-        "transactionHash": "0xf634c564d3b1babe034fc0dffeb19aaf8c0e2265c77941a5337995c2e8a36714",
-        "transactionIndex": 1,
-        "creatorAddress": "0xc362fa359031a081d21cb9d57c29e055fecbcb06"
-      },
-      "ageReset": {
+      "address": "0xc2562dd7e4caee53df0f9cd7d4dddaa53bcd3d9b",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly executed StrategySyrup runtime contains both the incomplete balanceOf() accounting and reward-settling deposit() path; it was created with the vault, reward token, and SmartChef fixed in its constructor and remained byte-identical through the pre-exploit block."
-      },
-      "codeAgeSeconds": 63945898,
-      "failureModeId": "failure:beefy-strategy-unsettled-reward-share-pricing",
-      "evidence": {
-        "identitySourceIds": ["source-1", "source-2", "source-3", "source-6"],
-        "ageSourceIds": ["source-4", "source-6"]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": ["source-6"]
+        "tx": "0xf634c564d3b1babe034fc0dffeb19aaf8c0e2265c77941a5337995c2e8a36714"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x03d363462519029cf9a544d44046cad0c7e64c5fb1f2adf5dd5438a9a0d2ec8e"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://crypto.training/hacks/2022-11-moocakectx/"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-11/MooCAKECTX_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf634c564d3b1babe034fc0dffeb19aaf8c0e2265c77941a5337995c2e8a36714"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1667770100/coingecko:pancakeswap-token",
-      "observedAt": 1787939178
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T17:46:18Z",
-      "note": "Reviewed the exploit receipt and full call trace, explorer-verified contracts, commit-pinned reproduction, technical analysis, direct deployment receipt, historical runtime, and token-transfer ledger. The vault prices and mints 44,955.527433503234324261 shares before earn() calls StrategySyrup.deposit(); its enterStaking() call settles 53,786.404578434280321792 CAKE of previously accrued MasterChef rewards after those shares exist. A constructor-created helper also calls harvest(), though the reproduction notes that this call is unnecessary and lowers profit. Burning the attacker's shares transfers exactly 79,913.717660761050982637 CAKE from the vault against its 50,000 CAKE input. After repaying that borrow, the helper deposits the exact 29,913.717660761050982637 CAKE surplus for 16,787.443968823239623346 vault shares. StrategySyrup 0xc2562dd7e4caee53df0f9cd7d4dddaa53bcd3d9b reports only held and staked CAKE in balanceOf(), while its deposit() materializes pending rewards. It is a direct 9,504-byte runtime created at block 1717347, transaction index 1, with constructor-fixed vault 0x489afbaed0ea796712c9a6d366c16ca3876d8184, output CTK, and SmartChef. Its code is absent in the preceding block and hashes to 0x87d18de8060b268a22cbb9baad56d97a81fdcbb761e87081802c4b6d406e6bc2 at deployment and pre-exploit block 22832427. Code age is 63,945,898 seconds."
-    }
+  "loss": {
+    "usd": 147945.51,
+    "assets": [
+      {
+        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "symbol": "CAKE",
+        "amount": "29913.717660761050982637",
+        "usd": 147945.51
+      }
+    ]
+  },
+  "refs": [
+    "https://crypto.training/hacks/2022-11-moocakectx/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/MooCAKECTX_exp.sol"
   ],
-  "discovery": [
-    "dfhl:src/test/2022-11/MooCAKECTX_exp.sol",
-    "seed:beefy-moocakectx:2022-11-06:beefy-moo-cake-ctx-share-price-donation-inflation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": ["source-6"]
-  }
+  "notes": [
+    "The strategy was created with the vault, reward token and SmartChef fixed in its constructor and has no setters the exploit used. The vault saw no deposit or withdrawal after block 2012052, and the anchor is its only transaction that both mints and burns shares.",
+    "Loss is the CAKE the attacker withdrew beyond its 50,000 deposit. It re-deposited that surplus and withdrew it 32 blocks later (0xc19dcddb), a round trip of its own funds. The harvest's normal 5% fee swap and the CTK the attacker supplied to SmartChef are not counted."
+  ]
 }

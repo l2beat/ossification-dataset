@@ -1,138 +1,49 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0x1ce7e9a9e3b6dd3293c9067221ac3260858ce119ecb7ca860eac28b2474c7c9b",
-  "protocol": {
-    "name": "Radiant Capital",
-    "slug": "radiant-capital"
-  },
+  "protocol": "Radiant Capital",
   "name": "Radiant Capital rUSDCn index-rounding drain",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0x1ce7e9a9e3b6dd3293c9067221ac3260858ce119ecb7ca860eac28b2474c7c9b",
-      "blockNumber": 166405687,
-      "transactionIndex": 2,
-      "timestamp": 1704221618
-    },
-    "attackerAddresses": [
-      "0x826d5f4d8084980366f975e10db6c4cf1f9dde6d",
-      "0x39519c027b503f40867548fb0c890b11728faa8f"
-    ]
-  },
-  "summary": "The Aave-v2-derived rUSDCn implementation rounded scaled balances during burns. By repeatedly manipulating the fresh reserve's liquidity index with flash loans, deposits, donations, and withdrawals, the attacker withdrew more USDC than the shares burned and used the inflated position to borrow WETH.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4500000,
-      "valuationTimestamp": 1704221618,
-      "method": "reported",
-      "sourceIds": [
-        "source-2",
-        "source-3"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Approximately $4.5 million of gross assets was reported lost across three consecutive transactions from the same attacker that invoked the same exploit contract and defect. The individual campaign assets are not repriced here."
-  },
+  "summary": "Radiant (an Aave v2 fork) listed a native USDC market 15 seconds before the exploit. As its only supplier, the attacker inflated the empty reserve's liquidity index with repeated flash loans whose premiums accrued to its tiny supply, then used rounding in rUSDCn burns to withdraw more than it held while borrowing WETH.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x3a2d44e354f2d88ef6da7a5a4646fd70182a7f55",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xc0249d743a17ed44b4f9ee611b51d26ab2e26444",
-        "codeHash": "0xbe2214a5bae06adeb2e832d0394131e64370f3e7fe510187bafcff91445d1356"
-      },
-      "deployment": {
-        "timestamp": 1704221603,
-        "blockNumber": 166405628,
-        "transactionHash": "0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247",
-        "transactionIndex": 2,
-        "creatorAddress": "0xe51dfe7188d0b9a84141ff47d04ab07aeb82b89d"
-      },
-      "ageReset": {
+      "address": "0x3a2d44e354f2d88ef6da7a5a4646fd70182a7f55",
+      "code": "0xc0249d743a17ed44b4f9ee611b51d26ab2e26444",
+      "reset": {
         "kind": "deployment",
-        "description": "The rUSDCn proxy was created and initialized with the defect-bearing implementation in this transaction. Its implementation slot did not change before the exploit."
-      },
-      "codeAgeSeconds": 15,
-      "failureModeId": "failure:radiant-rusdc-index-rounding",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+        "tx": "0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247"
+      }
+    },
+    {
+      "address": "0xf4b1486dd74d07706052a33d31d7c0aafd0659e1",
+      "code": "0xd1b589c00c940c4c3f7b25e53c8d921c44ef9140",
+      "reset": {
+        "kind": "config",
+        "tx": "0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247",
+        "address": "0xf4b1486dd74d07706052a33d31d7c0aafd0659e1",
+        "slot": "0xd57ffa7c36bb17e12f7ba93097c3a711d0fc3d18cabd5d323a6361d224273009"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x1ce7e9a9e3b6dd3293c9067221ac3260858ce119ecb7ca860eac28b2474c7c9b"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-01/RadiantCapital_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://neptunemutual.com/blog/how-was-radiant-capital-exploited/"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x2af556386c023f7ebe7c662fd5d1c6cc5ed7fba4723cbd75e00faaa98cd14243"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xc5c4bbddec70edb58efba60c1f27bce6515a45ffcab4236026a5eeb3e877fc6d"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T06:13:23Z",
-      "note": "Reviewed the live Arbitrum receipts and call traces for the three consecutive exploit transactions, the rUSDCn creation receipt and trace, its pre-exploit implementation slot and runtimes, the pinned exploit reproduction, and the cited technical analysis. The first exploit calls LendingPool 0xf4b1486dd74d07706052a33d31d7c0aafd0659e1, which repeatedly calls rUSDCn proxy 0x3a2d44e354f2d88ef6da7a5a4646fd70182a7f55; that proxy delegates the scaled-balance burn path to implementation 0xc0249d743a17ed44b4f9ee611b51d26ab2e26444. The proxy was created internally by 0xe51dfe7188d0b9a84141ff47d04ab07aeb82b89d in transaction 0x0e5330ad77b9b806cb9f6ea595d58552f341dbad0691e0599ab5f1caf214c247 at 166405628:2, only 15 seconds before the first exploit. Its implementation slot already selected the declared artifact, its runtime was absent in the prior block, and no Upgraded event occurred through the exploit. The pre-exploit implementation runtime hashes to the declared value. The inherited nine-second timestamp is discarded: block 166405650 is the attacker's contract creation, not a protocol code change. The same EOA then called the same exploit contract in two further successful transactions at blocks 166405720 and 166405731; the reported $4.5 million is retained as their coherent gross campaign loss."
-    }
+  "campaign": [
+    "eip155:42161:0x2af556386c023f7ebe7c662fd5d1c6cc5ed7fba4723cbd75e00faaa98cd14243",
+    "eip155:42161:0xc5c4bbddec70edb58efba60c1f27bce6515a45ffcab4236026a5eeb3e877fc6d"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $4.5 million gross loss is a rounded reported total for the three-transaction campaign; individual asset quantities are not structured in this record."
-    ],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 4506495.93,
+    "assets": [
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "1904.504602564646984979",
+        "usd": 4506495.93
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-01/RadiantCapital_exp.sol",
+    "https://neptunemutual.com/blog/how-was-radiant-capital-exploited/"
+  ],
+  "notes": [
+    "The LendingPool's flash-loan index accrual is half of the defect; its reset is the same multisig batch that listed native USDC (rUSDCn aToken address written into reserves[USDC]), so both targets age from that listing.",
+    "Loss is the WETH the rWETH reserve paid out against debt the attacker's throwaway contracts never repaid. The October 2024 Radiant multisig key compromise is a separate, out-of-cohort event."
+  ]
 }

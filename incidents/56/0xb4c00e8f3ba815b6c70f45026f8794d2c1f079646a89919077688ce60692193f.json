@@ -1,173 +1,39 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xb4c00e8f3ba815b6c70f45026f8794d2c1f079646a89919077688ce60692193f",
-  "protocol": {
-    "name": "BonfireSwap",
-    "slug": "bonfireswap"
-  },
+  "protocol": "BonfireSwap",
   "name": "BonfireSwap router transfer() pulls BONFIRE from any approved holder",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xb4c00e8f3ba815b6c70f45026f8794d2c1f079646a89919077688ce60692193f",
-      "blockNumber": 122003954,
-      "transactionIndex": 1,
-      "timestamp": 1789463732
-    },
-    "attackerAddresses": [
-      "0x2b5bf7d9d9dc1eec68f40c6b7a8f197e65f9731a",
-      "0x28e976ea7b83553d6d1d45ce81334156a2632127"
-    ]
-  },
-  "summary": "BonfireSwap.transfer(to, amountAIn, beneficiary, deadline) and loggedTransfer call BONFIRE.transferFrom(to, pancakePair, amountAIn). There is no check that msg.sender is `to`, so the router spends any holder's standing router allowance for any caller. The function then calls skimPools(beneficiary), which pays the pair's excess BONFIRE to the caller-chosen beneficiary. The attacker named 65 approved holders as `to` and itself as beneficiary. It emptied their BONFIRE balances into the pair, skimmed the tokens back and sold them through the router for 66.08 BNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 55945.68767765976,
-      "valuationTimestamp": 1789463732,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x5e90253fbae4dab78aa351f4e6fed08a64ab5590",
-          "symbol": "BONFIRE"
-        },
-        "amount": "6022302608127.130500287",
-        "usdValue": 55945.68767765976,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1789463732,
-          "unitPriceUsd": 9.28975033605265e-09,
-          "sourceIds": [
-            "source-6",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The loss is the 65 victims' whole BONFIRE balances before the exploit, 6022302608127.130500287 BONFIRE (9 decimals). All 65 balances are 0 after source-1. BONFIRE's 10% transfer fee is not deducted: it came out of the victims' balances. The unit value is the attacker's disposal in the same transaction. Two router sell() calls debited 5084276867162.854999227 BONFIRE and returned 66.080052256436953636 WBNB, which the router unwrapped to the attack contract. BNB is valued at DefiLlama WBNB 714.764306662756 USD (source-7), giving 9.28975e-9 USD per BONFIRE. That is below DefiLlama's pre-exploit BONFIRE quote of 9.6255e-9 (source-8), so the dump moved the price. The victims' depletion is worth 78.2715 BNB at that rate; the attacker's realised BNB was 66.08. Later abuses of the same function are de minimis and not added: 0x3ae217b0 pulled 146609.934596658 and 66339.006546790 BONFIRE (logged) from 0x284a931f in 0xf1e58aed... and 0xc0e37d95... (blocks 122183344/122184014), and 0x1fc3f1bd pulled 0.545202767 BONFIRE from 0x9f8f224a in 0xd6d06f57... (block 124310589). Together they are under 0.00001 BNB at the same unit value.",
-    "realizedAt": 1789463732
-  },
+  "summary": "BonfireSwap.transfer(to, amount, beneficiary, deadline) moved BONFIRE from the caller-chosen 'to' into the pair with transferFrom and then skimmed the pair's surplus to 'beneficiary', without checking that the caller was 'to'. The attacker named 65 holders with standing router approvals as 'to', took their balances and sold them for BNB.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x17e801e17cefc6334059189c178d4783830e03d3",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1643893053,
-        "blockNumber": 14932988,
-        "transactionHash": "0xf76467ed5ecfbc89dc9a451752e7d34908a8fe82432bfc1f242bc84e62e93e3f",
-        "transactionIndex": 229,
-        "creatorAddress": "0xbf007c28b08e925c0fe008a62ad5c2f32b465182"
-      },
-      "ageReset": {
+      "address": "0x17e801e17cefc6334059189c178d4783830e03d3",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable non-proxy BonfireSwap router. transfer() pulls from its `to` argument by construction. The only configuration write, setPool(pair, true) at block 14934742, lets skimPools pay the attacker. It does not create the unauthorized pull, which debits victims whether or not the skim pays."
-      },
-      "codeAgeSeconds": 145570679,
-      "failureModeId": "failure:bonfireswap-transfer-arbitrary-from",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x17e801e17cefc6334059189c178d4783830e03d3",
-        "codeHash": "0x07c9743d1ac20261fb5fb477da2da64533efba2acb19788ccd2ecab9d10f034d"
+        "tx": "0xf76467ed5ecfbc89dc9a451752e7d34908a8fe82432bfc1f242bc84e62e93e3f"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb4c00e8f3ba815b6c70f45026f8794d2c1f079646a89919077688ce60692193f"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/BonfireSwap_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf76467ed5ecfbc89dc9a451752e7d34908a8fe82432bfc1f242bc84e62e93e3f"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:03:57Z",
-      "note": "Reviewed anchor, root cause, earliest use and age. eth_getTransactionReceipt(source-1): status 1, block 122003954, index 1. It is a contract creation by 0x2b5bf7d9d9dc1eec68f40c6b7a8f197e65f9731a of attack contract 0x28e976ea7b83553d6d1d45ce81334156a2632127. debug_traceTransaction(callTracer): the constructor makes 66 successful router transfer() 0x335a9406 calls, whose `to` arguments are 65 distinct holders and beneficiary is 0x28e976ea (top victim 0xeff2fc4e3145f58f534d68a36bcd3085be6a4096 twice). Each call makes BONFIRE 0x5e90253fbae4dab78aa351f4e6fed08a64ab5590 transferFrom(holder, pair 0xd3f478f0d5e98b01f757bc6cb54db4c00b9838f2), then skimPools pays the pair's excess to 0x28e976ea (receipt Transfer logs 2-329). Two sell() 0x8a038a54 calls follow. One transfer, one sell and one simpleSell call revert. None of the 65 holders is the sender or attack contract. allowance(holder, router) at block 122003953 is a standing near-max approval. Earliest use: every router pull emits BONFIRE Approval(owner, router) (topic 0x8c5be1e5...). Etherscan getLogs with topic2 = router, block 14932988 to latest (paged), returns 301 events in 232 transactions. eth_getTransactionByHash shows owner == tx.from for every event before source-1 (router buys, sells and one EIP-7702 self-call at 69542430). Source-1 is the first transaction that spends a non-sender's allowance. Later non-sender pulls: 0xf1e58aed7a1ca807804def7a51fea775b8b07be890e3da9591faa2d305378e34, 0xc0e37d95336f646fc5542dcb6696fea57ac6db09893e2ed1eae8000b66e07be3 and 0xd6d06f577c1e38644f8e19381de11b54c144ec1c4c61471f620dd5ce8e4aeefb (see loss notes). The router's direct txlist (325 txs) has only one earlier transfer-family call, deployer simpleTransfer from itself at 14934641. Age: eth_getCode keccak is empty at block 14932987. It equals the recorded hash at 14932988 and 122003953. Source-3 receipt: top-level creation by 0xbf007c28b08e925c0fe008a62ad5c2f32b465182, tx index 229. The verified source has no delegatecall or selfdestruct. Owner-only writes in the txlist: setPool(pair, true) 0xaa30508d2cf7... at block 14934742 and two transferOwnership calls (14955605/14957299). There are no setBonfireMagic or setMinimumSkimAmount calls."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:03:57Z",
-      "note": "Verified source: Etherscan V2 contract.getsourcecode chainid=56 for 0x17e801e17cefc6334059189c178d4783830e03d3 returns BonfireSwap, v0.8.7+commit.e28d00a7, optimizer 200 runs, Proxy=0. SHA-256 of the SourceCode field is 2c3c03b060f9b26550303faf8ed087038967d0999014ebb233891f8b6e97d1e0. transfer(address to, uint amountAIn, address beneficiary, uint deadline) is public and runs only ensure(deadline). It calls _safeTransferFrom(tokenAddress, to, pancakePair, amountAIn), then skimPools(beneficiary). loggedTransfer has the same pull. sell and loggedSell pull from msg.sender."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:03:57Z",
-      "note": "Loss recipe. The victims are the 65 `to` addresses of source-1's successful transfer() calls; they match the 65 BONFIRE Transfer senders to the pair, other than the attack contract and the token contract. eth_call BONFIRE.balanceOf for each victim: the sum is 6022302608127130500287 raw at block 122003953 and 0 at 122003954 (decimals() = 9). Calldata amounts total 6023223303334818972025 raw, which includes in-transaction reflections; the logged Transfer amounts are 90% of calldata. Realised value: sell() amountAIn 2541976871886692758296 + 2542299995276162240931 raw, and WBNB Transfer logs 335/341 pay 33223195564710982431 + 32856856691725971205 wei to the router, forwarded as BNB to 0x28e976ea. Unit value = 66.080052256436953636 * 714.764306662756 / 5084276867162.854999227 = 9.28975e-9 USD per BONFIRE. The token contract's own fee swap-back of 499652336110219914845 raw (logs 11/18) is not victim depletion."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789463732/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790632977
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789463732/bsc:0x5e90253fbae4dab78aa351f4e6fed08a64ab5590",
-      "observedAt": 1790632977
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-6"
+  "loss": {
+    "usd": 55945.69,
+    "assets": [
+      {
+        "token": "0x5e90253fbae4dab78aa351f4e6fed08a64ab5590",
+        "symbol": "BONFIRE",
+        "amount": "6022302821076.616846502",
+        "usd": 55945.69
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-15:bonfireswap"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/BonfireSwap_exp.sol"
+  ],
+  "notes": [
+    "The router is immutable. Its only configuration write, setPool(pair) at block 14934742, lets skimPools pay the caller, but the unauthorized pull does not need it: the pulled tokens sit in the pair as skimmable surplus either way.",
+    "Loss is the victims' whole BONFIRE balances, valued at the attacker's realisation rate (66.08 BNB for 5.08e12 BONFIRE sold), which is below DefiLlama's pre-exploit quote because the dump moved the price. The three copycat pulls add about 213,000 BONFIRE, under 0.01 USD.",
+    "Copycats were found by scanning BONFIRE transfers into the pair whose sender was not the transaction's signer, from the router's deployment to block 127100000."
+  ],
+  "campaign": [
+    "eip155:56:0xf1e58aed7a1ca807804def7a51fea775b8b07be890e3da9591faa2d305378e34",
+    "eip155:56:0xc0e37d95336f646fc5542dcb6696fea57ac6db09893e2ed1eae8000b66e07be3",
+    "eip155:56:0xd6d06f577c1e38644f8e19381de11b54c144ec1c4c61471f620dd5ce8e4aeefb"
   ]
 }

@@ -1,148 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x442ce0af4d10b23968a66b0b53d7b95f5bb611d55f19dc5a1963c763f65128f0",
-  "protocol": {
-    "name": "BitCrown",
-    "slug": "bitcrown"
-  },
+  "protocol": "BitCrown",
   "name": "BitCrown distributor missing caller authorization",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x442ce0af4d10b23968a66b0b53d7b95f5bb611d55f19dc5a1963c763f65128f0",
-      "blockNumber": 51131922,
-      "transactionIndex": 38,
-      "timestamp": 1749441923
-    },
-    "attackerAddresses": [
-      "0xf499f7a82de632cfd194025a51c88d1b44c8155e"
-    ]
-  },
   "summary": "The stateless distributor let any caller choose a token, recipients and amounts for transfers from its own balance. The attacker removed its entire 100,000 BTCn inventory and sold it for USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 7939.270661176575,
-      "valuationTimestamp": 1749441923,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-3"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x3f74a64eb5641d2479cb8343b2330c6598d126d4",
-          "symbol": "BTCn"
-        },
-        "amount": "100000",
-        "usdValue": 7939.270661176575,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1749441923,
-          "unitPriceUsd": 0.07939270661176576,
-          "sourceIds": [
-            "source-1",
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Entire BTCn inventory valued at actual same-transaction disposal proceeds: 7939.270661176575393032 USDT at par. The token transfer deduction and swap price impact are reflected in the effective value of the stolen 100000 BTCn; gas and recoveries do not reduce gross loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x93b621a9f8f1821a6a693a29672ca3d6612a2a7e",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1749320543,
-        "blockNumber": 51051014,
-        "transactionIndex": 9,
-        "transactionHash": "0xcabfc77402deb8f502a72d2b9b0cc4bb867c6985e1aa9a468f321a60dd9a3bd4",
-        "creatorAddress": "0xb00de07b1a86e389fa281c887e832daa9c1a3205"
-      },
-      "ageReset": {
-        "kind": "deployment"
-      },
-      "codeAgeSeconds": 121380,
-      "failureModeId": "failure:bitcrown-distributor-missing-caller-authorization",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x93b621a9f8f1821a6a693a29672ca3d6612a2a7e",
-        "codeHash": "0xe3964c8cc2895731a0249aa878aca7abc76f234cc3be94ccc0c63b7a8110f546"
+      "address": "0x93b621a9f8f1821a6a693a29672ca3d6612a2a7e",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xcabfc77402deb8f502a72d2b9b0cc4bb867c6985e1aa9a468f321a60dd9a3bd4"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x442ce0af4d10b23968a66b0b53d7b95f5bb611d55f19dc5a1963c763f65128f0"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-06/BitCrown_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-09-18T05:19:56Z",
-      "note": "Reviewed anchor, defect, full observed campaign loss, direct runtime identity and age history. Source-1 receipt log 61 transfers 100000000000000000000000 BTCn raw units (18 decimals) from distributor to newly created attacker helper 0x728f4dfec4cbef3b51f493fdb13b5a1824e6d24d. callTracer shows helper directly calling distributor selector 0x1239ec8c, which calls BTCn.transfer; no authorization intermediary or delegatecall. The 1394-byte runtime ends with 51-byte CBOR metadata plus its two-byte length; cast disassemble on the 1341 executable bytes shows no CALLER, ORIGIN, SLOAD, SSTORE, DELEGATECALL, CALLCODE or SELFDESTRUCT and only one CALL at PC 0x126. The selector dispatch and loop encode token.transfer using caller-supplied recipients/amounts. An opcode trace restricted to the distributor frame executes 661 instructions without caller or state checks. Its external transfer is unrestricted, while creator funding (source-5) establishes that the transferred inventory belonged to the distributor. Source-4 receipt anchors direct CREATE at block 51051014/index 9 by the recorded creator. eth_getCode is empty at 51051013, identical at 51051014 and pre-exploit 51131921, and hashes to the recorded artifact. Absence of storage, delegated execution or destruction means no later code/configuration activation can reset this stateless defect; funding changes exposure only. First exercise and campaign: eth_getLogs over 51051014..51131922 for Transfer topic 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef with padded distributor as topic1 and no token-address filter returns only source-1 log 61. Complete Etherscan V2 account/txlist has deployment and two failed creator calls, 0xf9535cabbb0e5f3be7105c7bcecb2f8df3c3f4339af4c70a6ce34611ca80c883 and 0xdc1e7c71f070965b15fb9267429536f9d15021d82b3c84e4eb7a76cda341449d. Complete account/tokentx has only creator funding of 100000 BTCn and this depletion, with no later funding or losses as of review. Source-1 then disposes of the stolen inventory: log 63 delivers 98000000000000000000000 BTCn raw units to pair 0xc416b5b61321e7432ab080c2a5e0cbd573d3bfe8; log 65 pays attacker 7939270661176575393032 USDT raw units (18 decimals). Value all 100000 stolen BTCn using those realized proceeds, USDT at $1; do not value the price-sensitive token at a pre-sale spot quote or add pair USDT as a second loss. There are no attacker-supplied assets to subtract."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xcabfc77402deb8f502a72d2b9b0cc4bb867c6985e1aa9a468f321a60dd9a3bd4"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8ff8250553602a54d7c1deeb51889b55360d131cd1250ae3d0fe76532d6d3a8b"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 7939.270661176575,
+    "assets": [
+      {
+        "token": "0x3f74a64eb5641d2479cb8343b2330c6598d126d4",
+        "symbol": "BTCn",
+        "amount": "100000",
+        "usd": 7939.270661176575
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2025-06/BitCrown_exp.sol",
-    "seed:bitcrown:2025-06-09:bitcrown"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/BitCrown_exp.sol",
+    "eip155:56:0x8ff8250553602a54d7c1deeb51889b55360d131cd1250ae3d0fe76532d6d3a8b"
+  ],
+  "notes": [
+    "Entire BTCn inventory valued at actual same-transaction disposal proceeds: 7939.270661176575393032 USDT at par. The token transfer deduction and swap price impact are reflected in the effective value of the stolen 100000 BTCn; gas and recoveries do not reduce gross loss."
   ]
 }

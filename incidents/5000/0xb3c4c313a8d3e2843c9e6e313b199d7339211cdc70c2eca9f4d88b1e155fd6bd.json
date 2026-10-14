@@ -1,192 +1,47 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:5000:0xb3c4c313a8d3e2843c9e6e313b199d7339211cdc70c2eca9f4d88b1e155fd6bd",
-  "protocol": {
-    "name": "Minterest",
-    "slug": "minterest"
-  },
+  "protocol": "Minterest",
   "name": "Minterest mUSDY flashLoan exchange-rate reentrancy",
-  "incident": {
-    "chainId": 5000,
-    "exploit": {
-      "transactionHash": "0xb3c4c313a8d3e2843c9e6e313b199d7339211cdc70c2eca9f4d88b1e155fd6bd",
-      "blockNumber": 66416577,
-      "transactionIndex": 8,
-      "timestamp": 1720963466
-    },
-    "attackerAddresses": [
-      "0x5fdac50aa48e3e86299a04ad18a68750b2074d2d",
-      "0x618f768af6291705eb13e0b2e96600b3851911d1"
-    ]
-  },
-  "summary": "The mUSDY market runs the ERC-3156 borrower callback while its own cash balance is still reduced by the flash-loaned amount, and the mToken exchange rate is computed from that cash balance. Supplying USDY back inside the callback therefore minted mUSDY at an inflated rate. The attacker repeated the cycle 24 times to build collateral it had not paid for and borrowed the WETH and mETH markets out against it.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1393165.0049849325,
-      "valuationTimestamp": 1720963466,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 5000,
-          "tokenAddress": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
-          "symbol": "WETH"
-        },
-        "amount": "223.640470785331714615",
-        "usdValue": 714781.7814864144,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1720963466,
-          "unitPriceUsd": 3196.12,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 5000,
-          "tokenAddress": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
-          "symbol": "mETH"
-        },
-        "amount": "204.486893253187905361",
-        "usdValue": 678383.2234985182,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1720963466,
-          "unitPriceUsd": 3317.49,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Components are the attacker EOA’s net token gain in the single exploit transaction, which is a contract creation whose constructor runs the whole attack. The four later transactions in that EOA’s history only unwrap and swap the proceeds. The borrows backing the collateral were never repaid. DefiLlama observations are 127 and 103 seconds after the incident timestamp. Nothing was recovered."
-  },
+  "summary": "The Mantle mUSDY market's lendRUSDY lacked the nonReentrant guard of lend(). Inside mUSDY's own flashLoan callback, with the loaned cash out and the exchange rate depressed, the attacker supplied via lendRUSDY to mint excess mUSDY and redeemed, 25 times, then borrowed the WETH and mETH markets against the unbacked collateral.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5edbd8808f48ffc9e6d4c0d6845e0a0b4711fd5c",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x4b351368459ccc0024197d24ab7ba278e4c6f510",
-        "codeHash": "0x20450c32b82b446cc96fd669e1e3fefb1d5391f3ea6581bb322290eb3bc5d5f0"
-      },
-      "deployment": {
-        "timestamp": 1706027145,
-        "blockNumber": 49704565,
-        "transactionHash": "0xf2b48f909027e54331ecaffb5761496ddf1c27e7d42a07c7c693f4c5d4f9853c",
-        "transactionIndex": 0,
-        "creatorAddress": "0x66f850099e6d5dbd712d15244b65bd822f36be7e"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1708620479,
-        "blockNumber": 57147116,
-        "transactionHash": "0x6a3685cabc1cdd11dc7222ea23f2538fb7e3249f352a5e480d27f0754e70cb68",
-        "transactionIndex": 0,
-        "logIndex": 0,
-        "mechanism": {
-          "type": "event",
-          "address": "0x5edbd8808f48ffc9e6d4c0d6845e0a0b4711fd5c",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The market emitted exactly two Upgraded events between its creation block 49704565 and the exploit; the second, log 0 of block 57147116, selected 0x4b351368459ccc0024197d24ab7ba278e4c6f510, and the EIP-1967 implementation slot still reads that address at block 66416576."
-      },
-      "codeAgeSeconds": 12342987,
-      "failureModeId": "failure:minterest-flashloan-exchange-rate-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x5edbd8808f48ffc9e6d4c0d6845e0a0b4711fd5c",
+      "code": "0x4b351368459ccc0024197d24ab7ba278e4c6f510",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x6a3685cabc1cdd11dc7222ea23f2538fb7e3249f352a5e480d27f0754e70cb68"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 5000,
-      "transactionHash": "0xb3c4c313a8d3e2843c9e6e313b199d7339211cdc70c2eca9f4d88b1e155fd6bd"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://minterest.com/blog/minterest-security-incident-post-mortem-report/"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-07/Minterest_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 5000,
-      "transactionHash": "0x6a3685cabc1cdd11dc7222ea23f2538fb7e3249f352a5e480d27f0754e70cb68"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1720963466/mantle:0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111,mantle:0xcda86a272531e8640cd7f1a92c01839911b90bb0",
-      "observedAt": 1787645441
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T12:10:00Z",
-      "note": "The attacker EOA sent five Mantle transactions; the first is the exploit-contract creation whose constructor performs the whole attack, and it is therefore both the earliest and the only defect-executing transaction. The mUSDY market proxy emitted exactly two Upgraded events between its creation block 49704565 and the exploit, the second at block 57147116 installing 0x4b351368459ccc0024197d24ab7ba278e4c6f510, and its EIP-1967 slot still reads that address at block 66416576, so the exploited implementation is 142.9 days old. Its creator 0x66f850099e6d5dbd712d15244b65bd822f36be7e is not an attacker address. Loss is the attacker’s net token gain in the exploit transaction: 223.640470785331714615 WETH and 204.486893253187905361 mETH."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 5000,
-      "transactionHash": "0xf2b48f909027e54331ecaffb5761496ddf1c27e7d42a07c7c693f4c5d4f9853c"
-    }
-  ],
-  "discovery": [
-    "web:2024-07-15:minterest"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 1404308.33,
+    "assets": [
+      {
+        "token": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "symbol": "WETH",
+        "amount": "223.640470785331714615",
+        "usd": 714781.78
+      },
+      {
+        "token": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "symbol": "mETH",
+        "amount": "204.486893253187905361",
+        "usd": 678383.22
+      },
+      {
+        "token": "0x5be26527e817998a7206475496fde1e68957c5a6",
+        "symbol": "USDY",
+        "amount": "10663.478132229159934288",
+        "usd": 11143.33
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://minterest.com/blog/minterest-security-incident-post-mortem-report/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/Minterest_exp.sol"
+  ],
+  "notes": [
+    "The upgrade in block 57147116 routed the market to the implementation carrying lendRUSDY; later supervisor changes (linkage root swap, collateral factors 0.4 to 0.8) and the oracle upgrade are not on the reentrancy path or only scale the loss. FlashLoanExecuted shows no other flash loan on mUSDY.",
+    "Loss is the net outflow of the three markets in the single exploit tx: WETH and mETH borrowed and never repaid, plus the USDY the mUSDY market lost to the attacker and its flash lender across the redeem cycles."
+  ]
 }

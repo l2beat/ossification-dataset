@@ -1,204 +1,42 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x37d921a6bb0ecdd8f1ec918d795f9c354727a3ff6b0dba98a512fceb9662a3ac",
-  "protocol": {
-    "name": "Carson",
-    "slug": "carson"
-  },
+  "protocol": "Carson",
   "name": "Carson custom pair sell-side reserve burn",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x37d921a6bb0ecdd8f1ec918d795f9c354727a3ff6b0dba98a512fceb9662a3ac",
-      "blockNumber": 30306325,
-      "transactionIndex": 92,
-      "timestamp": 1690392936
-    },
-    "attackerAddresses": [
-      "0x25bcbbb92c2ae9d0c6f4db814e46fd5c632e2bd3",
-      "0x9cffc95e742d22c1446a3d22e656bb23835a38ac",
-      "0x55e741bace7d48ce29c514e5688eabb02493c8f2"
-    ]
-  },
-  "summary": "The closed-source Carson/USDT pair, after each swap's constant-product check, transfers a factory-configured share of the input token out of its own balance and then syncs. Its factory configured 30% to 0xdead plus 30% to a fee wallet for Carson input, so every sell removed 60% of the sold Carson from reserves and cut k by about 6.7%. The attacker bought Carson with flash-loaned USDT and sold it back in 51 chunks, draining the pair's USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 143783.09681835781,
-      "valuationTimestamp": 1690392936,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-9",
-        "source-10"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "143783.096818357805753138",
-        "usdValue": 143783.09681835781,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1690392936,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6",
-          "source-9"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Net USDT debit of pair 0xe0a3e0f7e4c789747eb29a212ea915a7a1e1ac69 across the four successful attacker calls to 0x9cffc95e742d22c1446a3d22e656bb23835a38ac: USDT sent out of the pair minus the flash-loaned USDT the attacker swapped in. The pair's concurrent loss of 411,566.919752722008226380 Carson (part burned to 0xdead, part to the fee wallet, rest bought back by the attacker and resold) is not valued: the drained pair was that token's market, so its value is endogenous to the USDT reserve counted here. DeFiHackLabs reports ~150K USD.",
-    "realizedAt": 1690393293
-  },
+  "summary": "The closed-source Carson/USDT pair, after each swap's k check, moved a factory-configured share of the input token out of its own reserve (30% to 0xdead, 30% to a fee wallet for Carson sells) and synced. The attacker bought Carson with flash-loaned USDT and sold it back in 51 chunks, each shrinking the Carson reserve, draining the pair's USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe0a3e0f7e4c789747eb29a212ea915a7a1e1ac69",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe0a3e0f7e4c789747eb29a212ea915a7a1e1ac69",
-        "codeHash": "0x39c2945b8c42027dd0884cb26e8c9985bcdb12aad01b381e6354718655c956de"
-      },
-      "deployment": {
-        "timestamp": 1689866173,
-        "blockNumber": 30131245,
-        "transactionHash": "0x2794b0c4d1402d308fe0a756c011696b8b3545e45c05776bf51bc5f9b8154be1",
-        "transactionIndex": 180,
-        "creatorAddress": "0xd092a69dd806bd0f49e69739770784cda896c07b"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1689868087,
-        "blockNumber": 30131883,
-        "transactionHash": "0xf5f715c21d509d1dc7774757bea7baf05ec0be5ba575f6edbd3efae23b002b89",
-        "transactionIndex": 103,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xd092a69dd806bd0f49e69739770784cda896c07b",
-          "callData": "0x918b6c8d000000000000000000000000e0a3e0f7e4c789747eb29a212ea915a7a1e1ac690000000000000000000000000acd5019edc8ff765517e2e691c5eef6f9c08830",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x000000000000000000000000000000000000000000000000000000000000dead0000000000000000000000000000000000000000000000000429d069189e0000000000000000000000000000376bceeae444eebf5e77490eb6d06fe35f2f53050000000000000000000000000000000000000000000000000429d069189e0000"
-        },
-        "description": "Factory owner call 0x3a2980ea(pair, Carson, 0x376bceeae444eebf5e77490eb6d06fe35f2f5305, 0.3e18, 0xdead, 0.3e18) set the pair's Carson-input reserve-removal shares from none to 30% + 30%. The pair reads them via factory 0x918b6c8d(pair, token) on every swap; with zero shares the post-check removal does not occur."
-      },
-      "codeAgeSeconds": 524849,
-      "failureModeId": "failure:carson-pair-sell-reserve-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0xe0a3e0f7e4c789747eb29a212ea915a7a1e1ac69",
+      "reset": {
+        "kind": "config",
+        "tx": "0xf5f715c21d509d1dc7774757bea7baf05ec0be5ba575f6edbd3efae23b002b89",
+        "address": "0xd092a69dd806bd0f49e69739770784cda896c07b",
+        "call": "0x918b6c8d000000000000000000000000e0a3e0f7e4c789747eb29a212ea915a7a1e1ac690000000000000000000000000acd5019edc8ff765517e2e691c5eef6f9c08830"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x37d921a6bb0ecdd8f1ec918d795f9c354727a3ff6b0dba98a512fceb9662a3ac"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-07/Carson_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2794b0c4d1402d308fe0a756c011696b8b3545e45c05776bf51bc5f9b8154be1"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf5f715c21d509d1dc7774757bea7baf05ec0be5ba575f6edbd3efae23b002b89"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xcaf6ddc1dcf5ddb69ab8659aeb5525cd28a0bde2356ae1a0054900384c1f78c0"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x6a94a644856c3aa1db8249b700956379b6b3a18de9b8811566fbd56c89240a01",
-        "0xed52a42b2f45e4dea8d07f70d645931e4f6da65e9ab281cd3dbb9d9d21febb45",
-        "0xcd781fec34b46f8c7372a9fcc7604c210b40442dc4f1a5c274fc3f9283df39ce"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:10:35Z",
-      "note": "Root cause and anchor. Pair, router 0x2bdfb2f33e1aaee08719f50d05ef28057bb6341a, factory 0xd092a69dd806bd0f49e69739770784cda896c07b and Carson 0x0acd5019edc8ff765517e2e691c5eef6f9c08830 are unverified (Etherscan V2 getsourcecode chainid=56 returns empty SourceCode); all were created by 0xebc30b1e38b1a34a801afe51bbef4e8be0b996e9, unrelated to the attacker. debug_traceTransaction(callTracer) of source-1 (block 30306325, index 92): attacker contract 0x9cffc95e borrows USDT through helper 0x55e741ba from five DODO pools, swaps 1,500,000 USDT for Carson via router swapExactTokensForTokensSupportingFeeOnTransferTokens, then sells Carson in 51 swaps (50 x 5000 Carson, then the remainder). In each sell, pair.swap (0x022c0d9f) transfers USDT out, reads both balances for the k check, calls factory 0x918b6c8d(pair, Carson) which returns (0xdead, 0.3e18, 0x4d9bd49b7383b88477724428556c7fe36d7e6bc4, 0.3e18), then itself calls Carson.transfer twice for 30% of the Carson input each (e.g. receipt logs 0xcc/0xcd: 1395 + 1395 Carson from a 4650 Carson input), calls 0x918b6c8d(pair, USDT) which returns zeros, and emits Sync with the reduced Carson reserve. For the first sell, getReserves before = 36785.567997789770 Carson / 1643796.192676695 USDT and Sync 0xce after = 38645.567997789770 / 1459816.867207916: k falls to 0.93298 of its prior value; adding back the 2790 removed Carson gives 1.00034 (fee-only growth). The pair runtime has no DELEGATECALL, CALLCODE or SELFDESTRUCT (cast disassemble). Earliest exercise: eth_getLogs Transfer on USDT and Carson with the pair as from or to, blocks 30131245..30700000, aggregated per (block, index) over 137 transactions: only six transactions reduce both reserves before the campaign (30154674:120, 30217585:35, 30218241:28, 30304589:43, 30304804:41, 30305102:108); each emits pair Burn (0xdccd412f) via calls to 0xdfa8b6a64173fcea6a67d8ba176eb9e9690c8f82 (selector 0xde090e72), i.e. LP withdrawals. The first reserve-depleting swap round trip is source-1; attacker 0x25bcbbb9 nonce history (txlist) shows only funding and three contract creations (0xa1daec0b, 0xef29765e, 0x0f3e99d0) before it, none touching the pair. Source-6 are the attacker's three repeats of the same call (blocks 30306364:88, 30306401:60, 30306444:49), all status 1. No later reserve-depleting swaps through block 30700000; pair USDT balance is 13.095858337383027904 at block 30306444 and 6.202898081178105678 at latest."
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:10:35Z",
-      "note": "Target identity and age. debug_traceTransaction(callTracer) of source-3 (Carson creation, block 30131245, index 180): Carson constructor calls factory 0xd092a69d createPair (0xc9c65396), which CREATE2s the pair 0xe0a3e0f7 and calls initialize (0x485cc955); pair factory() = 0xd092a69d, token0 = Carson, token1 = USDT. eth_getCode(pair) is empty at block 30131244; keccak256 of runtime is 0x39c2945b8c42027dd0884cb26e8c9985bcdb12aad01b381e6354718655c956de at blocks 30131245, 30306324 and 30400000. Factory runtime hash 0xc723e8e30c64a533b1074098230a14af15974bc58c3a802d5dec584974afff3c at blocks 30088917 and 30306324, empty at 30088916. Causal configuration: Etherscan V2 txlist of the factory, blocks 0..30306325, has five transactions: creation 0x7f1ecf3d (30088917), 0x3a2980ea for another pair 0xdee51463ab21a21d6d474322a378a7663a08fd18 (0x4c6a5feb, 30107185), setFeeTo (0xdc22f628, 30107257), source-4 (30131883:103) and source-5 (30154994:125). eth_call factory 0x918b6c8d(pair, Carson) returns all zeros at blocks 30131245 and 30131882 and (0xdead, 0.3e18, 0x376bceeae444eebf5e77490eb6d06fe35f2f5305, 0.3e18) at 30131883 and 30154993. Source-5 re-called 0x3a2980ea with the same pair, token and 0.3e18/0.3e18 shares, changing only the fee-wallet recipient to 0x4d9bd49b7383b88477724428556c7fe36d7e6bc4: the value at 30154994 and 30306324 is (0xdead, 0.3e18, 0x4d9bd49b, 0.3e18). The reserve removal amount is unchanged by source-5, so it is not causal; source-4 created the exploited 60% reserve removal and supplies the age (1690392936 - 1689868087 = 524849 s). Pair deployment (30131245) and Carson token configuration (setSwapPairMap 30131732, updateFeeExclude through 30154458) do not introduce the reserve removal."
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:10:35Z",
-      "note": "Loss. eth_getTransactionReceipt for each campaign transaction; sum USDT (0x55d398326f99059ff775485246999027b3197955, decimals 18) Transfer logs with from = pair minus those with to = pair. Source-1: 51 outgoing totalling 1600677049295746860016399, one incoming 1500000000000000000000000, net 100677049295746860016399. 0x6a94a644: 1027079653488669813098314 - 1e24 = 27079653488669813098314. 0xed52a42b: 1015027631719868690577567 - 1e24 = 15027631719868690577567. 0xcd781fec: 1000998762314072442060858 - 1e24 = 998762314072442060858. Total 143783096818357805753138 base units = 143783.096818357805753138 USDT. Cross-check: pair USDT balanceOf is 143796192676695188781042 at block 30306324 and 13095858337383027904 at block 30306444 (difference identical). Carson net outflow over the same four transactions: 411566919752722008226380 base units (unvalued). realizedAt = timestamp of block 30306444."
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1690392936/coingecko:tether",
-      "observedAt": 1790619002
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Pair, factory and token are closed source; the reserve-removal behaviour is established from execution traces, receipts and factory view calls rather than verified source."
-    ],
-    "reviewSourceIds": [
-      "source-7",
-      "source-9"
+  "loss": {
+    "usd": 143783.09681835782,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "143783.096818357805753138",
+        "usd": 143783.09681835782
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-07/Carson_exp.sol",
-    "seed:carson:2023-07-26:carson-token-price-manipulation"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/Carson_exp.sol",
+    "eip155:56:0xcaf6ddc1dcf5ddb69ab8659aeb5525cd28a0bde2356ae1a0054900384c1f78c0"
+  ],
+  "notes": [
+    "Factory owner call 0x3a2980ea(pair, Carson, 0x376bceeae444eebf5e77490eb6d06fe35f2f5305, 0.3e18, 0xdead, 0.3e18) set the pair's Carson-input reserve-removal shares from none to 30% + 30%. The pair reads them via factory 0x918b6c8d(pair, token) on every swap; with zero shares the post-check removal does not occur.",
+    "Loss is the pair's net USDT debit over the attacker's four calls (flash-loaned USDT swapped in netted out). The pair's Carson outflow is not valued: the drained pair was that token's market. Only these four txs ever made more than one swap on the pair.",
+    "Pair, factory and token are closed source; the reserve-removal behaviour is established from execution traces, receipts and factory view calls rather than verified source."
+  ],
+  "campaign": [
+    "eip155:56:0x6a94a644856c3aa1db8249b700956379b6b3a18de9b8811566fbd56c89240a01",
+    "eip155:56:0xed52a42b2f45e4dea8d07f70d645931e4f6da65e9ab281cd3dbb9d9d21febb45",
+    "eip155:56:0xcd781fec34b46f8c7372a9fcc7604c210b40442dc4f1a5c274fc3f9283df39ce"
   ]
 }

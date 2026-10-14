@@ -1,170 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xa13c8c7a0c97093dba3096c88044273c29cebeee109e23622cd412dcca8f50f4",
-  "protocol": {
-    "name": "BXH",
-    "slug": "bxh"
-  },
+  "protocol": "BXH",
   "name": "BXH TokenStakingPoolDelegate pays USDT bonus at the live BXH/USDT spot quote",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xa13c8c7a0c97093dba3096c88044273c29cebeee109e23622cd412dcca8f50f4",
-      "blockNumber": 21727290,
-      "transactionIndex": 207,
-      "timestamp": 1664374998
-    },
-    "attackerAddresses": [
-      "0x81c63d821b7cdf70c61009a81fef8db5949ac0c9",
-      "0x4e77df7b9cdcecec4115e59546f3eacba095a89f"
-    ]
-  },
-  "summary": "TokenStakingPoolDelegate converts a staker's pending BXH reward into the pool's USDT bonus token with getITokenBonusAmount, which applies the constant-product formula to the BXH/USDT pair's live getReserves and pays the result from the contract's USDT balance. The attacker flash-borrowed 3.18M USDT, bought BXH to inflate the pair's USDT per BXH, then harvested about 15 BXH of pending reward from a prior vUSDT stake as 40,085.62 USDT, draining the bonus balance.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 39885.62357708502,
-      "valuationTimestamp": 1664374998,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "39885.623577085020521681",
-        "usdValue": 39885.62357708502,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1664374998,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Net USDT depletion of the staking contract in the anchor: 40,085.623577085020521681 USDT paid out minus the 200 USDT the attack contract sent in first so the balance covered the payout. USDT (BSC-peg) valued at par. The honest value of the harvested reward at the pre-attack reserve ratio was about 2.6 USDT and is not deducted. The PancakeSwap flash-loan fee and the round-trip swap cost are attacker costs and are not netted.",
-    "realizedAt": 1664374998
-  },
+  "summary": "BXH's TokenStakingPoolDelegate paid pending BXH rewards in USDT, converted at the BXH/USDT pair's live reserves and paid from its own USDT balance. The attacker flash-borrowed USDT, bought BXH to inflate its USDT price, then harvested the small pending reward of an earlier vUSDT stake as about 40k USDT, draining the bonus balance.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x27539b1dee647b38e1b987c41c5336b1a8dce663",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x27539b1dee647b38e1b987c41c5336b1a8dce663",
+      "reset": {
+        "kind": "config",
+        "tx": "0xbd750b115a0b109060178b764741ee8180dfee0af4b18b685a679fa82740633d",
         "address": "0x27539b1dee647b38e1b987c41c5336b1a8dce663",
-        "codeHash": "0xa9194c3f4943187ffd54565c7d60f7c76afc00217cb5c55144db4d53979d43b6"
-      },
-      "deployment": {
-        "timestamp": 1663816940,
-        "blockNumber": 21542941,
-        "transactionHash": "0x226d97aa3e5b178f6b88f677ab6524d901acbc05d288f980a61ea6f35f79d03d",
-        "transactionIndex": 67,
-        "creatorAddress": "0xa81d30d483714438bd7ddd52b6033d65c6f0020c"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1663818700,
-        "blockNumber": 21543521,
-        "transactionHash": "0xbd750b115a0b109060178b764741ee8180dfee0af4b18b685a679fa82740633d",
-        "transactionIndex": 93,
-        "logIndex": 205,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0x27539b1dee647b38e1b987c41c5336b1a8dce663",
-          "storageSlot": "0x036b6384b5eca791c62761152d0c79bb0604c104a5fb6f4eb0703f3154bb3db7",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x000000000000000000000000919964b7f12a742e3d33176d7af9094ea4152e6f"
-        },
-        "description": "Admin Safe 0x445b0ad0c36fc0f0f3f51821d21a63701c821426 called add() creating pool 0 (vUSDT) with enableBonus=true, bonusToken USDT and swapPairAddress set to the BXH/USDT pair 0x919964b7f12a742e3d33176d7af9094ea4152e6f (PoolAdded log 205). Without an enabled bonus pool the spot-quote conversion path is unreachable."
-      },
-      "codeAgeSeconds": 556298,
-      "failureModeId": "failure:bxh-staking-spot-quote-bonus",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "slot": "0x036b6384b5eca791c62761152d0c79bb0604c104a5fb6f4eb0703f3154bb3db7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xa13c8c7a0c97093dba3096c88044273c29cebeee109e23622cd412dcca8f50f4"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x226d97aa3e5b178f6b88f677ab6524d901acbc05d288f980a61ea6f35f79d03d"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbd750b115a0b109060178b764741ee8180dfee0af4b18b685a679fa82740633d"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-09/BXH_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:20:32Z",
-      "note": "Loss. Receipt of source-1 (block 21727290, index 207, status 1; sender 0x81c63d821b7cdf70c61009a81fef8db5949ac0c9 -> attack contract 0x4e77df7b9cdcecec4115e59546f3eacba095a89f), USDT 0x55d398326f99059ff775485246999027b3197955 Transfer logs: 492 flash swap of 3,178,800 USDT from WBNB/USDT pair 0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae; 493 3,148,800 USDT into BXH/USDT pair 0x919964b7f12a742e3d33176d7af9094ea4152e6f for 148,851.122554820748325386 BXH (log 495); 498 attack contract -> staking contract 200 USDT; 499 staking contract -> attack contract 40085.623577085020521681 USDT; 501/503 BXH sold back for 3,148,687.356983872254615094 USDT; 506 repayment 3,186,778.788 USDT. eth_call USDT.balanceOf(0x27539b1dee647b38e1b987c41c5336b1a8dce663) is 40030.764994324038311630 at block 21727289 and 145.141417239017789949 at block 21727290 (no other staking-contract USDT transfer in the block per Etherscan tokentx). Net depletion 39885.623577085020521681 USDT."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:20:32Z",
-      "note": "Root cause, anchor and age. Verified TokenStakingPoolDelegate source (Etherscan V2 getsourcecode, chainid 56; v0.8.7+commit.e28d00a7, optimizer 200; SHA-256 of SourceCode be146fa21417d912be17a8dd7adbc1bb9e16ab20aca507c223b630552ac79917): depositIToken/withdrawIToken/depositITokenByDelegate, when pool.enableBonus, replace the pending BXH amount with getITokenBonusAmount(pid, pending), which reads IUniswapV2Pair(pool.swapPairAddress).getReserves() and returns a zero-fee constant-product amountOut, then safeBonusTransfer sends that much bonusToken. In source-1 the attack contract calls deposit(0, 0) (Deposit log 500) between the BXH buy and sell; eth_call pending(0, 0x4e77df7b9cdcecec4115e59546f3eacba095a89f) at block 21727289 is 15.239873538264498637 BXH on a 5582.890525516834000011 vUSDT stake, and BXH/USDT reserves at block 21727289 are 25147.47 USDT (token0) / 150042.58 BXH, so the unmanipulated value was about 2.55 USDT. Earliest exercise: Etherscan V2 tokentx (USDT, staking contract, blocks 0..21800000) has 447 transfers; the 8 transaction hashes absent from the contract's own txlist (752 transactions) are 6 inbound USDT funding transfers, one 2.9368 USDT delegate-routed harvest 0x9ef93913f200f72fc6fb749aaab677fdf276af293ce98a02367ad71ff0487239 (via 0x7d909f43af86d15253e2429302c9f1318370c45a, no pair swap in its logs) and source-1. All other harvests are single top-level EOA calls that cannot move the pair within the transaction. Age: eth_getCode empty at block 21542940; keccak256 of runtime 0xa9194c3f4943187ffd54565c7d60f7c76afc00217cb5c55144db4d53979d43b6 at blocks 21542941 and 21727289; source-2 is a top-level creation (to null) by 0xa81d30d483714438bd7ddd52b6033d65c6f0020c at index 67; no proxy, delegatecall target or selfdestruct path. Storage layout: Ownable _owner slot 0, ReentrancyGuard slot 1, userDepositInfo slot 2, iToken 3, tokenPerBlock 4, poolInfo slot 5 with 10-slot PoolInfo; poolInfo[0] base keccak256(5) = 0x036b6384b5eca791c62761152d0c79bb0604c104a5fb6f4eb0703f3154bb3db0. eth_getStorageAt at blocks 21543520/21543521/21727288: base+0 (lpToken) 0 -> vUSDT 0x19195ac5f36f8c75da129afca8f92009e292b84a; base+6 (enableBonus|bonusToken) 0 -> 0x...55d398326f99059ff775485246999027b319795501; base+7 (swapPairAddress) 0 -> 0x919964b7..., all unchanged at 21727288. Source-3 is admin Safe execTransaction (0x6a761202) by 0xd3f147f3860c58c72315aa4f964318d25944d05f; adminAddress() is the Safe. PoolAdded (topic 0x65e9a85cbd75f2b408db1d4a29b449bcb1b14cc4dd995b9499e6c10e9fbaf469) logs show pools 0..7 added in blocks 21543521..21557160; PoolBonusChanged (topic 0xb1983018fe052f5b126125eb67122851f80f389ccc9de41a6a67f3ffd8f1f139) first appears at block 21744073, after the exploit, repointing every pool's pair to 0x37dddef2301f9782b006a1739b5672c4ebf78734. Other pre-exploit admin calls (set allocPoint x25, setPoolDepositLimited x8, setDelegate, transferOwnership) do not touch the bonus path. The pool-0 creation is the latest change establishing the exploited state, so it supplies the age."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5",
-      "source-6"
+  "loss": {
+    "usd": 39875.05,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "39885.623577085020521681",
+        "usd": 39875.05
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2022-09/BXH_exp.sol",
-    "seed:bxh:2022-09-28:bxh-staking-spot-price-manipulation"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/BXH_exp.sol"
+  ],
+  "notes": [
+    "The admin Safe's add() created pool 0 with the bonus enabled, USDT as bonus token and the BXH/USDT pair as its price source (swapPairAddress, the slot named); without it the spot-quote payout path is unreachable. Later allocPoint and deposit-limit changes only scale rewards.",
+    "The attacker's earlier vUSDT stake stays in the pool and is not subtracted; the 200 USDT it sent to the pool in the anchor is netted as its own round trip."
   ]
 }

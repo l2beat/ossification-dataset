@@ -1,165 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x62dba55054fa628845fecded658ff5b1ec1c5823f1a5e0118601aa455a30eac9",
-  "protocol": {
-    "name": "Palmswap",
-    "slug": "palmswap"
-  },
+  "protocol": "Palmswap",
   "name": "Palmswap PLP AUM ignores collateral bought as USDP",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x62dba55054fa628845fecded658ff5b1ec1c5823f1a5e0118601aa455a30eac9",
-      "blockNumber": 30248638,
-      "transactionIndex": 0,
-      "timestamp": 1690219418
-    },
-    "attackerAddresses": [
-      "0xf84efa8a9f7e68855cf17eaac9c2f97a9d131366",
-      "0x55252a6d50bfad0e5f1009541284c783686f7f25",
-      "0x0fe7457f5909778b15d8e46768678abbf0c98329"
-    ]
-  },
-  "summary": "Palmswap's PlpManager prices the PLP liquidity token off PlpManager.getAum(), which credits the whole of Vault.poolAmount() to PLP holders and deducts only permanentPoolAmount, aumDeduction and open-trader profit. It never deducts the vault's own Vault.usdpAmount() liability, so BUSDT deposited through Vault.buyUSDP by an account that is not the PlpManager raises the PLP redemption rate even though the depositor keeps a fully redeemable USDP claim on the same pool. With inManagerMode false, buyUSDP and sellUSDP were callable by anyone. The attacker flash-loaned 3,000,000 BUSDT, minted 996,324.456826157454206069 PLP at an AUM of 1,060,591.303897471446528544 USDP against a supply of 1,060,117.814431969258921599 PLP, then sent 2,000,000 BUSDT straight to the vault and called buyUSDP for itself, lifting AUM to 4,050,654.353532854041808248 USDP against 2,056,442.271258126713127668 PLP, and redeemed its PLP at the inflated 1.9697 rate before selling the USDP it had just bought back for BUSDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 904155.9215477032,
-      "valuationTimestamp": 1690219418,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "BUSDT"
-        },
-        "amount": "904155.921547703167737871",
-        "usdValue": 904155.9215477032,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1690219418,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The Palmswap vault proxy 0x806f709558cdbba39699fbf323c8fda4e364ac7a holds 1073754.395280771243426859 BUSDT at block 30248637 and 169598.473733068075688988 BUSDT at block 30248638; the 904155.921547703167737871 BUSDT difference is the loss and it all occurs in the single exploit transaction. It reconciles exactly against the transaction's BUSDT transfers: 901455.921547703167737871 BUSDT to the attacker EOA 0xf84efa8a9f7e68855cf17eaac9c2f97a9d131366 and 2700 BUSDT of Radiant flash-loan premium to the aToken 0x4ff2dd7c6435789e0bb56b0553142ad00878a004 on a 3,000,000 BUSDT loan. The widely reported ~$900k is the attacker EOA's net take alone. BUSDT is valued at par; DefiLlama has no bsc:0x55d398326f99059ff775485246999027b3197955 observation at this timestamp and prices Tether at 0.999825 at the nearest observation 1690219500. The vault held no other token at the exploit block. Not netted out: the attacker moved the full 901455.921547703167737871 BUSDT to 0x0fe7457f5909778b15d8e46768678abbf0c98329, negotiated onchain with the Palmswap team, and on 2023-07-27 returned 721450 BUSDT to the Palmswap deployer 0xa237d6b4bdf35ba51b732577260154849b4eff20, keeping the remainder as a bounty."
-  },
+  "summary": "PlpManager priced PLP from getAum(), which counts the vault's whole poolAmount but never deducts USDP held outside PlpManager, and the Vault ran with manager mode off, so anyone could call buyUSDP/sellUSDP. The attacker bought PLP, deposited USDT through buyUSDP for itself to inflate AUM, redeemed its PLP at the inflated rate and sold the USDP back.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6876b9804719d8d9f5aeb6ad1322270458fa99e0",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xa68f4b2c69c7f991c3237ba9b678d75368ccff8f",
-        "codeHash": "0xa7d8fedb274a840c89e911cf4eb69897f99d2201476241e45192f2f39a8d3f61"
-      },
-      "deployment": {
-        "timestamp": 1689160794,
-        "blockNumber": 29896735,
-        "transactionHash": "0x5d5d68187ebc1283f64234370e29d7c3a0f322f90772511cf2410b5a587fa0c3",
-        "transactionIndex": 113,
-        "creatorAddress": "0xa237d6b4bdf35ba51b732577260154849b4eff20"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1689160794,
-        "blockNumber": 29896735,
-        "transactionHash": "0x5d5d68187ebc1283f64234370e29d7c3a0f322f90772511cf2410b5a587fa0c3",
-        "transactionIndex": 113,
-        "logIndex": 281,
-        "mechanism": {
-          "type": "event",
-          "address": "0x6876b9804719d8d9f5aeb6ad1322270458fa99e0",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The PlpManager proxy's only Upgraded event, log 281 of its own creation transaction, selected implementation 0xa68f4b2c69c7f991c3237ba9b678d75368ccff8f; the EIP-1967 implementation slot still holds that address at block 30248637."
-      },
-      "codeAgeSeconds": 1058624,
-      "failureModeId": "failure:palmswap-plp-aum-omits-usdp-liability",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x6876b9804719d8d9f5aeb6ad1322270458fa99e0",
+      "code": "0xa68f4b2c69c7f991c3237ba9b678d75368ccff8f",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x5d5d68187ebc1283f64234370e29d7c3a0f322f90772511cf2410b5a587fa0c3"
+      }
+    },
+    {
+      "address": "0x806f709558cdbba39699fbf323c8fda4e364ac7a",
+      "code": "0xea625e24a40b07f5094b390257f772580e757055",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x5f00e5518aa69f091d21b7b61e22e9e18113738e38871bd16ff5e55cd7a34c1b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x62dba55054fa628845fecded658ff5b1ec1c5823f1a5e0118601aa455a30eac9"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-07/Palmswap_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5d5d68187ebc1283f64234370e29d7c3a0f322f90772511cf2410b5a587fa0c3"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1690219418/coingecko:tether",
-      "observedAt": 1787648550
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://twitter.com/BlockSecTeam/status/1683680026766737408"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T09:10:00Z",
-      "note": "Triaged as a code bug, not oracle or spot-price manipulation: the Chainlink feeds read in the exploit are untouched (BUSDT 0.99976876 at round 38098, timestamp 1690218890, before and after every step), and the quantity the attacker moves is Palmswap's own internal pool accounting. Target moved off the v1 snapshot's 0xd990094a611c3de34664dd3664ebf979a1230fc1, which the DeFiHackLabs PoC names as the vulnerable contract but which is only the LiquidityEvent entry point (verified on BscScan as LiquidityEvent behind a proxy; purchasePlp and unstakeAndRedeemPlp forward straight to IPlpManager.addLiquidityForAccount / removeLiquidityForAccount and add only tier and vesting bookkeeping). The defective arithmetic is in PlpManager (verified BscScan source at implementation 0xa68f4b2c69c7f991c3237ba9b678d75368ccff8f): getAum() sets aum = aumAddition + vault.poolAmount() * price and then subtracts only vault.permanentPoolAmount(), trader profit and aumDeduction, never vault.usdpAmount(); _addLiquidity mints PLP against getAumInUsdp(true) taken before its buyUSDP, and _removeLiquidity pays out (_plpAmount * getAumInUsdp(false)) / plpSupply. Vault.buyUSDP and Vault.sellUSDP call _validateManager(), which is a no-op because inManagerMode reads false at block 30248637 and isManager[0x55252a6d50bfad0e5f1009541284c783686f7f25] is false, so the attacker could buy USDP for itself and both raise poolAmount and keep a redeemable claim. The trace confirms the exploited path: purchasePlp on 0xd990094a delegatecalls 0x02a4b53926bad267df700ff8e9f5d4a2516bb1fc, which calls proxy 0x6876b9804719d8d9f5aeb6ad1322270458fa99e0, which delegatecalls addLiquidityForAccount on 0xa68f4b2c; the AddLiquidity log reports aumInUsdp 1060591303897471446528544 against plpSupply 1060117814431969258921599 (rate 1.000447) and mints 996324456826157454206069 PLP; after the direct 2,000,000 BUSDT transfer and buyUSDP the RemoveLiquidity log on the same proxy reports aumInUsdp 4050654353532854041808248 against plpSupply 2056442271258126713127668 (rate 1.9697). The two PlpManager logs in the exploit transaction are emitted by 0x6876b980, confirming the proxy identity. Anchor kept and it is the only candidate: 0x6876b980 emits logs in exactly 19 transactions between blocks 30200000 and 30400000 and only 0x62dba550 is one of the attacker's, while every other successful call the attacker EOA made to its bot contract 0x55252a6d in that window (0xf72aaa1e at 30239621, 0x53738e25 at 30261341, 0x315a4a50 and 0xa7c01549 at 30291958/30292230) touches no Palmswap address at all; PlpManager activity stops entirely after the exploit block. The proxy is a TransparentUpgradeableProxy created at block 29896735, transaction index 113, by the Palmswap deployer 0xa237d6b4bdf35ba51b732577260154849b4eff20 with implementation 0xa68f4b2c in its constructor argument; it emitted exactly one Upgraded event (topic 0xbc7cd75a, log 281 of the creation transaction) between creation and block 30248637, and the EIP-1967 implementation slot 0x360894a1...382bbc reads 0x000000000000000000000000a68f4b2c69c7f991c3237ba9b678d75368ccff8f at block 30248637, so the code age is 1058624s (12d 06h 03m 44s). The implementation was created one block earlier at 29896734 by the same deployer and its runtime hash is 0xa7d8fedb274a840c89e911cf4eb69897f99d2201476241e45192f2f39a8d3f61 at blocks 29896734, 29896735 and 30248637 alike. Loss is the vault proxy's BUSDT balance delta across the exploit block, 904155.921547703167737871 BUSDT, reconciled against 901455.921547703167737871 BUSDT to the attacker EOA plus a 2700 BUSDT Radiant flash-loan premium; 721450 BUSDT was later returned to the Palmswap deployer after onchain negotiation and is not netted out."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 903997.69,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "904155.921547703167737871",
+        "usd": 903997.69
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/Palmswap_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1683680026766737408"
+  ],
   "notes": [
-    "The Palmswap Vault proxy 0x806f709558cdbba39699fbf323c8fda4e364ac7a (implementation 0xea625e24a40b07f5094b390257f772580e757055) is not aged as a separate target: its buyUSDP/sellUSDP guard _validateManager() is correct code that was disabled by the configuration flag inManagerMode = false, and configuration state is not an executable-code-age basis. The defective accounting exploited here is PlpManager.getAum()."
+    "Both contracts carry the defect: PlpManager's AUM omits outside USDP claims, and the Vault left inManagerMode at its default false from deployment (enabled only after the exploit). Launch setup within minutes of deployment (setParams, LiquidityEvent tiers, handlers) does not move the reset.",
+    "The anchor is the only BuyUSDP with a receiver other than PlpManager in the vault's history. The 721,450 USDT the attacker returned after negotiation is a later recovery and is not subtracted."
   ]
 }

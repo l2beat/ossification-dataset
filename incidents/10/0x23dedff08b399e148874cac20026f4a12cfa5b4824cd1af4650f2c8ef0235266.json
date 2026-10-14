@@ -1,187 +1,46 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:10:0x23dedff08b399e148874cac20026f4a12cfa5b4824cd1af4650f2c8ef0235266",
-  "protocol": {
-    "name": "MOBOX",
-    "slug": "mobox"
-  },
+  "protocol": "MOBOX",
   "name": "MO Loan borrow burns pair reserves and prices collateral from the manipulated spot",
-  "incident": {
-    "chainId": 10,
-    "exploit": {
-      "transactionHash": "0x23dedff08b399e148874cac20026f4a12cfa5b4824cd1af4650f2c8ef0235266",
-      "blockNumber": 117395456,
-      "transactionIndex": 5,
-      "timestamp": 1710389689
-    },
-    "attackerAddresses": [
-      "0x4e2c6096985e0b2825d06c16f1c8cdc559c1d6f8",
-      "0x700a7002484f2f3b4516e4f3c550fb8d9b080ac1",
-      "0x96f004c81d2c7b907f92c45922d38ab870a53945"
-    ]
-  },
-  "summary": "Loan.borrow pulls MO collateral, pays USDT valued at the MO/USDT pair's spot reserves, then has the pair burn 90% of the borrowed MO amount from its own reserves and sync, raising the MO spot price; a duration-0 order can be redeemed immediately for full collateral with zero interest. The attacker looped borrow/redeem to ratchet the MO price, then borrowed against the inflated price and sold MO into the depleted pair, draining USDT from the Loan contract and the pair.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 746192.002117,
-      "valuationTimestamp": 1710389689,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 10,
-          "tokenAddress": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
-          "symbol": "USDT"
-        },
-        "amount": "331860.835974",
-        "usdValue": 331860.835974,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1710389689,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 10,
-          "tokenAddress": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
-          "symbol": "USDT"
-        },
-        "amount": "414331.166143",
-        "usdValue": 414331.166143,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1710389689,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Two USDT components: net Loan contract depletion (331,860.835974) and net MO/USDT pair depletion (414,331.166143) in extraction transactions source-2 and source-6. MO burned from the pair and MO moved between the parties are not valued (the post-exploit MO price collapsed), so the USD figure is a lower bound on LP loss. Attacker seed funds (2,100 USDT into its contract and small USDT additions to the pair in its getReward calls) are not counted as victim loss.",
-    "realizedAt": 1710389815
-  },
+  "summary": "Loan.borrow priced MO collateral at the MO/USDT pair's spot reserves and then burned 90% of the borrowed amount from the pair's own reserves, while duration-0 orders could be redeemed at once for the full collateral. The attacker looped borrow/redeem to ratchet the MO price, then borrowed USDT and sold MO into the depleted pair.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xae7b6514af26bcb2332fea53b8dd57bc13a7838e",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1710138785,
-        "blockNumber": 117270004,
-        "transactionHash": "0xabd36d08e716df33eb83837cb296c1bb06c83e1fd46e71eacb9275b9e4b2d54d",
-        "transactionIndex": 13,
-        "creatorAddress": "0x9747fa1bfab2690562406d150f173e3c4a2d5aa6"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Immutable Loan runtime contains the self-referential reserve burn, spot-price valuation and zero-interest immediate redeem; post-deployment owner calls only changed supplyMaxAmount."
-      },
-      "codeAgeSeconds": 250904,
-      "failureModeId": "failure:mo-loan-borrow-burns-pair-reserves-spot-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0xae7b6514af26bcb2332fea53b8dd57bc13a7838e",
-        "codeHash": "0x479b827fa80af48c946de75d33c7f8209b20f405a3b6652c9dae74f3f3a582ed"
+      "address": "0xae7b6514af26bcb2332fea53b8dd57bc13a7838e",
+      "reset": {
+        "kind": "config",
+        "tx": "0x148384a5eab3b0c86a96a009387721ccfcd63636f39e3226f052005df14ca71d",
+        "address": "0x9d8355a8d721e5c79589ac0ab49bc6d3e0ef7c3f",
+        "slot": "0x3c1b5e2e8811b0a0f15644215fe157dd6acfce225fe3cf61f98ec2930342f3ec"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x23dedff08b399e148874cac20026f4a12cfa5b4824cd1af4650f2c8ef0235266"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x4ec3061724ca9f0b8d400866dd83b92647ad8c943a1c0ae9ae6c9bd1ef789417"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:47:00Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Verified Loan source (source-7) at 0xae7b6514af26bcb2332fea53b8dd57bc13a7838e: borrow(amount,duration) (selector 0x0ecbcdab) claims MO via ApproveProxy 0x9d8355a8d721e5c79589ac0ab49bc6d3e0ef7c3f, pays total=amount*price()*(10000-borrowOverCollateral)/10000/1e4 USDT where price() reads MO/USDT pair 0x4a6e0fad381d992f9eb9c037c8f78d788a9e8991 getReserves, then calls pair.setRouter(this), pair.claim(MO, 0xdead, amount*burnRate/10000), pair.claim(MO, this, remainder) and pair.sync(). redeem(index) (0xdb006a75) for duration 0 has no expiry check, charges interest = total*rate*(now-start)/1 days/10000 = 0 in the same block, and returns amount*redeemRate/10000 MO. eth_call at block 117395455: borrowOverCollateral 2000, burnRate 9000, redeemRate 10000, inviteRewardRate 100, borrowToken MO 0x61445ca401051c86848ea6b1fad79c5527116aa1 (decimals 4), supplyToken USDT (decimals 6), router 0x9eadd135641f8b8cc4e060d33d63f8245f42be59. Each borrow/redeem cycle is therefore free and burns pair MO, ratcheting the spot price the next borrow uses. eth_getLogs on the Loan for BorrowOrderFinished (0x686e4a402b44a69ba05376d442cb6b42e3a4633d2949b695e81103005026798f), blocks 117270004..117395455, returns 0 logs (85 BorrowOrderCreated): no redeem ever preceded the attacker. debug_traceTransaction(callTracer) of source-1 (block 117395456, index 5, sender 0x4e2c6096985e0b2825d06c16f1c8cdc559c1d6f8 via its contract 0x700a7002484f2f3b4516e4f3c550fb8d9b080ac1 and helper 0x96f004c81d2c7b907f92c45922d38ab870a53945, both created by the attacker in 0x95b7023c7a451e4064c6ba11fbea4a242d453dc1d8a4a1ca5fe347855892c5ec) shows borrow then redeem in the same transaction, emitting BorrowOrderCreated/BorrowOrderFinished at log indices 0x24/0x27 and 0x3d/0x40; pair MO falls by 2112563 base units. Four further 0x3e6ecea9 loop calls (0xb5700b647d13c625b405b57d4429ffc5902aa29a5b4888c3cf93245b279ae02d, 0xbfd5dd87b9f80b377ca8649d95e4c788336c7913498c1063fa8a88fd624cd80e, 0x2fb0cf4cdbca04019c679dfa51ae1d8f34153c2725ddb998f9959ef87dc174dd, 0x7168160b315350063896ef732d8005a4d36ffd0534e0ee3d58e82271b30b9f6a) burn 197953571, 535418891, 1448199780 and 3917102938 MO base units from the pair, then source-2 and source-6 extract USDT. Etherscan V2 account.txlist of the attacker EOA (30 txs) shows no earlier Loan interaction apart from getReward calls on its own contract. Identity/age: eth_getCode empty at block 117270003; keccak256 of runtime 0x479b827fa80af48c946de75d33c7f8209b20f405a3b6652c9dae74f3f3a582ed at deployment block 117270004 and pre-exploit block 117395455. Creation tx source-8 (index 13, top-level CREATE by 0x9747fa1bfab2690562406d150f173e3c4a2d5aa6). The verified source has no proxy, delegatecall or selfdestruct. Etherscan V2 account.txlist for the Loan (blocks 0..999999999, 209 txs) lists owner calls before the exploit only setSupplyMaxAmount (0xc3df9aeb8bf38cb47c1085786fbf92f91db0c169816ddd867cb000ce6de40fde, 0x886c1079de0cb969a051be1937964a85fcab6ffa6a8b38853103eb1dddd436f9), which do not affect borrow/redeem; deployment supplies the age. The pair (created 2023-10-31 by factory 0x30b2901af5d4db361d4f49645d54ca8e0f5de849) is unverified; its router-gated claim is the mechanism Loan misuses, and it is older than the Loan, so it cannot be the latest reset."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T04:47:00Z",
-      "note": "Reviewed gross campaign loss from receipts. For each successful tx of the attacker EOA (Etherscan V2 txlist, 30 txs), sum USDT (0x94b008aa00579c1307b0ef2c499ad98a8ce58e58) Transfer logs per address. Loan 0xae7b6514... USDT: source-2 (block 117395512, index 10) sends 1887388.769242 to the attacker contract and receives 1555923.364698 back (redeem repayments), net -331465.404544; source-6 (block 117395519, index 3) net -395.431430; no other attacker tx moves Loan USDT; total -331860.835974. Pair 0x4a6e0fad... USDT: source-2 sends 426636.613755 to router 0x9eadd135641f8b8cc4e060d33d63f8245f42be59 and receives 12799.098412, net -413837.515343 (router forwards 413837.515341 to the attacker EOA); source-6 net -493.650800; total -414331.166143. Earlier attacker txs only add USDT to the pair (0xed4dd5b5... +39.696258, 0x47bf821e... +2.390073, source-1 +2.106331) and are attacker inputs, not netted. The attacker EOA funded its contract with 2100 USDT in 0x11d8b85d2893457d1f8806aeec818ba417055c57e06b2ad6fea275a8aa8f3e00 and later withdrew 331460.835974 + 400 USDT (0x3ceb69dd67ed1208d1cc6c13a56825ee855036242284a362edca23c46517929a, 0x3df3a85fa42403df01e003f4fd11d6681144272d98357f0c6a46e3630a0aafb3). Total USDT victim depletion 746192.002117, matching SlowMist/DefiLlama's about $750,000. USDT valued at par; DefiLlama quoted 1.027 at the time (source-5)."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1710389689/optimism:0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
-      "observedAt": 1790657164
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0xedad1792eef7dcb6a4bd515d3d42a9cb4bd9f10c0e2979591fc6d25156ce865c"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "note": "Verified Loan standard-JSON source at https://optimistic.etherscan.io/address/0xae7b6514af26bcb2332fea53b8dd57bc13a7838e#code; reproduce Etherscan V2 contract.getsourcecode chainid=10. ContractName Loan, compiler v0.8.20+commit.a1b79de6, optimizer 200 runs. SHA-256 of the returned SourceCode string: 7863d43c62465c916739cc43a35b8f55530fa7010c4b799b937c6e62c0315f10. Inspect contracts/Loan.sol borrow, redeem, interest and price."
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0xabd36d08e716df33eb83837cb296c1bb06c83e1fd46e71eacb9275b9e4b2d54d"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 746192,
+    "assets": [
+      {
+        "token": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
+        "symbol": "USDT",
+        "amount": "331860.835974",
+        "usd": 331860.84
+      },
+      {
+        "token": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
+        "symbol": "USDT",
+        "amount": "414331.166143",
+        "usd": 414331.16
+      }
     ]
   },
-  "discovery": [
-    "web:2024-03-15:mobox"
+  "notes": [
+    "Reset is the owner granting Loan operator rights on ApproveProxy, the last of four post-deployment grants borrow() needs (MO setWhitelist via MO ownership, factory feeToSetter for pair.setRouter/claim, ApproveProxy.claim); supplyMaxAmount changes only sized the loss.",
+    "Loss is two USDT components at par: net Loan depletion and net MO/USDT pair depletion, both in the last two campaign txs; the earlier borrow/redeem loops only ratcheted the MO price. MO burned from the pair is not valued, and attacker seed funds are not counted."
+  ],
+  "campaign": [
+    "eip155:10:0xb5700b647d13c625b405b57d4429ffc5902aa29a5b4888c3cf93245b279ae02d",
+    "eip155:10:0xbfd5dd87b9f80b377ca8649d95e4c788336c7913498c1063fa8a88fd624cd80e",
+    "eip155:10:0x2fb0cf4cdbca04019c679dfa51ae1d8f34153c2725ddb998f9959ef87dc174dd",
+    "eip155:10:0x7168160b315350063896ef732d8005a4d36ffd0534e0ee3d58e82271b30b9f6a",
+    "eip155:10:0x4ec3061724ca9f0b8d400866dd83b92647ad8c943a1c0ae9ae6c9bd1ef789417",
+    "eip155:10:0xedad1792eef7dcb6a4bd515d3d42a9cb4bd9f10c0e2979591fc6d25156ce865c"
   ]
 }

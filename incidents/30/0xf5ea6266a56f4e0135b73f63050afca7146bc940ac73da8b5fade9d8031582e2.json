@@ -1,353 +1,126 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:30:0xf5ea6266a56f4e0135b73f63050afca7146bc940ac73da8b5fade9d8031582e2",
-  "protocol": {
-    "name": "Sovryn",
-    "slug": "sovryn"
-  },
+  "protocol": "Sovryn",
   "name": "Sovryn loan-closing cross-contract reentrancy into iToken mint",
-  "incident": {
-    "chainId": 30,
-    "exploit": {
-      "transactionHash": "0xf5ea6266a56f4e0135b73f63050afca7146bc940ac73da8b5fade9d8031582e2",
-      "blockNumber": 4689413,
-      "transactionIndex": 0,
-      "timestamp": 1664847519
-    },
-    "attackerAddresses": [
-      "0xc92ebecda030234c10e149beead6bba61197531a",
-      "0xe40151f2b79816bc00d277addb991c4e16607d22",
-      "0xdaa2e727738f742ff1a2fcd2c6419dc6befbff6c",
-      "0xa893cdcb731ae8f91cb50f51f28980cdba96b0a6"
-    ]
-  },
-  "summary": "Sovryn's LoanClosingsWith protocol module reduced the lender pool's principalTotal in _settleInterest before pulling the repayment (an rUSDT ERC777 transferFrom that calls the payer's tokensToSend hook) or refunding native RBTC to the borrower. From those callbacks the attacker minted iUSDT or iRBTC while the pool's totalAssetSupply omitted the repaid principal, i.e. at a depressed tokenPrice, then burned the iTokens at the corrected price once the close finished. Repeated with flash-swapped collateral, this drained the iUSDT and iRBTC lending pools.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1171196.3462127135,
-      "valuationTimestamp": 1664866907,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-3",
-        "source-10",
-        "source-11"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 30,
-          "tokenAddress": "0xef213441a85df4d7acbdae0cf78004e1e486bb96",
-          "symbol": "rUSDT"
-        },
-        "amount": "283054.029028213516182487",
-        "usdValue": 283054.0290282135,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1664847519,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3",
-            "source-11"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-12"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 30,
-          "tokenAddress": "0x542fda317318ebf1d3deaf76e0b632741a7e677d",
-          "symbol": "WRBTC"
-        },
-        "amount": "44.783206397609975592",
-        "usdValue": 888142.3171844999,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1664866907,
-          "unitPriceUsd": 19832.03947701027,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-12"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact net depletion of the Sovryn victim set {iUSDT 0x849c47f9c259e9d62f289bf1b2729039698d8387, iRBTC 0xa9dcdc63eabb8a2b6f39d7ff9429d88340044a7a, protocol 0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7} across 110 successful attacker transactions (source-12): 36 setup borrows plus 36 rUSDT-leg exploits through attack contracts 0xe40151f2 (01:37-02:49 UTC) and 0xdaa2e727 (03:02-04:07 UTC), and 38 self-contained RBTC-leg exploits through 0xa893cdcb (06:43-07:37 UTC, last source-13), all on 2022-10-04 from EOA 0xc92ebecda030234c10e149beead6bba61197531a. rUSDT is entirely iUSDT-to-attacker net flow (164,360.168033 to 0xe40151f2, 118,693.860995 to 0xdaa2e727). RBTC combines WRBTC Transfer logs and native value frames: iRBTC to 0xa893cdcb 147.537139 (WRBTC 1139.937139 out and 1095 in, 102.6 native out) and protocol to 0xa893cdcb 0.928868 native, less 103.682768 WRBTC paid into the protocol by the Sovryn AMM when closeWithSwap converted the attacker's own XUSD collateral to repay its 2.7-RBTC loans; that repayment is attacker-supplied input and is netted. Gross treatment: the 2,804.4 XUSD of trading fees the protocol kept from the attacker (38 x 73.8) and the later recoveries in source-9 (17.717 RBTC, 19,511.1505 USDT, ETH and BNB) are not deducted. Excluded: 6,949.589485 SOV trading rebates the protocol sent to LockedSOV 0xb4e4517ca4edf591dcafb702999f04f02e57d978 for the attack contracts (vesting-locked, about 2.8k USD); tx 0x4dda1cc8e7bd813cd136a83dffa6be5d456414684f5351d371d276e7e084325f, whose reentrant iRBTC mint and burn returned exactly the 15 WRBTC deposited and which left an open 2.7-RBTC loan backed by 82,000 XUSD; and setup loans never closed (nonces 91, 104, 108, 130: 1 rUSDT against 0.001 WRBTC each). rUSDT (Sovryn-bridged USDT, 18 decimals) is valued at par (DefiLlama USDT 1.00017 at the anchor). RBTC is pegged 1:1 to BTC by the Powpeg; the whole RBTC depletion falls in 1664865799..1664869002 and DefiLlama's rsk WRBTC series has no sample between 1664847694 and 1664873182, so the BTC quote sampled at 1664866907 inside that window is used. The Sovryn post-mortem (source-9) reports 44.9368 RBTC and 282,351.9644 rUSDT extracted, within 0.35% and 0.25% of these onchain figures.",
-    "realizedAt": 1664869002
-  },
+  "summary": "Sovryn's LoanClosingsWith module lowered the lender pool's principal before pulling the repayment or refunding RBTC, and no guard spanned protocol and loan tokens. From the rUSDT ERC777 send hook or the RBTC refund the attacker minted iUSDT or iRBTC at the depressed price, then burned them after the principal arrived. Repeated, this drained both pools.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7",
-      "relationship": "module-router",
-      "codeArtifact": {
-        "address": "0x9b93e1fb9545e845d2ace49e3913be50166f9e8f",
-        "codeHash": "0x60ad7412baca38b13e3b808cf031246d64b2a4016d235c13253327c567da58d3"
-      },
-      "deployment": {
-        "timestamp": 1601477039,
-        "blockNumber": 2742418,
-        "transactionHash": "0x4fbd96b8a2094b7233a914bbf3a253d8823c9db8469a5c30daae405535f2e8ec",
-        "transactionIndex": 0,
-        "creatorAddress": "0x7be508451cd748ba55dcbe75c8067f9420909b49"
-      },
-      "ageReset": {
-        "kind": "module-change",
-        "timestamp": 1660216280,
-        "blockNumber": 4544166,
-        "transactionHash": "0xa5790c9ccac536dbbf223b65cd645ae313fd88e552e859b036ae9c09dd5c72a6",
-        "transactionIndex": 1,
-        "logIndex": 7,
-        "mechanism": {
-          "type": "event",
-          "address": "0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7",
-          "eventTopic": "0x1420e3a2094d671bc2eb897941fa3d94ffa37f0cb6d530651946250a2151cb7f",
-          "codeAddressLocation": "topic2-address"
-        },
-        "description": "Sovryn multisig 0x924f5ad34698fd20c90fe5d5a8a0abd3b42dc711 executed replaceContract for LoanClosingsWith, emitting ProtocolModuleContractReplaced(prev 0xfe901c84ed9c827b48ca3af8b2c8a6221638eb8a, new 0x9b93e1fb9545e845d2ace49e3913be50166f9e8f, 'LoanClosingsWith'). logicTargets(closeWithDeposit 0x366f513b) reads 0xfe901c84 at block 4544165 and 0x9b93e1fb at 4544166 and 4689412; closeWithSwap 0xf8de21d2 also maps to 0x9b93e1fb at 4689412. It is the last LoanClosingsWith replacement before the exploit; the next one moves the selectors to the fixed module 0x88500b472a245a937d07c53b22a107ce1901d30f at block 4744854."
-      },
-      "codeAgeSeconds": 4631239,
-      "failureModeId": "failure:sovryn-loan-closing-cross-contract-reentrancy-itoken-mint",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-6",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The LoanClosingsWith module bytecode is unverified on Blockscout and absent from the repository's deployment address lists; its identity rests on the module-replacement event name, the logicTargets mapping for both closing selectors, the anchor trace, and the pre-fix LoanClosingsWith/LoanClosingsShared source at the parent of the fix merge (source-8), whose ordering matches the anchor's log sequence.",
-          "Only the protocol module is carried. The consuming half, iUSDT's LoanTokenLogicLM 0x82c49ec67389b6e8c377ed1da7816b9add4e3b1e (mint, burn and tokenPrice without a cross-contract guard, reached iUSDT 0x849c47f9 -> LoanTokenLogicProxy 0x8567ab78bae6f533e8fd3dc221fd680019f452cc -> beacon 0xd7fb11f4b71c6bfe9db50f3c02c821af8f616501), was registered earlier in the same upgrade batch (beacon getTarget(0x40c10f19) is 0x2564100636274dcd041a952a80bf20e8d8bd57ae at block 4544150 and 0x82c49ec6 at 4544151, tx 0x646155b650cf74c78ae0ad0e6472a24e5fef901276abc7666c1b9275e61c29e4; moduleUpgradeLog length 3 and activeModuleIndex 2 at block 4689412), so it cannot supply a later knot. The iRBTC logic was not executed by the anchor. The LoanMaintenance view module (block 4544170) and setSwapsImplContract (multisig tx 1054, block 4544171) postdate the reset within the same batch but are not defect-bearing."
-        ],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7",
+      "code": "0x9b93e1fb9545e845d2ace49e3913be50166f9e8f",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xa5790c9ccac536dbbf223b65cd645ae313fd88e552e859b036ae9c09dd5c72a6"
+      }
+    },
+    {
+      "address": "0x849c47f9c259e9d62f289bf1b2729039698d8387",
+      "code": "0x82c49ec67389b6e8c377ed1da7816b9add4e3b1e",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x646155b650cf74c78ae0ad0e6472a24e5fef901276abc7666c1b9275e61c29e4"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 30,
-      "transactionHash": "0xf5ea6266a56f4e0135b73f63050afca7146bc940ac73da8b5fade9d8031582e2"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:27:05Z",
-      "note": "Reviewed root cause and first exercise. RPC: public-node.rsk.co (receipts, archive eth_call and eth_getCode) and rsk-live.sovryn.app/rpc (parity trace_transaction; RSK traces repeat the top-level input in every frame, so frames are read by from/to/callType/value together with receipt logs). Attacker EOA 0xc92ebecda030234c10e149beead6bba61197531a (Blockscout account.txlist, 267 txs): nonces 0-3 failed creations, 4 creates 0xe40151f2 (0xb9ffd597820dc71d07fbd60b7a44939acd3472db34a76f2d8f6bf1fec3a119e3), 5-6 wrap and move 0.03 WRBTC, 7-8 approvals and ERC1820 hook registration, 9 (0x08aa35c8549493fb73fa9cdecbb3a4b87f896ef7f086a1fa95ed2db8ea67eb47, block 4689411) opens a loan borrowing 1 rUSDT from iUSDT on 0.001 WRBTC; nonce 10 = source-1 (block 4689413, index 0) is the first exploit. source-1 receipt: logs 0-2 flash-swap 8.203635 WRBTC from RSKSwap pairs 0x818c0a92, 0xc9fe8e7a, 0x1dd8665e; log 0x16 Borrow adds 26,000 rUSDT to that loan; trace frame 1.1.1.1.1.1.8 attacker -> protocol 0x5a0d867e, .8.0 DELEGATECALL 0x9b93e1fb (closeWithDeposit), .8.0.2 protocol -> rUSDT transferFrom, .8.0.2.1 rUSDT (ERC777 via ERC1820 0x1820a4b7618bde71dce8cdc73aab6c95905fad24) -> attacker tokensToSend hook, .8.0.2.1.0 attacker -> iUSDT mint. Log 0x1d Mint: 26,000 rUSDT -> 22,653.599832842260024200 iUSDT at price 1.147720459081574587, emitted before the repayment Sent/Transfer (logs 0x1f/0x20, 26,898.782561665082146831 rUSDT) and before CloseWithDeposit (log 0x24); log 0x25 Burn redeems the same iUSDT for 27,086.634289942073909285 rUSDT at 1.195687859316424506. iUSDT tokenPrice() is 1.197707101626735301 at block 4689412. The borrow/close/mint/burn loop runs five times per transaction. Pre-fix source (source-8): _closeWithDeposit calls _settleInterestToPrincipal -> _settleInterest, which executes lenderInterest.principalTotal -= closePrincipal, before _returnPrincipalWithDeposit's vaultTransfer(loanToken, msg.sender, lender) or Address.sendValue refund; closeWithDeposit and closeWithSwap carry only a per-contract nonReentrant, as does iToken mint. The fix (merge 2f3e3381806a8d3d04092aa276de6656dc227701, PR #453) adds globallyNonReentrant to both closing functions and to iToken mint, burn and borrow, plus an iTokenSupplyUnchanged invariant; the protocol moved closeWithDeposit to 0x88500b47 at block 4744854 (2022-10-24). This is a code defect (cross-contract checks-effects-interactions violation), not manipulation of a correctly working oracle or AMM. RBTC leg (0xa893cdcb, e.g. 0x7ea21d8ee0c35bff65effb37109ac289ac3b60babb5e08626080f8f8ffbde554): borrow 2.7 RBTC from iRBTC on 82,000 XUSD; closeWithSwap in the same module refunds 0.024620 native RBTC to the attacker (frame 3.1.1.1.1.1.5.0.10), whose fallback mints 14.505298 iRBTC for 14 WRBTC (log 44) before CloseWithSwap (log 51), then burns them for 14.556666 WRBTC: same defect in the same artifact, merged. Earlier-exercise scan: Blockscout v2 Mint logs (topic 0xb4c03061...) of iUSDT (550) and iRBTC (950), paged back past block 4544166, give 132 transactions in blocks 4544166..4689412; none of their receipts contains a protocol CloseWithDeposit (0x6349c1a0) or CloseWithSwap (0x2ed7b29b) event, so no reentrant mint during a close precedes source-1. The Sovryn post-mortem (source-9) confirms the attacker, the 2022-10-04 timing and the cross-contract reentrancy; the ledger date 2022-10-21 is the fix-merge date."
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:27:05Z",
-      "note": "Reviewed gross loss. For each of the 110 source-12 transactions take eth_getTransactionReceipt Transfer logs (topic 0xddf252ad...) of every token and error-free parity trace_transaction value frames, and sum value leaving minus value entering V = {0x849c47f9c259e9d62f289bf1b2729039698d8387, 0xa9dcdc63eabb8a2b6f39d7ff9429d88340044a7a, 0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7}; WRBTC 0x542fda31 Transfers and native frames form one RBTC asset, and native frames to or from the WRBTC contract (wrap/unwrap) are skipped. Transaction set: every attacker tx with selector 0xc55cd0c7 (to 0xe40151f2 or 0xdaa2e727) or 0x73a7eec5 (to 0xa893cdcb) except nonce 148, plus the setup tx whose Borrow event (protocol topic 0x7bd8cbb7, loanId topic3) opened each loan those exploits close: 74 exploits and 36 setups. Result: rUSDT 283054029028213516182487 wei (decimals() 18 at block 4689412), RBTC 44783206397609975592 wei (WRBTC decimals() 18). The only V counterparties are the three attack contracts, the Sovryn XUSD/WRBTC converter 0xa9c3d968 (collateral swaps inside closeWithSwap) and LockedSOV 0xb4e4517c (SOV rebates, excluded). Pair check: each exploit's CloseWithDeposit/CloseWithSwap loanId matches its setup Borrow; loans opened by nonces 91, 104, 108, 130 and 148 are never closed and are excluded. Valuation: rUSDT at par; RBTC at DefiLlama coingecko:bitcoin 19832.03947701027 (sample 1664866907, inside the RBTC leg). USD 283054.0290282135 + 888142.3171844999 = 1171196.3462127134."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:27:05Z",
-      "note": "Reviewed target identity and complete age history. Execution context: Sovryn protocol 0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7, a selector router (public logicTargets(bytes4) mapping; the fallback DELEGATECALLs the mapped module), created top-level by 0x7be508451cd748ba55dcbe75c8067f9420909b49 in source-6 (block 2742418, index 0, receipt contractAddress matches); eth_getCode empty at 2742417, runtime keccak 0x1f895d771f48017d4c79775a5dab5513a1b25beb1838d0dd034689d642385962 at 2742418 and 4689412. Artifact: LoanClosingsWith 0x9b93e1fb9545e845d2ace49e3913be50166f9e8f, created top-level by 0xfee171a152c02f336021fb9e79b4fac2304a9e7e in source-7 (block 4525590, index 0); eth_getCode empty at 4525589, runtime (21,368 bytes) keccak 0x60ad7412baca38b13e3b808cf031246d64b2a4016d235c13253327c567da58d3 at 4525590, 4544166 and 4689412. eth_call logicTargets(0x366f513b) at 4689412 = 0x9b93e1fb, and the anchor trace DELEGATECALLs it six times from 0x5a0d867e. History: Blockscout v2 logs of 0x5a0d867e with topic ProtocolModuleContractReplaced 0x1420e3a2094d671bc2eb897941fa3d94ffa37f0cb6d530651946250a2151cb7f return 59 events; LoanClosingsWith (topic3 'LoanClosingsWith') moves 0x3ef7f012 (block 3682732) -> 0xd8c5c2f3 (4019729) -> 0xfe901c84 (4388967) -> 0x9b93e1fb (4544166, source-5 log 7) -> 0x88500b47 (4744854, the post-exploit fix). No module event lies in blocks 4544171..4744847. Protocol owner at 4689412 is multisig 0x924f5ad34698fd20c90fe5d5a8a0abd3b42dc711; its transactions(id) for ids 1040..1110 shows only 1047..1054 addressed to the protocol, all executed in the 2022-08-11 batch ending at block 4544171 (1052/1053 replaceContract SwapsExternal 0x0dfedfa0 and LoanMaintenance 0x0d66b8e5, 1054 setSwapsImplContract 0xcd3edf0e); the Blockscout v2 multisig transaction list for blocks 4544167..4689413 has no submitTransaction addressed to the protocol. Knot choice: the defect is the closing module's state-before-transfer ordering (source-8); this installation is the latest pre-exploit change to it and the latest reset among the defect-bearing artifacts the anchor executed (iUSDT LoanTokenLogicLM registered at block 4544151)."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 30,
-      "transactionHash": "0xa5790c9ccac536dbbf223b65cd645ae313fd88e552e859b036ae9c09dd5c72a6"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 30,
-      "transactionHash": "0x4fbd96b8a2094b7233a914bbf3a253d8823c9db8469a5c30daae405535f2e8ec"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 30,
-      "transactionHash": "0x01c554b81f48ebb3eb804669935e7ff3ce5ece3958f2019304f7c80f280b3d11"
-    },
-    {
-      "id": "source-8",
-      "type": "source-code",
-      "repository": "https://github.com/DistributedCollective/Sovryn-smart-contracts",
-      "commit": "5a4bbc8b7b138e170dba941e0093e5ccc9af4d41",
-      "path": "contracts/modules/LoanClosingsShared.sol"
-    },
-    {
-      "id": "source-9",
-      "type": "post-mortem",
-      "url": "https://sovryn.com/all-things-sovryn/october-2022-lending-pool-exploit-postmortem"
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1664867400/coingecko:bitcoin",
-      "observedAt": 1790616425
-    },
-    {
-      "id": "source-11",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1664847519/coingecko:tether",
-      "observedAt": 1790616425
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction-set",
-      "chainId": 30,
-      "transactionHashes": [
-        "0x08aa35c8549493fb73fa9cdecbb3a4b87f896ef7f086a1fa95ed2db8ea67eb47",
-        "0xf5ea6266a56f4e0135b73f63050afca7146bc940ac73da8b5fade9d8031582e2",
-        "0x4c0223fe9315bf6e8ab0032b653e49fdba169f04bde6c27fbad260bbe979f306",
-        "0x4de474ebdac73a2f0db8ba9ef29e5311eddbcd91f03018c2b0525f009f580257",
-        "0xdf9d25246db43810092382325609f49c006e4024a92355fa6454173962e11479",
-        "0x42f4cb3e2ac7afbc2094aea15325f504d619c79f0b38a9427930b99018620115",
-        "0xbef652a62fc17ad940d7dabb4a7fb4607c8849f286de92569f2a242503c4071a",
-        "0x61c171fed2e34092a6b53f12863880622766cf7d9780228be9e7c0b554d3b3a6",
-        "0x01462196dc0671c100cc9dad94e88f0c3f17eec15d632431597acabe1f6c362a",
-        "0x133d566a86aa5db6fa28623ce95a27a0062e519f73b4b4411c263580d0381f1d",
-        "0x0e05f3520446ef4f14d894c26e2d30ea1a640e819ee7b308843d5f7ac7b16674",
-        "0xe4693f2f4c5c6476f8cf968ef2d04b01cd3cd70eb0c96fc5b8e43a633d4ab83c",
-        "0x455d54acfcd505a665ddefbca4ae170f9b11091405cae5612d5160354e7ae188",
-        "0xfb884efe3bb9972bde5e594b10f060e3d207535bc289395e6d0da551cbfb917d",
-        "0x51767bb2af52669930000c34f18b0d87db5633d55a791d91436b9486b2562e2b",
-        "0x2ed8fc461a6a8a57c95a99a331dd2e4155c0a9770b8c68eeb8f2b4e7f6ca1818",
-        "0x084f5fd4b6b9794d29c935bdb20058ff6622cdae47da5aeb5bbc29ec150aabd1",
-        "0xa1cf2b7dde88771714612f173267e8f1ca57524ab8600f1885d5430574da3e91",
-        "0x8a8fcc012b787a4e8bd013a44e1b353514ef61168e7f62d62aba32a1caa1c8a6",
-        "0xb9c9506870afee64b1b59bb265e08663c3c93dbeef095479dad1aca1d22f63ad",
-        "0x1ecf63314666c6237dcc076ad99c8cd929dda576162423f3089e35c9e47c5988",
-        "0xf0c843abed7b557403c4620f183fbc72bee720f74d06e983c1647354378281ba",
-        "0xd8ba1e944eb3c69c98717d1a16c0b4710e064ce90ae88b2e5fa2d90fea835dbf",
-        "0xdd363d8507618689c36cd381a7c3c2d65e14b8c5e318fd920d8b03dd529453c7",
-        "0x62b18e3797bcef954ec9bdeeb8bfa2d2d4c79778fe26eb381299600602bc771d",
-        "0x669b78ebc75cd6161d14586aca505ec9fc3368a95467fb6f2f1e16140db03c4e",
-        "0xedda96e3820f1294e18fdbdd459d5867063a38d91a04cc7eaf61e95aa44199ba",
-        "0xbfe3e43983d78df9f84917bd2896da8136f7a48a54bf4193f82d8f87f34e48e4",
-        "0x52b42a5ce3196c013637f6a5744d358ed83bb0ebc503646d6501e60c72622ab5",
-        "0x46ade4e11981fecb8fdf8aac9e74ae54377a9e6ecab780bb0635a7255cfaa219",
-        "0xb29d66369d4b93fb9eb8d1ded18b6625fa842d235df5963da49dfccc0113daa7",
-        "0xc557a6783cd84fc3c57ba2fe063a3a33ab20cba68eae4547a3e32d8f21baa160",
-        "0x0672f37aa7fb4e625c1ca1e17280e67a92c60f76e6cc66c9d49473ac82e8c60f",
-        "0x80044b312b8d0d9442a46cc04665c9be08ab244bf98c67dd3e5f397db631c877",
-        "0xd1d83ff7bbbe81974a660c62300d2af753561be12896a2ea60fbe1397c1600cb",
-        "0xb641db7e484bf8ea8ed98568857453e06cee2e53fac7d4061f71384d29a25625",
-        "0x779b1ddff81cc5e99f6147fb724cf2f4e1e8bdbdae042a8e956e479f0fd5e8d3",
-        "0x34e37d52958f38f7c6fc9cff1c53f1b0a287ac05561059d31488079953f0c71a",
-        "0x6bdbc203102aa4913f80a06b884cf45f9639fef7b20e9c4c46b1106ece1ccffc",
-        "0x08821f3cbdd1cf204bed99bb161de1e0b8aaf8da7c3fdb1316e2f76b92d06977",
-        "0x789bf62968b56fdc8a6e99a701efeeaa0ff8af52fab36dd84ce86fd9a256f325",
-        "0x79b827e06d79e446c668f3d8123931e7b23c5a80d2bfe1dbf5e84e300bb3f0c4",
-        "0x772ef92d85b3b35b2116e2084b6b04620be377ab4f1dea04d739a09cd31b137e",
-        "0xb16a27ca6a3fb7612ab881e782e3e72d1a74963def83340fc7b199bebea10a38",
-        "0xbdcbd4d325e3a1e6c0b675859e7b4b4685fd1504827209fe7699e6d2a1564c1f",
-        "0x1bd0323b136eb0cfe12bbb2b0834bdc657954fdc15857d8fc8370041ab5aa638",
-        "0x94b1e59c19c6b918c34c14aac59d95feec3a52dbd98add4e88e1f6a189fb0260",
-        "0x061fa5105f3e2f034abddd67adf1c0e20ba9c081cfdcff45a80f1417b9fd3db6",
-        "0x37ad2fc8bc3a69cb312df4a6cd87917cf82631c11eb3d5d5424c99707da90cf1",
-        "0xa77ed5005442f75f1f0945ca2c2b22fcae2d1f7b04ff02fa226a225d8264c818",
-        "0xc23cbbb8dea0c335a05bad44eb18c6175a883095ced48f833c61eea54d05e568",
-        "0xadf9df8f1917f04ac2d0dc3a97440f6783e821d51942c457ebbe569a6bd819e0",
-        "0xb2743429555435e33b2cc033a013bc9f26b0fae1fe3160f0d694586864177e03",
-        "0xda6c2dc5819a0b2a855237439e172fb74961cdc9972768b8f9a36961c33946fd",
-        "0x89b6a7e6a65243fea533219ba13afc2b27517a86848309df5c9d40aec7674fde",
-        "0xa5f6c80f33cb23ac4a7e67db6e151f3ca0716d3a22e10030a69621dcfaffc5c7",
-        "0x88113b3309097b2bb9a509661d86f004fad2ef5b77ea8710543ad0b184472d34",
-        "0x670945bcf9130bdf9bc2c28069ab2ccabe0f8a969cb4c12c379e2e73df7de289",
-        "0x3040b12b2360be42c874a57ed60c0a701701616ac0427af3ace0e9b15ee6e2ff",
-        "0x73440488ddfe58a86cc6af65aae75eb213e99b4562e34c4bf652b69c985dde33",
-        "0x02efbbf1667383adf2d92a54c80e7c20f551f7dec12f600f4ae3b9906bb39adc",
-        "0x28b3d912672c5dc4326e0d93161b237d39a635fe2e30ad5c6b710e6edeea7785",
-        "0x53278692a5d393ad64ac2323f36ba132e0b32f4725b6f7d623ab02c829374d68",
-        "0xab5535aa9e43039b4777b6079606431230a2ed7ea1303c75ab1b79cabacb1f04",
-        "0xcea52d5ec4a359a1188627fbd48e74331d4184d10bc4a000d5eb19ca0ddcd384",
-        "0x91b31f436f2b48334504085ebbdb266c4d6f6ec5031db0b24a98cac0069ff2dc",
-        "0x89ff2112f7add424401e6845ebd28707aca63b3155abc7181329390ac953c6df",
-        "0x6a9c83f663ea109edb904fa10a6b686364c21c13aaa7f1a62ccfc411334fbf9f",
-        "0x02e42093c1a18f24ea004d7b369e92239884704b0e78285141eb548505d1bbb6",
-        "0x8fe27e214afb0baf4cafd575910cf800796ba814fb68c5bce23daacbe7337af8",
-        "0x2af9332fe1ea1ae765353a18a4a318e20847ff4f88ecacaf8556d0a66a6d917b",
-        "0x73d84af02b389f8abb1d255005e9cd9de183e7f701c1a23026847c1c932c25c6",
-        "0x7ea21d8ee0c35bff65effb37109ac289ac3b60babb5e08626080f8f8ffbde554",
-        "0x8a978a7ad924fa939b458237aaeb20b7ea470bb65049202970940dae65571655",
-        "0x3c46999125b8671fbf5c3435ef2bbc9c0d33ca33e39c9c286006d69a9154098c",
-        "0x729c7f6c94495d32baf83870b3a4eefa21cbbc18a7dc55165093b457369e60dd",
-        "0x12ee6a3d3ebac7691de6af43d34a9d773d80b90cd6ed8d8cb679b68a7b7dbe4f",
-        "0x54bd2d4bd360a6744f20074adaf34bc53b95afc447fbfbe80094c5aff08451c3",
-        "0xc6d138c3fdad2282242bc6d795dd0558f3019a8463d098fd8847aa597a8ad716",
-        "0xf170f591fb73b0b14270bb9374456f8cebe3ac116c68d02af034b33796cbde1b",
-        "0x1888a7e262f154714a01a6e6fc16787ca025999bab28d4d1d8e152071b65ecfb",
-        "0x34451bb36b66f3fc5c747eb2470a3df186500894177fbcd2b90b681e62eb3a01",
-        "0xd815fd2ae47b8672b4a446bb55d232f55beb7bfc83cea982601c8885e5ce20cc",
-        "0x80f3a6e54f2908d66a91b5a0be34a1d97d443f601dcdede4e9e3570dd7b98eaf",
-        "0xb08170a4cad9730babc3d781859622a5940435a4852d1b60910bcfd9b0b9bf1d",
-        "0xc2bd4a2adad68642336f05482151153ce496f97d4b097440dbc8cc465f6e9fd4",
-        "0xfeeadcc8aed1a40567a72a3771ea572221998d72da42e2023e4937007146e8b0",
-        "0x0b7416e4e1867434ca26ea42e079fe111c28cfc37086acb04b873a4ca1147fa2",
-        "0x9f7c5dfc6c1ba3503656a2bb8ce963e94e4d71025b8388f5c6dc970e90b82db8",
-        "0x88ed03cfdea0e252204325de6aab9539b17633267d6cb314135db5c1f22e357e",
-        "0x105b606f633c64aef952a24a9295c83eab1881ed23b245cb38c64f3344ae3c1f",
-        "0xb28ee4bbc05feabc08516c4eb6240bdd72a201eb5cd977b9bf89b0c424b6420a",
-        "0x21a6634f6275e8fbe347528d498f697888bb0f0fac3052019bfd720c74177b3c",
-        "0xdf286c14d77e8754a97573a7cac9134873b468940e3945e05ff491a9f5f1b897",
-        "0xa834d3042a7e930f8430218aec75f882ab1142b71b804ad1e4e2767e7cd758cc",
-        "0x37eb45896b938d45c977b41126afd681e7898d8776e7e8298f48b7f9a1fc091d",
-        "0xef5c70933b624e851fee674158f3bb0173a7dc39c14fceeaaf3230105cfc308c",
-        "0x4732e620be6add72e0154cc55fafb745bafa4abd5072c829fa25a38397a8cb12",
-        "0xeedb93491284efbe8121dc15e237ee04487c98ccd40d361e4b3a292fb1e18416",
-        "0x71113a2c1ee4d68d3f26fcba17d5d2f9ec219bfc4eda2a838ec98f76cb03e456",
-        "0x3600f35fbc4d494f33e69cb1b852558d294146a3cfd583c77152be9058526cb6",
-        "0x4d957202929b55b2a27ce2a3a73bf5b28e8ed48aa3fd9b8f84a3c7c0e96505dc",
-        "0x1878e67944cef6c97043314a83be113eb45710d388e52493a787ba9d459dc1ca",
-        "0x81c318d319eef43c7a0c3d2a71cd6f2188e93458c218a8012b91b8d5eab06060",
-        "0xf759207a61e0524bc84291fb0589871be7668859493de034efef6000abf74b85",
-        "0xa880163c02e215cb8d46af81a58b9f3cecd991b43cea8693938b56306fe4a04c",
-        "0x5265eddb4778fee35e380b9b31d6204f368fd1752f6cf241b1b142818cd37d96",
-        "0x22893951bd3d1bd72c8f910a92a5717a91ab1f7b9f17388416998d3921f84545",
-        "0xbe91b7dfd6dc6caae659aef8f1ef869f0129278a5bb90a322a081fdf9dd8b4dc",
-        "0x6978434f16bbe657f22712ccd9400438a74c8f530d1f09ea9789c38893272ceb"
-      ]
-    },
-    {
-      "id": "source-13",
-      "type": "onchain-transaction",
-      "chainId": 30,
-      "transactionHash": "0x6978434f16bbe657f22712ccd9400438a74c8f530d1f09ea9789c38893272ceb"
-    }
+  "campaign": [
+    "eip155:30:0x4de474ebdac73a2f0db8ba9ef29e5311eddbcd91f03018c2b0525f009f580257",
+    "eip155:30:0x42f4cb3e2ac7afbc2094aea15325f504d619c79f0b38a9427930b99018620115",
+    "eip155:30:0x61c171fed2e34092a6b53f12863880622766cf7d9780228be9e7c0b554d3b3a6",
+    "eip155:30:0x133d566a86aa5db6fa28623ce95a27a0062e519f73b4b4411c263580d0381f1d",
+    "eip155:30:0xe4693f2f4c5c6476f8cf968ef2d04b01cd3cd70eb0c96fc5b8e43a633d4ab83c",
+    "eip155:30:0xfb884efe3bb9972bde5e594b10f060e3d207535bc289395e6d0da551cbfb917d",
+    "eip155:30:0x2ed8fc461a6a8a57c95a99a331dd2e4155c0a9770b8c68eeb8f2b4e7f6ca1818",
+    "eip155:30:0xa1cf2b7dde88771714612f173267e8f1ca57524ab8600f1885d5430574da3e91",
+    "eip155:30:0xb9c9506870afee64b1b59bb265e08663c3c93dbeef095479dad1aca1d22f63ad",
+    "eip155:30:0xf0c843abed7b557403c4620f183fbc72bee720f74d06e983c1647354378281ba",
+    "eip155:30:0xdd363d8507618689c36cd381a7c3c2d65e14b8c5e318fd920d8b03dd529453c7",
+    "eip155:30:0x669b78ebc75cd6161d14586aca505ec9fc3368a95467fb6f2f1e16140db03c4e",
+    "eip155:30:0xbfe3e43983d78df9f84917bd2896da8136f7a48a54bf4193f82d8f87f34e48e4",
+    "eip155:30:0x46ade4e11981fecb8fdf8aac9e74ae54377a9e6ecab780bb0635a7255cfaa219",
+    "eip155:30:0xc557a6783cd84fc3c57ba2fe063a3a33ab20cba68eae4547a3e32d8f21baa160",
+    "eip155:30:0x80044b312b8d0d9442a46cc04665c9be08ab244bf98c67dd3e5f397db631c877",
+    "eip155:30:0xb641db7e484bf8ea8ed98568857453e06cee2e53fac7d4061f71384d29a25625",
+    "eip155:30:0x34e37d52958f38f7c6fc9cff1c53f1b0a287ac05561059d31488079953f0c71a",
+    "eip155:30:0x08821f3cbdd1cf204bed99bb161de1e0b8aaf8da7c3fdb1316e2f76b92d06977",
+    "eip155:30:0x79b827e06d79e446c668f3d8123931e7b23c5a80d2bfe1dbf5e84e300bb3f0c4",
+    "eip155:30:0xb16a27ca6a3fb7612ab881e782e3e72d1a74963def83340fc7b199bebea10a38",
+    "eip155:30:0x94b1e59c19c6b918c34c14aac59d95feec3a52dbd98add4e88e1f6a189fb0260",
+    "eip155:30:0x37ad2fc8bc3a69cb312df4a6cd87917cf82631c11eb3d5d5424c99707da90cf1",
+    "eip155:30:0xc23cbbb8dea0c335a05bad44eb18c6175a883095ced48f833c61eea54d05e568",
+    "eip155:30:0xb2743429555435e33b2cc033a013bc9f26b0fae1fe3160f0d694586864177e03",
+    "eip155:30:0x89b6a7e6a65243fea533219ba13afc2b27517a86848309df5c9d40aec7674fde",
+    "eip155:30:0x88113b3309097b2bb9a509661d86f004fad2ef5b77ea8710543ad0b184472d34",
+    "eip155:30:0x3040b12b2360be42c874a57ed60c0a701701616ac0427af3ace0e9b15ee6e2ff",
+    "eip155:30:0x02efbbf1667383adf2d92a54c80e7c20f551f7dec12f600f4ae3b9906bb39adc",
+    "eip155:30:0x53278692a5d393ad64ac2323f36ba132e0b32f4725b6f7d623ab02c829374d68",
+    "eip155:30:0xcea52d5ec4a359a1188627fbd48e74331d4184d10bc4a000d5eb19ca0ddcd384",
+    "eip155:30:0x89ff2112f7add424401e6845ebd28707aca63b3155abc7181329390ac953c6df",
+    "eip155:30:0x02e42093c1a18f24ea004d7b369e92239884704b0e78285141eb548505d1bbb6",
+    "eip155:30:0x2af9332fe1ea1ae765353a18a4a318e20847ff4f88ecacaf8556d0a66a6d917b",
+    "eip155:30:0x73d84af02b389f8abb1d255005e9cd9de183e7f701c1a23026847c1c932c25c6",
+    "eip155:30:0x7ea21d8ee0c35bff65effb37109ac289ac3b60babb5e08626080f8f8ffbde554",
+    "eip155:30:0x8a978a7ad924fa939b458237aaeb20b7ea470bb65049202970940dae65571655",
+    "eip155:30:0x3c46999125b8671fbf5c3435ef2bbc9c0d33ca33e39c9c286006d69a9154098c",
+    "eip155:30:0x729c7f6c94495d32baf83870b3a4eefa21cbbc18a7dc55165093b457369e60dd",
+    "eip155:30:0x12ee6a3d3ebac7691de6af43d34a9d773d80b90cd6ed8d8cb679b68a7b7dbe4f",
+    "eip155:30:0x54bd2d4bd360a6744f20074adaf34bc53b95afc447fbfbe80094c5aff08451c3",
+    "eip155:30:0xc6d138c3fdad2282242bc6d795dd0558f3019a8463d098fd8847aa597a8ad716",
+    "eip155:30:0xf170f591fb73b0b14270bb9374456f8cebe3ac116c68d02af034b33796cbde1b",
+    "eip155:30:0x1888a7e262f154714a01a6e6fc16787ca025999bab28d4d1d8e152071b65ecfb",
+    "eip155:30:0x34451bb36b66f3fc5c747eb2470a3df186500894177fbcd2b90b681e62eb3a01",
+    "eip155:30:0xd815fd2ae47b8672b4a446bb55d232f55beb7bfc83cea982601c8885e5ce20cc",
+    "eip155:30:0x80f3a6e54f2908d66a91b5a0be34a1d97d443f601dcdede4e9e3570dd7b98eaf",
+    "eip155:30:0xb08170a4cad9730babc3d781859622a5940435a4852d1b60910bcfd9b0b9bf1d",
+    "eip155:30:0xc2bd4a2adad68642336f05482151153ce496f97d4b097440dbc8cc465f6e9fd4",
+    "eip155:30:0xfeeadcc8aed1a40567a72a3771ea572221998d72da42e2023e4937007146e8b0",
+    "eip155:30:0x0b7416e4e1867434ca26ea42e079fe111c28cfc37086acb04b873a4ca1147fa2",
+    "eip155:30:0x9f7c5dfc6c1ba3503656a2bb8ce963e94e4d71025b8388f5c6dc970e90b82db8",
+    "eip155:30:0x88ed03cfdea0e252204325de6aab9539b17633267d6cb314135db5c1f22e357e",
+    "eip155:30:0x105b606f633c64aef952a24a9295c83eab1881ed23b245cb38c64f3344ae3c1f",
+    "eip155:30:0xb28ee4bbc05feabc08516c4eb6240bdd72a201eb5cd977b9bf89b0c424b6420a",
+    "eip155:30:0x21a6634f6275e8fbe347528d498f697888bb0f0fac3052019bfd720c74177b3c",
+    "eip155:30:0xdf286c14d77e8754a97573a7cac9134873b468940e3945e05ff491a9f5f1b897",
+    "eip155:30:0xa834d3042a7e930f8430218aec75f882ab1142b71b804ad1e4e2767e7cd758cc",
+    "eip155:30:0x37eb45896b938d45c977b41126afd681e7898d8776e7e8298f48b7f9a1fc091d",
+    "eip155:30:0xef5c70933b624e851fee674158f3bb0173a7dc39c14fceeaaf3230105cfc308c",
+    "eip155:30:0x4732e620be6add72e0154cc55fafb745bafa4abd5072c829fa25a38397a8cb12",
+    "eip155:30:0xeedb93491284efbe8121dc15e237ee04487c98ccd40d361e4b3a292fb1e18416",
+    "eip155:30:0x71113a2c1ee4d68d3f26fcba17d5d2f9ec219bfc4eda2a838ec98f76cb03e456",
+    "eip155:30:0x3600f35fbc4d494f33e69cb1b852558d294146a3cfd583c77152be9058526cb6",
+    "eip155:30:0x4d957202929b55b2a27ce2a3a73bf5b28e8ed48aa3fd9b8f84a3c7c0e96505dc",
+    "eip155:30:0x1878e67944cef6c97043314a83be113eb45710d388e52493a787ba9d459dc1ca",
+    "eip155:30:0x81c318d319eef43c7a0c3d2a71cd6f2188e93458c218a8012b91b8d5eab06060",
+    "eip155:30:0xf759207a61e0524bc84291fb0589871be7668859493de034efef6000abf74b85",
+    "eip155:30:0xa880163c02e215cb8d46af81a58b9f3cecd991b43cea8693938b56306fe4a04c",
+    "eip155:30:0x5265eddb4778fee35e380b9b31d6204f368fd1752f6cf241b1b142818cd37d96",
+    "eip155:30:0x22893951bd3d1bd72c8f910a92a5717a91ab1f7b9f17388416998d3921f84545",
+    "eip155:30:0xbe91b7dfd6dc6caae659aef8f1ef869f0129278a5bb90a322a081fdf9dd8b4dc",
+    "eip155:30:0x6978434f16bbe657f22712ccd9400438a74c8f530d1f09ea9789c38893272ceb"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2",
-      "source-3"
+  "loss": {
+    "usd": 1171196.35,
+    "assets": [
+      {
+        "token": "0xef213441a85df4d7acbdae0cf78004e1e486bb96",
+        "symbol": "rUSDT",
+        "amount": "283054.029028213516182487",
+        "usd": 283054.03
+      },
+      {
+        "token": "0x542fda317318ebf1d3deaf76e0b632741a7e677d",
+        "symbol": "WRBTC",
+        "amount": "44.783206397609975592",
+        "usd": 888142.32
+      }
     ]
   },
-  "discovery": [
-    "web:2022-10-21:sovryn"
+  "refs": [
+    "https://github.com/DistributedCollective/Sovryn-smart-contracts/blob/5a4bbc8b7b138e170dba941e0093e5ccc9af4d41/contracts/modules/LoanClosingsShared.sol",
+    "https://sovryn.com/all-things-sovryn/october-2022-lending-pool-exploit-postmortem",
+    "eip155:30:0x08aa35c8549493fb73fa9cdecbb3a4b87f896ef7f086a1fa95ed2db8ea67eb47"
+  ],
+  "notes": [
+    "Reset: replaceContract of LoanClosingsWith (selectors closeWithDeposit and closeWithSwap). iUSDT's LoanTokenLogicLM, which minted mid-close without a cross-contract guard, was registered 15 blocks earlier in the same batch, so it does not move the age.",
+    "Campaign: 35 further rUSDT-leg and 38 RBTC-leg drains; the setup borrows are not listed. Excluded 0x4dda1cc8, whose iRBTC mint and burn returned the attacker's 15 WRBTC and left an over-collateralised loan. AMM repayments of the attacker's own collateral are netted.",
+    "RBTC is valued at the BTC quote inside the RBTC-leg window (DefiLlama has no WRBTC sample there). No public RSK RPC serves traces or logs, so earlier exploits of the module were not scanned beyond the attacker's history; Sovryn's post-mortem matches these totals within 0.4%."
   ]
 }

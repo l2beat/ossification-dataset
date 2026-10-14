@@ -1,254 +1,74 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:100:0xa262141abcf7c127b88b4042aee8bf601f4f3372c9471dbd75cb54e76524f18e",
-  "protocol": {
-    "name": "Agave",
-    "slug": "agave"
-  },
+  "protocol": "Agave",
   "name": "Agave ERC-677 reentrancy during aToken burn",
-  "incident": {
-    "chainId": 100,
-    "exploit": {
-      "transactionHash": "0xa262141abcf7c127b88b4042aee8bf601f4f3372c9471dbd75cb54e76524f18e",
-      "blockNumber": 21120284,
-      "transactionIndex": 2,
-      "timestamp": 1647339940
-    },
-    "attackerAddresses": [
-      "0x0a16a85be44627c10cee75db06b169c7bc76de2c",
-      "0xf98169301b06e906af7f9b719204aa10d1f160d6"
-    ]
-  },
-  "summary": "Agave’s Aave fork burns the collateral aToken and sends the underlying to the liquidator before it finishes updating the borrower’s accounting. Gnosis bridged tokens are ERC-677, so that transfer calls onTokenTransfer on the liquidator, who re-entered borrow() while the position still looked healthy and drew LINK, WETH, USDC, WBTC, GNO and WXDAI against collateral that had already been seized.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 5422965.233920522,
-      "valuationTimestamp": 1647339940,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0xe2e73a1c69ecf83f464efce6a5be353a37ca09b2",
-          "symbol": "LINK"
-        },
-        "amount": "24562.188424818133394657",
-        "usdValue": 318992.03740090225,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647339940,
-          "unitPriceUsd": 12.987117918148785,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
-          "symbol": "WETH"
-        },
-        "amount": "567.984778913459195220",
-        "usdValue": 1437327.3280839277,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647339940,
-          "unitPriceUsd": 2530.5736728253514,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
-          "symbol": "USDC"
-        },
-        "amount": "243423.967351",
-        "usdValue": 243423.967351,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1647339940,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0x8e5bbbb09ed1ebde8674cda39a0c169401db4252",
-          "symbol": "WBTC"
-        },
-        "amount": "16.76923269",
-        "usdValue": 647484.5378228539,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647339940,
-          "unitPriceUsd": 38611.45884205951,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0x9c58bacc331c9aa871afd802db6379a98e80cedb",
-          "symbol": "GNO"
-        },
-        "amount": "8400.266606163732126645",
-        "usdValue": 2430643.4427481,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647339940,
-          "unitPriceUsd": 289.35313088332276,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
-          "symbol": "WXDAI"
-        },
-        "amount": "347787.556021242542688213",
-        "usdValue": 345093.920513738,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647339940,
-          "unitPriceUsd": 0.9922549399457524,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Components are the net underlying-token gain of the attacker EOA and its exploit contract across the two transactions that touch the lending pool, at blocks 21120283 and 21120284; the debt tokens minted against them were never repaid. The transaction at block 21120285 only forwards the proceeds from the exploit contract to the EOA. The v1 snapshot carried USD 1,500,000, which is well below the measured amount and below contemporaneous reporting of roughly USD 5.5 million. Nothing was recovered."
-  },
+  "summary": "Agave's Aave v2 fork liquidation sends the seized collateral to the liquidator before the borrower's accounting is final, with no reentrancy guard. Gnosis bridged WETH is ERC-677 and calls onTokenTransfer on the recipient, so the attacker liquidated its own position and re-entered borrow() from the callback, draining six markets against collateral already seized.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x207e9def17b4bd1045f5af2c651c081f9fdb0842",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x2d5bc0f897ad211ef9f954eadf59c43fb1ec4788",
-        "codeHash": "0x98940c1f13847a5d4e3ad54bf27bbc513bd5cb05912dc17b0363b592881c9ce9"
-      },
-      "deployment": {
-        "timestamp": 1620378980,
-        "blockNumber": 15927425,
-        "transactionHash": "0x26f0b0b982717c4c7f427efb550ecc47547bd4d9b7147af96893180f24cdba50",
-        "transactionIndex": 5,
-        "creatorAddress": "0xa91b9095efa6c0568467562032202108e49c9ef8"
-      },
-      "ageReset": {
+      "address": "0x207e9def17b4bd1045f5af2c651c081f9fdb0842",
+      "code": "0x2d5bc0f897ad211ef9f954eadf59c43fb1ec4788",
+      "reset": {
         "kind": "deployment",
-        "description": "The pool is an Aave-fork InitializableImmutableAdminUpgradeabilityProxy, which sets its implementation in the constructor and never emits Upgraded; the proxy emitted no Upgraded event at all between its creation block 15927425 and the exploit. Its EIP-1967 implementation slot is zero at block 15927424 and holds 0x2d5bc0f897ad211ef9f954eadf59c43fb1ec4788 from block 15927425 through block 21120283, so the proxy creation is the change that made the exploited implementation active."
-      },
-      "codeAgeSeconds": 26960960,
-      "failureModeId": "failure:aave-fork-erc677-liquidation-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x26f0b0b982717c4c7f427efb550ecc47547bd4d9b7147af96893180f24cdba50"
+      }
+    },
+    {
+      "address": "0x207e9def17b4bd1045f5af2c651c081f9fdb0842",
+      "code": "0x85b79018c781b499f2878bee14e4e8b5db31ac61",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x712ff2e656a2eb85285e89bcabaafa1b619a3eba48efdc78a3b28bd7ff0a5de5"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 100,
-      "transactionHash": "0xa262141abcf7c127b88b4042aee8bf601f4f3372c9471dbd75cb54e76524f18e"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-03/Agave_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 100,
-      "transactionHash": "0x26f0b0b982717c4c7f427efb550ecc47547bd4d9b7147af96893180f24cdba50"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 100,
-      "transactionHashes": [
-        "0x45b2d71f5bbb17fa67341fdf30468f1de032db71760be0cf4df9bac316cda7cc",
-        "0xa262141abcf7c127b88b4042aee8bf601f4f3372c9471dbd75cb54e76524f18e"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1647339940/coingecko:chainlink,coingecko:ethereum,coingecko:wrapped-bitcoin,coingecko:gnosis,coingecko:usd-coin,coingecko:xdai",
-      "observedAt": 1787644589
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T11:00:00Z",
-      "note": "The attacker EOA sent 20 Gnosis transactions; three reach the exploit contract, at blocks 21120283, 21120284 and 21120285. The first touches the pool but nets nothing, the second is the drain, and the third only forwards 567.98 WETH from the exploit contract to the EOA, so the v1 anchor is the earliest suitable one and is kept. The pool proxy emitted no Upgraded event before the exploit and its EIP-1967 slot goes from zero at block 15927424 to 0x2d5bc0f897ad211ef9f954eadf59c43fb1ec4788 at its creation block 15927425 and holds it through block 21120283, so the exploited implementation is 312.0 days old. The proxy was created by the Aave-fork configurator factory 0xa91b9095efa6c0568467562032202108e49c9ef8, sent by 0x79c815a50f2f0cb91772945d94fc65371f5d9881, neither of which is an attacker address. Loss is the attacker-side net gain of underlyings across the two pool-touching transactions; the matching debt tokens were never repaid. This is the same ERC-677 reentrancy class as the Hundred Finance Gnosis incident of the same day, but a different fork and a different code hash, so it carries its own failure identity."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "campaign": [],
+  "loss": {
+    "usd": 5444384.25,
+    "assets": [
+      {
+        "token": "0x9c58bacc331c9aa871afd802db6379a98e80cedb",
+        "symbol": "GNO",
+        "amount": "8400.266606163732126645",
+        "usd": 2430643.44
+      },
+      {
+        "token": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
+        "symbol": "WETH",
+        "amount": "576.444475204443374882",
+        "usd": 1458735.21
+      },
+      {
+        "token": "0x8e5bbbb09ed1ebde8674cda39a0c169401db4252",
+        "symbol": "WBTC",
+        "amount": "16.76923269",
+        "usd": 647484.54
+      },
+      {
+        "symbol": "XDAI",
+        "amount": "347787.556021242542688213",
+        "usd": 345093.92
+      },
+      {
+        "token": "0xe2e73a1c69ecf83f464efce6a5be353a37ca09b2",
+        "symbol": "LINK",
+        "amount": "24562.421758151473394757",
+        "usd": 318995.07
+      },
+      {
+        "token": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
+        "symbol": "USDC",
+        "amount": "243423.967351",
+        "usd": 243432.07
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/Agave_exp.sol",
+    "eip155:100:0x45b2d71f5bbb17fa67341fdf30468f1de032db71760be0cf4df9bac316cda7cc"
+  ],
+  "notes": [
+    "liquidationCall runs in the LendingPoolCollateralManager the AddressesProvider pointed to at launch, after the WETH listing and collateral setup; that route sets the age. LINK's later borrow enablement only shaped the attacker's dust position; the genesis markets already allowed it.",
+    "Loss is the aToken reserves' depletion in the exploit transaction, including WETH paid on to the flash-swap pairs; the setup transaction moved only dust. XDAI is WXDAI unwrapped by its aToken reserve.",
+    "Separate incident from Hundred Finance on Gnosis the same day: a Compound fork with its own borrow-before-accounting code."
+  ]
 }

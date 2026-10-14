@@ -1,221 +1,166 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x8d9cd0a12ec69f62ef6a373d0259d8ef679037d1e04bde3bcfc94d9922acfc8e",
-  "protocol": {
-    "name": "DungeonSwap",
-    "slug": "dungeonswap"
-  },
+  "protocol": "DungeonSwap",
   "name": "DungeonSwap swap router pulls approved tokens for any caller-named user",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x8d9cd0a12ec69f62ef6a373d0259d8ef679037d1e04bde3bcfc94d9922acfc8e",
-      "blockNumber": 26028397,
-      "transactionIndex": 90,
-      "timestamp": 1677495240
-    },
-    "attackerAddresses": [
-      "0x7d192fa3a48c307100c3e663050291fff786aa1f",
-      "0xde5fc6cbfae6d1c34252c60f6ca6a1c23c6dce3f",
-      "0xbaca2500b0f3009b420a7592bb1485e7ba419d76",
-      "0x6887888f73fae814fda831c49db0aec7e46c7c94"
-    ]
-  },
-  "summary": "The unverified DungeonSwap router 0x544fde4e... exposes 0x4f1f05bc, which transferFroms the input token from a caller-supplied user address and swaps it along a caller-supplied path, sending the output to that user, with no check that the caller is the user or an authorised front end. Anyone could therefore spend every allowance granted to the router: attackers forced approved wallets' BUSD, USDT, USDC and other tokens into buys of DND or other tokens they then dumped. The first drain (29 wallets) came at block 26028397 and hundreds of copycat senders continued until October 2025.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1779347.555329,
-      "valuationTimestamp": 1677495240,
-      "method": "other",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
-          "symbol": "BUSD"
-        },
-        "amount": "1104951.479695410303889914",
-        "usdValue": 1104951.4796954102,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1677495240,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "634628.943718915721016336",
-        "usdValue": 634628.9437189157,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1677495240,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "20445.032110391790798989",
-        "usdValue": 20445.032110391792,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1677495240,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "63.467677718180654806",
-        "usdValue": 19322.099804522917,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1677495240,
-          "unitPriceUsd": 304.44,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Lower bound on victim input across 11,251 unauthorised router calls in 7,308 transactions by 457 senders against 6,474 wallets (blocks 26028397..63995459). Stablecoin legs are counted at par: victim stablecoin inputs, or the stablecoin output of a victim-token first hop. WBNB legs are counted only for the first-day campaign (blocks up to 26040000: 63.467677718180654806 WBNB at the anchor-time quote); 116.66 WBNB of later WBNB legs and 1,776 first hops whose input and output are neither WBNB nor a stablecoin (e.g. CAKE, ETH, zSEED routed directly) are not valued. Victims received the path's output tokens (mostly DND) at manipulated prices; that output is not netted.",
-    "realizedAt": 1759996024
-  },
+  "summary": "DungeonSwap's unverified router exposed 0x4f1f05bc, which pulled the input token from a caller-named user and swapped it along a caller-supplied path and minimum output, never checking the caller. Anyone could spend every allowance granted to the router; attackers forced approved wallets' tokens into thin pools they had front-run, then dumped.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x544fde4e25dd7e0aff084f4975d808ae366b746b",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1627032113,
-        "blockNumber": 9404605,
-        "transactionHash": "0xca2d0dd9ca1180676f8d699f6dcca2ec4dd8fb89c47e9ee9ff101ef18710b7e0",
-        "transactionIndex": 33,
-        "creatorAddress": "0x6b40b4bef3730c1d484dc0f917a8cd845fe0e85c"
-      },
-      "ageReset": {
+      "address": "0x544fde4e25dd7e0aff084f4975d808ae366b746b",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable unverified router runtime; Etherscan txlist shows no transaction to it after creation (owner functions never called), so deployment supplies the age."
-      },
-      "codeAgeSeconds": 50463127,
-      "failureModeId": "failure:dungeonswap-router-arbitrary-user-transferfrom",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x544fde4e25dd7e0aff084f4975d808ae366b746b",
-        "codeHash": "0x650dc4eb30b1ca62deb24c1b3b76aebe1eb25a292543e57c1f98bc97aaac66d7"
+        "tx": "0xca2d0dd9ca1180676f8d699f6dcca2ec4dd8fb89c47e9ee9ff101ef18710b7e0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8d9cd0a12ec69f62ef6a373d0259d8ef679037d1e04bde3bcfc94d9922acfc8e"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/MetaSleuth/status/1630210958084952065"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T06:08:33Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. The router 0x544fde4e25dd7e0aff084f4975d808ae366b746b is unverified; its dispatcher (cast disassemble of eth_getCode) exposes 0x4f1f05bc, 0x5aa6e675, 0x6e261df1, 0x9d80002f and Ownable (owner 0x8da5cb5b, isOwner 0x8f32d59b); owner() at block 26028396 is the deployer 0x6b40b4bef3730c1d484dc0f917a8cd845fe0e85c. debug_traceTransaction(callTracer) of source-1 (block 26028397, index 90): EOA 0x7d192fa3a48c307100c3e663050291fff786aa1f calls its contract 0xde5fc6cbfae6d1c34252c60f6ca6a1c23c6dce3f (created at block 26028356), which calls router 0x4f1f05bc 29 times, each ABI word 4 naming a different third-party wallet (first 0x11d515398303477f4cc59f74999b4c8e401196e2) and path [BUSD, DND 0x14c358b573a4ce45364a3dbd84bbb4dae87af034]; each call executes BUSD.transferFrom(wallet, BUSD/WBNB pair 0x58f876857a02d6762e0101bb5c46a8c1ed44dc16, amount) and swaps via WBNB into the DND/WBNB pair 0x599283d9a18bb169b29b31965854bf88a803f115 with DND sent to the wallet; the attacker contract bought DND first and sells it after, ending +343.180144899909140316 WBNB. The router makes no caller authorisation: unrelated contracts (this one; 0x6887888f73fae814fda831c49db0aec7e46c7c94 of the MetaSleuth-reported attacker 0xbaca2500b0f3009b420a7592bb1485e7ba419d76 from block 26031822) succeed in spending other wallets' allowances. Earliest-use scan: Etherscan V2 logs Swap(address,uint256,uint256,uint256,uint256,address) (0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822) with topic1 = router, block-bisected: blocks 9404605..12999999 return 393658 logs in 174429 transactions (activity ends at block 12190627), blocks 13000000..26028396 return none. The final-hop recipient is the pulled wallet; every 2021 transaction names a single wallet, and cross-checking against Etherscan txlist of the project front end 0x0ccee62efec983f3ec4bad3247153009fb483551 (196415 txs) gives 156150 front calls with sender = wallet, 18277 front calls ending in native BNB (no token recipient), one reverted transaction, and one front call (0x9f20538d0cd8262902519da1633c18ffac8731d3804bb9da5e690b93a34befc4, 0.609 of token 0xe8176d41 swapped and returned to the same wallet 0x99f8c0b566f17e70b73603eb993110227f3b321e) with no third-party gain; none is an unauthorised drain. Source-1 is the first. Identity/age: eth_getCode empty at block 9404604; keccak256 of runtime 0x650dc4eb30b1ca62deb24c1b3b76aebe1eb25a292543e57c1f98bc97aaac66d7 at deployment block 9404605 and pre-exploit block 26028396; creation source-6 (index 33) is a top-level CREATE by the owner. The runtime has no DELEGATECALL or SELFDESTRUCT; Etherscan V2 txlist of the router returns only the creation transaction, so no owner configuration ever changed; deployment supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T06:08:33Z",
-      "note": "Reviewed loss from logs. Etherscan V2 Swap logs with topic1 = router, blocks 26028397..64000000 (block-bisected): 15511 logs in 7308 successful transactions. Per transaction, ordering by logIndex, each router call is a run of swaps whose last log has recipient (topic2) != router; that recipient is the pulled wallet, and the first swap's input is the pulled token (pair token0/token1 from eth_call 0x0dfe1681/0xd21220a7 on all 418 pairs). eth_getTransactionByHash for all 7308 transactions: no call names the transaction sender or target as the wallet, leaving 11251 calls by 457 senders against 6474 wallets, last at block 63995459 (1759996024). First-hop value: stablecoin input or stablecoin output at par gives 1104951.479695410303889914 BUSD, 634628.943718915721016336 USDT and 20445.032110391790798989 USDC; WBNB input or WBNB output gives 63.467677718180654806 WBNB in blocks <= 26040000 (valued, source-5) and 116.658009001182688458 WBNB later (not valued); 1776 first hops touch neither. The main 2023-02-27 attacker 0xbaca2500... alone accounts for 865 calls in 12 transactions pulling 544808.26 BUSD, 189248.29 USDT, 5909.92 USDC and 123966.44 zSEED (its forced swaps put 2399.736684213709 WBNB into the DND/WBNB pair); source-1 pulls 110226.574573486797095769 BUSD from 29 wallets. Copycat drains of the same router are merged here as the same fault."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1677495240/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790662113
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xca2d0dd9ca1180676f8d699f6dcca2ec4dd8fb89c47e9ee9ff101ef18710b7e0"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x21b1378e332333d9c48129fe644f7c6d6393892f6604dba58ce7da103c922519"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-4"
+  "loss": {
+    "usd": 2013442.47,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "1163622.71746092257450018",
+        "usd": 1163593.19
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "651233.376254002577622433",
+        "usd": 651221.14
+      },
+      {
+        "token": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "symbol": "CAKE",
+        "amount": "40969.451963471737965552",
+        "usd": 100228.68
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "21790.577799464268442921",
+        "usd": 21791.32
+      },
+      {
+        "token": "0x4b0f1812e5df2a09796481ff14017e6005508003",
+        "symbol": "twt",
+        "amount": "15778.862067463885392637",
+        "usd": 21617.04
+      },
+      {
+        "token": "0xcfbb1bfa710cb2eba070cc3bec0c35226fea4baf",
+        "symbol": "HEROEGG",
+        "amount": "12909112.542796662490289189",
+        "usd": 6873.27
+      },
+      {
+        "token": "0x5ac52ee5b2a633895292ff6d8a89bb9190451587",
+        "symbol": "BSCX",
+        "amount": "3727.238142674460258524",
+        "usd": 6863.02
+      },
+      {
+        "token": "0x3203c9e46ca618c8c1ce5dc67e7e9d75f5da2377",
+        "symbol": "mbox",
+        "amount": "11461.196941089825345971",
+        "usd": 4033.27
+      },
+      {
+        "token": "0x4ee438be38f8682abb089f2bfea48851c5e71eaf",
+        "symbol": "YAE",
+        "amount": "384592.499729095312585462",
+        "usd": 3874.13
+      },
+      {
+        "token": "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
+        "symbol": "XRP",
+        "amount": "10018.794240477761913835",
+        "usd": 3765.2
+      },
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "0.105980514218770625",
+        "usd": 2713.54
+      },
+      {
+        "token": "0x89af13a10b32f1b2f8d1588f93027f69b6f4e27e",
+        "symbol": "GAFI",
+        "amount": "500",
+        "usd": 2245
+      },
+      {
+        "token": "0x8717e80eff08f53a45b4a925009957e14860a8a8",
+        "symbol": "BHO",
+        "amount": "2867558.20547945205479452",
+        "usd": 2164.77
+      },
+      {
+        "token": "0x5b1baec64af6dc54e6e04349315919129a6d3c23",
+        "symbol": "DXCT",
+        "amount": "22333.865234898316883562",
+        "usd": 2117.31
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "1.255171731301683426",
+        "usd": 2103.06
+      },
+      {
+        "token": "0x82030cdbd9e4b7c5bb0b811a61da6360d69449cc",
+        "symbol": "FEVR",
+        "amount": "3034436.65",
+        "usd": 1927.14
+      },
+      {
+        "token": "0x9d70a3ee3079a6fa2bb16591414678b7ad91f0b5",
+        "symbol": "MEPAD",
+        "amount": "233700.056535874615386565",
+        "usd": 1726.56
+      },
+      {
+        "token": "0x00e1656e45f18ec6747f5a8496fd39b50b38396d",
+        "symbol": "BCOIN",
+        "amount": "45096.408604095480457466",
+        "usd": 1549.52
+      },
+      {
+        "token": "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+        "symbol": "ADA",
+        "amount": "3951.682581126498946534",
+        "usd": 1534.72
+      },
+      {
+        "token": "0xfe1d7f7a8f0bda6e415593a2e4f82c64b446d404",
+        "symbol": "BLP",
+        "amount": "17800",
+        "usd": 1235.33
+      },
+      {
+        "token": "0xbb46693ebbea1ac2070e59b4d043b47e2e095f86",
+        "symbol": "BFG",
+        "amount": "67142.339000000005013504",
+        "usd": 1232.21
+      },
+      {
+        "symbol": "112 other assets under $1,000 each",
+        "usd": 9033.05
+      }
     ]
   },
-  "discovery": [
-    "web:2023-02-27:dungeonswap"
+  "campaign": [
+    {
+      "chainId": 56,
+      "count": 7310,
+      "from": 26031822,
+      "to": 126617788,
+      "selection": "Transactions in which the router pulled an approved token from an owner other than the transaction sender (router Approval events as spender)."
+    }
+  ],
+  "refs": [
+    "https://twitter.com/MetaSleuth/status/1630210958084952065"
+  ],
+  "notes": [
+    "Campaign: every transaction where the router pulled an approved token from an owner other than the sender (Approval events with the router as spender). Before the anchor, pulls since block 20,000,000 were all by the owners and no earlier transaction pulled from two owners. Tokens emitting no Approval on transferFrom are missed.",
+    "Loss: victims' pulled input tokens, priced at DefiLlama's daily price nearest each pull; BUSD, USDT and USDC without a DefiLlama datapoint at par. 60 small tokens with no DefiLlama price are not valued, so the total is a lower bound. The tokens victims received in exchange are not netted."
   ]
 }

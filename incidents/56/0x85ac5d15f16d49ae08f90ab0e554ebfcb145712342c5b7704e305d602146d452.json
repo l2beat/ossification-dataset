@@ -1,161 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x85ac5d15f16d49ae08f90ab0e554ebfcb145712342c5b7704e305d602146d452",
-  "protocol": {
-    "name": "BCE",
-    "slug": "bce"
-  },
+  "protocol": "BCE",
   "name": "BCE deferred burn against the PancakeSwap pair",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x85ac5d15f16d49ae08f90ab0e554ebfcb145712342c5b7704e305d602146d452",
-      "blockNumber": 88215293,
-      "transactionIndex": 1,
-      "timestamp": 1774245553
-    },
-    "attackerAddresses": [
-      "0x9f7eabd7c3538ba6b9d10eede63712c0ecce6d69",
-      "0xaf7f22831d1ec86d24be51a1760b04ad4b58e9eb",
-      "0xb68419184079c7a69a9a7decb53b691b30d5eb54"
-    ]
-  },
   "summary": "BCE accrued a scheduledDestruction amount on sells and settled it during a later ordinary transfer by burning that amount out of the PancakeSwap pair's own balance and calling sync(), collapsing the BCE reserve so the attacker's remaining BCE could be sold into the distorted pair for its USDT side.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 800009.3241674005,
-      "valuationTimestamp": 1774245553,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "800009.324167400507778023",
-        "usdValue": 800009.3241674005,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1774245553,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross defect-caused loss is the exploit transaction's exact net USDT outflow from PancakeSwap pair 0xca23e8d408d769661cb480a3fd45d6be370c45f7: 1,368,537.151371370971397343 plus 36,575,519.358323350250156783 USDT out, less 2,222,765.758031675244035783 plus 34,921,281.427495645469740320 USDT in, equals 800,009.324167400507778023 USDT. This also equals the 680,007.925542290431611320 USDT paid to the attacker EOA plus 120,001.398625110076166703 USDT swapped into WBNB for the attack's 15% builder payment. It does not count flash-loan principal as loss and supersedes the rounded $679,000 report, which tracks the attacker's retained USDT after the builder payment rather than the LP's gross loss."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xcdb189d377ac1cf9d7b1d1a988f2025b99999999",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xcdb189d377ac1cf9d7b1d1a988f2025b99999999",
-        "codeHash": "0x61d8107bc988bd25c7204fa545cd25e4717f52f9a041f197bc50f09546c4b7a9"
-      },
-      "deployment": {
-        "timestamp": 1774156513,
-        "blockNumber": 88017532,
-        "transactionHash": "0x40012dcc745bba85a522d14fedbddead0b47edc3854b2af8a8ecc951eaced1aa",
-        "transactionIndex": 38,
-        "creatorAddress": "0x1fe979226d796c65a2b1a044c69c2e91628bcfce"
-      },
-      "ageReset": {
+      "address": "0xcdb189d377ac1cf9d7b1d1a988f2025b99999999",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct BCE creation by 0x1fe979226d796c65a2b1a044c69c2e91628bcfce. Archival eth_getCode is empty immediately before deployment and hashes to 0x61d8107bc988bd25c7204fa545cd25e4717f52f9a041f197bc50f09546c4b7a9 in the deployment block and immediately before and during the exploit. Both EIP-1967 code-selection slots are zero. The defect-bearing scheduledDestruction accumulation, pair-balance burn, and sync calls are in BCE._update itself; its linked Helper library performs reserve/liquidity classification but does not contain this defect."
-      },
-      "codeAgeSeconds": 89040,
-      "failureModeId": "failure:bce-deferred-burn-settled-against-pair",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+        "tx": "0x40012dcc745bba85a522d14fedbddead0b47edc3854b2af8a8ecc951eaced1aa"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x85ac5d15f16d49ae08f90ab0e554ebfcb145712342c5b7704e305d602146d452"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-23-mar-29-2026"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-03/bce_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/sanbir/evm-hack-registry",
-      "commit": "d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6",
-      "path": "2026-03-bce_exp/sources/BCE_cdb189/src_BCE.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x40012dcc745bba85a522d14fedbddead0b47edc3854b2af8a8ecc951eaced1aa"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x37243080c54d63d78a3246a34f46c8cb4e4eb0ff1bb1b9f77fd768e0fe024630"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T10:30:08Z",
-      "note": "Anchor review: archive transaction-count binary searches recover all five successful transactions from the attacker EOA before the exploit. Nonces 0-3 only deploy attacker contracts. Nonce 4, transaction 0x37243080 at block 88095203, calls BCE.transfer(0xaf7f2283..., 0), but its receipt contains only the zero-value Transfer from the EOA and no burn from the pair or Sync event; scheduledDestruction was zero, so this preparation did not execute or finalize the defect. Nonce 5 is the retained anchor and first successful campaign transaction that burns the pair through scheduledDestruction and drains USDT. Root cause and artifact review: the verified BCE source puts both the uncapped sell-branch scheduledDestruction accumulator and the ordinary-transfer consumer in BCE._update. The consumer calls super._update(pair, address(0), scheduledDestruction), charging the deferred burn to LP assets rather than the triggering user's balance, then pair.sync(), violating the AMM reserve-ownership invariant under an unprivileged zero-value transfer. Receipt logs prove this exact path: BCE Transfer log 70 burns 174166.6534965 BCE from pair 0xca23e8d..., followed by the reserve Sync and final USDT withdrawal. Helper is linked for reserve/liquidity classification, but the erroneous state mutation and sync are direct BCE code, so BCE is the defect-bearing artifact. Code history: BCE is the direct top-level creation in 0x40012dcc at block 88017532 index 38 by 0x1fe97922...; archival code is absent at block 88017531 and the 14,849-byte runtime hash is 0x61d8107bc988bd25c7204fa545cd25e4717f52f9a041f197bc50f09546c4b7a9 at block 88017532, immediately before the exploit, and in the exploit block. Implementation and beacon slots are zero. Loss review: USDT Transfer logs give pair outflows of 1368537.151371370971397343 and 36575519.358323350250156783, and inflows of 2222765.758031675244035783 and 34921281.427495645469740320; exact net LP loss is 800009.324167400507778023 USDT. It resolves into 680007.925542290431611320 USDT retained by the EOA and 120001.398625110076166703 USDT swapped for the builder payment. The published ~$679K estimate is therefore net attacker retention after that payment, not comparable gross LP loss."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 800009.3241674005,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "800009.324167400507778023",
+        "usd": 800009.3241674005
+      }
     ]
   },
-  "discovery": [
-    "web:2026-03-23:bce-usdt"
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-23-mar-29-2026",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-03/bce_exp.sol",
+    "https://github.com/sanbir/evm-hack-registry/blob/d6c70c964a670c7ac83c24b3ca91bd862b1bf9d6/2026-03-bce_exp/sources/BCE_cdb189/src_BCE.sol",
+    "eip155:56:0x37243080c54d63d78a3246a34f46c8cb4e4eb0ff1bb1b9f77fd768e0fe024630"
+  ],
+  "notes": [
+    "Direct BCE creation by 0x1fe979226d796c65a2b1a044c69c2e91628bcfce. Archival eth_getCode is empty immediately before deployment and hashes to 0x61d8107bc988bd25c7204fa545cd25e4717f52f9a041f197bc50f09546c4b7a9 in the deployment block and immediately before and during the exploit. Both EIP-1967 code-selection slots are zero. The defect-bearing scheduledDestruction accumulation, pair-balance burn, and sync calls are in BCE._update itself; its linked Helper library performs reserve/liquidity classification but does not contain this defect.",
+    "Gross defect-caused loss is the exploit transaction's exact net USDT outflow from PancakeSwap pair 0xca23e8d408d769661cb480a3fd45d6be370c45f7: 1,368,537.151371370971397343 plus 36,575,519.358323350250156783 USDT out, less 2,222,765.758031675244035783 plus 34,921,281.427495645469740320 USDT in, equals 800,009.324167400507778023 USDT. This also equals the 680,007.925542290431611320 USDT paid to the attacker EOA plus 120,001.398625110076166703 USDT swapped into WBNB for the attack's 15% builder payment. It does not count flash-loan principal as loss and supersedes the rounded $679,000 report, which tracks the attacker's retained USDT after the builder payment rather than the LP's gross loss."
   ]
 }

@@ -1,214 +1,47 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0x0e29dcf4e9b211a811caf00fc8294024867bffe4ab2819cc1625d2e9d62390af",
-  "protocol": {
-    "name": "Paribus",
-    "slug": "paribus"
-  },
+  "protocol": "Paribus",
   "name": "Paribus pETH redeem reentrancy",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0x0e29dcf4e9b211a811caf00fc8294024867bffe4ab2819cc1625d2e9d62390af",
-      "blockNumber": 79308098,
-      "transactionIndex": 1,
-      "timestamp": 1681208132
-    },
-    "attackerAddresses": [
-      "0x014abff04e5c441b2ceaa62d843bbc5ae49e5504"
-    ]
-  },
-  "summary": "The Paribus native-ETH market sent ether to the redeemer before the comptroller's collateral bookkeeping was updated, so the receive hook re-entered the protocol and borrowed against collateral that had already been withdrawn.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 67937.3707330498,
-      "valuationTimestamp": 1681208132,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-3",
-        "source-5",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "13.075471156453514228",
-        "usdValue": 25103.989337409796,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1681207964,
-          "unitPriceUsd": 1919.93,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "symbol": "USDT"
-        },
-        "amount": "20122.071155",
-        "usdValue": 20122.071155,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1681208132,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
-          "symbol": "WBTC"
-        },
-        "amount": "0.75523112",
-        "usdValue": 22711.31024064,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1681207971,
-          "unitPriceUsd": 30072,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is exact net depletion of the three implicated Paribus markets in the successful anchor receipt. pETH receives 200 ETH and sends 213.075471156453514228 ETH, for 13.075471156453514228 ETH net depletion; its archive balance falls from 13.075471156463824220 ETH to 0.000000000010309992 ETH. pUSDT receives 30,000 USDT and sends 50,122.071155 USDT, for 20,122.071155 USDT net depletion; pWBTC receives no WBTC and sends its full 0.75523112 WBTC balance. Both token archive balances fall exactly to zero. Flash-liquidity inputs are included in the market inflows; repayments and downstream swaps occur outside the victim markets and return no value to them. USDT is valued at par. The closest preceding DefiLlama points are ETH at $1,919.93 at 1681207964, 168 seconds before the anchor, and BTC at $30,072 at 1681207971, 161 seconds before it. Exact component values total $67,937.3707330498, replacing the seed's rounded $86,000 estimate."
-  },
+  "summary": "PEther.redeemFresh sent ether to the redeemer before reducing its pETH balance and totalSupply, so the receive hook re-entered the comptroller and borrowed from other markets against pETH collateral that was being withdrawn. The attacker supplied ETH and USDT, borrowed, then redeemed and borrowed USDT and WBTC inside the callback.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x375ae76f0450293e50876d0e5bdc3022cab23198",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7",
-        "codeHash": "0x5d54ba25f763126cb6e489bfb65be217226432ce11ac86fee695590694e1c281"
-      },
-      "deployment": {
-        "timestamp": 1679930500,
-        "blockNumber": 74259357,
-        "transactionHash": "0xc472b813c28862b4792c295bee2fd7432f12226e7da865cf87f65c26c8cdfcc4",
-        "transactionIndex": 4,
-        "creatorAddress": "0x8acd5764d8edef0558dbdf40ae64c7ffb6531160"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "pETH is a Compound-style delegator whose implementation is stored in nonstandard slot 18. Its creation receipt emits NewImplementation(0x0, 0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7); slot 18 is zero one block earlier and selects that implementation at creation and immediately before the incident. No later NewImplementation event exists before the incident, and both delegator and implementation runtimes are unchanged. Proxy creation is therefore the implementation's canonical activation and latest age reset for this market."
-      },
-      "codeAgeSeconds": 1277632,
-      "failureModeId": "failure:paribus-peth-redeem-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x375ae76f0450293e50876d0e5bdc3022cab23198",
+      "code": "0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4a6b4a3b8ec942045a9110d23ff687538e3b97d08d7f38147fbd18867c0032f2",
+        "address": "0x2130c88fd0891ea79430fb490598a5d06bf2a545",
+        "call": "0x8e8f294b000000000000000000000000375ae76f0450293e50876d0e5bdc3022cab23198"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x0e29dcf4e9b211a811caf00fc8294024867bffe4ab2819cc1625d2e9d62390af"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-04/Paribus_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T12:43:37Z",
-      "note": "Reviewed the sender's bounded nonce history, all four successful campaign transactions, the anchor receipt and call trace, archive market balances, commit-pinned technical reproduction, all three market implementation slots and runtimes, canonical pETH creation receipt and implementation event history, and independently preceding ETH and BTC prices. Campaign scope is sender nonces 6 through 9: inner helper 0xec05281d0345f5142acd197bdbc6c4e1fc29dfe7 deployment, main helper 0xcd31e27f0a811de7139938b1972b475697f8c50b deployment, setup, and the successful anchor. Nonces 0 through 5 are failed deployments; nonces 10 and 11 are downstream distributions that do not touch or return value to the victim markets. In the anchor, pETH receives two 100-ETH deposits and sends a 13.075471156463824220-ETH borrow plus two 99.999999999994845004-ETH redemptions: 200 in - 213.075471156453514228 out = 13.075471156453514228 ETH net depletion. Its archive balance moves from 13.075471156463824220 to 0.000000000010309992 ETH. pUSDT receives 30,000 USDT and sends 50,122.071155 USDT, exactly depleting its 20,122.071155-USDT opening inventory; pWBTC receives zero and sends its full 0.75523112-WBTC inventory. Both token archive balances become zero. Financing inputs are already netted at the market boundary; repayments and swaps are downstream and return nothing to these markets. The trace delegates pETH calls to slot-18 implementation 0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7. pUSDT and pWBTC select distinct addresses whose shared runtime hash is 0xf559a4d91bdc0ee8d9f654afc95bf752e589b50e097c754d821186b9e4e4d020; those ERC20-market runtimes perform ordinary borrow transfers downstream of the pETH redeem/callback failure. The implicated failure target is therefore the pETH implementation, while gross protocol loss includes all three market inventories. pETH was created by 0x8acd5764d8edef0558dbdf40ae64c7ffb6531160 in 0xc472b813...cc4 at block 74259357 index 4, timestamp 1679930500. Slot 18 is zero and proxy code absent one block earlier. The creation receipt's NewImplementation event selects 0x5b0ec471565e36e5a33c35b861dd752e16f3a8e7, and it is the sole such event through the incident. Slot 18, the proxy runtime, and implementation runtime remain unchanged; the implementation runtime hashes to 0x5d54ba25f763126cb6e489bfb65be217226432ce11ac86fee695590694e1c281. Code age is 1681208132 - 1679930500 = 1,277,632 seconds. Preceding prices are ETH $1,919.93 at 1681207964 and BTC $30,072 at 1681207971; component values total $67,937.3707330498."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xc472b813c28862b4792c295bee2fd7432f12226e7da865cf87f65c26c8cdfcc4"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 42161,
-      "transactionHashes": [
-        "0xd669314923c9d6213d8e581855d5703810c6907b3b3c1b70e818b969a2ddf3f2",
-        "0x84c0b7ee108e4c6cdffe2517f2e2f45226963d1da03c4e6e460299e7186db95d",
-        "0x54ed79a3fc30d0b1f051343735024068a4fd481f45ebc206b3bea0c976ceaad3",
-        "0x0e29dcf4e9b211a811caf00fc8294024867bffe4ab2819cc1625d2e9d62390af"
-      ]
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1681207964/coingecko:ethereum?searchWidth=4h",
-      "observedAt": 1788007417
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1681207971/coingecko:bitcoin?searchWidth=4h",
-      "observedAt": 1788007417
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 97956.87,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "13.075471156453514228",
+        "usd": 25106.6
+      },
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "50122.071155",
+        "usd": 50172.19
+      },
+      {
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "0.75523112",
+        "usd": 22678.08
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2023-04/Paribus_exp.sol",
-    "seed:paribus:2023-04-11:paribus-peth-redeem-reentrancy"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Paribus_exp.sol"
+  ],
+  "notes": [
+    "The pETH delegator was created already pointing at the vulnerable implementation; the comptroller set pETH's collateral factor shortly afterwards. Borrowing against pETH needed that HIGH-rated setting (rule 10), so it, not the deployment, is the reset.",
+    "USDT is the gross amount borrowed from pUSDT: the 30,000 USDT the attacker supplied as collateral and left in the market is not subtracted (rule 14). The 200 ETH the attacker supplied to pETH and redeemed within the transaction is excluded."
   ]
 }

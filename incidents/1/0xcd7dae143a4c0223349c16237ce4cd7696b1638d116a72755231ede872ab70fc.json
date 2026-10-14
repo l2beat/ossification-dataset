@@ -1,581 +1,115 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xcd7dae143a4c0223349c16237ce4cd7696b1638d116a72755231ede872ab70fc",
-  "protocol": {
-    "name": "Popsicle Finance",
-    "slug": "popsicle"
-  },
+  "protocol": "Popsicle Finance",
   "name": "Popsicle Finance Sorbetto reward-accounting exploit",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xcd7dae143a4c0223349c16237ce4cd7696b1638d116a72755231ede872ab70fc",
-      "blockNumber": 12955063,
-      "transactionIndex": 37,
-      "timestamp": 1628031222
-    },
-    "attackerAddresses": [
-      "0xf9e3d08196f76f5078882d98941b71c0884bea52",
-      "0xdfb6fab7f4bc9512d5620e679e90d1c91c4eade6"
-    ]
-  },
-  "summary": "SorbettoFragola transferred LP shares without synchronizing the recipient's per-share fee debt. The same shares could therefore be moved through fresh addresses, each credited with historical fees, and the duplicated rewards collected from vault liquidity.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 20700000,
-      "valuationTimestamp": 1628031222,
-      "method": "reported",
-      "sourceIds": [
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "2560",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "96.2",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "160000",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "5390000",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-          "symbol": "USDT"
-        },
-        "amount": "4980000",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
-          "symbol": "UNI"
-        },
-        "amount": "10500",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Halborn reports approximately $20.7 million drained from the Sorbetto Fragola pools. BlockSec reports over $20 million and the rounded six-asset basket recorded here. The total is the gross campaign loss across all eight vaults executed in the selected transaction."
-  },
+  "summary": "SorbettoFragola vaults transferred LP shares without settling or moving the per-account fee accounting, so a recipient was credited with fees accrued before it held the shares. With flash-loaned deposits the attacker passed the same shares through helper contracts, each collecting the full historical fees, then withdrew, across eight vaults.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xc4ff55a4329f84f9bf0f5619998ab570481ebb48",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xc4ff55a4329f84f9bf0f5619998ab570481ebb48",
-        "codeHash": "0x569b6a8deb8a91662c904b14f073a8cdc967484c62590c491f3299c3d1140e24"
-      },
-      "deployment": {
-        "timestamp": 1624653500,
-        "blockNumber": 12705397,
-        "transactionHash": "0x3be530ca0c8b4e5591b7669786e9ae370836e70add0be35e38385c7ab8ff6cb9",
-        "transactionIndex": 88,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0xc4ff55a4329f84f9bf0f5619998ab570481ebb48",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3377722,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-5",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x3be530ca0c8b4e5591b7669786e9ae370836e70add0be35e38385c7ab8ff6cb9"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0xd63b340f6e9cccf0c997c83c8d036fa53b113546",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xd63b340f6e9cccf0c997c83c8d036fa53b113546",
-        "codeHash": "0xaf7d9acc6c1e22430dc773821479a3830aca5c8ea3b7745c96897d9f4f2a0edd"
-      },
-      "deployment": {
-        "timestamp": 1624658774,
-        "blockNumber": 12705780,
-        "transactionHash": "0x0168ee028ffd8c7c6ecd37b07f4c5c7341e9040937437a8c2c55586676c5d60e",
-        "transactionIndex": 85,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0xd63b340f6e9cccf0c997c83c8d036fa53b113546",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3372448,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-6",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x0168ee028ffd8c7c6ecd37b07f4c5c7341e9040937437a8c2c55586676c5d60e"
       }
     },
     {
-      "id": "target-3",
-      "executionAddress": "0x0a8143ef65b0ce4c2fad195165ef13772ff6cca0",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x0a8143ef65b0ce4c2fad195165ef13772ff6cca0",
-        "codeHash": "0x2d2a34f72a7251001f2cc15bba9dbc35b1dfb3b4b03db3571d072ca620c3434d"
-      },
-      "deployment": {
-        "timestamp": 1624658959,
-        "blockNumber": 12705792,
-        "transactionHash": "0x2174560eefa86a05d648ea5efad5245a278efd29a1a584727b237c19fe6c7be9",
-        "transactionIndex": 20,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0x0a8143ef65b0ce4c2fad195165ef13772ff6cca0",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3372263,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-7",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-7",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x2174560eefa86a05d648ea5efad5245a278efd29a1a584727b237c19fe6c7be9"
       }
     },
     {
-      "id": "target-4",
-      "executionAddress": "0x98d149e227c75d38f623a9aa9f030fb222b3faa3",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x98d149e227c75d38f623a9aa9f030fb222b3faa3",
-        "codeHash": "0x438784ad4ffcff55816829cdcf848693011ab067ca0b5adfdc9e5e4d1ff92b69"
-      },
-      "deployment": {
-        "timestamp": 1624811742,
-        "blockNumber": 12717165,
-        "transactionHash": "0x13b8386716d83e47fac67e969b73e627d0b049336e637cb56cfbc56d38b06640",
-        "transactionIndex": 20,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0x98d149e227c75d38f623a9aa9f030fb222b3faa3",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3219480,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-8",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-8",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x13b8386716d83e47fac67e969b73e627d0b049336e637cb56cfbc56d38b06640"
       }
     },
     {
-      "id": "target-5",
-      "executionAddress": "0xb53dc33bb39efe6e9db36d7ef290d6679facbec7",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xb53dc33bb39efe6e9db36d7ef290d6679facbec7",
-        "codeHash": "0xa5769d67e9371e147815f0c0872a7d903cbdc9c98e5b5385d036f7ecc0a516c3"
-      },
-      "deployment": {
-        "timestamp": 1624911019,
-        "blockNumber": 12724572,
-        "transactionHash": "0x4d4ced988e8147fbda191235690a890dc3e9575005158cc0c9c9538008016f8b",
-        "transactionIndex": 100,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0xb53dc33bb39efe6e9db36d7ef290d6679facbec7",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3120203,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-9",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-9",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x4d4ced988e8147fbda191235690a890dc3e9575005158cc0c9c9538008016f8b"
       }
     },
     {
-      "id": "target-6",
-      "executionAddress": "0x6f3f35a268b3af45331471eabf3f9881b601f5aa",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x6f3f35a268b3af45331471eabf3f9881b601f5aa",
-        "codeHash": "0x66e2b13a977c2f50d355c5815826e7bb481247fe38cea4162e2a91e9cc5fe70d"
-      },
-      "deployment": {
-        "timestamp": 1624811745,
-        "blockNumber": 12717166,
-        "transactionHash": "0x516547d2e25a041940226f20f3ff84c34fdd3852745fea1168a0dccef754cc15",
-        "transactionIndex": 75,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0x6f3f35a268b3af45331471eabf3f9881b601f5aa",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3219477,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-10",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-10",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x516547d2e25a041940226f20f3ff84c34fdd3852745fea1168a0dccef754cc15"
       }
     },
     {
-      "id": "target-7",
-      "executionAddress": "0xdd90112eaf865e4e0030000803ebbb4d84f14617",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xdd90112eaf865e4e0030000803ebbb4d84f14617",
-        "codeHash": "0x75318b7d250b66dfcce2b3a5f727596f5c8a40d4b11f70635b13d17a90f22454"
-      },
-      "deployment": {
-        "timestamp": 1624659094,
-        "blockNumber": 12705803,
-        "transactionHash": "0x3cc1c95fe60c5f89c61552daf59ce00b9d3fa892eab31663c37f6403dd3edfe0",
-        "transactionIndex": 39,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0xdd90112eaf865e4e0030000803ebbb4d84f14617",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3372128,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-11",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-11",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x3cc1c95fe60c5f89c61552daf59ce00b9d3fa892eab31663c37f6403dd3edfe0"
       }
     },
     {
-      "id": "target-8",
-      "executionAddress": "0xe22eacac57a1adfa38dca1100ef17654e91efd35",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe22eacac57a1adfa38dca1100ef17654e91efd35",
-        "codeHash": "0xc22c00d729b43df85c47dec955617e6eb0188c7b72dfecc38c66ca9579567c59"
-      },
-      "deployment": {
-        "timestamp": 1624659222,
-        "blockNumber": 12705817,
-        "transactionHash": "0x9a964919ebeb861c44056122fc55cd51e84d628884a9ebd778cc74ae07102efa",
-        "transactionIndex": 65,
-        "creatorAddress": "0x9556e1711ec7bd368441eeb4d3c4cced15e19add"
-      },
-      "ageReset": {
+      "address": "0xe22eacac57a1adfa38dca1100ef17654e91efd35",
+      "reset": {
         "kind": "deployment",
-        "description": "The directly deployed SorbettoFragola vault retained the same 24,254-byte runtime through the exploit."
-      },
-      "codeAgeSeconds": 3372000,
-      "failureModeId": "failure:popsicle-fragola-transfer-fee-debt-not-synchronized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-12",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-12",
-          "source-13"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: sibling instance of the same template and failure; target-5 carries the latest age reset and supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-13",
-          "source-14"
-        ]
+        "tx": "0x9a964919ebeb861c44056122fc55cd51e84d628884a9ebd778cc74ae07102efa"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xcd7dae143a4c0223349c16237ce4cd7696b1638d116a72755231ede872ab70fc"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2021-08/Popsicle_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/the-analysis-of-the-popsicle-finance-security-incident"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-popsicle-finance-hack-august-2021"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3be530ca0c8b4e5591b7669786e9ae370836e70add0be35e38385c7ab8ff6cb9"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0168ee028ffd8c7c6ecd37b07f4c5c7341e9040937437a8c2c55586676c5d60e"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2174560eefa86a05d648ea5efad5245a278efd29a1a584727b237c19fe6c7be9"
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x13b8386716d83e47fac67e969b73e627d0b049336e637cb56cfbc56d38b06640"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x4d4ced988e8147fbda191235690a890dc3e9575005158cc0c9c9538008016f8b"
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x516547d2e25a041940226f20f3ff84c34fdd3852745fea1168a0dccef754cc15"
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3cc1c95fe60c5f89c61552daf59ce00b9d3fa892eab31663c37f6403dd3edfe0"
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9a964919ebeb861c44056122fc55cd51e84d628884a9ebd778cc74ae07102efa"
-    },
-    {
-      "id": "source-13",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:45:03Z",
-      "note": "Reviewed the successful exploit receipt and full call trace, calldata and state-changing vault calls, all eight vault deployment transactions, archive-node runtimes at deployment and immediately before the exploit, the commit-pinned reproduction, BlockSec's technical analysis, Halborn's incident analysis, and the reported loss. The trace calls deposit(uint256,uint256), transfers each vault's LP shares through two fresh helper accounts, and calls collectFees(uint256,uint256) against all eight directly deployed SorbettoFragola vaults. This reproduces the missing transfer-time fee-debt synchronization described by the technical sources. Each vault was created directly by 0x9556... and retained its 24,254-byte runtime through the exploit: c4ff block 12705397:88 hash 0x569b...0e24; d63b block 12705780:85 hash 0xaf7d...0edd; 0a81 block 12705792:20 hash 0x2d2a...3434d; 98d1 block 12717165:20 hash 0x4387...2b69; b53d block 12724572:100 hash 0xa576...16c3; 6f3f block 12717166:75 hash 0x66e2...e70d; dd90 block 12705803:39 hash 0x7531...2454; e22e block 12705817:65 hash 0xc22c...7c59. BlockSec reports the six-asset basket and over $20 million harvested; Halborn reports approximately $20.7 million drained."
-    },
-    {
-      "id": "source-14",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T09:00:00Z",
-      "note": "Knot selection. 8 sibling targets share failure:popsicle-fragola-transfer-fee-debt-not-synchronized and one loss, so the incident contributes one observation. target-5 (0xb53dc33bb39efe6e9db36d7ef290d6679facbec7) carries the latest age reset among them and supplies the knot; target-1, target-2, target-3, target-4, target-6, target-7, target-8 remain reviewed evidence."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $20.7 million loss and six asset quantities are reported estimates; individual incident-time token prices are not reconstructed here."
-    ],
-    "reviewSourceIds": [
-      "source-13"
+  "loss": {
+    "usd": 21064036.86,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "2572.426090014232766731",
+        "usd": 6479675.42
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "5414085.448419",
+        "usd": 5428453.86
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "5004178.993184",
+        "usd": 5017986.51
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "97.42200167",
+        "usd": 3745775.27
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "10665.060531001037336542",
+        "usd": 228948.66
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "162628.049788569637316002",
+        "usd": 163197.14
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2021-08/Popsicle_exp.sol",
+    "https://blocksec.com/blog/the-analysis-of-the-popsicle-finance-security-incident",
+    "https://www.halborn.com/blog/post/explained-the-popsicle-finance-hack-august-2021"
+  ],
+  "notes": [
+    "Each vault is a direct deployment of the same template; the latest-deployed vault sets the age. Storage changes after deployment are supply, fee accumulators and rerange ticks.",
+    "No further exploit found: collectFees calls on the eight vaults before and after the anchor are holders collecting their own fees, with no third-party pulls or outsized payouts.",
+    "Loss is depletion of the eight vaults and their Uniswap V3 pools together, so the attacker's flash-loaned deposits net out; it includes the flash-loan premium paid from vault funds."
+  ]
 }

@@ -1,145 +1,90 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0",
-  "protocol": {
-    "name": "Ekubo",
-    "slug": "ekubo"
-  },
+  "protocol": "Ekubo",
   "name": "Ekubo router payCallback settles with a caller-supplied payer",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0",
-      "blockNumber": 25030409,
-      "transactionIndex": 43,
-      "timestamp": 1778003435
-    },
-    "attackerAddresses": [
-      "0x61b0dad9628d3e644eb560a5c9b0f960430e3a75",
-      "0xa911ff351b143634dbc5af3e204ea074583a83e3"
-    ]
-  },
-  "summary": "The Ekubo router takes the address whose tokens settle a Core debt from its own calldata and does not check it against the caller. The attacker locked Core, called withdraw to send 17 WBTC of Core-held liquidity to themselves, and then settled the resulting debt through pay(), whose payCallback ran transferFrom against a third party that still held a router approval. The debt was paid with the victim’s tokens and the withdrawal kept.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1376975.3020429024,
-      "valuationTimestamp": 1778003435,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "17",
-        "usdValue": 1376975.3020429024,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1778003435,
-          "unitPriceUsd": 80998.54717899427,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The whole loss is in the single exploit transaction: netting its ERC-20 transfers leaves exactly two non-zero positions, 17 WBTC out of the approval holder 0x765decf4fa157756e850c1079f60801b9219edd1 and 17 WBTC into the attacker EOA. Ekubo Core itself ends the transaction whole because the router repaid it with the victim’s tokens, so the loss falls on the approval holder rather than on protocol-held liquidity. The attacker sent one exploit transaction and then 41 swap and mixer transactions. Nothing was recovered."
-  },
+  "summary": "The Ekubo router's payCallback takes the payer of a Core debt from caller-supplied calldata and never checks it against the caller. The attacker locked Core, withdrew WBTC to itself and settled the debt via pay(), whose callback ran transferFrom on a third party holding a router approval. Copycats then drained other approval holders the same way.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8ccb1ffd5c2aa6bd926473425dea4c8c15de60fd",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8ccb1ffd5c2aa6bd926473425dea4c8c15de60fd",
-        "codeHash": "0x2ce3674818a9487e495273dee5a576b9e61be5970d6bebd837106f92b33d2fb7"
-      },
-      "deployment": {
-        "timestamp": 1757083379,
-        "blockNumber": 23297576,
-        "transactionHash": "0x0cd9656c1dbeeecea2eb7ef29461f69ee91a65cf8c34676dc9a7f45d0f478df0",
-        "transactionIndex": 29,
-        "creatorAddress": "0x00000c771f6176268d5a9846e0956c3ef58597a1"
-      },
-      "ageReset": {
+      "address": "0x8ccb1ffd5c2aa6bd926473425dea4c8c15de60fd",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-upgradeable contract. The runtime code hash is 0x2ce3674818a9487e495273dee5a576b9e61be5970d6bebd837106f92b33d2fb7 both at the deployment block 23297576 and at block 25030408, and the exploit trace shows 255 frames executing at the router with no DELEGATECALL out of it, so no code change occurred between deployment and the exploit."
-      },
-      "codeAgeSeconds": 20920056,
-      "failureModeId": "failure:ekubo-router-paycallback-unchecked-payer",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x0cd9656c1dbeeecea2eb7ef29461f69ee91a65cf8c34676dc9a7f45d0f478df0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x770bc9a1f7c32cb63a5002b9ceb5c7994cd3af0fc6b2309cb32d3c46f629daa0"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-05/Ekubo_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0cd9656c1dbeeecea2eb7ef29461f69ee91a65cf8c34676dc9a7f45d0f478df0"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T11:20:00Z",
-      "note": "The trace shows the attacker contract entering the router, the router locking Ekubo Core, Core.withdraw sending 20000000 WBTC units to the attacker EOA, and Core.pay calling back into the router, whose payCallback runs WBTC.transferFrom from 0x765decf4fa157756e850c1079f60801b9219edd1 into Core; that payer address comes from the attacker’s own calldata and is never checked against the caller, which is the defect. The pattern repeats until 17 WBTC has moved. The router is not upgradeable: identical runtime code hash at the deployment block 23297576 and at block 25030408 with no delegatecall out of it in the exploit, so the exploited code is 242.1 days old, deployed by 0x00000c771f6176268d5a9846e0956c3ef58597a1, which is not an attacker address. The attacker EOA sent exactly one transaction against Ekubo."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1778003435/ethereum:0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-      "observedAt": 1787644589
-    }
+  "campaign": [
+    "eip155:1:0x6be1a4ef00b12357671fd7806aa734d7601678255cfc6c91dae1dec3e179496a",
+    "eip155:1:0xd19dd1e3cb102cb41fdc585ee9089db5d05a701ba94e1de64b9421c0854d8167",
+    "eip155:1:0xb3fce1d029f6ebe1564f22953a390e49d1d5078c4f4e808b99e6e94ecd083520",
+    "eip155:1:0xd3b5944fc405521e75bdaebdba24746d9b4a757cbbeedc9ebe725dd042230ee1",
+    "eip155:1:0xe4a082b1b0baed15ec4cd4524be142aa1520ad89237232869066f1a6f9cc9ee7",
+    "eip155:1:0x1cb06207b21844246d5d5023f0b34f0883b858cb9260e7a585610fc8ebe0b09c",
+    "eip155:1:0x74d73fbffafcecbd27514043ed9e6ec10252daaa5a040698c80c2c52bccb54cd",
+    "eip155:1:0xb99e082074d861b366032a52f0753c53bf9580887ecd8a81be92903e2ccebde1",
+    "eip155:1:0xf4431b44643642049678e6db7aadcd1d219201c1da43e0aac528f2a585b95bc7",
+    "eip155:1:0x6c62cfbdbedde1decd1642b9636ec5aefe9d4e5ae6cf9dcaaf90703cdd91ae4b",
+    "eip155:1:0xfa5737e2dfd5fc24da8b98270b841470d57cdda5ad6652908016d37b93e15c8e",
+    "eip155:1:0x439ef7f5cee4a37a3ac33928edf7c918ea3617a2b0eaa09a1df4bd24ab8ea402",
+    "eip155:1:0x905f79bba572b7b740c03c88256125951d82707d8318a83133a273f6344ec110",
+    "eip155:1:0xbc149360d351bb141821f901b3dc7277085710f729fcd021bfe9a5da94b3c3f8",
+    "eip155:1:0x09644d0d5f19a520aedcfe16c3a4a11e4caa191a13612b7a32da2027d574f2e8",
+    "eip155:1:0x45df4a840ad3daf70c8bcb2b77efa9ed3de20af7aefb723de1ff3f58765986a1",
+    "eip155:1:0xdfdcf9f39bb4c00fe3db1d2a686b2131ed150c0552e586174d6b6b27d8cc699d",
+    "eip155:1:0xbbc19cb3dbf3676841368a31955df2877991b2ee453a8f597a7d61c326644d2a",
+    "eip155:1:0x757209923b916cdc88836cc422534ecd3221b1a9a53030779f33ae9f68b2524d",
+    "eip155:1:0xcc66462e643a1ca855fac781ef3114b1dab5c9abc87da4169682558979d0a47d",
+    "eip155:1:0x5cdf0eea5a3b8906d3edd26e6bbbbdef3200d5f301b855932e70ca2842bf44d5",
+    "eip155:1:0x38f4e05a8778feb227432eeb230ffc440260da2b8aac31538bb4d20b19018fb0",
+    "eip155:1:0x6ae0c358ad7eefbe616f46a1b0603b0a7351cf75e8bd3699659c549d0ea7d5b7",
+    "eip155:1:0x925f61dd7e1f6c399f467d83fd3ba82b26c0c01cbc608b32075abbecc452e864"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 1416516.52,
+    "assets": [
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "17.01484735",
+        "usd": 1378182.07
+      },
+      {
+        "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+        "symbol": "cbBTC",
+        "amount": "0.34386474",
+        "usd": 28064.36
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "9810.987028",
+        "usd": 9809.41
+      },
+      {
+        "token": "0x04c46e830bb56ce22735d5d8fc9cb90309317d0f",
+        "symbol": "EKUBO",
+        "amount": "758.596396128683675309",
+        "usd": 451.94
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "0.550329927867664502",
+        "usd": 5.36
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "3.383984",
+        "usd": 3.38
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-05/Ekubo_exp.sol"
+  ],
+  "notes": [
+    "Non-upgradeable router with no storage read by the exploit; the defect sits in the router, not in Ekubo Core or an extension, so the router's deployment sets the age.",
+    "Campaign: every transaction in which the router pulled tokens by transferFrom from an address other than its caller, found from Transfer logs into Core by accounts that had approved the router and confirmed by trace. None precede the anchor; zero-amount pulls, one failed attempt and a net-zero sweep are excluded.",
+    "Loss nets each victim's flows per transaction; copycat drains of USDC, cbBTC, EKUBO, LINK and USDT approval holders are included."
+  ]
 }

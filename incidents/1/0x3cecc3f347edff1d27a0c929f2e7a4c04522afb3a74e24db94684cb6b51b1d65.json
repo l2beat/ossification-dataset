@@ -1,155 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3cecc3f347edff1d27a0c929f2e7a4c04522afb3a74e24db94684cb6b51b1d65",
-  "protocol": {
-    "name": "PegaBall",
-    "slug": "pegaball"
-  },
-  "name": "PegaBall",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3cecc3f347edff1d27a0c929f2e7a4c04522afb3a74e24db94684cb6b51b1d65",
-      "blockNumber": 22626978,
-      "transactionIndex": 1,
-      "timestamp": 1748988131
-    },
-    "attackerAddresses": [
-      "0x28a8cb85d9d2c9ee536931de22fe80e3efea3bd6"
-    ]
-  },
-  "summary": "buyGamesFrom self-funds purchases from the proxy balance instead of requiring msg.value, letting a vendor drain vendor/referrer cuts.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1512.161332053179,
-      "valuationTimestamp": 1748988000,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "0.581178",
-        "usdValue": 1512.161332053179,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1748988000,
-          "unitPriceUsd": 2601.890181757016,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit trace records 258 outward ETH transfers from the proxy: 0.290589 ETH to the attacker and 0.290589 ETH to the attack contract. Self-calls and DELEGATECALL frame values are excluded."
-  },
+  "protocol": "PegaBall",
+  "name": "PegaBall buyGamesFrom pays vendor cuts from the pool",
+  "summary": "PegaBall's buyGamesFrom never checked msg.value: it only required the caller's wallet balance to cover the price, 'paid' the price by sending the proxy's own ETH to itself, then paid the vendor and referrer cuts from the pool. A self-registered vendor looped it to drain the proxy's ETH.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb8fcabf7bd88a2489fafbafa5f9a05a0e068cb5e",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x29003dd6b9970ad658314fffb61e42f352c41630",
-        "codeHash": "0xf276ade02ddb033ca14731888ca07393e3d951cf16ba5ba29764a650a804fa3c"
-      },
-      "deployment": {
-        "timestamp": 1705212551,
-        "blockNumber": 19003242,
-        "transactionHash": "0x863b95b439b13cc5fe59f7cc85c9baf5a7d2b5037a4a0404f645659f1ad714f1",
-        "transactionIndex": 6,
-        "creatorAddress": "0x0bcc91ccbe49ce929f9a5d498601c9a802796333"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1705212551,
-        "blockNumber": 19003242,
-        "transactionHash": "0x863b95b439b13cc5fe59f7cc85c9baf5a7d2b5037a4a0404f645659f1ad714f1",
-        "transactionIndex": 6,
-        "logIndex": 69,
-        "mechanism": {
-          "type": "event",
-          "address": "0xb8fcabf7bd88a2489fafbafa5f9a05a0e068cb5e",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Constructor-time Upgraded event selected the vulnerable PegaBallV1 implementation."
-      },
-      "codeAgeSeconds": 43775580,
-      "failureModeId": "failure:pegaball-missing-purchase-payment-check",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0xb8fcabf7bd88a2489fafbafa5f9a05a0e068cb5e",
+      "code": "0x29003dd6b9970ad658314fffb61e42f352c41630",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x863b95b439b13cc5fe59f7cc85c9baf5a7d2b5037a4a0404f645659f1ad714f1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3cecc3f347edff1d27a0c929f2e7a4c04522afb3a74e24db94684cb6b51b1d65"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-06/PegaBall_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T11:42:26Z",
-      "note": "Reviewed the exploit call trace, proxy creation and constructor log, pre-exploit implementation slot and runtimes, a complete Upgraded-event query, and the commit-pinned reproduction. The exploit calls buyGamesFrom through proxy 0xb8fcabf7bd88a2489fafbafa5f9a05a0e068cb5e, which delegates to implementation 0x29003dd6b9970ad658314fffb61e42f352c41630. Its constructor emitted the only Upgraded event through the exploit, selecting that implementation at log 69. The exploit made 258 real outward ETH calls totaling 0.581178 ETH; self-calls and DELEGATECALL frame values were excluded."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x863b95b439b13cc5fe59f7cc85c9baf5a7d2b5037a4a0404f645659f1ad714f1"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1748980931&to=1748988131",
-      "observedAt": 1787571746
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 1698.21,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "0.6241872",
+        "usd": 1698.21
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/PegaBall_exp.sol"
+  ],
+  "notes": [
+    "The campaign tx is a copycat months later; together with the anchor these are the only buyGamesFrom calls that took ETH out of the proxy."
+  ],
+  "campaign": [
+    "eip155:1:0x5a23f103efe55d5bd43920c0978d65877476e63b05da2c60525cd80df0a8ae4f"
+  ]
 }

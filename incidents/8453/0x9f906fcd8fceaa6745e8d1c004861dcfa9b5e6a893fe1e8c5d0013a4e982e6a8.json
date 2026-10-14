@@ -1,168 +1,68 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0x9f906fcd8fceaa6745e8d1c004861dcfa9b5e6a893fe1e8c5d0013a4e982e6a8",
-  "protocol": {
-    "name": "AllbridgeCCTP",
-    "slug": "allbridge-cctp"
-  },
+  "protocol": "AllbridgeCCTP",
   "name": "Allbridge CCTP phantom deposit",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0x9f906fcd8fceaa6745e8d1c004861dcfa9b5e6a893fe1e8c5d0013a4e982e6a8",
-      "blockNumber": 50157345,
-      "transactionIndex": 120,
-      "timestamp": 1787104037
-    },
-    "attackerAddresses": [
-      "0x2419432344b0b892e592b2601b98eae702ba360e"
-    ]
-  },
-  "summary": "CCTPTokenMessenger accepted a generic Circle attestation, decoded a token amount from its attacker-authored body, and credited a deposit without verifying that Circle minted USDC.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 190155.976393,
-      "valuationTimestamp": 1787104037,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-          "symbol": "USDC"
-        },
-        "amount": "190155.976393",
-        "usdValue": 190155.976393,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1787104037,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "At block 50157344 the Router held 191,155.976393 USDC; 191,112.338841 USDC had been legitimately minted into it three blocks earlier and the remaining baseline was 43.637552 USDC. The attacker flash-borrowed and deposited 808,844.023607 USDC, then redeemed a phantom 1,000,000 USDC credit for a 999,000 USDC payout. The Router ended with its 1,000 USDC fee, so exact pre-existing victim depletion was 190,155.976393 USDC. The 404.422012 USDC flash-loan premium reduces attacker proceeds, not gross victim loss."
-  },
+  "summary": "CCTPTokenMessenger.receiveCctpMessage read amount, source sender and hook hash at fixed offsets of any Circle message it relayed, never checking that Circle's TokenMessenger sent it. A self-sent generic CCTP message with a crafted body recorded a phantom deposit that Router.receiveToken paid out in USDC.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xf9b710e427bf4d93598e0f80a84de22c7ad9b577",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xf9b710e427bf4d93598e0f80a84de22c7ad9b577",
+      "reset": {
+        "kind": "config",
+        "tx": "0x46e00cc9ed339e8b848906073a937342daf22d30a81ba789270f8fb69195bcb0",
         "address": "0xf9b710e427bf4d93598e0f80a84de22c7ad9b577",
-        "codeHash": "0xed35bbb215ff837130244756eb11ba27fe8f5603ac25a4080e56f60acb4c81f9"
-      },
-      "deployment": {
-        "timestamp": 1777378093,
-        "blockNumber": 45294373,
-        "transactionHash": "0x1685d88033341bdcc3afc1b9790b76654a0c5abfe61e545a06e3d17430bc5261",
-        "transactionIndex": 34,
-        "creatorAddress": "0xfa00c78931f236949d1b52e60d9dbe762a632641"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1777379791,
-        "blockNumber": 45295222,
-        "transactionHash": "0x46e00cc9ed339e8b848906073a937342daf22d30a81ba789270f8fb69195bcb0",
-        "transactionIndex": 91,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xf9b710e427bf4d93598e0f80a84de22c7ad9b577",
-          "callData": "0x82a5e6650000000000000000000000000000000000000000000000000000000000000005",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x000000000000000000000000dac2959b638247ab586f6c3ffcfc9c352d3aae5c"
-        },
-        "description": "setRemoteTokenMessenger(5, 0xdac2959b638247ab586f6c3ffcfc9c352d3aae5c) completed the Polygon receive-path configuration after domain 7 had been mapped to Allbridge chain ID 5. The receive function required this exact value as sourceSender, and the attacker copied it into the forged generic Circle message. The getter retained this value immediately before exploitation; later configuration calls addressed other chain IDs."
-      },
-      "codeAgeSeconds": 9724246,
-      "failureModeId": "failure:allbridge-cctp-unbacked-generic-message-credit",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "call": "0x82a5e6650000000000000000000000000000000000000000000000000000000000000005"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x9f906fcd8fceaa6745e8d1c004861dcfa9b5e6a893fe1e8c5d0013a4e982e6a8"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "48c978bb245f8b624a28903267ce0ae887f15504",
-      "path": "src/test/2026-08/AllbridgeCCTP_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x1685d88033341bdcc3afc1b9790b76654a0c5abfe61e545a06e3d17430bc5261"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x46e00cc9ed339e8b848906073a937342daf22d30a81ba789270f8fb69195bcb0"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x3015213003863b4429c2290c51cd6862776a477a0b99598fd17a012d7cd2f229"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T06:40:44Z",
-      "note": "Reviewed the successful Base exploit receipt and call trace, the successful Polygon message transaction, the commit-pinned exact-calldata reproduction, explorer-verified Allbridge and Circle source, archive balances and calls, contract creation, runtime history, and every direct call to the vulnerable contract through the exploit block. On Polygon, attacker 0x2419432344b0b892e592b2601b98eae702ba360e directly called Circle MessageTransmitterV2.sendMessage in block 90871052 index 48. Its emitted 408-byte generic message names source domain 7, destination domain 6, recipient 0xb6fbdfa5f3cbeb139d4cce86d92f4ac8687b16c0, destination caller 0xf9b710e427bf4d93598e0f80a84de22c7ad9b577, amount 1,000,000 USDC, sourceSender 0xdac2959b638247ab586f6c3ffcfc9c352d3aae5c, and hookData hash 0xe15a0288fb4a60804a866655fdf08a6d3e51c3ca58f5d400e8620e7069aac52e. The Base exploit relayed Circle's valid attestation through CCTPTokenMessenger.receiveCctpMessage. Verified Allbridge code checked the destination caller, mapped source domain and copied sourceSender, then called Circle's receiveMessage; it did not require Circle's TokenMessengerV2 as recipient, observe a USDC balance increase, or otherwise establish a mint before assigning receivedMessages[messageHash] = amount - feeExecuted. The forged recipient was attacker code rather than Circle's minting messenger, so Circle minted no USDC. Router.receiveToken nevertheless accepted receivedTokenAmount(messageHash) and paid 999,000 USDC after the attacker topped its balance up with 808,844.023607 flash-loaned USDC. Archive calls show Router balances of 191,155.976393 USDC at block 50157344 and exactly 1,000 USDC at block 50157345. Transaction 0x3015213003863b4429c2290c51cd6862776a477a0b99598fd17a012d7cd2f229 had legitimately minted 191,112.338841 USDC into the Router three blocks earlier, leaving a 43.637552 USDC prior baseline. The exploit transfers are 808,844.023607 USDC into Router, 999,000 USDC out, and 809,248.445619 USDC back to Aave; harness 0xb6fbdfa5f3cbeb139d4cce86d92f4ac8687b16c0 ends with 189,751.554381 USDC. Gross victim depletion is therefore exactly 190,155.976393 USDC at stablecoin par. Artifact history: CCTPTokenMessenger is a direct, non-proxy contract created by 0xfa00c78931f236949d1b52e60d9dbe762a632641 in block 45294373 index 34. Its code is absent one block earlier, and its 6,018-byte runtime hashes to 0xed35bbb215ff837130244756eb11ba27fe8f5603ac25a4080e56f60acb4c81f9 from deployment through block 50157344. Its immutable TOKEN, TOKEN_MESSENGER, MESSAGE_TRANSMITTER and ROUTER bind Base USDC, Circle's TokenMessengerV2, Circle's MessageTransmitterV2 proxy and the Allbridge Router. Transaction 0x46e00cc9ed339e8b848906073a937342daf22d30a81ba789270f8fb69195bcb0 at block 45295222 index 91 changed remoteTokenMessengers(5) from zero to 0xdac2959b638247ab586f6c3ffcfc9c352d3aae5c; source domain 7 had been mapped to chain ID 5 two transactions earlier. This latest necessary configuration supplied the exact public comparison value used by the vulnerable receive path and forged message. It remained unchanged through block 50157344, and all later configuration calls visible in the complete direct-call history either addressed other chain IDs or changed noncausal fee and gas parameters. The defect-bearing Allbridge artifact is 0xf9b710e427bf4d93598e0f80a84de22c7ad9b577; its downstream call to Circle proxy 0x81d40f21f12a8f0e3252bccb954d722d4c464b64 and implementation 0x7db629f6acc20be49a0a7565c21cc178e9ac21e3 merely validated and delivered the generic message. The configuration reset precedes exploitation by 9,724,246 seconds."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2026-08/AllbridgeCCTP_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 191207.24,
+    "assets": [
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "191155.975393",
+        "usd": 191112.17
+      },
+      {
+        "chainId": 42161,
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "34.151127",
+        "usd": 34.14
+      },
+      {
+        "chainId": 1,
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "30.890412",
+        "usd": 30.88
+      },
+      {
+        "chainId": 137,
+        "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "symbol": "USDC",
+        "amount": "30.054934",
+        "usd": 30.05
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:8453:0xe041f8b1b9fe42ac607987eca8de166d0cab8073db06967068fe8ea512eceff9",
+    "eip155:8453:0x162d52761a02214de735a2e69e26d5c22eb20bde7af49fef2d5b2c4a164dee69",
+    "eip155:1:0x91cf7ed8a8f45701d3ff3e4344eb4b5c710c927be48f0d63b1c4cf5465ea3bf9",
+    "eip155:1:0x396ebe8a67c0fe3224cbdd7051b75d8c5e40d5a3f3d810d4f8294b27abacddde",
+    "eip155:42161:0xa21b59ea68c9b074df9a3d8484542e7f62a834d468b82b5900e6272747b7f487",
+    "eip155:42161:0x0ff72ce97cf2b0f9eadd748cdd36f45b2c749eb6c73b90fcd579f25b04d6eafa",
+    "eip155:137:0x9761eef9a622519a62389680c444231a1fe7a9ac5b4f802263675c66cc24907d",
+    "eip155:137:0x955d5a3f612414ba2a233d5e1173eeb1fefb02db042a91579e50790ca780914b"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/48c978bb245f8b624a28903267ce0ae887f15504/src/test/2026-08/AllbridgeCCTP_exp.sol",
+    "eip155:8453:0x3015213003863b4429c2290c51cd6862776a477a0b99598fd17a012d7cd2f229"
+  ],
+  "notes": [
+    "The exploit's forged body copied remoteTokenMessengers(5), the Polygon sender set in the reset tx (domain 7 mapping and Router registration landed earlier in the same block); the check passes only with that value.",
+    "Campaign: every MessageReceived on the Allbridge CCTP messengers on Base, Ethereum, Polygon (0xdac2959b, old 0xf9b710e4) and Arbitrum (0x1ab89cb3, old 0xf9b710e4) whose relayed message was not sent to Circle's TokenMessengerV2, plus each forger's Router claim tx. Copycats 0xf33f35 (Base) and 0x3c4435 (Ethereum, Polygon, Arbitrum) drained small Router balances.",
+    "The anchor's Router outflow is net of the 808,844 USDC the attacker flash-borrowed into the Router within the same tx; the flash-loan premium is not a victim loss."
+  ]
 }

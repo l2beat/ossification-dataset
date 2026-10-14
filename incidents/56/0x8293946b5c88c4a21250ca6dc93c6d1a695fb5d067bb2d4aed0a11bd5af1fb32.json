@@ -1,213 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x8293946b5c88c4a21250ca6dc93c6d1a695fb5d067bb2d4aed0a11bd5af1fb32",
-  "protocol": {
-    "name": "GROKD",
-    "slug": "grokd"
-  },
+  "protocol": "GROKD",
   "name": "GROKD deposit contract unauthenticated updatePool",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x8293946b5c88c4a21250ca6dc93c6d1a695fb5d067bb2d4aed0a11bd5af1fb32",
-      "blockNumber": 37622478,
-      "transactionIndex": 0,
-      "timestamp": 1712406068
-    },
-    "attackerAddresses": [
-      "0x2f5181aaab8776d8c67d4505ff47213391908b34",
-      "0x98aa55463d2d4d957a53e9f8cc1efd39c4003a74"
-    ]
-  },
-  "summary": "The GROKD LP-staking deposit contract (UUPS proxy 0x31d3231c, implementation 0xec61196d) exposes updatePool(uint256 pid, (startBlock, endBlock, rewardPerBlock)) without any caller check: it only requires pid < pool count and overwrites the pool's reward schedule. After staking 1 LP through the ordinary deposit() one transaction earlier, the attacker contract set pool 0's rewardPerBlock from 0.1875 to 969,437,458 GROKD and called reward() in the same transaction, collecting 1,346,001.9 GROKD, almost the contract's entire GROKD reward balance, which it sold for 157.67 BNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 91769.70341357437,
-      "valuationTimestamp": 1712406068,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xa4133fed73ea3361f2f928f98313b1e1e5049612",
-          "symbol": "GROKD"
-        },
-        "amount": "1346001.91530948623566834",
-        "usdValue": 91769.70341357437,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1712406233,
-          "unitPriceUsd": 0.06817947461276366,
-          "sourceIds": [
-            "source-5",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion: GROKD balanceOf(deposit proxy) falls from 1346594.907093285618305585 to 592.991783799382637245 across source-1, equal to the reward() transfer of 1346001.91530948623566834 GROKD to the attack contract. GROKD has no DefiLlama quote and the attacker's own sales moved the GROKD/WBNB pair, so it is valued at realised proceeds: five sells (source-8..source-12, blocks 37622485..37622533) disposed of exactly that amount (4 x 300000 + 146001.91530948623566834 GROKD) and paid the attacker EOA 157.669066410511957157 BNB, valued at the DefiLlama WBNB quote 582.04 at the anchor (source-7). The GROKD transfer tax (3.5% of each sell, swapped by the token contract for its own recipients) is not in the attacker's proceeds, so the realised value is conservative. The attacker's 0.2 BNB LP purchase and 1 LP stake in 0x383dbb44 are attacker inputs and are not subtracted.",
-    "realizedAt": 1712406233
-  },
+  "summary": "The GROKD LP-staking contract's implementation exposed updatePool without a caller check, letting anyone overwrite a pool's reward schedule. After staking 1 LP, the attacker raised pool 0's rewardPerBlock to an enormous value and called reward() in the same transaction, collecting almost the contract's whole GROKD reward balance, then sold it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x31d3231cda62c0b7989b488ca747245676a32d81",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xec61196d3e2ae276eecf070110075118abd1f63e",
-        "codeHash": "0x38f12552c32b677b2d80f2f41c940f1121e976eb5a2d8b99522c2f8640556300"
-      },
-      "deployment": {
-        "timestamp": 1712150388,
-        "blockNumber": 37537410,
-        "transactionHash": "0xaccc9c72713058a8e79d2654291730da765fadeef1f5b125ffeae0db58d80500",
-        "transactionIndex": 161,
-        "creatorAddress": "0xa2bc1f61b3527563a9796134a0f0d56b1085f5d4"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1712322502,
-        "blockNumber": 37594687,
-        "transactionHash": "0x2e76af7095e1a40782c755fe9baab7ec7a967b7d13cc253d4b47681f288e6bb0",
-        "transactionIndex": 84,
-        "logIndex": 243,
-        "mechanism": {
-          "type": "event",
-          "address": "0x31d3231cda62c0b7989b488ca747245676a32d81",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "upgradeToAndCall by the proxy admin emitted Upgraded(0xec61196d), the implementation executed by the exploit; it is the sixth and last pre-exploit Upgraded event, and the next one (37622860) is the post-exploit fix."
-      },
-      "codeAgeSeconds": 83566,
-      "failureModeId": "failure:grokd-deposit-unauthenticated-update-pool",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-13"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-13",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x31d3231cda62c0b7989b488ca747245676a32d81",
+      "code": "0xec61196d3e2ae276eecf070110075118abd1f63e",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x2e76af7095e1a40782c755fe9baab7ec7a967b7d13cc253d4b47681f288e6bb0"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8293946b5c88c4a21250ca6dc93c6d1a695fb5d067bb2d4aed0a11bd5af1fb32"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://x.com/hipalex921/status/1778482890705416323"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-04/GROKD_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed root cause, first exercise, artifact identity and age history. Proxy and implementation are unverified (Etherscan V2 getsourcecode: ERC1967Proxy, empty implementation source). Selector 0xd2beb00a = updatePool(uint256,(uint256,uint256,uint256)), present in the implementation's selector table. debug_traceTransaction(source-1) callTracer: attack contract 0x98aa55463d2d4d957a53e9f8cc1efd39c4003a74 (created by the attacker EOA in 0x620e5eb6539b3c591f5b57313f55fd51e88cf4a8e777f3a465fa69a39f0e58d3, block 37622449) calls the proxy with updatePool(0, 37565180, 37997180, 969437458174368938037660232), which delegatecalls 0xec61196d, then reward() (0x228cb733), which transfers 1346001915309486235668340 GROKD to it (receipt log 0) and 0 LP (log 1). structLogs of the updatePool frame (steps 2263-2455): after dispatch the only SLOAD is slot 7 (value 18, compared with pid), followed by three SSTOREs to keccak256(7)+0..2 (0xa66cc928...8736c688/689/68a) writing 0x23d32fc, 0x243ca7c, 0x321e65de97dab44fca0ca48; no CALLER, ORIGIN or owner-slot read executes. eth_call poolInfo(0) at 37622477 = (37565180, 37997180, 187500000000000000); rewardPerBlock storage at 37622478 = 969437458174368938037660232. Earliest exercise: poolInfo(0) storage is zero through block 37562784 and set at 37562785 by the admin's 0x269cafcc call (0x8700f9bb3b3a6b8c7db409b8ab5c5d74b3302829e6382fb8c1e7b4e674eac077); slot values are unchanged at blocks 37564964, 37588770, 37589225, 37594687, 37610000, 37622477; poolInfo(1..17) at 37622477 equal their 37562785 values; Etherscan V2 account.txlist for the proxy (3092 transactions) has no direct updatePool call. The attacker's previous transaction 0x383dbb44a91687b2b9bbd8b6779957a198d114f24af662776f384569b84fc549 (block 37622464, the former seed anchor) only buys GROKD, adds liquidity and stakes 1 LP through deposit(address,uint256) (0x47e7ef24); it does not exercise the defect. Identity: proxy creation receipt (block 37537410, index 161) from 0xa2bc1f61b3527563a9796134a0f0d56b1085f5d4, to null; proxy code empty at 37537409 and keccak 0x36b40c41e66afc5c895827d6e4fc42d77a8fd026f3077d1ea1103a32596eb802 at 37537410 and 37622477; EIP-1967 admin slot 0 (UUPS). Implementation 0xec61196d created by the same deployer in 0xaafdf372b1a2edda1549fae0f760fbf72738fe06bac3edaaee6fbc147cbd5bcc (block 37594673, Etherscan getcontractcreation), code empty at 37594672, keccak 0x38f12552c32b677b2d80f2f41c940f1121e976eb5a2d8b99522c2f8640556300 at 37594673 and 37622477; its one DELEGATECALL is the UUPS upgradeToAndCall path, no SELFDESTRUCT. Age: Etherscan V2 logs.getLogs topic0 Upgraded on the proxy returns 8 events: blocks 37537410 (0x37d4c8ef), 37537728 (0x3579871a), 37588770 (0x791aa28c), 37589213 (0xbb72e527), 37589285 (0x0bb8b2da), 37594687 tx index 84 log 243 (0xec61196d, source-6), then 37622860 and 37624434 after the exploit. The EIP-1967 implementation slot reads 0x0bb8b2da at 37594686 and 0xec61196d at 37594687 and 37622477.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:50:03Z"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Reviewed loss. eth_call GROKD 0xa4133fed73ea3361f2f928f98313b1e1e5049612 balanceOf(0x31d3231cda62c0b7989b488ca747245676a32d81) = 1346594907093285618305585 at block 37622477 and 592991783799382637245 at 37622478; source-1 log 0 moves 1346001915309486235668340 to the attack contract. Attacker EOA txlist (Etherscan V2 account.txlist) shows five calls of 0xbe1d8f6a on the attack contract after source-1: source-8..source-12. Each receipt's log 8 moves the attack contract's GROKD to pair 0x8af65d9114dfccd050e7352d77eec98f40c42cfd after log 1 sends the 3.5% tax to the token contract (inputs 300000e18 x4 and 0x1eeac799a6ad71434f74 = 146001915309486235668340); each log 9 pays WBNB to the router, which callTracer shows forwarded as BNB to the attacker EOA 0x2f5181aa: 109544455349956602703 + 26732118158070826432 + 12097826444718206940 + 6894316641245118501 + 2400349816521202581 = 157669066410511957157 wei. Logs 1-7 of each sell are the token contract's own tax swap and are excluded.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:50:03Z"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2e76af7095e1a40782c755fe9baab7ec7a967b7d13cc253d4b47681f288e6bb0"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1712406068/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790621365
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc19072a138d67056eb21972189753fb6f12b6fb7f5d78e40edc403fc5fa3e320"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb20a39b83a3af6439bd92122631646bdf85fea51580727db7d1b243a01b79900"
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xdc09ec2fe767b372300407413c27fd82d9c6d853f4325385985b8d3ed165505c"
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x44b75023c8c9129fe8618957ab8628587e269531e5b8a3416ee9547d35e30fb7"
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2c736d3adaabc2473f5de74b780e66216165ec341a9df2a3f7439f5b2847871c"
-    },
-    {
-      "id": "source-13",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xaccc9c72713058a8e79d2654291730da765fadeef1f5b125ffeae0db58d80500"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-5"
+  "loss": {
+    "usd": 91769.70341357437,
+    "assets": [
+      {
+        "token": "0xa4133fed73ea3361f2f928f98313b1e1e5049612",
+        "symbol": "GROKD",
+        "amount": "1346001.91530948623566834",
+        "usd": 91769.70341357437
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2024-04/GROKD_exp.sol",
-    "seed:grokd:2024-04-06:grokd-depositfromido-missing-access-control"
+  "refs": [
+    "https://x.com/hipalex921/status/1778482890705416323",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/GROKD_exp.sol",
+    "eip155:56:0x383dbb44a91687b2b9bbd8b6779957a198d114f24af662776f384569b84fc549"
+  ],
+  "notes": [
+    "The upgrade to 0xec61196d is the last before the exploit; later pool state changes are user deposits and withdrawals. The 1-LP stake (0x383dbb44) is setup; no other caller took more than about 100 GROKD from the contract.",
+    "GROKD has no market price and the attacker's own sells moved the pair, so the stolen GROKD is valued at the 157.67 BNB the five campaign sells paid the attacker (rule 15); the pair's gross BNB loss in those sells, 168.78 BNB, also includes the token's sell tax."
+  ],
+  "campaign": [
+    "eip155:56:0xc19072a138d67056eb21972189753fb6f12b6fb7f5d78e40edc403fc5fa3e320",
+    "eip155:56:0xb20a39b83a3af6439bd92122631646bdf85fea51580727db7d1b243a01b79900",
+    "eip155:56:0xdc09ec2fe767b372300407413c27fd82d9c6d853f4325385985b8d3ed165505c",
+    "eip155:56:0x44b75023c8c9129fe8618957ab8628587e269531e5b8a3416ee9547d35e30fb7",
+    "eip155:56:0x2c736d3adaabc2473f5de74b780e66216165ec341a9df2a3f7439f5b2847871c"
   ]
 }

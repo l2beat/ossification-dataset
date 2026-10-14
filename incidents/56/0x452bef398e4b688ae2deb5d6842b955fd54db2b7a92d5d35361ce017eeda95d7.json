@@ -1,223 +1,93 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x452bef398e4b688ae2deb5d6842b955fd54db2b7a92d5d35361ce017eeda95d7",
-  "protocol": {
-    "name": "GYM Network",
-    "slug": "gym-network"
-  },
+  "protocol": "GYM Network",
   "name": "GymSinglePool depositFromOtherContract missing access control",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x452bef398e4b688ae2deb5d6842b955fd54db2b7a92d5d35361ce017eeda95d7",
-      "blockNumber": 18498609,
-      "transactionIndex": 57,
-      "timestamp": 1654658091
-    },
-    "attackerAddresses": [
-      "0xb2c035eee03b821cbe78644e5da8b8eaa711d2e5",
-      "0xf80812247da2877ccc3b3ffd4ac60a1fd04823de",
-      "0x70b3f18a64cc4f67a2a2f423b801ef16a09d0c5f",
-      "0xfa3e1cc700352a265d0e0431c89ff54fad67d48c",
-      "0x63fe44b8982b3ec13743bcfec0993fad3eb15688",
-      "0x68b5f1635522ec0e3402b7e2446e985958777c22",
-      "0x7cbfd7bccd0a4a377ec6f6e44857efe42c91b6ea",
-      "0xa796406635272448fa30089cd4d71dadae01c169",
-      "0xd36ea4756cf157c1a57bffc8d3f064a1e0efbe9f",
-      "0x2cdb504cefe087e00f13f9283f2fcbbde7c2a28d",
-      "0x8aedf4e03f70d0680b760a63c1b4acb0eb437874",
-      "0x151508c74583a265ce343edf69dbbac115926a79"
-    ]
-  },
-  "summary": "GymSinglePool.depositFromOtherContract() is external with no caller authorization and its private _autoDeposit() helper never pulls tokens from anyone: it only credits userInfo/user_deposits for the caller-supplied _from address and makes the pool approve itself for the credited amount. Any address could therefore book an arbitrary GYMNET deposit it never funded and then call withdraw(), which transferFrom's the fabricated principal out of the pool's own GYMNET balance.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 2164822.374548077,
-      "valuationTimestamp": 1654658091,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x3a0d9d7764fae860a659eb96a500f1323b411e68",
-          "symbol": "GYMNET"
-        },
-        "amount": "40190625.461200003991892805",
-        "usdValue": 2164822.374548077,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1654658091,
-          "unitPriceUsd": 0.053863863766887496,
-          "sourceIds": [
-            "source-7",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Eighteen transactions between blocks 18498635 and 18501349 move 40,190,625.461200003991892805 GYMNET out of the pool proxy 0xa8987285e100a8b557f06a7889f79e0064b359f2 to twelve attacker addresses: six fabricated principals of 8,000,000, 8,000,000, 8,000,000, 8,000,000, 8,000,000 and 180,000 GYMNET, one of 10,000 GYMNET, and eleven small claimAll payouts on the fake positions. The pool's GYMNET balance falls from 40,170,632.720222770254498215 before the campaign to 1,847.531967313247850203 at block 18501360. The attacker unwound essentially all of it through the PancakeSwap GYMNET/WBNB pair in eight transactions and the exploiter EOA received exactly 7,475.416854059780883755 BNB; only 625.251209 GYMNET was left stranded in three spent exploit contracts. Those realised proceeds, valued at the DefiLlama BNB observation nearest the incident timestamp (289.5921948984552 USD), give the USD figure and the implied 0.0538638637668875 USD per GYMNET unit price. Marking the drained tokens at DefiLlama's GYMNET spot of 0.19653195097164186 USD would give 7.90 million USD, but the drained quantity is about 2.6x the pair's entire GYMNET reserve and was not realisable at that price; contemporaneous reporting of roughly 2.1 million USD is the realised figure. The 10 percent GYMNET transfer tax charged on the attacker's sells is already inside the realised proceeds. Nothing was returned by the attacker: the BNB was swapped and bridged out over the following day."
-  },
+  "summary": "GymSinglePool.depositFromOtherContract had no caller check and its _autoDeposit credits a staking deposit for any _from address without pulling tokens. From a series of throwaway contracts the attacker booked fake GYMNET deposits, claimed rewards on them and withdrew the fabricated principal out of the pool's real GYMNET, then sold it for BNB.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa8987285e100a8b557f06a7889f79e0064b359f2",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x0288fba0bf19072d30490a0f3c81cd9b0634258a",
-        "codeHash": "0x521c11320cc5d1da81ac2be87682703031ca75190a29ee30d364e560791f3ab0"
-      },
-      "deployment": {
-        "timestamp": 1652611304,
-        "blockNumber": 17821375,
-        "transactionHash": "0xbca88a18c7c7a96c6bca12e8b36ff4aa1aba798c9b4ca1891b61c8a1306cd5f5",
-        "transactionIndex": 69,
-        "creatorAddress": "0xc08d6d75fdd67005fa21933bd281b1e6180184b2"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1654453915,
-        "blockNumber": 18431003,
-        "transactionHash": "0x0ca64e54f6d6e693871a62c4d210c10daf6464ddfa53490c4cb1b6ecfeefd57c",
-        "transactionIndex": 70,
-        "logIndex": 218,
-        "mechanism": {
-          "type": "event",
-          "address": "0xa8987285e100a8b557f06a7889f79e0064b359f2",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The eighth and last Upgraded event the proxy emitted before the exploit, log 218 of block 18431003, selected implementation 0x0288fba0bf19072d30490a0f3c81cd9b0634258a; the EIP-1967 implementation slot still holds that address at block 18498608 and its runtime code hash is unchanged from its deployment block 18430866 through the exploit."
-      },
-      "codeAgeSeconds": 204176,
-      "failureModeId": "failure:gym-network-singlepool-depositfromothercontract-unauthorized",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-9"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-9"
-        ]
+      "address": "0xa8987285e100a8b557f06a7889f79e0064b359f2",
+      "code": "0x0288fba0bf19072d30490a0f3c81cd9b0634258a",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x0ca64e54f6d6e693871a62c4d210c10daf6464ddfa53490c4cb1b6ecfeefd57c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x452bef398e4b688ae2deb5d6842b955fd54db2b7a92d5d35361ce017eeda95d7"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/skynet-report/gym-network-exploit-analysis"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-06/Gym_2_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbca88a18c7c7a96c6bca12e8b36ff4aa1aba798c9b4ca1891b61c8a1306cd5f5"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x0ca64e54f6d6e693871a62c4d210c10daf6464ddfa53490c4cb1b6ecfeefd57c"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x0ea998db28b9fb95080c48bdd456c65739f7168244d63290d9c271b523343e14",
-        "0x0570dc22501e76a996a4eabb641acbba114c116a86c597024650adb7f387ef0f",
-        "0x6b5abed53fb3e7d3cf30688bac6de544cac1e58117b67d3a9dce10548bec43ee",
-        "0x68eb3ba2cd7de44c78f01fba466213b791086b2ca798dbbd97b7a76fc8e23b44",
-        "0xa5160878a3b9700f9751ad2ab467cce305c5337b7af1cc01197f9a9692e8d0e9",
-        "0x761b2e72b7c1d40308a30192bb7d0c1bd156195476e60cb6ebdf54ccfa684303",
-        "0x236888b92eb0f0dadeb8b6f029beeb68cdf45507593fe3b64ed719944ea39c31",
-        "0xc5422fbf158e7691b9a4386e8969cdabd2f476d713cdf92dee47320b53b747e4",
-        "0x38035e05ee3583556aec1a234ce4fb5c7960d56c424f0bad597d6d9b9ea7de7d",
-        "0xeb8ec6a8fe45836342575800e180de8a92ef3b506b512f17771e0fa5500c5735",
-        "0x005ada1d97ff76ae053edc4004c5579b08ef8ac99bcf9ccddad0b11991a04a13",
-        "0xf1f773d9e2cb22177ca48a479bacfcd6301ee87f68dc41d4b4506d8404740e30",
-        "0x171a448161f2c438cca0502599a6784561d11099c9218e2125c5f3c7a6705dd3",
-        "0x6d39bde03ec9eb3d1e497dd4c45f743b71b89b2fdae240bb7f3fd82a471c3a39",
-        "0xe02a5786e0651fe643140cdce4a2500b46bffe1a0d7d8214b2703ed7175eec28",
-        "0x91f5e625447da3e7d0d409d5c7762c94c4d5793ab34430b81a9889e5ef9f37dd",
-        "0xfffd3aca0f53715f4c76c4ff1417ec8e8d00928fe0dbc20c89d875a893c29d89",
-        "0x017c416b8ca824a7995568b40aea63281329fbe480424e378fe778523eb4a9ab"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x6ec1745a88d809c623ac9cc2fa6cf080deb0b96efee4088e6013f2d639c779e2",
-        "0x0ed0ac728b294ee3a91ba54224623986d7eaabe4a42a3707767d1e8bfa0bb7d9",
-        "0x12970f3962b4bacd01bb4e3dc086804e4e5861134db5dd80d7e4671aa7f23d16",
-        "0xc9c40c492d50b37b0dd9a80f1fa8f0b4ad95980689433c1719fe75671f514e74",
-        "0x96f6c4fba6cd527150a4a85be4f84264814f40a7edaa7b568c09125bee055229",
-        "0xe34e8f38f5e8d9153e3aad6be5d2b5d614377e67121ec9ee983f290484bbe882",
-        "0x1c0535728e6097b7aacbb660f7df85540176ecd438211f588cd3d4a903748ece",
-        "0x292149e6eb7117a0fb80b3a970b18db1ed4c363d3a05c9e5fbf2cffaa4c979da"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1654658091/coingecko:binancecoin,bsc:0x3a0d9d7764fae860a659eb96a500f1323b411e68",
-      "observedAt": 1787644800
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T09:20:00Z",
-      "note": "Re-anchored. The v1 snapshot anchored this incident to 0x8432c1c6613995eeea8a3ae2cfeb9577913db6b7b35dbe26a8c56c02066096e6 at block 18501050, which is the thirteenth defect-executing transaction of the campaign, not the first. The attacker EOA 0xb2c035eee03b821cbe78644e5da8b8eaa711d2e5 sent 125 transactions; its first successful exploit call is 0x452bef398e at block 18498609 index 57, whose trace shows exploit contract 0xf80812247da2877ccc3b3ffd4ac60a1fd04823de calling the GymSinglePool proxy 0xa8987285e100a8b557f06a7889f79e0064b359f2, which delegatecalls implementation 0x0288fba0bf19072d30490a0f3c81cd9b0634258a and books a 100 GYMNET deposit with no incoming token transfer. The verified source of both 0x0288fba0 and its predecessor 0xfbbe401a76e31d73f7e4302e0b0232d79e5869d9 shows depositFromOtherContract(uint256,uint8,bool,address) declared external with only a require(isPoolActive) guard; the selector 0x0e3d1093 is absent from the earlier implementation 0x21fec98cce28979e1220396c711e5c5c30a93824, so the unguarded entrypoint first shipped in the block-18389587 upgrade and was still present, unchanged in that respect, in the artifact executed at exploit time. The proxy emitted exactly eight Upgraded events between its creation block 17821375 and the exploit, at blocks 17821375, 18139114, 18139332, 18145250, 18221435, 18252092, 18389587 and 18431003; the last of them, log 218 of transaction 0x0ca64e54f6 at block 18431003 index 70, selected 0x0288fba0, and the EIP-1967 implementation slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc reads that address at both block 18498608 and block 18501049. The artifact's runtime code hash is 0x521c11320cc5d1da81ac2be87682703031ca75190a29ee30d364e560791f3ab0 at its deployment block 18430866, at block 18498608 and today, so the exploited code is 2d 8h 42m 56s old. The proxy and the implementation were both created by 0xc08d6d75fdd67005fa21933bd281b1e6180184b2, the GYM deployer, which is not an attacker address. The pool's GYMNET balance rose monotonically from block 18389587 to block 18498530, so no one drained the unguarded function before this campaign. Loss is the 40,190,625.4612 GYMNET the pool paid out to attacker addresses across eighteen transactions, valued at the 7,475.416854059780883755 BNB the exploiter realised selling it into PancakeSwap."
-    }
-  ],
-  "discovery": [
-    "seed:gym-network:2022-06-08:gymsinglepool-depositfromothercontract-missing-access-control"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-9"
+  "loss": {
+    "usd": 2152456.05,
+    "assets": [
+      {
+        "token": "0x3a0d9d7764fae860a659eb96a500f1323b411e68",
+        "symbol": "GYMNET",
+        "amount": "40191068.970050915913416794",
+        "usd": 2152456.05
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:56:0x0ea998db28b9fb95080c48bdd456c65739f7168244d63290d9c271b523343e14",
+    "eip155:56:0xd8d83773d6af4ebbbdbb7069a27dd191e2fe74d5763618a975669f0d6fc90292",
+    "eip155:56:0x1a28e7979a7a1abf604c27aa7e5804b3807ab0a864581cbe413d2d7582d8dac6",
+    "eip155:56:0x0570dc22501e76a996a4eabb641acbba114c116a86c597024650adb7f387ef0f",
+    "eip155:56:0xf227a17265ee2c99e0bfde16d2aad032fa705b7daddd6dbea33c016537e1fe87",
+    "eip155:56:0x6b5abed53fb3e7d3cf30688bac6de544cac1e58117b67d3a9dce10548bec43ee",
+    "eip155:56:0xc0fa6ac43b315d1bd38a908201060009cdf9444a5e913e2b448a22c3279990b9",
+    "eip155:56:0x68eb3ba2cd7de44c78f01fba466213b791086b2ca798dbbd97b7a76fc8e23b44",
+    "eip155:56:0x5b336c310fde6a6750c1ea91db95689d1761ca5b444c9094d8bdc7aefc790a99",
+    "eip155:56:0xa5160878a3b9700f9751ad2ab467cce305c5337b7af1cc01197f9a9692e8d0e9",
+    "eip155:56:0xdc1f16af6f2b828b251deb7cba9be6646a6599bad9c3cad405f949852b22d7a3",
+    "eip155:56:0x761b2e72b7c1d40308a30192bb7d0c1bd156195476e60cb6ebdf54ccfa684303",
+    "eip155:56:0x54ccb285415b777d333770fbef96641ed8903503ca5393e1673fe7228eea0682",
+    "eip155:56:0x4bf607cb07c5ebc54b05216fc694b538c07d6e6b9c0bb27aaadfe5bc29bbc137",
+    "eip155:56:0x8191b1c7bfce1b20d7126b99969394891538b66c30c34ab62989efd1182c3bd2",
+    "eip155:56:0x236888b92eb0f0dadeb8b6f029beeb68cdf45507593fe3b64ed719944ea39c31",
+    "eip155:56:0xc5422fbf158e7691b9a4386e8969cdabd2f476d713cdf92dee47320b53b747e4",
+    "eip155:56:0xda5e0fd154518ac14969c90c9d7a3865cfb66acffdf477a690fd576e70e463ce",
+    "eip155:56:0x6ec68f2f94f13b74703aba79843d5eafc9abe2412ebe8c6c4eee566ba8f6fb60",
+    "eip155:56:0xddd04c19d949d91e1cbe60e4ce88ee3d110bcc440279c3ecfa804aa8632abe36",
+    "eip155:56:0xe19344e575425e91d0ae3424f34f8131c40e290691b74a1708c312203ac335cf",
+    "eip155:56:0x38035e05ee3583556aec1a234ce4fb5c7960d56c424f0bad597d6d9b9ea7de7d",
+    "eip155:56:0x5231e13506adbeb94b937ac8ebeb1f7febfbbcebb4b218d46a5975409587b120",
+    "eip155:56:0x523527612798485d70dcd11c62dd8b6fecd3300213addfcdbfdd929397c8626e",
+    "eip155:56:0x62194df1972d419afcce7512294526eb05cacdb074495cfcf2c9c9487d7aa7ec",
+    "eip155:56:0x138013116fc84075608407d2efee92a8a0c2d765a402611af1c70c785cfcf2de",
+    "eip155:56:0x32dcc1c11aee8311b727d2e32534d796b17e7333f746b3fcd918cc7fbab11651",
+    "eip155:56:0xeb8ec6a8fe45836342575800e180de8a92ef3b506b512f17771e0fa5500c5735",
+    "eip155:56:0x005ada1d97ff76ae053edc4004c5579b08ef8ac99bcf9ccddad0b11991a04a13",
+    "eip155:56:0xb033e2537664963fb2b09541c038309095d20a1e2b71657d06c458f5122eae86",
+    "eip155:56:0xf1f773d9e2cb22177ca48a479bacfcd6301ee87f68dc41d4b4506d8404740e30",
+    "eip155:56:0xb44679ddda3f556def72c22fd1e01b669363b2352fb5e2080a4e19582219bd29",
+    "eip155:56:0x449fb6b4f6765723c90b8da78b6cf406cc93e37a029faef48fa7a217cc3f4a16",
+    "eip155:56:0x2606e91c7603a562d2752fe337d04e6b338badf4f4e840a99e623b302177566e",
+    "eip155:56:0x5dd173fa814fa73bc9e7b616f4c9c41f1264f140b99ec94c98edfbcce08323f9",
+    "eip155:56:0x8432c1c6613995eeea8a3ae2cfeb9577913db6b7b35dbe26a8c56c02066096e6",
+    "eip155:56:0x171a448161f2c438cca0502599a6784561d11099c9218e2125c5f3c7a6705dd3",
+    "eip155:56:0xdbb2a8579b292963fd483c5fb90125d764f258712a9e8676086d0763032df076",
+    "eip155:56:0x6d39bde03ec9eb3d1e497dd4c45f743b71b89b2fdae240bb7f3fd82a471c3a39",
+    "eip155:56:0xa3fe989903daa2ab69fb6ba3c72e6a499f705bc1982706032099e863bd8c3354",
+    "eip155:56:0xe02a5786e0651fe643140cdce4a2500b46bffe1a0d7d8214b2703ed7175eec28",
+    "eip155:56:0xc1e3c31b4b4e3a952eca541f54894926490a246593b2f4cc2a07c825d432268b",
+    "eip155:56:0x91f5e625447da3e7d0d409d5c7762c94c4d5793ab34430b81a9889e5ef9f37dd",
+    "eip155:56:0xb74d1dc2a32e50ce169ce7bccc3aebdf95e31fb6761edf9c135e3f8e1c1d1d67",
+    "eip155:56:0xfffd3aca0f53715f4c76c4ff1417ec8e8d00928fe0dbc20c89d875a893c29d89",
+    "eip155:56:0xb74eb6d52c9a11a51187012735410a9012547a5ed80d9100176a1b3adf9fb652",
+    "eip155:56:0x73d2a6c6683e5bd004c7cc2dc16d5166e5113962c5cb1113ab878261eb4ceb77",
+    "eip155:56:0x017c416b8ca824a7995568b40aea63281329fbe480424e378fe778523eb4a9ab"
+  ],
+  "refs": [
+    "https://www.certik.com/skynet-report/gym-network-exploit-analysis",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-06/Gym_2_exp.sol",
+    "eip155:56:0x6ec1745a88d809c623ac9cc2fa6cf080deb0b96efee4088e6013f2d639c779e2",
+    "eip155:56:0x0ed0ac728b294ee3a91ba54224623986d7eaabe4a42a3707767d1e8bfa0bb7d9",
+    "eip155:56:0x12970f3962b4bacd01bb4e3dc086804e4e5861134db5dd80d7e4671aa7f23d16",
+    "eip155:56:0xc9c40c492d50b37b0dd9a80f1fa8f0b4ad95980689433c1719fe75671f514e74",
+    "eip155:56:0x96f6c4fba6cd527150a4a85be4f84264814f40a7edaa7b568c09125bee055229",
+    "eip155:56:0xe34e8f38f5e8d9153e3aad6be5d2b5d614377e67121ec9ee983f290484bbe882",
+    "eip155:56:0x1c0535728e6097b7aacbb660f7df85540176ecd438211f588cd3d4a903748ece",
+    "eip155:56:0x292149e6eb7117a0fb80b3a970b18db1ed4c363d3a05c9e5fbf2cffaa4c979da"
+  ],
+  "notes": [
+    "The campaign lists the attacker's successful fake deposits, reward claims and principal withdrawals; the eight sale transactions in refs only realise the proceeds. No other party called depositFromOtherContract outside GYM's vault bank before the fix.",
+    "GYMNET is valued at the BNB the exploiter EOA received from its sales (rule 15): the drained quantity was over twice the GYMNET/WBNB pair's reserve, so DefiLlama's spot would overstate the loss about 3.6-fold."
+  ]
 }

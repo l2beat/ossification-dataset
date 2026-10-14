@@ -1,154 +1,39 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd87cdecd5320301bf9a985cc17f6944e7e7c1fbb471c80076ef2d031cc3023b2",
-  "protocol": {
-    "name": "ARA",
-    "slug": "ara"
-  },
+  "protocol": "ARA",
   "name": "ARA swap arbitrary approved-source authorization failure",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd87cdecd5320301bf9a985cc17f6944e7e7c1fbb471c80076ef2d031cc3023b2",
-      "blockNumber": 29214011,
-      "transactionIndex": 0,
-      "timestamp": 1687106228
-    },
-    "attackerAddresses": [
-      "0xf84efa8a9f7e68855cf17eaac9c2f97a9d131366",
-      "0x98e241bd3be918e0d927af81b430be00d86b04f9",
-      "0xc8b5ecfa4efbae96a3ac90b0d0de316abe6ca0d1"
-    ]
-  },
-  "summary": "The public ARA swap entry point accepted an arbitrary token source address, checked that address's standing allowance, and transferFrom'd its balance without requiring the caller to be that source or otherwise authorized by it. The attacker forced an allowance-granting EOA through two adverse ARA/USDT trades around its own Pancake V3 price movement; across that EOA and the external LP inventory, ARA merely moved internally while USDT left the victim set.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 124915.75835420914,
-      "valuationTimestamp": 1687106228,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "124915.758354209141283962",
-        "usdValue": 124915.75835420914,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1687106228,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The victim set is the code-empty allowance-granting EOA 0xb817ef68d764f150b8d73a2ad7ce9269674538e0 plus the external-liquidity inventory in the canonical Pancake V3 ARA/USDT fee-100 pool 0x92974438c330d5c6790b4260e358e84513109872; the swap contract itself is a zero-balance conduit. Archive balances at blocks 29,214,010 and 29,214,011 show the EOA moving from 8,876.933460457984207061 USDT and 163,497.870920445229714611 ARA to zero USDT and 12,179.863325262845197568 ARA, while the pool moves from 499,211.781917017878419913 USDT and 498,700.441845375704016457 ARA to 383,172.957023266721343012 USDT and 650,018.449440558088533500 ARA. Thus combined ARA is exactly 662,198.312765820933731068 before and after, while combined USDT falls from 508,088.715377475862626974 to 383,172.957023266721343012: exact scarce-asset depletion of 124,915.758354209141283962 USDT. Pancake V3 has no fungible LP shares; the NonfungiblePositionManager balances of the attacker EOA, helper, allowance-granting EOA and swap deployer are all zero at block minus one, so the pool-side inventory is not attacker- or deployer-owned. The Binance-Peg USDT contract reports symbol USDT and 18 decimals and is valued at the repository's stablecoin-par convention."
-  },
+  "summary": "The ARA swap helper let any caller name the source account whose allowance it spent with transferFrom. With flash-loaned USDT the attacker forced an approving EOA to sell ARA, pumped ARA on Pancake V3, forced the same EOA to buy ARA back at the inflated price, and dumped its ARA for USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x7ba5dd9bb357afa2231446198c75bac17cefcda9",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x7ba5dd9bb357afa2231446198c75bac17cefcda9",
-        "codeHash": "0x0fcc9b3bdb480a487b9a4b0e85f62d60bc72e6be50c2d59cd84afa09c7ee062e"
-      },
-      "deployment": {
-        "timestamp": 1687060800,
-        "blockNumber": 29198906,
-        "transactionHash": "0xb34f4b7bd2b3000c057c22edcf1d602b3c5047040e73be6dc4b28f6e265983a6",
-        "transactionIndex": 142,
-        "creatorAddress": "0x8de9f81b24be0ffea0590387a497415d3cfa9908"
-      },
-      "ageReset": {
+      "address": "0x7ba5dd9bb357afa2231446198c75bac17cefcda9",
+      "reset": {
         "kind": "deployment",
-        "description": "The constructor fixed the Pancake V3 router and ARA/USDT pool. The direct runtime has no pool, token, allowance-source or authorization setter, and ownership cannot change the public arbitrary-source behavior."
-      },
-      "codeAgeSeconds": 45428,
-      "failureModeId": "failure:ara-swap-arbitrary-approved-source",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0xb34f4b7bd2b3000c057c22edcf1d602b3c5047040e73be6dc4b28f6e265983a6"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd87cdecd5320301bf9a985cc17f6944e7e7c1fbb471c80076ef2d031cc3023b2"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb34f4b7bd2b3000c057c22edcf1d602b3c5047040e73be6dc4b28f6e265983a6"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x69612e035571b73bf107b3dd4f3bf740cd1297399ecbb7e6c5787349352513d0"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-06/ARA_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://www.quillaudits.com/blog/hack-analysis/ara-protocol-flash-loan-hack"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-31T20:02:49Z",
-      "note": "Reviewed the loss receipt and call trace, exact Transfer logs and archive balances, Pancake V3 pool identity and position-manager balances, DODO balance and repayment, attacker/helper/funds-holder end states, adjacent sender nonces, later ARA/USDT flows, the direct runtime and selectors, constructor transaction and arguments, runtime code history, the commit-pinned reproduction, and QuillAudits' analysis. The trace executes swapExactInputSingle(uint256,uint256,address,address) twice at 0x7ba5dd9bb357afa2231446198c75bac17cefcda9. The decoded calls specify 163,497.870920445229714611 ARA and 132,123.869275720631745148 USDT respectively, both name the unrelated EOA 0xb817ef68d764f150b8d73a2ad7ce9269674538e0 as source, and both set minimum output to zero. Although the caller is attacker helper 0x98e241bd3be918e0d927af81b430be00d86b04f9, the runtime reads that EOA's allowance, transferFroms its token, approves the constructor-fixed router, and executes the swap. The invariant failure is authorization: possession of a standing allowance is treated as permission for any caller to initiate trades from its owner. Pool spot movement makes those forced trades adverse but is not itself the selected code defect. The DODO lender's USDT balance is exactly 1,202,701.257417339116619317 before and after, so flash principal and fee net to zero; the helper stays at its pre-existing 1 wei USDT, and the attacker EOA gains exactly 124,915.758354209141283962 USDT. At nonce 582 it transfers its full 125,103.926980578863479744 USDT balance, comprising the incident gain plus pre-existing inventory, to funds holder 0xc8b5ecfa4efbae96a3ac90b0d0de316abe6ca0d1. A later successful call through the same helper at 0xb80236fb22dd45e4748babf7764a363e33568116b614e82595e135d355e89ca7 has no ARA or USDT flow and is excluded; the bounded later sender/helper/funds-holder scan finds no transfer back to the allowance-granting EOA, swap or pool. Direct deployment transaction 0xb34f4b7bd2b3000c057c22edcf1d602b3c5047040e73be6dc4b28f6e265983a6 appends only the Pancake V3 router and pool constructor arguments. Code is absent one block earlier and the 12,551-byte runtime has hash 0x0fcc9b3bdb480a487b9a4b0e85f62d60bc72e6be50c2d59cd84afa09c7ee062e identically at creation and immediately before the incident. The only mutable administration exposed is Ownable ownership, which remains with the deployer and cannot repair or activate the public arbitrary-source path, so deployment is the honest reset."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 131639.43,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "131639.433274839927692066",
+        "usd": 131639.43
+      }
     ]
-  }
+  },
+  "refs": [
+    "eip155:56:0x69612e035571b73bf107b3dd4f3bf740cd1297399ecbb7e6c5787349352513d0",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/ARA_exp.sol",
+    "https://www.quillaudits.com/blog/hack-analysis/ara-protocol-flash-loan-hack"
+  ],
+  "notes": [
+    "The constructor fixed the Pancake V3 router and ARA/USDT pool; the runtime has no setter that changes the arbitrary-source behaviour.",
+    "Victim set: allowance-granting EOA 0xb817ef68 plus the Pancake V3 ARA/USDT pool, whose combined ARA is unchanged while USDT leaves; USDT at par. Two copycat flash-loan contracts forced the same EOA through the swap 16 minutes later, taking 6,498.34 and 225.33 USDT."
+  ],
+  "campaign": [
+    "eip155:56:0x09299c92154ebe39082b28cf4359e78c2c083eab6993bd2576162a541ab0ca96",
+    "eip155:56:0x0d74999ab5a0205c3587d5225f177f5204a208291d1348f06ce75dd58b667fdf"
+  ]
 }

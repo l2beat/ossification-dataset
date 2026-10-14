@@ -1,152 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xbc877fc865082eebd622ea55133df369649667518b84feea7c1d150d4df1b694",
-  "protocol": {
-    "name": "XBIT",
-    "slug": "xbit"
-  },
+  "protocol": "XBIT",
   "name": "XBITVault fail-open transfer authorization while unbound",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xbc877fc865082eebd622ea55133df369649667518b84feea7c1d150d4df1b694",
-      "blockNumber": 91870104,
-      "transactionIndex": 2,
-      "timestamp": 1775891907
-    },
-    "attackerAddresses": [
-      "0x7faf903b64d6b9aebee007c6c17410716b9d8af4",
-      "0x089b9dd4a19441cba972a16c17db772fbd4152a2"
-    ]
-  },
-  "summary": "XBITVault keeps the XBIT balance ledger and its transfer(from,to,amount) only enforces msg.sender == xbitContract when xbitContract is non-zero. bindXBIT was never called, so anyone could move any holder's XBIT. The attacker moved 1,526,216,569.965537999999999998 XBIT out of the XBIT/USDT PancakeSwap pair, synced its XBIT reserve to 2 wei and sold XBIT back 20 times for the pair's USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 53112.28469985901,
-      "valuationTimestamp": 1775891907,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "53112.284699859007901897",
-        "usdValue": 53112.28469985901,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1775891907,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact USDT depletion of the XBIT/USDT pair 0xf019728561318141edde5255525df2cb57f6d6ff in the anchor transaction; the attacker supplied no USDT. The pair's pre-exploit liquidity came from a single addLiquidity (source-5). BSC-USD valued at par."
-  },
+  "summary": "XBITVault keeps the XBIT balance ledger, and its transfer(from,to,amount) only checks msg.sender == xbitContract when xbitContract is set; bindXBIT was never called, so anyone could move anyone's XBIT. The attacker moved the XBIT/USDT pair's XBIT to itself, synced the pair and sold back for its USDT. A copycat repeated it against an unbound sibling vault.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xc8790ba6c20c7e07c9ca4d4060979390d342391a",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xc8790ba6c20c7e07c9ca4d4060979390d342391a",
-        "codeHash": "0xaf67dafd6e5809b97d76eacbf0725c0791d4460901d452ad7a44b8bc65cf21e0"
-      },
-      "deployment": {
-        "timestamp": 1775850595,
-        "blockNumber": 91778398,
-        "transactionHash": "0x4cbf1c8381bb349f93c8fc664d065a313d7c85a00840e22c3f608f5830acc540",
-        "transactionIndex": 1,
-        "creatorAddress": "0x1c2dc4f8a80ad376ce9ae1768ab211c46919ace2"
-      },
-      "ageReset": {
+      "address": "0xc8790ba6c20c7e07c9ca4d4060979390d342391a",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable vault; the fail-open check is in the deployed code and xbitContract was zero from construction through the exploit (bindXBIT never called), so no configuration change created the condition."
-      },
-      "codeAgeSeconds": 41312,
-      "failureModeId": "failure:xbit-vault-fail-open-transfer-authorization",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x4cbf1c8381bb349f93c8fc664d065a313d7c85a00840e22c3f608f5830acc540"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbc877fc865082eebd622ea55133df369649667518b84feea7c1d150d4df1b694"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x4cbf1c8381bb349f93c8fc664d065a313d7c85a00840e22c3f608f5830acc540"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:22:47Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. Verified XBITVault source (Etherscan V2 contract.getsourcecode chainid=56, v0.8.30+commit.73712a01, optimizer 200; SHA-256 of SourceCode 32adbee479dbbaab482d209583c23fb8d4771ad8dc2cff62b414d7defc2e5e46): transfer(address,address,uint256) (0xbeabacc8) requires msg.sender == xbitContract only inside `if (xbitContract != address(0))`, then moves _balances[from] to _balances[to]; bindXBIT(address,address) is onlyOwner and requires a non-zero XBIT address, so it can set but never clear xbitContract. eth_call xbitContract() (0x0fd82b75) returns zero at blocks 91778398 and 91870103; hence it was never set. debug_traceTransaction(callTracer) of source-1 (block 91870104, index 2): EOA 0x7faf903b64d6b9aebee007c6c17410716b9d8af4 creates 0x089b9dd4a19441cba972a16c17db772fbd4152a2, whose constructor calls vault.transfer(pair 0xf019728561318141edde5255525df2cb57f6d6ff, self, 1526216569965537999999999998) directly (no Transfer event is emitted because xbitContract is unset), then pair.sync() (receipt log 1: reserves 53112.3366348007224 USDT / 2 wei XBIT), then 20 router sells of XBIT (0x5c11d795) each paying USDT from the pair to the EOA. First exercise: trace_filter(toAddress=[vault]) over every 100-block window from creation block 91778398 to 91870104 returns 204 frames; apart from source-1 all come from the XBIT token 0xdea75e39c3bf5be273ccdb52020c18df8288f849 (its normal path) or the owner 0x1c2dc4f8a80ad376ce9ae1768ab211c46919ace2 (creation and setOutputCaller 0x89c9dbee at block 91779308, which only authorises the unused output path). The pair has only two log-emitting transactions (eth_getLogs over the vault lifetime): the addLiquidity source-5 at block 91867547 and source-1. Artifact: eth_getCode(vault) is 0x at 91778397; keccak256(runtime) = 0xaf67dafd6e5809b97d76eacbf0725c0791d4460901d452ad7a44b8bc65cf21e0 at 91778398 and 91870103; source-2 is a top-level creation (receipt contractAddress = vault, index 1) by the owner EOA. The contract has no proxy, delegatecall or self-destruct path. Deployment supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-6-apr-12-2026"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd4735de2cafaa4f4700a12881a182e05868d1ed7717ca8d5f1cdd15425c8131c"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:22:47Z",
-      "note": "Reviewed loss. eth_call USDT(0x55d398326f99059ff775485246999027b3197955).balanceOf(pair) = 53112336634800722400000 at block 91870103 and 51934941714498103 at 91870104; source-1 receipt has 20 USDT Transfer logs from the pair to the attacker EOA summing 53112284699859007901897 (18 decimals) and no USDT inflow to the pair. Loss = 53112.284699859007901897 USDT at USD 1 par. XBIT itself has no other market; the vault balances of other holders were not moved."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 53190.12,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "53171.745877878029536565",
+        "usd": 53190.12
+      }
     ]
   },
-  "discovery": [
-    "web:2026-04-11:xbit"
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-6-apr-12-2026"
+  ],
+  "notes": [
+    "The vault is immutable and xbitContract stayed zero from construction until the owner's bindXBIT after the exploit, so the deployment is the reset.",
+    "Campaign: the attacker's second contract run and a copycat that drained this pair's remainder and the pair of sibling vault 0x7612bede (same deployer and template, never bound); pair Sync scans on all four sibling pairs find no earlier exploit. Loss is the USDT both pairs lost, at DefiLlama prices."
+  ],
+  "campaign": [
+    "eip155:56:0xf3bf365fd9818731b7ee6e5259c22164c6121b771648c07fa8a2f573375200bd",
+    "eip155:56:0x1ae39cf3d69e88dfd62eccac4394a6d2db625705562e496baa11acfe69e7812c"
   ]
 }

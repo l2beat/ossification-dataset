@@ -1,149 +1,141 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1ea0a2e88efceccb2dd93e6e5cb89e5421666caeefb1e6fc41b68168373da342",
-  "protocol": {
-    "name": "DAO SoulMate",
-    "slug": "dao-soulmate"
-  },
+  "protocol": "DAO SoulMate",
   "name": "SoulMate vault unprotected redeem()",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1ea0a2e88efceccb2dd93e6e5cb89e5421666caeefb1e6fc41b68168373da342",
-      "blockNumber": 19063677,
-      "transactionIndex": 0,
-      "timestamp": 1705943675
-    },
-    "attackerAddresses": [
-      "0xd215ffaf0f85fb6f93f11e49bd6175ad58af0dfd",
-      "0xd129d8c12f0e7aa51157d9e6cc3f7ece2dc84ecd"
-    ]
-  },
-  "summary": "SoulMate.redeem(shares, receiver) burned shares held by the vault itself without checking that the caller owned or was authorized to spend them. The attacker called it twice with the vault's share balances and received the corresponding token basket.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 317720.7514978634,
-      "valuationTimestamp": 1705943399,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "134.517429177775527250",
-        "usdValue": 317720.7514978634,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1705943399,
-          "unitPriceUsd": 2361.93,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The helper redeemed the vault's two share balances, swapped the resulting basket to WETH, unwrapped it, paid 1.357692226125015452 ETH to the block builder, and transferred exactly 134.517429177775527250 ETH to the attacker EOA. The recorded net loss is the final attacker receipt; the builder payment and transaction gas are excluded."
-  },
+  "summary": "SoulMate's redeem(amount, to) redeemed BUI SetTokens held by the vault itself through the DebtIssuanceModule without checking the caller, so anyone could burn the vault's BUI and receive the underlying token basket.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x82c063afefb226859abd427ae40167cb77174b68",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x82c063afefb226859abd427ae40167cb77174b68",
+      "reset": {
+        "kind": "config",
+        "tx": "0xaf6f9d764610218f423137a7663bffc9f689ac59e2c4249bd59b76104022cd99",
         "address": "0x82c063afefb226859abd427ae40167cb77174b68",
-        "codeHash": "0xe01b8e2859105e034f442f20907101b37636836921f0d137674e9298f2869187"
-      },
-      "deployment": {
-        "timestamp": 1690243895,
-        "blockNumber": 17766455,
-        "transactionHash": "0xc828ccaca9f38a68e9d9cea6cd3b66b55e37c195f28ae99cc76da221a769fc4b",
-        "transactionIndex": 120,
-        "creatorAddress": "0x76136c44421b9dce602b2f5af32f2203b8a1aaf5"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The two vulnerable redeem calls execute directly in SoulMate's immutable runtime. The address had no code immediately before the creation transaction, and its 12,469-byte runtime hash at deployment matches the pre-exploit hash."
-      },
-      "codeAgeSeconds": 15699780,
-      "failureModeId": "failure:soulmate-redeem-burns-unowned-vault-shares",
-      "evidence": {
-        "identitySourceIds": [
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "slot": "0x3"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1ea0a2e88efceccb2dd93e6e5cb89e5421666caeefb1e6fc41b68168373da342"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-01/DAO_SoulMate_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/MetaSec_xyz/status/1749743245599617282"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:03:05Z",
-      "note": "Reviewed the exploit receipt and call trace, the commit-pinned reproduction, the SoulMate creation trace, and bytecode at the pre-deployment, deployment, and pre-exploit boundaries. The helper calls selector 0x7bde82f2 twice directly on SoulMate, passing the helper as receiver; the target performs no delegatecall. The runtime appears in the recorded creation transaction and remains hash-identical through the block before the exploit. The trace establishes the exact final attacker receipt of 134.517429177775527250 ETH after the stolen basket was sold and the builder was paid."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xc828ccaca9f38a68e9d9cea6cd3b66b55e37c195f28ae99cc76da221a769fc4b"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1705943500/coingecko:ethereum",
-      "observedAt": 1787576544
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 322906.47,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "93977.149907710239958545",
+        "usd": 94071.13
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "78673.580494",
+        "usd": 78752.25
+      },
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "14.232811551166071148",
+        "usd": 33652.48
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.53425329",
+        "usd": 21655.96
+      },
+      {
+        "token": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+        "symbol": "SNX",
+        "amount": "5837.879424213881291898",
+        "usd": 19031.49
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "1762.475202638411972665",
+        "usd": 10786.35
+      },
+      {
+        "token": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "symbol": "MKR",
+        "amount": "4.996884213088428981",
+        "usd": 9779.4
+      },
+      {
+        "token": "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+        "symbol": "ENS",
+        "amount": "503.05127442213551285",
+        "usd": 8843.64
+      },
+      {
+        "token": "0xc944e90c64b2c07662a292be6244bdf05cda44a7",
+        "symbol": "GRT",
+        "amount": "53101.237123621465749247",
+        "usd": 8041.01
+      },
+      {
+        "token": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
+        "symbol": "MATIC",
+        "amount": "7955.222530971850633386",
+        "usd": 5995.28
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "396.97701220890269308",
+        "usd": 5938.78
+      },
+      {
+        "token": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "symbol": "AAVE",
+        "amount": "60.919276273740212853",
+        "usd": 5663.06
+      },
+      {
+        "token": "0x767fe9edc9e0df98e07454847909b5e959d7ca0e",
+        "symbol": "ILV",
+        "amount": "59.491437440006292094",
+        "usd": 4676.03
+      },
+      {
+        "token": "0xbbbbca6a901c926f240b89eacb641d8aec7aeafd",
+        "symbol": "LRC",
+        "amount": "15731.031130056040017123",
+        "usd": 3649.78
+      },
+      {
+        "token": "0x92d6c1e31e14520e676a687f0a93788b716beff5",
+        "symbol": "DYDX",
+        "amount": "1283.228036799843451089",
+        "usd": 3567.37
+      },
+      {
+        "token": "0x967da4048cd07ab37855c090aaf366e4ce1b9f48",
+        "symbol": "OCEAN",
+        "amount": "7827.273743118846102989",
+        "usd": 3365.14
+      },
+      {
+        "token": "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+        "symbol": "BAT",
+        "amount": "13678.62734745478973098",
+        "usd": 3006.81
+      },
+      {
+        "token": "0xe41d2489571d322189246dafa5ebde1f4699f498",
+        "symbol": "ZRX",
+        "amount": "8006.462838843002205447",
+        "usd": 2430.51
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:1:0xa93dd219e384b624317cc2673f42de5522f7e29c0cdbe800ea71343a05caf4d2"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-01/DAO_SoulMate_exp.sol",
+    "https://twitter.com/MetaSec_xyz/status/1749743245599617282"
+  ],
+  "notes": [
+    "The deployer wired the vault after creation: the SetToken (slot 0x4) and then the DebtIssuanceModule (slot 0x3), both read by redeem. Module wiring is HIGH config, so the later write sets the age.",
+    "Loss is the BUI SetToken's component outflow at DefiLlama prices, not the attacker's swapped ETH. The campaign transaction is a dust copycat redeem."
+  ]
 }

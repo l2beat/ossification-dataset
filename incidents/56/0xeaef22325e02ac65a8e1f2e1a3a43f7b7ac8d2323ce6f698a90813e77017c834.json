@@ -1,160 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xeaef22325e02ac65a8e1f2e1a3a43f7b7ac8d2323ce6f698a90813e77017c834",
-  "protocol": {
-    "name": "CrowdRingCircle",
-    "slug": "crowd-ring-circle"
-  },
+  "protocol": "CrowdRingCircle",
   "name": "CrowdRingCircle pair-reserve burn",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xeaef22325e02ac65a8e1f2e1a3a43f7b7ac8d2323ce6f698a90813e77017c834",
-      "blockNumber": 110301524,
-      "transactionIndex": 20,
-      "timestamp": 1784195067
-    },
-    "attackerAddresses": [
-      "0x34579ea92a07a88f5505dfaa4d99ab94b2784087",
-      "0xc5940d118f9c2070478545ba80a780aa8f86d133",
-      "0x2eadbcdcd4ab4bb7f8b01610794ea09a64cd5da1"
-    ]
-  },
-  "summary": "CRC's sell hook burned CRC from the receiving AMM pair before crediting the seller, then called sync() on the reduced balance. Repeated dust sells ratcheted down the recorded CRC reserve, inflated CRC's pool price, and let the attacker drain USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 209061.63226787103,
-      "valuationTimestamp": 1784195067,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "209061.632267871026055744",
-        "usdValue": 209061.63226787103,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1784195067,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt shows the CRC/USDT pair receiving 184,995,877.105807691589020575 USDT and transferring out 185,204,938.738075562615076319 USDT, for exact net victim depletion of 209,061.632267871026055744 USDT. This subtracts the attacker's swap input but does not deduct financing fees; the final 201,359.472267252045095696 USDT transfer to the attacker EOA is net proceeds, not gross loss. USDT is valued at par."
-  },
+  "summary": "CRC's sell hook burned the sold amount from the receiving DEX pair's own balance and called sync() before crediting the seller. With flash-loaned USDT the attacker bought almost all CRC out of the pair (routed to the restriction-exempt owner), then sold CRC equal to the pair's remainder, burning its reserve to dust, and swapped it for the pair's USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8581433150f2c48ff2efe5a22b17c7d405054509",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x8581433150f2c48ff2efe5a22b17c7d405054509",
+      "reset": {
+        "kind": "config",
+        "tx": "0xe53ef4d2ce1365b0da7da4a9d6e4b6e65f5a99afa304cff5fcd6c16730afa431",
         "address": "0x8581433150f2c48ff2efe5a22b17c7d405054509",
-        "codeHash": "0x4fd381dd4e4fb0da5f64850d74526e59cf0a2b94bd84f47441c3d791f336d672"
-      },
-      "deployment": {
-        "timestamp": 1784010743,
-        "blockNumber": 109892046,
-        "transactionHash": "0x583153c6875b2b74f8bd5135a6f78f0b5ec03784071e6bea48c881b08844bdd2",
-        "transactionIndex": 48,
-        "creatorAddress": "0xa5341a83807503ed8decb8534605494551c2a196"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1784014291,
-        "blockNumber": 109899928,
-        "transactionHash": "0xe53ef4d2ce1365b0da7da4a9d6e4b6e65f5a99afa304cff5fcd6c16730afa431",
-        "transactionIndex": 60,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x8581433150f2c48ff2efe5a22b17c7d405054509",
-          "callData": "0x40009927000000000000000000000000d8799a644850c065388c22df4ee0c28472922526",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "setDexPair(0xd8799a644850c065388c22df4ee0c28472922526, true) changed isDexPair(pair) from false to true, activating the defective burn-and-sync sell path for the CRC/USDT pair. No later DexPairUpdated, sellDestroyToggled, or SellFeeRateUpdated event occurred before exploitation; sellDestroyEnabled and sellFeeRate remained true and 1000."
-      },
-      "codeAgeSeconds": 180776,
-      "failureModeId": "failure:crowdringcircle-pair-balance-burn-and-sync",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "call": "0x40009927000000000000000000000000d8799a644850c065388c22df4ee0c28472922526"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xeaef22325e02ac65a8e1f2e1a3a43f7b7ac8d2323ce6f698a90813e77017c834"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-07/CrowdRingCircle_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-27T19:03:02Z",
-      "note": "Reviewed the exploit receipt and call trace, verified CrowdRingCircle source, deployment and configuration transactions, direct runtime history and disassembly, all pair and sell-control events through the exploit, and the commit-pinned reproduction. The exploit transaction creates helpers 0xc5940d118f9c2070478545ba80a780aa8f86d133 and 0x2eadbcdcd4ab4bb7f8b01610794ea09a64cd5da1; its 778-frame trace executes the CRC token in 12 frames. The token's 21,847-byte direct runtime hashes to 0x4fd381dd4e4fb0da5f64850d74526e59cf0a2b94bd84f47441c3d791f336d672 at deployment block 109892046 and pre-exploit block 110301523, contains no SELFDESTRUCT, and makes no target-originated DELEGATECALL in the trace. Transaction 0xe53ef4d2ce1365b0da7da4a9d6e4b6e65f5a99afa304cff5fcd6c16730afa431 at 109899928:60, timestamp 1784014291, calls setDexPair for the CRC/USDT pair; isDexPair(pair) changes from false to true. The vulnerable sell controls remain enabled and unchanged until exploitation, making code/configuration age 180,776 seconds. The receipt's pair-level USDT transfers establish exact gross depletion of 209,061.632267871026055744 USDT."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x583153c6875b2b74f8bd5135a6f78f0b5ec03784071e6bea48c881b08844bdd2"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe53ef4d2ce1365b0da7da4a9d6e4b6e65f5a99afa304cff5fcd6c16730afa431"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2026-07/CrowdRingCircle_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 208860.68,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "209061.632267871026055744",
+        "usd": 208860.68
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/CrowdRingCircle_exp.sol"
+  ],
+  "notes": [
+    "The reset is setDexPair(pair, true), which registered the CRC/USDT pair and so enabled the burn-and-sync sell path the exploit needed; sellDestroyEnabled is a feature gate set at deployment, and the later feeReceiver and exemption changes were not needed.",
+    "Loss is the pair's net USDT outflow; the CRC that left the pair went to the owner or was burned and is not valued separately (unpriced, realised only through the drained USDT). BurnFromPair logs show no other tx collapsing the pair balance, so there is no campaign."
+  ]
 }

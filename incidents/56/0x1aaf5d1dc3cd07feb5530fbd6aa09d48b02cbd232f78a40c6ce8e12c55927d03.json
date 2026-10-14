@@ -1,254 +1,79 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x1aaf5d1dc3cd07feb5530fbd6aa09d48b02cbd232f78a40c6ce8e12c55927d03",
-  "protocol": {
-    "name": "KiloEx",
-    "slug": "kiloex"
-  },
-  "name": "MinimalForwarder unguarded execute on BSC",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x1aaf5d1dc3cd07feb5530fbd6aa09d48b02cbd232f78a40c6ce8e12c55927d03",
-      "blockNumber": 48358304,
-      "transactionIndex": 29,
-      "timestamp": 1744656747
-    },
-    "attackerAddresses": [
-      "0x00fac92881556a90fdb19eae9f23640b95b4bcbd",
-      "0xcc6a5784194bd516db29aa505179857025d8bef4",
-      "0x551f3110f12c763d1611d5a63b5f015d1c1a954c",
-      "0xd649a0876453fc7626569b28e364262192874e18"
-    ]
-  },
-  "summary": "KiloEx's BSC MinimalForwarder exposes a public execute((address,address,uint256,uint256,uint256,bytes),bytes) entry point that relays any request with a valid signature but omits the keeper and approved-router authorization enforced by its other relay entry point. Because the request chooses its own signer and the downstream delegate trusts msg.sender == the forwarder without checking the appended ERC-2771 sender, the attacker used a self-generated signer to reach the privileged price-and-trade path, set artificial prices, and trade against KiloEx's USDT vault.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4282438.022370661,
-      "valuationTimestamp": 1744660053,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-4",
-        "source-9"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "959228.632122660000000000",
-        "usdValue": 959228.63212266,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1744660053,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-          "symbol": "USDC"
-        },
-        "amount": "3323209.390248",
-        "usdValue": 3323209.390248,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1744656807,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-9"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Three calls using the unguarded forwarder entry point define the BSC campaign. In the first two, KiloEx USDT vault 0xef7af0804aab3885da59a8236fabfa19ddc6cf48 loses a transaction-local net 892947.452212280000000000 and 61974.379910380000000000 USDT. In the third, the attacker directly relays USDT.transfer through the forwarder and removes 4306.800000000000000000 USDT of accumulated KiloEx fees. The resulting gross KiloEx outflow is 959228.632122660000000000 USDT; the attacker EOA receives 959217.079253360000000000 USDT, with the difference going to flash-loan and protocol fees. This record covers BSC only and does not include the separately recorded Base loss or the out-of-scope opBNB leg. Later recovery under the cross-chain bounty agreement is not netted out of the exploit-time gross loss. Base leg of the same campaign (USDC component): Three exploit transactions (blocks 28933730, 28933848, 28935593) net 3,323,209.390248 USDC out of the KiloEx USDC liquidity pool 0xdf5acc616cd3ea9556ec340a11b54859a393ebbb, whose USDC balance falls from 3,323,951.604434 at block 28933729 to 1,555.175358 at block 28935593 (the residual difference is unrelated third-party deposits between the exploit transactions). Of that outflow the attacker EOA 0x00fac92881556a90fdb19eae9f23640b95b4bcbd keeps 3,323,170.888033 USDC; 15 USDC is the Uniswap V3 flash-loan fee and 23.502215 USDC is a KiloEx vault fee. This record covers the Base leg only; the BSC leg is a separate record and opBNB is out of the corpus, so the widely reported ~7.5M campaign figure is not used here. Between 2025-04-15 and 2025-04-18 the attacker returned the proceeds under a 10% bounty deal (on Base: 305.536342416848900260 ETH, 10,551.589691 USDC, 232.193079 USDT and 0.090531 USDbC to 0xd38a22f5330f45162f13086d6ccbde0335c1ae9e). Recovery is not netted out of the exploit-time gross figure.",
-    "realizedAt": 1744660533
-  },
+  "protocol": "KiloEx",
+  "name": "KiloEx MinimalForwarder unguarded execute",
+  "summary": "KiloEx's price feed accepted price updates relayed by its trusted forwarder, whose execute() relayed any request signed by its own sender, so anyone could set oracle prices. The attacker opened a position, pushed crafted prices through the forwarder and closed against the vault on BSC, opBNB, Base and Taiko, and pulled the BSC forwarder's own USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xad37c86c06be706466ee70cbbf58f20655e7efb1",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xd8240094e57bf5f893420ffc1e750c94de4a4177",
-        "codeHash": "0xca3ef4513e1e310d392809cc65aab1738b466192d2ea96f7ed1ca2f0d76fa10e"
-      },
-      "deployment": {
-        "timestamp": 1741397709,
-        "blockNumber": 47272034,
-        "transactionHash": "0xc9c9916f05610dda2123049f3e9059a8231e5bd668d9e4480ef459c03846275e",
-        "transactionIndex": 74,
-        "creatorAddress": "0x1d568fc08a1d3978985bc3e896a22abd1222abcf"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1741576834,
-        "blockNumber": 47331739,
-        "transactionHash": "0x1d96b8a03565d8ef5ad133e7e57d27fe66f240e5e4eda0f9cd304f6d9839ca3d",
-        "transactionIndex": 117,
-        "logIndex": 402,
-        "mechanism": {
-          "type": "event",
-          "address": "0xad37c86c06be706466ee70cbbf58f20655e7efb1",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The second and final pre-exploit Upgraded event from the forwarder proxy selected implementation 0xd8240094e57bf5f893420ffc1e750c94de4a4177. The EIP-1967 implementation slot changes from 0xde6f7616d7a18831445ca064a0351c4b603aad2b at block 47331738 to 0xd8240094e57bf5f893420ffc1e750c94de4a4177 at block 47331739 and still holds the latter address immediately before the exploit."
-      },
-      "codeAgeSeconds": 3079913,
-      "failureModeId": "failure:kiloex-minimalforwarder-unguarded-execute-keeper-bypass",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0xad37c86c06be706466ee70cbbf58f20655e7efb1",
+      "code": "0xd8240094e57bf5f893420ffc1e750c94de4a4177",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1d96b8a03565d8ef5ad133e7e57d27fe66f240e5e4eda0f9cd304f6d9839ca3d"
+      }
+    },
+    {
+      "address": "0xaf457b72fff6712641c5f1843515a6e114b2ecde",
+      "code": "0x80b000003c8d146b8aeb77297f287fe8ffc785a4",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x7dcd01e876136edf14cb82b5fb694344b4a795118f4db431c56e03a87a5114d1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1aaf5d1dc3cd07feb5530fbd6aa09d48b02cbd232f78a40c6ce8e12c55927d03"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc9c9916f05610dda2123049f3e9059a8231e5bd668d9e4480ef459c03846275e"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1d96b8a03565d8ef5ad133e7e57d27fe66f240e5e4eda0f9cd304f6d9839ca3d"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x1aaf5d1dc3cd07feb5530fbd6aa09d48b02cbd232f78a40c6ce8e12c55927d03",
-        "0x38b25be14b83fd549d5e0b29ba962db83d41f5f9072d0eac4f692fa8e7110bc0",
-        "0x1daa1c3b1872d98c2dba1564a3604a1e49d13e5fb157e79a6f28be3faa1edc7a"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://blog.solidityscan.com/kiloex-vault-hack-analysis-123a086ccae3/"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T09:51:30Z",
-      "note": "Anchor kept as the first of the three BSC campaign transactions. Attacker EOA 0x00fac92881556a90fdb19eae9f23640b95b4bcbd created exploit contract 0xcc6a5784194bd516db29aa505179857025d8bef4 at block 48357841, then called it twice at blocks 48358304 and 48358423; it called the vulnerable forwarder directly at block 48359406. callTracer on the anchor shows exploit contract -> KiloEx router 0x298e94d5494e7c461a05903dcf41910e0125d019 -> forwarder proxy 0xad37c86c06be706466ee70cbbf58f20655e7efb1 selector 0x47153f82 -> DELEGATECALL implementation 0xd8240094e57bf5f893420ffc1e750c94de4a4177 -> delegate collection 0xaf457b72fff6712641c5f1843515a6e114b2ecde selector 0xac9fd279. At block 48358303, forged signer 0x551f3110f12c763d1611d5a63b5f015d1c1a954c has isKeeper=false and nonce=0, while approvedRouters(0xaf457b72fff6712641c5f1843515a6e114b2ecde)=true. The implementation runtime hash is exactly 0xca3ef4513e1e310d392809cc65aab1738b466192d2ea96f7ed1ca2f0d76fa10e, identical to the reviewed Base implementation and therefore assigned the same bytecode-level failure identity. The proxy was created by 0x1d568fc08a1d3978985bc3e896a22abd1222abcf at block 47272034, tx index 74. Its two pre-exploit Upgraded logs were enumerated: creation selected 0xde6f7616d7a18831445ca064a0351c4b603aad2b, and block 47331739 tx 0x1d96b8a03565d8ef5ad133e7e57d27fe66f240e5e4eda0f9cd304f6d9839ca3d index 117 log 402 selected 0xd8240094e57bf5f893420ffc1e750c94de4a4177. The EIP-1967 slot confirms that transition and retains 0xd8240094e57bf5f893420ffc1e750c94de4a4177 through block 48358303; its runtime hash is unchanged from activation through the exploit, establishing age 3079913 seconds. Loss was recomputed from USDT Transfer logs in the three campaign receipts: KiloEx vault 0xef7af0804aab3885da59a8236fabfa19ddc6cf48 loses net 954921.832122660000000000 USDT in the two price-manipulation transactions, and the forwarder loses 4306.800000000000000000 accumulated fee USDT in the final direct relay. The attacker EOA receives 959217.079253360000000000 USDT; 11.552869300000000000 USDT of the victim outflow is retained as flash-loan and protocol fees. USDT is valued at par. Base is a separate record and opBNB is excluded from this corpus, so neither is counted here."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x6b378c84aa57097fb5845f285476e33d6832b8090d36d02fe0e1aed909228edd"
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xf76f1c60b60d98d750f17cea87b7b896a5b909b2f71d6b6d921b1c2669e506c7"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction-set",
-      "chainId": 8453,
-      "transactionHashes": [
-        "0x6b378c84aa57097fb5845f285476e33d6832b8090d36d02fe0e1aed909228edd",
-        "0xde7f5e78ea63cbdcd199f4b109db2a551b4462dec79e4dba37711f6c814b26e6",
-        "0xf0fcce0807a82041d050a60461e187f0e81a6f7fbda69bb600c04049d924e138"
-      ]
-    },
-    {
-      "id": "source-10",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-kiloex-hack-april-2025"
-    },
-    {
-      "id": "source-11",
-      "type": "post-mortem",
-      "url": "https://quillaudits.medium.com/kiloex-exploit-breakdown-7-4m-drained-across-chains-ff6e2293d5cb"
-    },
-    {
-      "id": "source-12",
-      "type": "post-mortem",
-      "url": "https://www.coinspeaker.com/kiloex-exchange-hacker-returns-7-and-a-half-million-after-exploit/"
-    },
-    {
-      "id": "source-13",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T09:20:00Z",
-      "note": "Anchor kept. The attacker EOA 0x00fac92881556a90fdb19eae9f23640b95b4bcbd deployed exploit contract 0xd649a0876453fc7626569b28e364262192874e18 at block 28932940 and then sent exactly three successful calls to it (selector 0x7493b4a4) at blocks 28933730, 28933848 and 28935593; 0x6b378c84 is the earliest and every one of the three routes through the forwarder. callTracer on the anchor: attacker contract -> Uniswap V3 flash -> createIncreasePosition on router 0x796f1793599d7b6aca6a87516546ddf8e5f3aa9d, then CALL 0x3274b668aed85479e2a8511e74d7db7240ebe7c8 selector 0x47153f82 which DELEGATECALLs 0xbed75e25a63d2be11605038921aa5eef78bb4e61, ecrecover returns req.from 0x551f3110f12c763d1611d5a63b5f015d1c1a954c, and the forwarder then CALLs 0xfdc7bc3a9fde88e7bcfb69c8b9ca7fda483627ed selector 0xac9fd279, which drives PriceFeed.setPrices([0x9ef1b8c0e4f7dc8bf5719ea496883dc6401d5b2e],[100]) and executeIncreasePosition. Defect location established from the runtime of 0xbed75e25: the dispatcher sends 0x2b3102be to 0x1649, which loads mapping slot 0xd3 (approvedRouters[req.to]) and mapping slot 0xce (isKeeper[msg.sender]) and reverts 'execute not allowed' unless both hold, while 0x47153f82 at 0x15a1 decodes and jumps directly to the internal relay at 0x1d9c with no such check. At block 28933729 isKeeper(0x551f3110..) is false and getNonce(0x551f3110..) is 0 while approvedRouters(0xfdc7bc3a..) is true, and 0x551f3110 has nonce 0 and no code, i.e. a keypair the attacker generated. eth_call of the same 0xac9fd279 payload to 0xfdc7bc3a from an unrelated address at block 28933729 reverts 'DelegateCollection: not trustedForwarder' with and without the appended ERC-2771 sender, confirming the delegate's only guard is msg.sender == the forwarder proxy, which is why the forwarder proxy is the execution address supplying storage and authority. Code history: the proxy was created at block 27437694 tx 0xf76f1c60 txIndex 208 by KiloEx deployer 0x1d568fc08a1d3978985bc3e896a22abd1222abcf (creation receipt contractAddress equals the proxy). All 13,625 logs the proxy emitted over [27437694, 28933729] were enumerated by topic0: 13,617 relay events 0x3b702134, 4 keeper-configuration events 0x72605a8a, 1 Initialized 0x7f26b83f, 1 router-configuration event 0x38f252aa, 1 AdminChanged 0x7e644d79 and exactly 1 Upgraded 0xbc7cd75a (block 27437694, txIndex 208, logIndex 446, topic1 = 0xbed75e25..). The EIP-1967 implementation slot reads 0xbed75e25.. at block 28933729 and keccak(code) of 0xbed75e25 is 0xca3ef451.. both at block 27437694 and at block 28933729, and prestateTracer on the anchor returns the same hash, so the exploited code is 2,992,072s (34d 15h 7m 52s) old. Loss: ERC-20 Transfer netting over the three exploit transactions gives -3,323,209.390248 USDC for pool 0xdf5acc61.., +3,323,170.888033 USDC for the attacker EOA, +15 USDC for the Uniswap pool and +23.502215 USDC for the KiloEx vault; USDC valued at par. Only the Base leg is counted here because the BSC leg is a separate incident record. The attacker's later return of the funds under a 10% bounty deal is recorded in loss.notes and not netted out."
-    },
-    {
-      "id": "source-14",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T09:00:00Z",
-      "note": "Merged the Base leg of the same 2025-04-14 campaign into this record. Sixty seconds after the BSC anchor the same attacker exercised the byte-identical MinimalForwarder runtime (hash 0xca3ef451...) deployed on Base at 0x3274b668aed85479e2a8511e74d7db7240ebe7c8 in source-8 (block 27437694, 34.6 days before its first exploit) through source-7 and the two further transactions in source-9, netting 3323209.390248 USDC out of the KiloEx USDC pool. One fault, one attacker, one hour is one incident; the Base forwarder is described here rather than as a target because the verifier anchors targets on the incident chain. Its review is source-13."
-    },
-    {
-      "id": "source-15",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T16:20:00Z",
-      "note": "Reconciled seed row seed:kiloex:2025-04-14:minimalforwarder-spoofed-keeper-on-base, pending only because its exploitTx 0x6b378c84aa57097fb5845f285476e33d6832b8090d36d02fe0e1aed909228edd is the Base leg rather than this BSC anchor; that transaction is source-7 and, with the other two Base transactions in source-9, already supplies the 3323209.390248 USDC component, so no loss is added. Corrected realizedAt: eth_getTransactionReceipt on Base gives blocks 28933730, 28933848 and 28935593 (all status 1) for the three Base transactions, and eth_getBlockByNumber(28935593).timestamp = 1744660533 (2025-04-14T19:55:33Z), later than the last BSC transaction 0x1daa1c3b1872d98c2dba1564a3604a1e49d13e5fb157e79a6f28be3faa1edc7a at BSC block 48359406, timestamp 1744660053, which the previous realizedAt used."
-    }
-  ],
-  "discovery": [
-    "web:2025-04-15:kiloex",
-    "seed:kiloex:2025-04-14:minimalforwarder-spoofed-keeper-on-base"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6",
-      "source-13",
-      "source-14",
-      "source-15"
+  "loss": {
+    "usd": 7433108.98,
+    "assets": [
+      {
+        "chainId": 8453,
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "3323209.390248",
+        "usd": 3323178.4
+      },
+      {
+        "chainId": 204,
+        "token": "0x9e5aac1ba1a2e6aed6b32689dfcf62a509ca96f3",
+        "symbol": "USDT",
+        "amount": "3105681.46920348",
+        "usd": 3108787.15
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "959228.63212266",
+        "usd": 960183.55
+      },
+      {
+        "chainId": 167000,
+        "token": "0x07d83526730c7438048d55a4fc0b850e2aab6f0b",
+        "symbol": "USDC",
+        "amount": "40960.260774",
+        "usd": 40959.88
+      }
     ]
   },
+  "campaign": [
+    "eip155:204:0x79eb28ae21698733048e2dae9f9fe3d913396dc9d93a0e30d659df6065127964",
+    "eip155:167000:0x9bce6e105cea138fe9fb1e4bfb63fe90d21817db9d2cc6d1bf7697317430215b",
+    "eip155:8453:0x6b378c84aa57097fb5845f285476e33d6832b8090d36d02fe0e1aed909228edd",
+    "eip155:8453:0xde7f5e78ea63cbdcd199f4b109db2a551b4462dec79e4dba37711f6c814b26e6",
+    "eip155:204:0xcfc679a66f1d2966dbe83bb827409c40f29f881c20128107ae73e93ab55c65e4",
+    "eip155:56:0x38b25be14b83fd549d5e0b29ba962db83d41f5f9072d0eac4f692fa8e7110bc0",
+    "eip155:204:0x783d56ce53af6d59c7c4be374ff48a66257733fadf5905526b5862a54917889f",
+    "eip155:56:0x1daa1c3b1872d98c2dba1564a3604a1e49d13e5fb157e79a6f28be3faa1edc7a",
+    "eip155:8453:0xf0fcce0807a82041d050a60461e187f0e81a6f7fbda69bb600c04049d924e138"
+  ],
+  "refs": [
+    "https://blog.solidityscan.com/kiloex-vault-hack-analysis-123a086ccae3/",
+    "https://www.halborn.com/blog/post/explained-the-kiloex-hack-april-2025",
+    "https://quillaudits.medium.com/kiloex-exploit-breakdown-7-4m-drained-across-chains-ff6e2293d5cb",
+    "https://www.coinspeaker.com/kiloex-exchange-hacker-returns-7-and-a-half-million-after-exploit/",
+    "eip155:8453:0xf76f1c60b60d98d750f17cea87b7b896a5b909b2f71d6b6d921b1c2669e506c7"
+  ],
   "notes": [
-    "The same attacker exercised the byte-identical Base deployment of MinimalForwarder (0x3274b668aed85479e2a8511e74d7db7240ebe7c8) one minute later, starting with 0x6b378c84aa57097fb5845f285476e33d6832b8090d36d02fe0e1aed909228edd. That leg is merged here as the 3323209.390248 USDC component; the code age is measured on the BSC anchor."
+    "The forwarder's last upgrade before the exploit is the reset (rule 9); the price feed, which treated any call from the forwarder as its keeper, is unchanged since deployment.",
+    "Campaign: the attacker's legs on opBNB, Taiko and Base (other addresses, same code) and two more BSC txs, one relaying USDT.transfer to pull the forwarder's own fees. The first opBNB leg landed in the same second as the anchor; the BSC tx stays the anchor.",
+    "Loss is each vault's net outflow per leg; opBNB USDT is priced at the BSC USDT rate and Taiko USDC at the Base USDC rate. The bounty-deal return is not netted (rule 14). Chains 204 and 167000 need RPC_URL_FOR_CHAIN_<id> to derive."
   ]
 }

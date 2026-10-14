@@ -1,135 +1,266 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x8f28a7f604f1b3890c2275eec54cd7deb40935183a856074c0a06e4b5f72f25a",
-  "protocol": {
-    "name": "Aperture Finance",
-    "slug": "aperture-finance"
-  },
+  "protocol": "Aperture Finance",
   "name": "Aperture Finance arbitrary call approval drain",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x8f28a7f604f1b3890c2275eec54cd7deb40935183a856074c0a06e4b5f72f25a",
-      "blockNumber": 24313234,
-      "transactionIndex": 5,
-      "timestamp": 1769361035
-    },
-    "attackerAddresses": [
-      "0xe3e73f1e6ace2b27891d41369919e8f57129e8ea"
-    ]
-  },
-  "summary": "The closed-source Aperture router forwarded caller-supplied call targets and calldata without validation, letting the attacker make the contract invoke ERC-20 transferFrom() and ERC-721 transfers against the standing token and Uniswap V3 position approvals users had granted it.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 3670000,
-      "valuationTimestamp": 1769361035,
-      "method": "reported",
-      "sourceIds": [
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "36.91885364",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "BlockSec reports approximately $3.67 million of gross assets lost across the Aperture campaign on Ethereum, Arbitrum, and Base. The structured asset component is the exact WBTC amount transferred from a victim in the selected Ethereum transaction; it is only one component of the reported cross-chain total. No recovery is netted from the exploit-time loss."
-  },
+  "summary": "Aperture's closed-source router executed a caller-supplied call target and calldata from its swap path without validation, so anyone could make it call ERC-20 transferFrom() or the Uniswap V3 position manager against the token and position approvals users had granted it, moving those assets to themselves.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xd83d960debec397fb149b51f8f37dd3b5cfa8913",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xd83d960debec397fb149b51f8f37dd3b5cfa8913",
-        "codeHash": "0xefc84c5b1d6be0359381d8700907c9373ac7417486f2038676c552668d818ecf"
-      },
-      "deployment": {
-        "timestamp": 1765826879,
-        "blockNumber": 24020090,
-        "transactionHash": "0x239acc3db4cf951a671fab224129ba26250d96d3dce6ea0d934eee8d26b7c9f7",
-        "transactionIndex": 222,
-        "creatorAddress": "0x13b0d85ccb8bf860b6b79af3029fca081ae9bef2"
-      },
-      "ageReset": {
+      "address": "0xd83d960debec397fb149b51f8f37dd3b5cfa8913",
+      "reset": {
         "kind": "deployment",
-        "description": "The vulnerable arbitrary-call path is part of the target's immutable direct runtime, created by the factory in this transaction and unchanged through the exploit."
-      },
-      "codeAgeSeconds": 3534156,
-      "failureModeId": "failure:aperture-arbitrary-call-approval-drain",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x239acc3db4cf951a671fab224129ba26250d96d3dce6ea0d934eee8d26b7c9f7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8f28a7f604f1b3890c2275eec54cd7deb40935183a856074c0a06e4b5f72f25a"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/17m-closed-source-smart-contract-exploit-arbitrary-call-swapnet-aperture"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://blog.solidityscan.com/aperture-finance-hack-analysis-22dca439ff33/"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T05:53:54Z",
-      "note": "Reviewed the live Ethereum transaction, receipt, call trace, factory creation transaction, pre-exploit runtime and hash, runtime control flow, and BlockSec's campaign analysis. The selected transaction calls selector 0x67b34120 on 0xd83d960debec397fb149b51f8f37dd3b5cfa8913; its user-controlled target and calldata make that contract call WBTC.transferFrom(victim, attacker, 36.91885364 WBTC) against a standing approval. The target is a direct contract with no delegatecall path in its runtime. It was created internally by factory 0x13b0d85ccb8bf860b6b79af3029fca081ae9bef2 in transaction 0x239acc3db4cf951a671fab224129ba26250d96d3dce6ea0d934eee8d26b7c9f7 at 24020090:222; 0xbeef63ae5a2102506e8a352a5bb32aa8b30b3112 is the transaction sender, not the target's creatorAddress. The pre-exploit runtime hash matches the declared artifact and the deployment is its last code change. BlockSec reports approximately $3.67 million lost across the same arbitrary-call campaign on Ethereum, Arbitrum, and Base."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x239acc3db4cf951a671fab224129ba26250d96d3dce6ea0d934eee8d26b7c9f7"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The cross-chain $3.67 million campaign total is retained from BlockSec reporting; only the selected Ethereum transaction's WBTC component was independently quantified here."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 4082061.13,
+    "assets": [
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "38.01071741",
+        "usd": 3333816.13
+      },
+      {
+        "chainId": 56,
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "164603.847455638234183835",
+        "usd": 164404.16
+      },
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "48.001330188611256761",
+        "usd": 137871.83
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "87401.734134",
+        "usd": 87285.63
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "77072.984433",
+        "usd": 77043.51
+      },
+      {
+        "chainId": 42161,
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "19.464928852835811171",
+        "usd": 53290.68
+      },
+      {
+        "chainId": 8453,
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "40770.099357",
+        "usd": 40758.57
+      },
+      {
+        "chainId": 42161,
+        "token": "0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8",
+        "symbol": "PENDLE",
+        "amount": "18028.239700280963011997",
+        "usd": 33433.64
+      },
+      {
+        "chainId": 8453,
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "11.445020163402315599",
+        "usd": 30196.19
+      },
+      {
+        "chainId": 42161,
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "23869.49728",
+        "usd": 23861.39
+      },
+      {
+        "token": "0x68749665ff8d2d112fa859aa293f07a622782f38",
+        "symbol": "XAUt",
+        "amount": "4.118034",
+        "usd": 20956.27
+      },
+      {
+        "chainId": 42161,
+        "token": "0x46850ad61c2b7d64d08c9c754f45254596696984",
+        "symbol": "PYUSD",
+        "amount": "9264.074714",
+        "usd": 9261.03
+      },
+      {
+        "chainId": 42161,
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "0.08920417",
+        "usd": 7444.21
+      },
+      {
+        "chainId": 8453,
+        "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+        "symbol": "cbBTC",
+        "amount": "0.07291371",
+        "usd": 6091.82
+      },
+      {
+        "token": "0x6de037ef9ad2725eb40118bb1702ebb27e4aeb24",
+        "symbol": "RNDR",
+        "amount": "3107.311693234393783875",
+        "usd": 5904.68
+      },
+      {
+        "chainId": 137,
+        "token": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        "symbol": "USDT0",
+        "amount": "5236.977096",
+        "usd": 5230.94
+      },
+      {
+        "token": "0xf19308f923582a6f7c465e5ce7a9dc1bec6665b1",
+        "symbol": "TITANX",
+        "amount": "53558208759.830160351441482549",
+        "usd": 4379.84
+      },
+      {
+        "token": "0x58d7fa7356d68c494c2de09f95d55c2ff2d38bd3",
+        "symbol": "AU",
+        "amount": "368448.701346026666434877",
+        "usd": 3945.3
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "264.758551087028414241",
+        "usd": 3110.35
+      },
+      {
+        "token": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "symbol": "AAVE",
+        "amount": "18.798532059779315162",
+        "usd": 2829.09
+      },
+      {
+        "token": "0xe28b3b32b6c345a34ff64674606124dd5aceca30",
+        "symbol": "INJ",
+        "amount": "637.214921398370827702",
+        "usd": 2768
+      },
+      {
+        "chainId": 42161,
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "14425.046931866259726252",
+        "usd": 2443.3
+      },
+      {
+        "chainId": 56,
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "2.722844444478582293",
+        "usd": 2364.6
+      },
+      {
+        "chainId": 8453,
+        "token": "0x940181a94a35a4569e4529a3cdfb74e38fd98631",
+        "symbol": "AERO",
+        "amount": "5449.281468661426110832",
+        "usd": 2264.6
+      },
+      {
+        "chainId": 42161,
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USD0",
+        "amount": "1685.492979",
+        "usd": 1683.39
+      },
+      {
+        "chainId": 42161,
+        "token": "0xba5ddd1f9d7f570dc94a51479a000e3bce967196",
+        "symbol": "AAVE",
+        "amount": "7.415765195458450568",
+        "usd": 1110.92
+      },
+      {
+        "token": "0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44",
+        "symbol": "wTAO",
+        "amount": "3.277656138",
+        "usd": 1010.65
+      },
+      {
+        "symbol": "97 other assets under $1,000 each",
+        "usd": 17300.41
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://blocksec.com/blog/17m-closed-source-smart-contract-exploit-arbitrary-call-swapnet-aperture",
+    "https://blog.solidityscan.com/aperture-finance-hack-analysis-22dca439ff33/"
+  ],
+  "notes": [
+    "The anchor executed only 0xd83d960d, a direct deployment unchanged through the exploit. Other Aperture routers with the same call path (0xaf34783a and 0xafc9f5bd on Ethereum and Arbitrum; separate Base and BNB Chain deployments) were drained in the campaign and are not targets.",
+    "Campaign: the attacker's transactions on four chains plus every later call into these routers that pulled assets from a third party's approval, by any sender. No such pull precedes the anchor.",
+    "Stolen Uniswap V3 positions are valued at their liquidity and uncollected fees one block before the theft. Assets without a DefiLlama price are listed at $0 except Polygon SHIB, priced at the SHIB market price."
+  ],
+  "campaign": [
+    "eip155:1:0x60ec7bce55e9721c62360a5884a03f59a74209c46b0bef4296b87133985da87c",
+    "eip155:1:0x6d9b99c60472dc7a7a394ba83627c9c129badcbd8088acca797dcedcf3c7c014",
+    "eip155:1:0x8cee6a63c423e0074041f579e0162953ff930e69db6cc1cdd28dfc6d073b05ad",
+    "eip155:42161:0x258c4e9a1099342172b1701b4210e8abc43fc2774ea814f17e9be39fe833b788",
+    "eip155:42161:0x6115c860cd9d2018673d2c041c16732bab07538dadc17b74b837694005240788",
+    "eip155:42161:0x6cc0c2435eaa0d17166ec1d345899b6b56d71a463ad2f04e20e938f340456d0e",
+    "eip155:42161:0xe7e5fbc9a6ea8e2c4432cc4d257f3a2490d4e6de2e17ecb1df5c853b5e8befc9",
+    "eip155:56:0xdd5be67e64a4cb90d752003e1e99c6a041385c2fa5aced017bd2b3fdbc8a05d9",
+    "eip155:8453:0x1288e7a14fbdc5cca3f5c3731915cd1aaa031acddf24d26b0bb8071a1345f374",
+    "eip155:8453:0x40255245854e09d1bf9a1615d6c7321c332b398c16bb5eed37a4a9162f199ef0",
+    "eip155:8453:0xc8e8095f545ecac8a1fb24ee4f6a0c2c3d630d4f26202c268277bd44380d3d6a",
+    "eip155:8453:0xf182886569a90730067663d54d1d4ac326c3c3f1f4388f9cc1cfa8c9138980cd",
+    {
+      "chainId": 1,
+      "count": 114,
+      "from": 24313235,
+      "to": 25803114,
+      "selection": "Calls into the Aperture routers (0xd83d960d, 0xaf34783a, 0xafc9f5bd and their Base and BNB Chain deployments) that pulled assets from a third party's approval, by any sender."
+    },
+    {
+      "chainId": 10,
+      "count": 1,
+      "from": 146883532,
+      "to": 146883532,
+      "selection": "Calls into the Aperture routers (0xd83d960d, 0xaf34783a, 0xafc9f5bd and their Base and BNB Chain deployments) that pulled assets from a third party's approval, by any sender."
+    },
+    {
+      "chainId": 56,
+      "count": 113,
+      "from": 77371826,
+      "to": 115540023,
+      "selection": "Calls into the Aperture routers (0xd83d960d, 0xaf34783a, 0xafc9f5bd and their Base and BNB Chain deployments) that pulled assets from a third party's approval, by any sender."
+    },
+    {
+      "chainId": 137,
+      "count": 72,
+      "from": 82122088,
+      "to": 94570364,
+      "selection": "Calls into the Aperture routers (0xd83d960d, 0xaf34783a, 0xafc9f5bd and their Base and BNB Chain deployments) that pulled assets from a third party's approval, by any sender."
+    },
+    {
+      "chainId": 8453,
+      "count": 393,
+      "from": 41287606,
+      "to": 51861513,
+      "selection": "Calls into the Aperture routers (0xd83d960d, 0xaf34783a, 0xafc9f5bd and their Base and BNB Chain deployments) that pulled assets from a third party's approval, by any sender."
+    },
+    {
+      "chainId": 42161,
+      "count": 232,
+      "from": 425142472,
+      "to": 485610746,
+      "selection": "Calls into the Aperture routers (0xd83d960d, 0xaf34783a, 0xafc9f5bd and their Base and BNB Chain deployments) that pulled assets from a third party's approval, by any sender."
+    }
+  ]
 }

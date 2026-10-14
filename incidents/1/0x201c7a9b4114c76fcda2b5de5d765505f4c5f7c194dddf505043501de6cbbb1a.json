@@ -1,195 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x201c7a9b4114c76fcda2b5de5d765505f4c5f7c194dddf505043501de6cbbb1a",
-  "protocol": {
-    "name": "OrderFactory (unattributed 2017 order platform)",
-    "slug": "orderfactory"
-  },
+  "protocol": "OrderFactory (unattributed 2017 order platform)",
   "name": "OrderFactory permissionless createOrderForBuyer drains buyer escrow",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x201c7a9b4114c76fcda2b5de5d765505f4c5f7c194dddf505043501de6cbbb1a",
-      "blockNumber": 25933639,
-      "transactionIndex": 2,
-      "timestamp": 1788882503
-    },
-    "attackerAddresses": [
-      "0x77071d2bbd8f3c296c8cd7d0abd21bc172420cda",
-      "0xde26cf7c41107f17eac0dcc5c7f2c47f6253de29",
-      "0xfc3facd67138966ab0c841e905b0c4bca1abe92f",
-      "0x2a9a23bbacbc84f56ff379736bd8d18421a71e6c"
-    ]
-  },
-  "summary": "The unverified 2017 order factory's order-creation entry point (selector 0xbde886fc) checks only that the named buyer has an active request (getState(buyer) == 1). Any caller can create an order for any buyer with an attacker-chosen seller. The factory then moves the buyer's whole Account System ETH balance into a new order proxy and records the attacker as seller, and the proxy's seller-gated abort(address) sends that ETH wherever the caller says. From 2017 to 2018 only the platform operator EOA called this entry point. In September 2026 an attacker helper contract drained the platform's dormant buyer balances.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 61689.57853765249,
-      "valuationTimestamp": 1788882503,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "24.703408005580266342",
-        "usdValue": 61662.096081495365,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1788882503,
-          "unitPriceUsd": 2496.0967356231367,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "0.011",
-        "usdValue": 27.482456157125272,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1788928643,
-          "unitPriceUsd": 2498.4051051932065,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The loss is the buyers' pre-existing escrow: Account System ETH outflows minus the attacker's own deposit(address) top-ups, which were credited to buyers and swept back out. Component 1 is the first attacker's campaign, five transactions in block 25933639 (tx indices 2-6) against Account System 0xfcf3d97c6db4c3bf6020a2b99af074b595bda163, which lost 24.523408005580266342 ETH. It also includes index 7 against the byte-different sibling deployment (factory 0xf682e1279976178aa2c4d3c00bd73bbcfd81fc26, Account System 0xcccbeac80848dfb620b5ca4e5e8bc877361dbc0a), which lost 0.18 ETH. Index 8 paid 24.70340800558027 ETH to the attacker EOA. Component 2 is a later actor (0xfc3facd6 via 0x2a9a23bb) repeating the path at block 25937470, which took the last 0.011 ETH. Both Account System balances were then 0.",
-    "realizedAt": 1788928643
-  },
+  "summary": "The 2017 order factory's createOrder entry (0xbde886fc) checked only that the named buyer had an active request, not who called it. Any caller could open an order for any buyer with itself as seller; the factory moved the buyer's whole Account System ETH balance into the order, and the seller-gated abort sent it to the attacker. Dormant buyer balances were drained in 2026.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa27bcd590195b2a9bdc29379de4f040b2d8066e0",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1495226811,
-        "blockNumber": 3734393,
-        "transactionHash": "0x75d427ce6b389e2eca1899860bbde2e52c716d9edaaf23be0b201d55c501de7b",
-        "transactionIndex": 0,
-        "creatorAddress": "0xfae24b41f509821a14c43f3826332d62cb6295b3"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Immutable, unverified direct factory runtime whose 0xbde886fc entry lacks any caller or buyer authorization. Launch wiring of the Account System to this factory (blocks 3734397/3734399) and the operator's per-buyer add(address,bytes32) entries set ordinary values, not the missing check."
-      },
-      "codeAgeSeconds": 293655692,
-      "failureModeId": "failure:orderfactory-createorderforbuyer-missing-authorization",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "Factory, Account System and order templates are unverified. The root cause is established from callTracer traces, the 4-byte-matched getState/deposit/abort selectors, the caller history and the DeFiHackLabs reproduction (source-2), not from source code."
-        ],
-        "reviewSourceIds": [
-          "source-5"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0xa27bcd590195b2a9bdc29379de4f040b2d8066e0",
-        "codeHash": "0x0a3deb54f84882aa311223bdef20a5bd5ea752165d9a7178e6e943f4e4674465"
+      "address": "0xa27bcd590195b2a9bdc29379de4f040b2d8066e0",
+      "reset": {
+        "kind": "config",
+        "tx": "0x55645d16c35d91f9883bed95e9543cdf37b56f7d0f796216d8e968143e507c95",
+        "address": "0xfcf3d97c6db4c3bf6020a2b99af074b595bda163",
+        "slot": "0x6f8fc102f7a7bd8be8a3d467ac6333b7cf90e6c6fafd2fbddd968ebdf72e97c6"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x201c7a9b4114c76fcda2b5de5d765505f4c5f7c194dddf505043501de6cbbb1a"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/OrderFactory_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x6971f884df6df3114f1e52566a4a0566e31eb2435e5a409ea04907236b51d593"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x75d427ce6b389e2eca1899860bbde2e52c716d9edaaf23be0b201d55c501de7b"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Reviewed anchor, root cause, earliest use and age. debug_traceTransaction(callTracer) of source-1 (block 25933639, index 2, from 0x77071d2b to helper 0xde26cf7c created at index 1 in 0x7b00b1ef46204dc0e6ea9b14797f3962fdb2a22770372e566aefe399bba4ff8d) shows the pattern five times. The helper calls getState(buyer) 0x1bab58f5 on the factory and accountBalances 0x6ff96d17 on 0xfcf3d97c. It calls factory 0xbde886fc directly (it is neither the buyer nor the operator). The factory calls deployer 0xdd3068d772764443e4c4b18b8c96aee153d83056 0x115f6a8e, which CREATEs an order proxy, then calls Account System 0x506d994b. That sends the buyer's full balance to the proxy (10.05, 5.05, 3.05, 1.547 and 0.55 ETH). The helper then calls proxy abort(address) 0x90cbfa19, which forwards the ETH to the helper. Buyers: 0x448f48d9..., 0x8f7db812..., 0x5c8d3b20..., 0x9d8f6e98..., 0x3ed7571b.... The authorization gap is at the factory entry, which creates the order and records the caller-supplied seller. Earliest use: Etherscan txlist on the factory (14415 unique txs; pages from block 0 and from 4808935) shows 0xbde886fc calls by operator 0xfae24b41f509821a14c43f3826332d62cb6295b3 (2029 ok, 47 failed, last block 6462109) and two failed calls by others: 0xd302083b at 4733538 and 0x478427bb at 25952137. Every createOrderForBuyer creates a proxy, and Etherscan txlistinternal on the deployer lists 2054 creations. The 2031 up to block 6462109 all belong to operator 0xbde886fc transactions; comm of hashes leaves two operator txs, 0x910b8a17... and 0xf3348ed9..., labelled failed. The next creations are the 23 campaign ones in block 25933639 and one at 25937470. The Account System has no value movement between block 6462109 and 25933639. Age: eth_getCode of the factory is empty at 3734392, and keccak equals the recorded hash at 3734393 and 25933638. Source-4 is a top-level creation by 0xfae24b41 (pre-Byzantium receipt). The factory delegatecalls library 0xcec57141847d92182b65234bba72eaa226fe01c0, whose address is embedded in its runtime. There is no upgrade slot. Other writes on the factory are one-off calls by unrelated EOAs in 2017, with selectors 0x5491dd70, 0x9378aa25, 0x5481ab7d and 0x5a5732f8; none sets a caller check. A 2026 kill(address) 0xcbf0b0c0 call on the Account System (0xb90db6f0..., block 24506409) left its code in place.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:13:42Z"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Loss recipe: callTracer each campaign transaction and sum value CALLs out of, minus into, each Account System. Block 25933639: idx2 source-1 20.247 out, 0 in. idx3 0x47a841589e9a3c89d0884e43f1bf51fb5670f865617ec555cdc9ba92d9066872: 3.457250015 out, 0.05 in. idx4 0x328b59b84f1366d1c2f7f81be7c797dde613cd4334f037d427910676520282ab: 4.5 out, 3.72003597055910072 in. idx5 0x95cdfc25ff8f5aab2857bf84b0891102b670ba1e9173a98335ca8f1cb5022471: 0.43 out, 0.358140330981394941 in. idx6 0x1cf380ed8677a0fd8f6646824b2a0c0defceccb316feda3f5bf5b56b56258d44: 1.0547 out, 1.037365707879237997 in. That nets 24.523408005580266342 ETH from 0xfcf3d97c. idx7 0x82e3d77bfbc093e565046d0f5a8fda499e73d27db92843a56645ad8b97d31413 takes 0.18 ETH from 0xcccbeac8 through the sibling factory 0xf682e127 (created by 0xd302083b at block 3724460, codeHash 0x99c46700b9e8d882da526b40285b79046035e21a97a1dd55068b99b728e3a295). idx8 0x2736381fcc263a81bff5ca8816abe2c7323f9b9c294022c3f2ff2067717acc92 pays 24.70340800558027 ETH to the attacker EOA. The inflows are deposit(address) 0xf340fa01 calls by the helper. Source-3 (block 25937470, index 280, from 0xfc3facd6) takes 0.11 out for 0.099 in. eth_getBalance of 0xfcf3d97c: 24.534408005580266342 at 25933638, 0.011 at 25933639, 0 at 25937470. For 0xcccbeac8: 0.18 at 25933638, 0 at 25933639.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:13:42Z"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788882503/ethereum:0x0000000000000000000000000000000000000000",
-      "observedAt": 1790623150
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788928643/ethereum:0x0000000000000000000000000000000000000000",
-      "observedAt": 1790623150
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5",
-      "source-6"
+  "loss": {
+    "usd": 61612.94,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "24.714408005580266342",
+        "usd": 61612.94
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-08:orderfactory"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/OrderFactory_exp.sol"
+  ],
+  "notes": [
+    "Reset is the Account System's grant to this factory (36b196cf, slot 0x6f8fc102.. 0->1), four blocks after the factory's deployment: with that slot zeroed the factory's balance transfer (0x506d994b) reverts. The operator's per-buyer registrations are live user data, not resets.",
+    "Campaign: the attacker's four further drains in the same block, its drain of the byte-different sibling deployment (factory 0xf682e127, Account System 0xcccbeac8, 0.18 ETH) and a later copycat (0xfc3facd6, 0.011 ETH). Loss is the two Account Systems' net ETH outflow per tx; the attacker's top-up deposits net out. A trace_filter scan found no non-operator createOrder call before the anchor.",
+    "Factory, Account System and order templates are unverified; the mechanism comes from traces, an unprivileged eth_call of 0xbde886fc that succeeds, and the DeFiHackLabs reproduction."
+  ],
+  "campaign": [
+    "eip155:1:0x47a841589e9a3c89d0884e43f1bf51fb5670f865617ec555cdc9ba92d9066872",
+    "eip155:1:0x328b59b84f1366d1c2f7f81be7c797dde613cd4334f037d427910676520282ab",
+    "eip155:1:0x95cdfc25ff8f5aab2857bf84b0891102b670ba1e9173a98335ca8f1cb5022471",
+    "eip155:1:0x1cf380ed8677a0fd8f6646824b2a0c0defceccb316feda3f5bf5b56b56258d44",
+    "eip155:1:0x82e3d77bfbc093e565046d0f5a8fda499e73d27db92843a56645ad8b97d31413",
+    "eip155:1:0x6971f884df6df3114f1e52566a4a0566e31eb2435e5a409ea04907236b51d593"
   ]
 }

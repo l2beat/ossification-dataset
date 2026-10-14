@@ -1,209 +1,189 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x49ca5e188c538b4f2efb45552f13309cc0dd1f3592eee54decfc9da54620c2ec",
-  "protocol": {
-    "name": "Yiedl",
-    "slug": "yiedl"
-  },
+  "protocol": "Yiedl",
   "name": "Yiedl vault forwards caller-supplied 1inch calldata",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x49ca5e188c538b4f2efb45552f13309cc0dd1f3592eee54decfc9da54620c2ec",
-      "blockNumber": 38126754,
-      "transactionIndex": 18,
-      "timestamp": 1713921883
-    },
-    "attackerAddresses": [
-      "0x322696471792440499b1979e0a440491e870667a"
-    ]
-  },
-  "summary": "The Yiedl vault's redeem path forwarded caller-supplied router calldata without validating the swap recipient, allowing one constructor transaction to deplete the vault's USDC, BTCB, and ETH inventory.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 137325.189830315,
-      "valuationTimestamp": 1713921883,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "75635.138375994372050770",
-        "usdValue": 75635.13837599437,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1713921883,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
-          "symbol": "BTCB"
-        },
-        "amount": "0.521372360835400072",
-        "usdValue": 34772.447986659994,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1713921749,
-          "unitPriceUsd": 66694.07624704877,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
-          "symbol": "ETH"
-        },
-        "amount": "8.333778171625678105",
-        "usdValue": 26917.603467660643,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1713921683,
-          "unitPriceUsd": 3229.94,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the exact ERC-20 depletion of vault 0x4edda16ab4f4cc46b160abc42763ba63885862a4 in the single successful constructor receipt. Fifty vault outflows aggregate to 75,635.138375994372050770 USDC, 0.521372360835400072 BTCB, and 8.333778171625678105 ETH, with zero inflows or returns of any component. Archive balances across block 38126754 reproduce all three deltas exactly. Later transactions from the same sender do not touch this vault or return these assets and are excluded from this single-vault boundary. USDC is valued at par; the closest preceding DefiLlama observations value BTC and ETH 134 and 200 seconds before the incident."
-  },
+  "summary": "SpotVault.redeem() forwarded caller-supplied 1inch calldata for every held asset and credited only the receiving asset's balance change, without checking the swap recipient or requiring shares. Calling redeem with zero shares and swaps paying the caller let the attacker, then copycat bots, swap the vault's approved token inventory to themselves.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4edda16ab4f4cc46b160abc42763ba63885862a4",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x4edda16ab4f4cc46b160abc42763ba63885862a4",
-        "codeHash": "0x74b96155073c5af9228ac8e09d90dc6d34e2eb420c0db651038ebc4c10e6bcca"
-      },
-      "deployment": {
-        "timestamp": 1713859068,
-        "blockNumber": 38105870,
-        "transactionHash": "0x62c3b5ca0e8139994f3c66406a7fab4ccb75f8283c32036807b47c7040f953a1",
-        "transactionIndex": 113,
-        "creatorAddress": "0xc0aacf2a87bbdfff6e582762a7c4259ead5aee30"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The victim vault is directly deployed. Its 24,569-byte runtime is absent one block before creation and has code hash 0x74b96155073c5af9228ac8e09d90dc6d34e2eb420c0db651038ebc4c10e6bcca at creation and immediately before the incident; the EIP-1967 implementation, admin, and beacon slots are zero. The vulnerable redeem behavior is in this unchanged runtime."
-      },
-      "codeAgeSeconds": 62815,
-      "failureModeId": "failure:yiedl-redeem-unvalidated-router-recipient",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x4edda16ab4f4cc46b160abc42763ba63885862a4",
+      "reset": {
+        "kind": "config",
+        "tx": "0xea0f54aedb98e46e274a836291822119fc5d079c003cbb1b41edac2b14a42496",
+        "address": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "slot": "0x13a3aa457f783e28b19d6ec1589d8d88a19db0e07c59db16e874e3d0434d8463"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x49ca5e188c538b4f2efb45552f13309cc0dd1f3592eee54decfc9da54620c2ec"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Phalcon_xyz/status/1782966566042181957"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-04/YIEDL_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T11:26:25Z",
-      "note": "Reviewed the successful constructor receipt and call trace, commit-pinned technical reproduction, published analysis, direct creation receipt, archive runtime code and balances, EIP-1967 slots, the sender's later transaction history, and independently preceding BTC and ETH prices. The anchor succeeds at block 38126754 index 18, timestamp 1713921883, and its constructor trace reaches direct Yiedl vault 0x4edda16ab4f4cc46b160abc42763ba63885862a4. The reproduction and analysis establish that the vault's redeem path forwarded caller-supplied router calldata without validating the recipient. Across 50 iterations in this one receipt, Transfer logs show exact vault outflows of 75,635.138375994372050770 USDC, 0.521372360835400072 BTCB, and 8.333778171625678105 ETH, with zero vault inflows or returned units. Archive balances from block 38126753 to 38126754 fall from 118,954.909835626232308114 to 43,319.771459631860257344 USDC, 0.819986629305181478 to 0.298614268469781406 BTCB, and 13.106921627719034641 to 4.773143456093356536 ETH, reproducing every receipt aggregate exactly. Later transactions from the same sender do not touch this vault or return these three assets and are outside this single-vault boundary. USDC is valued at par. The closest preceding DefiLlama observations are BTC $66,694.07624704877 at 1713921749 and ETH $3,229.94 at 1713921683, respectively 134 and 200 seconds before the incident; component values total $137,325.189830315. The vault was directly created by 0xc0aacf2a87bbdfff6e582762a7c4259ead5aee30 in 0x62c3b5ca...53a1 at block 38105870 index 113, timestamp 1713859068. Code is absent one block earlier, and the 24,569-byte runtime hashes to 0x74b96155073c5af9228ac8e09d90dc6d34e2eb420c0db651038ebc4c10e6bcca at creation and immediately before the incident. The EIP-1967 implementation, admin, and beacon slots are zero. Deployment is therefore the latest age reset, 1713921883 - 1713859068 = 62,815 seconds."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x62c3b5ca0e8139994f3c66406a7fab4ccb75f8283c32036807b47c7040f953a1"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1713921800/coingecko:bitcoin?searchWidth=4h",
-      "observedAt": 1788002785
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama Coins API",
-      "url": "https://coins.llama.fi/prices/historical/1713921800/coingecko:ethereum?searchWidth=4h",
-      "observedAt": 1788002785
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-04/YIEDL_exp.sol",
-    "seed:yiedl:2024-04-24:yiedl-vault-forwards-caller-supplied-1inch-calldata"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 320079.43,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "118954.262651602768097854",
+        "usd": 118954.26
+      },
+      {
+        "token": "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
+        "symbol": "BTCB",
+        "amount": "0.819982168100119185",
+        "usd": 54767.43
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "13.106850318428094218",
+        "usd": 42356.6
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "27600.152278269853130985",
+        "usd": 27654.19
+      },
+      {
+        "token": "0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd",
+        "symbol": "LINK",
+        "amount": "1372.368009715342289201",
+        "usd": 20986.43
+      },
+      {
+        "token": "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+        "symbol": "ADA",
+        "amount": "38078.097671255410754868",
+        "usd": 19165.66
+      },
+      {
+        "token": "0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+        "symbol": "SOL",
+        "amount": "121.541863701729158233",
+        "usd": 14420.65
+      },
+      {
+        "token": "0xcc42724c6683b7e57334c4e856f4c9965ed682bd",
+        "symbol": "MATIC",
+        "amount": "15808.888864123598014989",
+        "usd": 11675.84
+      },
+      {
+        "token": "0x7083609fce4d1d8dc0c979aab8c869ea2c873402",
+        "symbol": "DOT",
+        "amount": "780.698552201519952669",
+        "usd": 5706.91
+      },
+      {
+        "token": "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
+        "symbol": "XRP",
+        "amount": "8046.515156603757055725",
+        "usd": 4391.46
+      }
     ]
   },
+  "refs": [
+    "https://twitter.com/Phalcon_xyz/status/1782966566042181957",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/YIEDL_exp.sol"
+  ],
   "notes": [
-    "Replaces the seed's rounded $135,000 estimate with exact single-vault depletion and independently preceding prices for both non-stable assets."
+    "The reset is the operator approveAsset giving the 1inch router the vault's BTCB allowance (0 to max), the latest allowance the anchor's swaps spent; USDC and ETH were approved earlier. The operator rotationSwaps that filled the vault is normal operation.",
+    "Campaign: every later tx in which the vault paid out tokens without burning shares (9 more by the attacker, 88 by nine unaffiliated copycat senders through block 38127860); the only other outflows are two share-burning user redeems. SOL is unpriced and valued at the 23.787 WBNB its swaps realised."
+  ],
+  "campaign": [
+    "eip155:56:0x4b0270b86d2073aa94004f01a244b7dd53a69c714e36a7b106698ccbb31a86bf",
+    "eip155:56:0x6fb1374910939cc6f1ffc7cb1ab369eeed58ae40e65caeb8d099603413e1854e",
+    "eip155:56:0x03e18e29c745a382dfd6d4cc04fe80b9bd0ba933920366109fc52bd97fb613d8",
+    "eip155:56:0xd1f6cf9cb6fe79cd8c1b59040c2dc76006eaed116b1116d9fdca13fe85c43a1d",
+    "eip155:56:0x0f0d41cb8af42babb043d1ede58ee1f3ab8f87c2c50d5a08c3a12d89cb330299",
+    "eip155:56:0x8ac5c000ab5dab60f22659ebfce5fa92e32d4b83213a6810dfe926fd12f76ab5",
+    "eip155:56:0x7e8f84ca07bbb4c9e09dc7460d960a770b520b44b7aa52977cca9e8dd1c3f51b",
+    "eip155:56:0x06a279c31f7fc8d08c739bcae969e363765fae0a2aa68845c29073bb88085143",
+    "eip155:56:0x90df9f7a6810c8378fee11db04f74d4b128031053bf867e7b111d122c8cb4b86",
+    "eip155:56:0x62ee0de3497a6a79bb571638859f6b9ad4fa33ec0a8fe545e60b420473e701b4",
+    "eip155:56:0xeda84392c5d9b3233a94118951d8a395aad0e340642264c0d7563152383a3d92",
+    "eip155:56:0x7e172a7b5309194f8393633124630a3b55988b545849ed7c85aa2d0e413794ef",
+    "eip155:56:0x93d4276e4b3c63729d1ec26a38393ab1e388fa426666446a58b56b7f5f9c833f",
+    "eip155:56:0xdbc88f4fbb748803e55dc361d2f5b5fff3ee6d9ba473161732a595a9fdd00d46",
+    "eip155:56:0x7b57da06f0b72672aad9361db8cfbb48e605993c6befa23942683f1dffa76119",
+    "eip155:56:0x969fd81d41a3b064f7fc950c6e35e17181fc6c7c636a562539c7403f51ff4764",
+    "eip155:56:0xe8c5d1e527b82ac2d8b5d9b83efc524cfaf53a8bad91452be35a9c9d31b19860",
+    "eip155:56:0xf1eda5aa8ef10ad987f978a14946cd0610cfc6fe0e2f6bfd657b81dd1698dfee",
+    "eip155:56:0x188ce066130f230376c3c12bd50357ae60bd957048e829d136fc5a8a44c566b8",
+    "eip155:56:0x98e5d205c9ca5814f42b565edb2e921461b99e93e9e43fa7e3a3286d7293e422",
+    "eip155:56:0x0588e14793268aeb72f0e82fdf99341b3e7ce45502385acb099416250e06360a",
+    "eip155:56:0x3629ad588ac120163792e92b6c43bd4bdc5bf35cac66eb7f3a0267df93abc849",
+    "eip155:56:0x0a89b8670c40b4067b9522a5933c3bf8c44c968103aa642b04c65d49ad9e6457",
+    "eip155:56:0x9eaad0cc55a967edc8e37c1b232bdc02ae78a52810c34d540b84d038ddeca793",
+    "eip155:56:0x3b78deb81fa184e384963f2732f166215a5840191f39aaac03a69b4ea9273a85",
+    "eip155:56:0x977fc3e2c329a93bf0321481b68a29341d1a82294ed4b7eae6f0ffd45a7c32e3",
+    "eip155:56:0x5e468cba495e5f6165418fb9d87d824309c54261055425f33f588dd3b3abbcea",
+    "eip155:56:0x9b9a94835854bc026c0ee4c0bc1220bcb81c5611cc671b3e8a862cd05b2755ca",
+    "eip155:56:0xdcc458e671e7f10d188f80131c9fc177ef18adf463523ee732f621e1e85f3603",
+    "eip155:56:0xee8b950e94bd861557d13ea278a8de6c7653bd28071b33c4673b084a42b97e1f",
+    "eip155:56:0x46a4d3e78037f688874d6103bac2577f8465c2d60d6bab5189b461cf3e074855",
+    "eip155:56:0x8710034dadecfc8c26f651c612f613fffdece6e2f9957b9ec8ab843218168c1d",
+    "eip155:56:0xd56e3e057d8f9185973629385ee438b903ddc59a8ea4bf74737c216fb375f50f",
+    "eip155:56:0x73df62a381aa3ac76d950f065bc44b4b80e101a6538e2a4267ab1163e61fb12f",
+    "eip155:56:0xd88887af3909d78557653a06582a04dd4929aca2a45096d9fc0b23aba0d9d2df",
+    "eip155:56:0x32b4ba72528afd8fbedac22f4f95ea5c7c7131fc55ef62d0211be4b48df263a5",
+    "eip155:56:0xfa7148853beb13152d142c124ead8268aaf81324ff060ec002dc29efaa262064",
+    "eip155:56:0x660df8973a1ec18c39e0d2c579228c2ba348fd48062e936b0343e3aac2ad6641",
+    "eip155:56:0xede5abb7d1115bc7dd95aec7c961aacd0213d3130d08eff3d1394754bf96257b",
+    "eip155:56:0x9da398ed274c8cfa774b36003fa8c930d3430d0fc5889b5008830fd6463f68a9",
+    "eip155:56:0x63e75e935987b2cf6653f46732062e36047bf4efc1f87c21eccf37bc27deb652",
+    "eip155:56:0xb3e7d124050ae4af5ae7cc1ae441cf135c4771c1289759d3eb86d94178dc7be1",
+    "eip155:56:0x2e3d4332f66a334e0170187011ed673dc222f95bf4443b618e08f8052437ef7a",
+    "eip155:56:0x454f4c1bb05519a71c1712195abac1c6904d5a33c9c132782959737b0b75ff35",
+    "eip155:56:0x718d5fd26995fa4abcfe60fb693eb9cf829c760e99f2df36a194b577bd107b93",
+    "eip155:56:0xa4cba51fd7a695bb9a7128da35c1a131e9d12bd7b2a7cca914983b44843b25cf",
+    "eip155:56:0x1c244cc81cd6b697a916deea0995329069ea824667a212d2e21d2d814c03c194",
+    "eip155:56:0x9f8777beaafc3490ebff58030f739ee637ad1a78759c3dd3ddc99ccda113dd76",
+    "eip155:56:0xf1b9d7b76339dd85d48f6546c5e7c08f218ee7a451b2a438ab619a6abbed32a3",
+    "eip155:56:0x9cb9961cf3b3db20bef818b2070a161cf11d4ae397b4b144c62d787480f265cc",
+    "eip155:56:0xf62c6b2dde9d58434cb09ef42cfbc52ce3c1c06bf8995a14e5cfcee52807b549",
+    "eip155:56:0x1b8cb743a3be56a362124307e66113ad8097ef849f33ff5960fdf48d04c3a264",
+    "eip155:56:0xaf8f1404defcc02e1f6805e2513a80f77683bf060dafa146b22b29316f4229db",
+    "eip155:56:0xfefdce77af01d98ecc29e91847e88f859323afcde6082e6259c06c630ccfcf10",
+    "eip155:56:0xbc95982102163fdd4e4b84360a4f9e662d2b941130cd076521a961e73ff8a15a",
+    "eip155:56:0xaa33d1e8149f41a966653c4cc1edb896a39f6042eb93b3beaf4a8714c159e2c3",
+    "eip155:56:0xb56e0e8b425f1a316364cd149a5b2c1fd499d923e408127c8dc627f58c525591",
+    "eip155:56:0xe2342c20ee5dc1420ee7c9f3c57bc0c0059ac097f495a9ffec8358da5e9f000b",
+    "eip155:56:0x7e00934ab57806fb05c24ebc5c6258dc98cafa29b7417e8acbf5280e31994f4f",
+    "eip155:56:0x4df2fbbedbdb034e8e1e235ff50296f5096106d5bd82ed3ab02c9b8ac1ec3ac0",
+    "eip155:56:0x9fcae77844d25831c66bde9c039969a178014105e11a30e2f64e7bc516758b57",
+    "eip155:56:0xb8cc6c2a8452c190acaf6dd560b6848d33edeb09247cb73798fed1131fb016a0",
+    "eip155:56:0x29f8c428c7df3e101e3a09f6bdba060f4e5ccd25c13b3c6ced07407e2ec2004f",
+    "eip155:56:0x5a15fdc57c35f2305aaa0bb95b109ad412b17406d737d137190fe5867393339d",
+    "eip155:56:0xe339fca9aa4f1ee990cfb1f225759677a4f28599a70479979aedeb5a4fb3c5f6",
+    "eip155:56:0x6c0b6c7f313fc15e515612ea370dc106621583898aa51de02794a9d72dac748e",
+    "eip155:56:0xbedbf080d73afc6bc7ca73fe2026e429d858924562fef9fcf53227ca1b448def",
+    "eip155:56:0x26986c0edbe2a8cc26cb01fc72810877e22466ffebae46ce64ec2c1bc82d830e",
+    "eip155:56:0xa2984d4415a7560532bb1bfd5b67ff4a7a938c6cae41605f2700d22e7f4db36d",
+    "eip155:56:0x10ba6ac476bf7676f530f0ea5f965ab00b0e01e37826c25f4ef1cfd21de30295",
+    "eip155:56:0x6a4803bdc7acaeca7513a5e94f0ae89236199f0fb21bf1c4fecced15048b8b33",
+    "eip155:56:0x943d4621524724942ad4c618cacf147a574694e5f4885f9c4d73bef8eecfe95b",
+    "eip155:56:0xc63179b637be2d6f900dafaa42145f88b5922d7511fc48b8aee73fed0c1391ec",
+    "eip155:56:0x702cd4999e143679e55abf43f3b42077abe93d992825c2fb91ccf29b9aaae05d",
+    "eip155:56:0x4ddb3e813ef1bf0cd88e5580e936225bb21477a4b962ca9794cb46655156d924",
+    "eip155:56:0x1149e103d1ee0d5844589fbd51d575eea2255ef85730eda716defbb31ac40f74",
+    "eip155:56:0x3b110b34d8534126d1b2fcb44843202a0ceafa622e25afce4bba2b4be51060f3",
+    "eip155:56:0xc50201d01d97954abaf88143d9a20072a58002f85be8463934d35ad36cb8f2bf",
+    "eip155:56:0x24b14a05dca990f6fc232c83fefb03c43dd2020c703735ebbf2b96d73be8325c",
+    "eip155:56:0x52f984fcb49169340f8a2c06f707aefb6b4e3d26b7f240d8119a4040357ab352",
+    "eip155:56:0xa519b66913fd4a0789f996b1b7945e9da15c6e8822e2c314ad57cfc2dbee158e",
+    "eip155:56:0xfbdbe0588087db6866d8b9f7fb5af50f7844e155cb2804bebd70f1a7a341bedc",
+    "eip155:56:0xa3c0a889bd235d1e6af192c0d6ae6a6a1c2dff62099a49402d7fd93450d06281",
+    "eip155:56:0x8ef3765665cd849cdf9132ab37caf6aa0f891e1f7d9f418f86a6ab6ea38b6f5b",
+    "eip155:56:0xc93b5f7a78d97a5fea07b1cf5b7b33659ed8a54a77237c1b6fd09d7162f5312c",
+    "eip155:56:0xfa0228faf61f67e91114153264e534878cd3ab784de6c928987a2b14ec53e579",
+    "eip155:56:0xd78eaca4675e6e5b02d78da173c8d607b922d7bdf6efc3218d473fc7acf2fe94",
+    "eip155:56:0x3e9ba1003d27ab9af782b960521a45fd97ce525ae706885289728d7d6f4f3c1b",
+    "eip155:56:0xe9902a2955e47f4c513f738df5979c04df4cbe5492790935dfecac21c3f06241",
+    "eip155:56:0xa9fa04b033afbed2218679aea92e9429a5f7839d0b4c65358ebf9ba20efcd021",
+    "eip155:56:0x6db3b4797383f9bdab808ec004b7efab5cf02b8e340ed93730cda361b1b800af",
+    "eip155:56:0x97f5d3a06fb631da3644792619d423becf8467a8853d483718b0310fd00bb6df",
+    "eip155:56:0x5e97c6d06f94be7c0d07854149422644c5a0cf7758dd37bc2523e4250f51c4b9",
+    "eip155:56:0xbe66749cd73547b98d1bcb4141ef7029574d30d2f1e5e519c27c4610cd5dcda6",
+    "eip155:56:0xeff168a7d356c2796134c6e8c72c1b14f1e11478b1fa7204ee6129ce6a9f1c52",
+    "eip155:56:0x93cdda9370a493fbd1b843e68e900dba726e3167f528c210fd2b34f285ed62a2",
+    "eip155:56:0xda37bf4c29a5fcb1496fb0373c19e8b8e442c137638612a44aa500578aa55476"
   ]
 }

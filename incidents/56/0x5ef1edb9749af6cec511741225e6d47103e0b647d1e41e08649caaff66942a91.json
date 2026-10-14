@@ -1,148 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x5ef1edb9749af6cec511741225e6d47103e0b647d1e41e08649caaff66942a91",
-  "protocol": {
-    "name": "IPC",
-    "slug": "ipc-token"
-  },
+  "protocol": "IPC",
   "name": "IPC sells burn the pair's balance",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x5ef1edb9749af6cec511741225e6d47103e0b647d1e41e08649caaff66942a91",
-      "blockNumber": 45561316,
-      "transactionIndex": 1,
-      "timestamp": 1736265142
-    },
-    "attackerAddresses": [
-      "0x09ea8b5e546914746f3dc686ac164486a607fb7b",
-      "0x3be77a356848cf7220503e62e93dfd0ff3f0074a"
-    ]
-  },
-  "summary": "IPC's transfer hook implemented a sell by subtracting destroyNum from the IPC/USDT pair's IPC balance and immediately syncing the lower reserve, rather than charging the seller. Repeated permitted swaps therefore ratcheted down the pair's IPC reserve and let the attacker deplete its USDT side.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 591934.2039530536,
-      "valuationTimestamp": 1736265142,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "591934.203953053577941826",
-        "usdValue": 591934.2039530536,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1736265142,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross pre-recovery loss is the IPC/USDT PancakeSwap pair 0xde3595a72f35d587e96d5c7b6f3e6c02ed2900ab's exact net USDT outflow in the single successful exploit transaction; the attacker EOA receives the same amount. USDT is valued at par. The pair's IPC balance reduction is the defect's mechanism and is not added as a second loss component. A transaction three seconds earlier, cited in technical reproductions as an earlier attempt, failed with no logs or loss and is excluded. No recovery was identified."
-  },
+  "summary": "The IPC token burns a pending destroyNum of IPC straight out of its PancakeSwap pair and calls sync() on every sell, and each sell adds half its size to destroyNum. Inside flash loans the attacker repeatedly flash-swapped IPC out of the pair and sold it back, so each round burned pair-held IPC and lifted the price, then sold into the inflated USDT reserve.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xeab0d46682ac707a06aefb0ac72a91a3fd6fe5d1",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xeab0d46682ac707a06aefb0ac72a91a3fd6fe5d1",
-        "codeHash": "0x74fb3560e8d552944bc9e3190ea19ff2b120d39484142a94381eaf273b72861c"
-      },
-      "deployment": {
-        "timestamp": 1735622224,
-        "blockNumber": 45347025,
-        "transactionHash": "0x5894b4e70f6323951e8b81c63f5440e4855777e267f1b0bc7f9e1b7353d6a129",
-        "transactionIndex": 61,
-        "creatorAddress": "0x94f91f4b610fa3c112e26a742baf5602b46d6035"
-      },
-      "ageReset": {
+      "address": "0xeab0d46682ac707a06aefb0ac72a91a3fd6fe5d1",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct non-upgradeable token deployment. Runtime hash 0x74fb3560e8d552944bc9e3190ea19ff2b120d39484142a94381eaf273b72861c is identical at deployment block 45347025 and pre-exploit block 45561315. Sourcify also has exact creation-bytecode and runtime-bytecode matches, and the verified Token source contains neither a proxy mechanism nor a code-replacement path; deployment is therefore the only code-change anchor."
-      },
-      "codeAgeSeconds": 642918,
-      "failureModeId": "failure:ipc-sell-hook-burns-pair-reserve",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x5894b4e70f6323951e8b81c63f5440e4855777e267f1b0bc7f9e1b7353d6a129"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5ef1edb9749af6cec511741225e6d47103e0b647d1e41e08649caaff66942a91"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://x.com/TenArmorAlert/status/1876663900663370056"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-01/IPC_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5894b4e70f6323951e8b81c63f5440e4855777e267f1b0bc7f9e1b7353d6a129"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://crypto.training/hacks/2025-01-ipc/"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T11:23:02Z",
-      "note": "Onchain review identifies the attacker EOA 0x09ea8b5e546914746f3dc686ac164486a607fb7b calling helper 0x3be77a356848cf7220503e62e93dfd0ff3f0074a, which invokes the direct IPC token target. Receipt Transfer-log netting gives IPC/USDT pair 0xde3595a72f35d587e96d5c7b6f3e6c02ed2900ab -591934.203953053577941826 USDT and the attacker EOA the exact positive delta. The immediately preceding reported attempt, transaction 0x3a3683119e1801821faa15c319cb9c8fb3fcf6ee92b1904a829d82c432e09a44 at block 45561315, failed and emitted no logs, so the retained anchor is the earliest successful loss-finalizing transaction. Sourcify reports exact creation and runtime matches for IPC at https://sourcify.dev/server/v2/contract/56/0xeab0d46682ac707a06aefb0ac72a91a3fd6fe5d1?fields=all. In verified Token.sol, the sell branch calls _destroy(destroyNum), whose lines 282-284 subtract burnNum from balances[pair] and call pair.sync(); this code defect is in the token runtime itself. Direct CREATE transaction 0x5894b4e70f6323951e8b81c63f5440e4855777e267f1b0bc7f9e1b7353d6a129 deployed the token at block 45347025, index 61, by 0x94f91f4b610fa3c112e26a742baf5602b46d6035. Historical eth_getCode returns the recorded runtime hash at both deployment block 45347025 and pre-exploit block 45561315. The exact-matched non-proxy source has no code-change mechanism, so age is measured from that deployment."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 590115.78,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "591934.203953053577941826",
+        "usd": 590115.78
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://x.com/TenArmorAlert/status/1876663900663370056",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-01/IPC_exp.sol",
+    "https://crypto.training/hacks/2025-01-ipc/"
+  ],
+  "notes": [
+    "Later owner actions (setPool, renouncing ownership) and opening trading do not touch the burn logic; the pair's creation is not a change to the token, so the deployment is the reset.",
+    "The pair was drained in this single transaction; an attempt seconds earlier reverted. The sender paid a builder bribe; no earlier exercise of the burn appears in the pair's history."
+  ]
 }

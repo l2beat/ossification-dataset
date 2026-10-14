@@ -1,159 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xcc36283cee837a8a0d4af0357d1957dc561913e44ad293ea9da8acf15d874ed5",
-  "protocol": {
-    "name": "PLN",
-    "slug": "pln"
-  },
+  "protocol": "PLN",
   "name": "PLN permissionless liqBurnAt pair-reserve destruction",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xcc36283cee837a8a0d4af0357d1957dc561913e44ad293ea9da8acf15d874ed5",
-      "blockNumber": 20681143,
-      "transactionIndex": 165,
-      "timestamp": 1725500183
-    },
-    "attackerAddresses": [
-      "0x67404bcd629e920100c594d62f3678340f40d95a",
-      "0xbe01c53ad466ef011e3f8a67f6e23c34e2e9976c"
-    ]
-  },
-  "summary": "PLNTOKEN._transfer contains an unauthenticated branch that destroys the Uniswap V2 pair's own token reserve: when the sender or the recipient is fee-exempt and the recipient is 0xdead, it calls liqBurnAt(), which _basicTransfer's balanceOf(uniswapV2Pair) - minimumTokens from the pair to the dead address and then calls IUniswapV2Pair.sync(). Nothing restricts who may reach that branch, and transferFrom needs no allowance for amount 0 because it settles the allowance with SafeMath.sub(allowance, 0). The attacker therefore bought PLN, called transferFrom(0x3f5a63b89773986fd436a65884fcd321de77b832, 0xdead, 0) to burn 497,295,516.022683914 of the pair's 497,295,616.022683914 PLN and resync the reserves, and sold its position back into the emptied pool. The invariant broken is that an ERC-20 transfer may only move the caller's own approved balance; here a zero-value call moves and burns a third party's liquidity. No parameter repairs it: minimumTokens only sets the burn floor, and the branch stays reachable by any caller at every value.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 405988.81044600555,
-      "valuationTimestamp": 1725500159,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "164.993847285453536788",
-        "usdValue": 405988.81044600555,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1725500159,
-          "unitPriceUsd": 2460.63,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depletion of the PLN/WETH Uniswap V2 pair 0x2b818dd5134cd1761decdeaa157683a83d32c849 in the single exploit transaction. The pair held 165.0 WETH before the campaign (Sync log 0x1a0 reports 165.9 WETH after the attacker's 0.9 WETH buy) and 0.006152714546463212 WETH after (Sync log 0x1a9), so victim depletion is 164.993847285453536788 WETH. The attacker's own 0.9 ETH seed is an attacker-supplied input and is netted out; the attack contract's realised gross proceeds were 165.893847285453536788 WETH, unwrapped and forwarded to the EOA in the same transaction. The 497,295,516.022683914 PLN burned out of the pair is the mechanism, not a separate loss: PLN has no price series independent of this pool and valuing it would double count the WETH already taken. WETH is liquid and deep, so the spot DefiLlama price applies; only PLN was repriced by the attack. The seed row's round 400,000 USD is close but unsourced."
-  },
+  "summary": "PLN's _transfer called liqBurnAt, burning all but a floor of the Uniswap pair's PLN and syncing it, whenever a fee-exempt party sent to 0xdead. transferFrom settled the allowance after the transfer, so a zero-amount transferFrom from the exempt team wallet to 0xdead let anyone empty the pair's PLN reserve and sell a small buy back for its WETH.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe0c218e1633a5c76d57ff4f11149f07bfff16aea",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe0c218e1633a5c76d57ff4f11149f07bfff16aea",
-        "codeHash": "0x8246a8bc7771bc158a61321adfb61b54e1c780aafabce9bd56c14801dfc01a48"
-      },
-      "deployment": {
-        "timestamp": 1725499283,
-        "blockNumber": 20681068,
-        "transactionHash": "0x605b3ac6ee0033c4f104b299dea8b914b68f0046674e910ade9c8b92957b895c",
-        "transactionIndex": 21,
-        "creatorAddress": "0x0e0821bf742b68e2e2eedf84a7d9179e1608e3c7"
-      },
-      "ageReset": {
+      "address": "0xe0c218e1633a5c76d57ff4f11149f07bfff16aea",
+      "reset": {
         "kind": "deployment",
-        "description": "PLNTOKEN is a plain non-proxy Solidity 0.8.19 contract created by a top-level CREATE from the EOA 0x0e0821bf742b68e2e2eedf84a7d9179e1608e3c7. Its 9,810-byte runtime hashes to 0x8246a8bc7771bc158a61321adfb61b54e1c780aafabce9bd56c14801dfc01a48 both at the creation block 20681068 and at block 20681142 immediately before the exploit, and the address is empty at block 20681067, so deployment is the only executable-code change."
-      },
-      "codeAgeSeconds": 900,
-      "failureModeId": "failure:pln-permissionless-liqburn-pair-reserve-destruction",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x605b3ac6ee0033c4f104b299dea8b914b68f0046674e910ade9c8b92957b895c"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xcc36283cee837a8a0d4af0357d1957dc561913e44ad293ea9da8acf15d874ed5"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-09/PLN_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Target confirmed, root cause rewritten, loss reconstructed. The token's ERC-20 name string is Planet Finance and its symbol is PLN; it is a two-week-old Ethereum token unrelated to the 2021 BSC Planet Finance/AQUA protocol. The seed row's summary said 'transfer/reflection logic manipulated to profit buying and selling around a transferFrom trigger', which does not name the defect. I read the Etherscan-verified PLNTOKEN source (Solidity 0.8.19, contract PLNTOKEN) at 0xe0c218e1633a5c76d57ff4f11149f07bfff16aea and matched it against the runtime: _transfer's fee-exempt branch runs 'if (sender != address(this) && recipient != address(this)) { if (recipient == address(0xdead)) liqBurnAt(); }' and liqBurnAt does _basicTransfer(uniswapV2Pair, deadAddress, balanceOf(uniswapV2Pair) - minimumTokens) followed by pair.sync(); the runtime confirms this with the 0xdeac-complement equality test at 0x1a1a and the 0xfff6cae9 sync call inside 0x1d7e. transferFrom settles the allowance with _allowances[sender][msg.sender].sub(amount) so amount 0 clears any allowance requirement, and 0x3f5a63b89773986fd436a65884fcd321de77b832 is the constructor-set project wallet in packed slot 4 that the constructor marks isExcludedFromFee, so any caller can fire the burn. The defect is in the token, not in the Uniswap V2 pair 0x2b818dd5134cd1761decdeaa157683a83d32c849, which runs stock UniswapV2Pair code and only executes sync(). Anchor kept and shown to be first: the attacker EOA 0x67404bcd629e920100c594d62f3678340f40d95a had nonce 0 at block 20681142, spent nonce 0 on the creation of the attack contract 0xbe01c53ad466ef011e3f8a67f6e23c34e2e9976c in 0x53da5c9cc9a83401870056690205b3767f5a90b7692729ba8fed219b0d970e3f, and this transaction is nonce 1, status 1 at block 20681143 index 165, timestamp 1725500183; its only later transaction moves the proceeds out. The EOA was funded 0.9936275280854 ETH from 0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936 at block 20659007, before PLN existed, so it is not the deployer. Trace via debug_traceTransaction callTracer: WETH deposit of 0.9 ETH, swapExactTokensForTokensSupportingFeeOnTransferTokens into 2,704,383.977316086 PLN, transferFrom(projectWallet, 0xdead, 0) whose only external effect is the pair's sync(), then a sale back to 165.893847285453536788 WETH and a withdraw forwarded to the EOA. Receipt logs reproduce the burn exactly: Sync 0x1a0 shows 165.9 WETH / 497,295,616.022683914 PLN, Transfer 0x1a2 burns 497,295,516.022683914 PLN from the pair to 0xdead, Sync 0x1a3 shows 165.9 WETH / 100.000000000 PLN, and Sync 0x1a9 leaves 0.006152714546463212 WETH. Code history: created by top-level CREATE in 0x605b3ac6ee0033c4f104b299dea8b914b68f0046674e910ade9c8b92957b895c at block 20681068 index 21, timestamp 1725499283, from 0x0e0821bf742b68e2e2eedf84a7d9179e1608e3c7; keccak(eth_getCode) is 0x8246a8bc7771bc158a61321adfb61b54e1c780aafabce9bd56c14801dfc01a48 at both 20681068 and 20681142 and the account is empty at 20681067, so no proxy, no upgrade, one code state. Age 1725500183 - 1725499283 = 900 s. The deployer added the 165 ETH / 500,000,000 PLN of liquidity himself 48 s before the exploit in 0xfdb5249679bba34ad713af91e74b171aceb884299a2fd3566abdbbf3b402d508, which is an exposure change and not a code change, so the age basis stays the token deployment. Boundary test applied: minimumTokens is only the burn floor, the branch is reachable by any external caller at every setting, so this is a code defect and not a configuration."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x605b3ac6ee0033c4f104b299dea8b914b68f0046674e910ade9c8b92957b895c"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1725500183/ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      "observedAt": 1787702308
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xfdb5249679bba34ad713af91e74b171aceb884299a2fd3566abdbbf3b402d508"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://x.com/TenArmorAlert/status/1831525062253654300"
-    }
+  "campaign": [
+    "eip155:1:0x6fbb95edcc32b59bea918eb6a7eabca3179eae56693b66af05a11e3468e7388e"
   ],
-  "discovery": [
-    "dfhl:src/test/2024-09/PLN_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 406003.86,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "164.999966164440113324",
+        "usd": 406003.86
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-09/PLN_exp.sol",
+    "https://x.com/TenArmorAlert/status/1831525062253654300"
+  ],
+  "notes": [
+    "launchLPs (4 blocks before the exploit) created the pair, stored it as uniswapV2Pair and seeded it; like openTrading elsewhere this is the token's launch, not a change to the vulnerable code or rules, so the deployment stays the reset.",
+    "The campaign tx is a bot reusing the attacker's unprotected contract two blocks later on the pair's leftover WETH. The burned PLN is the mechanism and is not valued separately; the loss is the pair's WETH net of the attackers' own buys."
+  ]
 }

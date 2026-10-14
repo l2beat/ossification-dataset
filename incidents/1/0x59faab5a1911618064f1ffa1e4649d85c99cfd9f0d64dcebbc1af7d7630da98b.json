@@ -1,191 +1,46 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x59faab5a1911618064f1ffa1e4649d85c99cfd9f0d64dcebbc1af7d7630da98b",
-  "protocol": {
-    "name": "Yearn",
-    "slug": "yearn-ydai"
-  },
+  "protocol": "Yearn",
   "name": "Yearn v1 yDAI loose Curve slippage configuration",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x59faab5a1911618064f1ffa1e4649d85c99cfd9f0d64dcebbc1af7d7630da98b",
-      "blockNumber": 11792184,
-      "transactionIndex": 7,
-      "timestamp": 1612473160
-    },
-    "attackerAddresses": [
-      "0x14ec0cd2acee4ce37260b925f74648127a889a28",
-      "0x62494b3ed9663334e57f23532155ea0575c487c5"
-    ]
-  },
-  "summary": "Yearn's controller selected StrategyDAI3pool for the v1 DAI vault while the strategy's slippage allowance was 1% and the vault's earn() function was permissionless. In each exploit round the attacker imbalanced Curve 3pool, deposited DAI into yDAI, called earn() so the strategy added that DAI near the configured minimum, restored the pool, and withdrew. Eleven transactions repeated the loss-making round trip before Yearn disabled further investment.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 11072464.48854697,
-      "valuationTimestamp": 1612475535,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-5",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "11072464.488546969286678676",
-        "usdValue": 11072464.48854697,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1612475535,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-2",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross pre-recovery loss to the shares outstanding before the campaign. Immediately before the anchor, at block 11792183, yDAI totalSupply was 31,494,626.844158695810766902 and getPricePerFullShare was 1.110058316613691736 DAI. After the eleventh and final defect-executing transaction, at block 11792351, getPricePerFullShare was 0.758491538466562243 DAI. Their product, (1.110058316613691736 - 0.758491538466562243) * 31,494,626.844158695810766902, is 11,072,464.488546969286678676 DAI. Using only the opening supply excludes attacker-supplied temporary deposits and later users' shares. The attacker's final Curve unwind at block 11792373 raised the onchain share price by 4.067954716 DAI across the opening supply; gross pre-recovery depletion remains the value before that recovery. DAI is valued at par.",
-    "realizedAt": 1612475535
-  },
+  "summary": "StrategyDAI3pool, the v1 yDAI vault's strategy, added and removed Curve 3pool liquidity with a loose 1% slippage allowance, and the vault's earn() was permissionless. Each round the attacker imbalanced 3pool, deposited DAI into yDAI, called earn() so the strategy added it at the skewed rate, rebalanced the pool, and withdrew at the vault's expense.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9c211bfa6dc329c5e757a223fb72f5481d676dc1",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x9c211bfa6dc329c5e757a223fb72f5481d676dc1",
-        "codeHash": "0xdca6ecc6d43890257a6aec9c2151af3ef7e0a41520bdb126edd95805cb420871"
-      },
-      "deployment": {
-        "timestamp": 1610950772,
-        "blockNumber": 11677579,
-        "transactionHash": "0xe5eb5e62d9fca7d41bf769b66b576af15379abe8962abd60557a2538f14c01bb",
-        "transactionIndex": 61,
-        "creatorAddress": "0x710295b5f326c2e47e6dd2e7f6b5b0f7c5ac2f24"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1611082219,
-        "blockNumber": 11687459,
-        "transactionHash": "0x49d62533adb1131d476ff0a4f67d5a41ba1e65c2ceeb1de54eb8ad9d4f87bf8e",
-        "transactionIndex": 12,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x9e65ad11b299ca0abefc2799ddb6314ef2d91080",
-          "callData": "0x39ebf8230000000000000000000000006b175474e89094c44da98b954eedeac495271d0f",
-          "valueBefore": "0x000000000000000000000000aa880345a3147a1fc6889080401c791813ed08dc",
-          "valueAfter": "0x0000000000000000000000009c211bfa6dc329c5e757a223fb72f5481d676dc1"
-        },
-        "description": "The Yearn governance Safe approved StrategyDAI3pool and changed Controller.strategies(DAI) from 0xaa880345a3147a1fc6889080401c791813ed08dc to 0x9c211bfa6dc329c5e757a223fb72f5481d676dc1. This made the strategy's constructor-set slip value of 100 (1%) active for the yDAI vault. No later pre-exploit setStrategy call changed the DAI entry and no setSlip call reached the strategy."
-      },
-      "codeAgeSeconds": 1390941,
-      "failureModeId": "failure:yearn-v1-ydai-loose-curve-slippage",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+      "address": "0x9c211bfa6dc329c5e757a223fb72f5481d676dc1",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x49d62533adb1131d476ff0a4f67d5a41ba1e65c2ceeb1de54eb8ad9d4f87bf8e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x59faab5a1911618064f1ffa1e4649d85c99cfd9f0d64dcebbc1af7d7630da98b"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x59faab5a1911618064f1ffa1e4649d85c99cfd9f0d64dcebbc1af7d7630da98b",
-        "0xf39f41363694a609569a48b65d61bd1c31f0c54597d146880abb862f1ba4d25c",
-        "0xebb0f4373c8add3ac012a2801279b48affc19252719dfc72efb900eda9121057",
-        "0x34626e684ddebea1eb203022dfea2a7ee0dcf48d26f52eaf99ee26b5d1513a67",
-        "0x9831f1aac10125cf3b4be769459969ba2aa7294c9dee7defaceef8cf88a5fea1",
-        "0xf6022012b73770e7e2177129e648980a82aab555f9ac88b8a9cda3ec44b30779",
-        "0x97ef50880551e66efd1fdc1bf2910adf9c825a4b040efcfa557b20eda4b555fb",
-        "0xb64d16230c0b18505e038c27e16097edf489648efd87c7a498c2dcc0cfa9bd7d",
-        "0x9b34850afb0bd8e3aa5ebd3eed497074112b7dd5ed5a9ec34a92ad8129cf8517",
-        "0x6dc268706818d1e6503739950abc5ba2211fc6b451e54244da7b1e226b12e027",
-        "0xb094d168dd90fcd0946016b19494a966d3d2c348f57b890410c51425d89166e8"
-      ]
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x49d62533adb1131d476ff0a4f67d5a41ba1e65c2ceeb1de54eb8ad9d4f87bf8e"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe5eb5e62d9fca7d41bf769b66b576af15379abe8962abd60557a2538f14c01bb"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://github.com/yearn/yearn-security/blob/master/disclosures/2021-02-04.md"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2021-02/Yearn_ydai_exp.sol"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-26T09:28:53Z",
-      "note": "Anchor and campaign: the attacker EOA's nonce-1 transaction 0x59faab5a1911618064f1ffa1e4649d85c99cfd9f0d64dcebbc1af7d7630da98b is the first successful transaction that executes the defect. Ten later calls to the same helper repeat it through 0xb094d168dd90fcd0946016b19494a966d3d2c348f57b890410c51425d89166e8 at block 11792351; the three interleaved direct Curve calls only adjust or unwind the attacker's pool position. The anchor call trace reaches StrategyDAI3pool 25 times, including five direct deposit() calls and five direct withdraw(uint256) calls. Verified source shows both paths use slip in their Curve minimum-output expressions and allows governance or strategist to change it through setSlip. The strategy read slip=100 and withdrawalFee=0 immediately before the anchor. Loss: yDAI getPricePerFullShare fell from 1.110058316613691736 before the anchor to 0.758491538466562243 after the final defect call. Multiplying that delta by the opening totalSupply of 31,494,626.844158695810766902 gives 11,072,464.488546969286678676 DAI of pre-existing depositor equity lost, independently reproducing Yearn's 11 million DAI disclosure while excluding attacker-supplied deposits. Target and reset: Etherscan creation data and the deployment trace identify 0xe5eb5e62d9fca7d41bf769b66b576af15379abe8962abd60557a2538f14c01bb as the strategy's top-level creation by 0x710295b5f326c2e47e6dd2e7f6b5b0f7c5ac2f24. Its runtime hashes to 0xdca6ecc6d43890257a6aec9c2151af3ef7e0a41520bdb126edd95805cb420871 at deployment and pre-exploit and has no delegatecall. Transaction 0x49d62533adb1131d476ff0a4f67d5a41ba1e65c2ceeb1de54eb8ad9d4f87bf8e changed Controller.strategies(DAI) from the prior strategy to this one. Exhaustive trace_filter scans from that activation through the block before the anchor found no later setStrategy call for DAI and no setSlip call to this strategy; historical calls confirm the selected strategy and slip=100 persisted through the exploit."
-    }
-  ],
-  "discovery": [
-    "adjudication:18",
-    "dfhl:src/test/2021-02/Yearn_ydai_exp.sol",
-    "seed:yearn-ydai:2021-02-04:yearn-ydai"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-7"
+  "loss": {
+    "usd": 11072464.48854697,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "11072464.488546969286678676",
+        "usd": 11072464.48854697
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/yearn/yearn-security/blob/master/disclosures/2021-02-04.md",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-02/Yearn_ydai_exp.sol"
+  ],
+  "notes": [
+    "The reset is the governance Safe's setStrategy pointing Controller.strategies(DAI) at StrategyDAI3pool; later fee changes and the vault's min raise only changed the loss size.",
+    "Loss is the yDAI share-price drop over the campaign times the opening share supply, before the attacker's final 3pool unwind and later recoveries. Summing the Yearn contracts' net 3Crv and DAI outflows with fees paid in y3Crv gives $11.21M, within 2%."
+  ],
+  "campaign": [
+    "eip155:1:0xf39f41363694a609569a48b65d61bd1c31f0c54597d146880abb862f1ba4d25c",
+    "eip155:1:0xebb0f4373c8add3ac012a2801279b48affc19252719dfc72efb900eda9121057",
+    "eip155:1:0x34626e684ddebea1eb203022dfea2a7ee0dcf48d26f52eaf99ee26b5d1513a67",
+    "eip155:1:0x9831f1aac10125cf3b4be769459969ba2aa7294c9dee7defaceef8cf88a5fea1",
+    "eip155:1:0xf6022012b73770e7e2177129e648980a82aab555f9ac88b8a9cda3ec44b30779",
+    "eip155:1:0x97ef50880551e66efd1fdc1bf2910adf9c825a4b040efcfa557b20eda4b555fb",
+    "eip155:1:0xb64d16230c0b18505e038c27e16097edf489648efd87c7a498c2dcc0cfa9bd7d",
+    "eip155:1:0x9b34850afb0bd8e3aa5ebd3eed497074112b7dd5ed5a9ec34a92ad8129cf8517",
+    "eip155:1:0x6dc268706818d1e6503739950abc5ba2211fc6b451e54244da7b1e226b12e027",
+    "eip155:1:0xb094d168dd90fcd0946016b19494a966d3d2c348f57b890410c51425d89166e8"
+  ]
 }

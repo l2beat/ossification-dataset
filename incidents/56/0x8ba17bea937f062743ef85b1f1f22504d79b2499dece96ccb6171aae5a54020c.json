@@ -1,182 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x8ba17bea937f062743ef85b1f1f22504d79b2499dece96ccb6171aae5a54020c",
-  "protocol": {
-    "name": "STO Protocol",
-    "slug": "sto"
-  },
+  "protocol": "STO Protocol",
   "name": "STO pending sell burn removes the previous sale from the STO/WBNB pair, with trading opened by permissionless initializeLiquidity",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x8ba17bea937f062743ef85b1f1f22504d79b2499dece96ccb6171aae5a54020c",
-      "blockNumber": 82890987,
-      "transactionIndex": 40,
-      "timestamp": 1771846754
-    },
-    "attackerAddresses": [
-      "0x622ddba7ddf86d573504a1d6021258884e601c42",
-      "0x8e6149b4a6ab28db7d4b1e8261bd71364307fcfd",
-      "0xc2b3613cc32f40c64dd56f7e089ddbcb3ee7e0ea"
-    ]
-  },
-  "summary": "While burnEnabled is set, every non-whitelisted sale to the STO/WBNB pair adds its after-tax amount to pendingBurnFromSell, and the next non-pair transfer moves that amount from the pair to DEAD and calls sync(), so a seller can sell and then delete the sold tokens from the reserve. Buying was still disabled, but initializeLiquidity is permissionless and enables buying and selling once the pair holds 2,000 WBNB. The attacker donated flash-loaned WBNB to the pair, called initializeLiquidity with 1 wei of BNB, bought 7.85M STO, and alternated sells with transfers that burned each prior sale from the pair until it held no WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 16177.01,
-      "valuationTimestamp": 1771846754,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "26.611266065271298275",
-        "usdValue": 16177.01,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1771846740,
-          "unitPriceUsd": 607.9006639390248,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Net WBNB depletion of the STO/WBNB pair 0x7c404ad6149bc69e07ecd534b9f4243ef289bd00 in the single exploit transaction; the attacker's flash-loaned donation and buy input and its 0.06 WBNB zap liquidity leg are netted as attacker inputs. The pair's STO burned to DEAD is the same liquidity and is not added."
-  },
+  "summary": "While burnEnabled is set, each sale to the STO/WBNB pair is queued in pendingBurnFromSell and burned from the pair with a sync() at the next transfer, and the public initializeLiquidity() opens buying once the pair holds 2,000 WBNB. The attacker donated flash-loaned WBNB, opened buying, bought STO, then alternated sells with burn-triggering transfers until the pair's WBNB was gone.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xfe33eb082b2374ecd9fb550f833db88cad8d084b",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0xfe33eb082b2374ecd9fb550f833db88cad8d084b",
+      "reset": {
+        "kind": "config",
+        "tx": "0x648cd009a030835a28a31deac0d941a120d37262fb2e9a0ed6815bda192d5e62",
         "address": "0xfe33eb082b2374ecd9fb550f833db88cad8d084b",
-        "codeHash": "0x55ebcea4d2e6907eddee682dbf55b2851c02361ebb3ec6a51e29db18f0a588ec"
-      },
-      "deployment": {
-        "timestamp": 1771567364,
-        "blockNumber": 82270213,
-        "transactionHash": "0xda98c6329e1f2fe3eb38775108ad67d968648798579b40f9a5d2226431e153ea",
-        "transactionIndex": 39,
-        "creatorAddress": "0x075e15b432817423c1a4980563536d854e092e15"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1771590882,
-        "blockNumber": 82322465,
-        "transactionHash": "0x648cd009a030835a28a31deac0d941a120d37262fb2e9a0ed6815bda192d5e62",
-        "transactionIndex": 44,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xfe33eb082b2374ecd9fb550f833db88cad8d084b",
-          "callData": "0x5dc96d16",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "Owner setBurnEnabled(true), the only write of burnEnabled; without it sales never accrue pendingBurnFromSell and the pair-burn path is dead. Later owner writes (whitelist entries, the last at 82881039) are not necessary to the exploited condition."
-      },
-      "codeAgeSeconds": 255872,
-      "failureModeId": "failure:sto-pending-sell-burn-from-pair",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "call": "0x5dc96d16"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8ba17bea937f062743ef85b1f1f22504d79b2499dece96ccb6171aae5a54020c"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xda98c6329e1f2fe3eb38775108ad67d968648798579b40f9a5d2226431e153ea"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x648cd009a030835a28a31deac0d941a120d37262fb2e9a0ed6815bda192d5e62"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:31:33Z",
-      "note": "source-1 (82890987:40): contract creation by EOA 0x622ddba7 deploying 0x8e6149b4, which creates 0xc2b3613c and runs a WBNB flash loan from 0x8f73b65b. callTracer (withLog): 0.1 BNB into zap 0x4cc42a61 (owner-whitelisted 82724264) buys STO and mints 17.05 LP to the attacker; lpDividend 0x52614e1e claim() pays 461.668 STO; removeLiquidity; WBNB transferred to the pair; STO.initializeLiquidity(0x2298e8d3) with 1 wei BNB, which sets buyEnabled and sellEnabled (buyEnabled() false at 82890986, true at 82890987; autoBuyThreshold 2000e18); swapExactTokensForTokensSupportingFeeOnTransferTokens buys 7.85M STO; then 40 STO.transfer + pair.swap rounds. Verified source (source-8): _update on a sale to the pair adds afterTax to pendingBurnFromSell when burnEnabled; the next non-pair transfer runs _executePendingSellBurn: super._update(pair, DEAD, pendingBurnFromSell) and pair.sync() (only a 1000 STO floor); initializeLiquidity has no access control and flips both trading flags when pair WBNB >= autoBuyThreshold. Pair STO 7901582.908873299 -> 217236.834, pendingBurnFromSell 0 -> 173391.536 after the tx. Config: burnEnabled() (0x5dc96d16) false at 82322464, true at 82322465 (source-3, owner 0x075e15b4); Etherscan txlist of the token to 82890987 (596 txs, complete): owner writes setLPDividendContract 82270227, initializeLiquidity 82280522, setSellEnabled(true) 82281158/82282236 (also set by the attacker's initializeLiquidity, so not necessary), setBurnEnabled 82322465, setWhitelist x9 (82289280..82881039; the zap whitelist only sourced the attacker's seed STO, which any holder transfer could supply, and 0x536ae748 at 82881039 does not appear in the trace). First exercise: buyEnabled was false until source-1, so no non-whitelisted account could acquire STO from the pair before it; source-1 is the first drain. Artifact: eth_getCode empty at 82270212; keccak(runtime) 0x55ebcea4d2e6907eddee682dbf55b2851c02361ebb3ec6a51e29db18f0a588ec at 82270213 and 82890986; source-2 creates it at 82270213:39 from 0x075e15b432817423c1a4980563536d854e092e15; no DELEGATECALL/SELFDESTRUCT. codeAgeSeconds = 1771846754 - 1771590882 = 255872."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:31:33Z",
-      "note": "Loss: eth_call WBNB 0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c balanceOf(pair 0x7c404ad6149bc69e07ecd534b9f4243ef289bd00) = 26611271941212387188 at 82890986 and 5875941088913 at 82890987 (-26611266065271298275), matching the pair's net WBNB Transfer logs in source-1. The attacker EOA received 26.571266065271298 BNB after repaying the flash loan and spending 0.1 BNB on the zap. Valued at the DefiLlama WBNB price (source-6) 607.9006639390248: 16,177.01 USD."
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1771846754/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790638293
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-23-mar-1-2026"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:57:56Z",
-      "note": "Verified STO source at https://bscscan.com/address/0xfe33eb082b2374ecd9fb550f833db88cad8d084b#code; reproduce with Etherscan V2 contract.getsourcecode chainid=56: ContractName STO, v0.8.20+commit.a1b79de6, optimizer 200 runs, SHA-256 of returned SourceCode 2f90b788b7c4be213fee9b52098771c2e19088142e3865c907ea49dd27d3e44f. Inspect _update, _executePendingSellBurn and initializeLiquidity."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-5"
+  "loss": {
+    "usd": 16177.01,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "26.611266065271298275",
+        "usd": 16177.01
+      }
     ]
   },
-  "discovery": [
-    "web:2026-02-23:sto"
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-feb-23-mar-1-2026"
+  ],
+  "notes": [
+    "Owner setBurnEnabled(true), the only write of burnEnabled; without it sales never accrue pendingBurnFromSell and the pair-burn path is dead. Later owner writes (whitelist entries, the last at 82881039) are not necessary to the exploited condition.",
+    "Net WBNB depletion of the STO/WBNB pair 0x7c404ad6149bc69e07ecd534b9f4243ef289bd00 in the single exploit transaction; the attacker's flash-loaned donation and buy input and its 0.06 WBNB zap liquidity leg are netted as attacker inputs. The pair's STO burned to DEAD is the same liquidity and is not added."
   ]
 }

@@ -1,237 +1,55 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d",
-  "protocol": {
-    "name": "Sentiment",
-    "slug": "sentiment"
-  },
+  "protocol": "Sentiment",
   "name": "Sentiment WeightedBalancerLPOracle Balancer vault read-only reentrancy",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d",
-      "blockNumber": 77026913,
-      "transactionIndex": 4,
-      "timestamp": 1680630629
-    },
-    "attackerAddresses": [
-      "0xdd0cdb4c3b887bc533957bc32463977e432e49c3",
-      "0x9f626f5941fafe0a5b839907d77fbbd5d0dea9d0",
-      "0xa4d063b9468b93aee2a87ec7072c3dabd5ee5968"
-    ]
-  },
-  "summary": "WeightedBalancerLPOracle.getPrice(token) values a Balancer weighted-pool BPT as the weighted-geometric invariant of vault.getPoolTokens(poolId) balances divided by IPool(token).totalSupply(). Both reads are unguarded external views on the Balancer Vault and the pool token, and the oracle never probes the vault's reentrancy lock. Inside Vault.exitPool the BPT is burned before the pool's native-ETH payout returns, so total supply is already reduced while the token balances are not yet settled, and the quotient overstates the unit value. The attacker re-entered Sentiment from the exitPool ETH callback and had RiskEngine.isAccountHealthy price 221.214516056534546564 B-33WETH-33WBTC-33USDC at 3.5500730700050576 ETH instead of the 0.2201185612401734 ETH the same function returned outside reentrancy, a 16.1x inflation, which let AccountManager.borrow approve four undercollateralised borrows in the same transaction. The violated invariant is that a collateral price must not be derived from a Balancer pool's balances and supply while that pool is mid-update; the deployed oracle has no state in which it can detect that.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1098458.66,
-      "valuationTimestamp": 1680630629,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-          "symbol": "USDC.e"
-        },
-        "amount": "461000.000000",
-        "usdValue": 461000,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1680630629,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "symbol": "USDT"
-        },
-        "amount": "361000.000000",
-        "usdValue": 361000,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1680630629,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x17fc002b466eec40dae837fc4be5c67993ddbd6f",
-          "symbol": "FRAX"
-        },
-        "amount": "125000.000000000000000000",
-        "usdValue": 125000,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1680630629,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "81.000000000000000000",
-        "usdValue": 151458.66,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1680630629,
-          "unitPriceUsd": 1869.86,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross depletion of Sentiment's four LToken lending pools in the anchor transaction, read from the AccountManager Borrow(account,owner,token,amount) events at log indices 37, 40, 43 and 46: 461,000 USDC.e out of LUSDC 0x0ddb1ea478f8ef0e22c7706d2903a41e94b1299b, 361,000 USDT out of LUSDT 0x4c8e1656e042a206eef7e8fcff99bac667e4623e, 81 WETH out of LWETH 0xb190214d5ebac7755899f2d96e519aa7a5776bec and 125,000 FRAX out of LFRAX 0x2e9963ae673a885b6bfeda2f80132ce28b784c40. Each pool also paid a 0.1 percent origination fee out of the same amount to the Sentiment treasury 0x92f473ef0cd07080824f5e6b0859ac49b3aeb215; the fee is included because it left the lending pool. The attacker's realised proceeds, forwarded from the exploit contract to the attacker EOA at log indices 110-113, were 0.51695721 WBTC, 29.973117081932212940 WETH, 538,399.328226 USDC.e and 360,000 USDT, about 968,971 USD at the same prices, the roughly 1M USD figure reported at the time; the gap to gross depletion is Aave flash-loan premiums, Balancer join and exit costs and the balances left behind in the borrowing account. The 50 WETH margin deposited into the Sentiment account before the borrows came from the Aave flash loan and was converted into 221.214516056534546564 BPT that stayed inside the Sentiment account as collateral, so it is not counted as depletion. Sentiment recovered the position on 2023-04-08 in transaction 0x4d9e9ad33412949def1b3246833e46440208142450f9916905a8f9d8e9a64cc9, where liquidator 0xf0885fc34fa3b36910d0f256d0fd862a4be79c16, funded by 0xc478f962e932bd8f4e45f9a66b5cbb972d8ac63e, repaid 464,272.338750 USDC.e, 363,579.746514 USDT, 81.674233642042944923 WETH and 125,901.406716158845171079 FRAX and took the account's collateral; per methodology that later recovery does not reduce gross victim depletion."
-  },
+  "summary": "Sentiment's WeightedBalancerLPOracle priced Balancer BPT from vault.getPoolTokens balances and the pool's totalSupply without checking the Vault's reentrancy lock. From the ETH callback inside Vault.exitPool, after the BPT was burned but before balances settled, the attacker had its BPT collateral valued about 16 times too high and borrowed from Sentiment's lending pools.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b",
-        "codeHash": "0x0a1961db8700d29e1ed861d644d78ffd51e058c308ac2aa8e64ef6cf1279c35d"
-      },
-      "deployment": {
-        "timestamp": 1668464349,
-        "blockNumber": 38133216,
-        "transactionHash": "0xa8ab8ca1dea6bac57c3d8140fa685c7170e5de5ea2089ea6598f59cf9fdb48e1",
-        "transactionIndex": 1,
-        "creatorAddress": "0xc5fc2cbf32c09f89f91caf2023884729116ea5d1"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "WeightedBalancerLPOracle is a plain non-proxy contract whose runtime contains no DELEGATECALL, CREATE or SELFDESTRUCT. Its 7,090-byte runtime is byte-identical at the creation block, at the block before the exploit and at head, so the executed pricing code dates from deployment."
-      },
-      "codeAgeSeconds": 12166280,
-      "failureModeId": "failure:balancer-vault-read-only-reentrancy-lp-pricing",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b",
+      "reset": {
+        "kind": "config",
+        "tx": "0x703f4f28d1c1660b702cd029ff21bf4a08f0a31f9766c71f720045f70d8a49c8",
+        "address": "0x08f81e1637230d25b4ea6d4a69d74373e433efb3",
+        "slot": "0x98dc242c497f9a9f863eb5e2a93fb234e83a3b24ac879effce7556bb20b0b649"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Anchor: 0xa9ff2b587e2741575daf893864710a5cbb44bb64ccdc487a100fa20741e0f74d, receipt status 0x1, block 77026913 index 4, timestamp 1680630629, 111 logs, 2,246 call frames. Campaign scan of attacker EOA 0xdd0cdb4c3b887bc533957bc32463977e432e49c3: the first attempt 0xba6620b0afebb16da47368d7b2b8300f32ca81d871b1ad9c44f8443c0d39462f at block 77026009 reverted (isError=1) and the only successful earlier transaction, 0xad7a0bb3dd5f953e54703789d70931c98033a689ed0cd6ebac539960c3f76a03, is a bare SELFDESTRUCT of the failed helper 0xa4d063b9468b93aee2a87ec7072c3dabd5ee5968 with no other call frame, so this is the earliest successful defect-executing transaction. Reentrant path reproduced from the callTracer trace: exploit contract 0x9f626f5941fafe0a5b839907d77fbbd5d0dea9d0 CALLs Balancer Vault 0xba12222222228d8ba445958a75a0704d566bf2c8 exitPool (0x8bdb3913); the vault CALLs the exploit contract back with 10,004.998167081932 ETH of value; from inside that callback the exploit contract CALLs Sentiment AccountManager proxy 0x62c5aa8277e49b3ead43dc67453ec91dc6826403 borrow(address,address,uint256) (0x5224372c), which DELEGATECALLs implementation 0x23ad9605b6e7a02ab9f73068f5e68715f21c2b6b, STATICCALLs RiskEngine 0xc0ac97a0ea320aa1e32e9ded16fb580ef3c078da isAccountHealthy(address) (0x36481862), which STATICCALLs OracleFacade 0x08f81e1637230d25b4ea6d4a69d74373e433efb3 getPrice(address) (0x41976e09), which STATICCALLs WeightedBalancerLPOracle 0x16f3ae9c1727ee38c98417ca08ba785bb7641b5b getPrice(0x64541216bafffeec8ea535bb71fbc927831d0595). Eleven of the oracle's fourteen frames sit strictly inside the exitPool frame. The oracle is entered only by STATICCALL, never DELEGATECALL, so it is a direct target. Price evidence: the same call returns 0x030e04aa4b30cb67 (0.2201185612401734e18) on its first three invocations outside the reentrant window and 0x314464a5e854f8e0 (3.5500730700050576e18) on all eleven invocations inside it. Verified source (Etherscan, WeightedBalancerLPOracle, solc 0.8.17): getPrice reads vault.getPoolTokens(IPool(token).getPoolId()) and IPool(token).totalSupply() and divides the balance invariant by the supply, with no reentrancy probe of any kind. Boundary test: the contract has no owner, no setters and no storage; vault 0xba12222222228d8ba445958a75a0704d566bf2c8 and oracleFacade 0x08f81e1637230d25b4ea6d4a69d74373e433efb3 are immutable constructor arguments, confirmed in the creation bytecode's trailing constructor words. There is no parameter value at which this deployed code is correct, so this is missing validation in executed EVM code rather than a configured value applied as designed. Code history: the oracle was created by top-level CREATE (to=null) from Sentiment deployer 0xc5fc2cbf32c09f89f91caf2023884729116ea5d1 in 0xa8ab8ca1dea6bac57c3d8140fa685c7170e5de5ea2089ea6598f59cf9fdb48e1 at block 38133216 index 1, timestamp 1668464349, receipt status 0x1. eth_getCode is empty (0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470) at block 38133215 and hashes to 0x0a1961db8700d29e1ed861d644d78ffd51e058c308ac2aa8e64ef6cf1279c35d at blocks 38133216, 50000000, 70000000, 77026912 and at head; the runtime has no DELEGATECALL, CREATE, CREATE2 or SELFDESTRUCT opcode outside PUSH data, so no upgrade or metamorphic path exists and the deployment basis holds. Code age 1680630629 - 1668464349 = 12,166,280 s (140.81 days). Loss: the four AccountManager Borrow events in the anchor are exactly 461,000 USDC.e, 361,000 USDT, 81 WETH and 125,000 FRAX, each split as a 0.1 percent origination fee to Sentiment treasury 0x92f473ef0cd07080824f5e6b0859ac49b3aeb215 and the remainder to the attacker's Sentiment BeaconProxy account 0xdf346f8d160424c79cb8e8b49b13dd0ca61c3b8c. Valued at 1 USD for USDC.e, USDT and FRAX (DefiLlama quoted FRAX at 1.001 at the anchor timestamp) and 1,869.86 USD for WETH, gross depletion is 1,098,458.66 USD. Cross-check on the attacker side: the exploit contract forwards 0.51695721 WBTC, 29.973117081932212940 WETH, 538,399.328226 USDC.e and 360,000 USDT to the EOA, about 968,971 USD with WBTC at 28,203 USD. Aave V3 flash loans of USDC.e, USDT and WETH are taken and repaid inside the transaction and are not loss. Recovery: at block 78150591, timestamp 1680915421, transaction 0x4d9e9ad33412949def1b3246833e46440208142450f9916905a8f9d8e9a64cc9, liquidator 0xf0885fc34fa3b36910d0f256d0fd862a4be79c16 (funded minutes earlier by 0xc478f962e932bd8f4e45f9a66b5cbb972d8ac63e with 465,317.071955 USDC.e, 364,366.737777 USDT, 83.34 WETH and 126,730.044581038777134541 FRAX) repaid the whole debt and seized the account's 221.214516056534546564 BPT plus 488.111610 USDC.e, 639.0 USDT, 0.919 WETH and 4,875 FRAX. That is a later recovery and does not reduce gross depletion. Scope: this is a single-transaction campaign on Arbitrum only; Sentiment had no comparable deployment exploited elsewhere."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xa8ab8ca1dea6bac57c3d8140fa685c7170e5de5ea2089ea6598f59cf9fdb48e1"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1680630629/coingecko:ethereum",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://twitter.com/peckshield/status/1643417467879059456"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-04/Sentiment_exp.sol"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x4d9e9ad33412949def1b3246833e46440208142450f9916905a8f9d8e9a64cc9"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1680630629/arbitrum:0x17fc002b466eec40dae837fc4be5c67993ddbd6f",
-      "observedAt": 1787663821
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-04/Sentiment_exp.sol",
-    "seed:sentiment:2023-04-04:sentiment-balancer-lp-oracle-read-only-reentrancy"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "USDC.e, USDT and FRAX are valued at par. DefiLlama quoted FRAX at 1.001 at the anchor timestamp, which would raise the total by 125 USD."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 1098944.66,
+    "assets": [
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "461000",
+        "usd": 461000
+      },
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "361000",
+        "usd": 361361
+      },
+      {
+        "token": "0x17fc002b466eec40dae837fc4be5c67993ddbd6f",
+        "symbol": "FRAX",
+        "amount": "125000",
+        "usd": 125125
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "81",
+        "usd": 151458.66
+      }
     ]
   },
+  "refs": [
+    "https://twitter.com/peckshield/status/1643417467879059456",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Sentiment_exp.sol",
+    "eip155:42161:0x4d9e9ad33412949def1b3246833e46440208142450f9916905a8f9d8e9a64cc9"
+  ],
   "notes": [
-    "The OracleFacade mapping that routes the BPT 0x64541216bafffeec8ea535bb71fbc927831d0595 to this oracle is protocol configuration and is not the age basis; the defect is in the oracle's own executable pricing logic."
+    "Reset: the oracle contract is unchanged since deployment, but the exploit needed OracleFacade to route the BPT to it; that oracle assignment (a Safe batch about two weeks after deployment) is the latest such change. Later Chainlink feed swaps for the underlying tokens and an AccountManager upgrade did not create the flaw.",
+    "Gross depletion of the four LToken pools; the 0.1% origination fee paid to the treasury out of each borrow is included. The attacker's BPT left in the account, the later liquidation that recovered the debt, and the bounty-negotiated return of about 466 ETH do not reduce the loss."
   ]
 }

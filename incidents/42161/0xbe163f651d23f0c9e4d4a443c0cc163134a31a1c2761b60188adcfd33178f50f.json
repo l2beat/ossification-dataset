@@ -1,221 +1,40 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xbe163f651d23f0c9e4d4a443c0cc163134a31a1c2761b60188adcfd33178f50f",
-  "protocol": {
-    "name": "Predy Finance",
-    "slug": "predyfinance"
-  },
+  "protocol": "Predy Finance",
   "name": "Predy Finance PredyPool lock settlement credits a supply() as repayment of take()",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xbe163f651d23f0c9e4d4a443c0cc163134a31a1c2761b60188adcfd33178f50f",
-      "blockNumber": 211107442,
-      "transactionIndex": 3,
-      "timestamp": 1715672488
-    },
-    "attackerAddresses": [
-      "0x76b02ab483482740248e2ab38b5a879a31c6d008",
-      "0x8affdd350eb754b4652d9ea5070579394280cad9",
-      "0xb79714634895f52a4f6a75eceb58c96246370149"
-    ]
-  },
-  "summary": "PredyPool settles a trade lock by comparing raw ERC20 balances. TradeLogic.callTradeAfterCallback() runs GlobalDataLibrary.initializeLock(), which snapshots the pool's quote and base token balances, then hands control to the caller's predyTradeAfterCallback, then runs finalizeLock(), whose settle() computes paid = balanceOf(this) - snapshot. PredyPool.take() is guarded only by onlyByLocker and sends any amount to any address without recording a debt, and PredyPool.supply() is reachable from inside that callback because trade() carries no reentrancy guard. The attacker registered its own pair through the permissionless registerPair(), acquired the lock with a zero-size trade(), and inside the callback called take() for the pool's entire WETH and USDC balances and then supply() to put the same tokens back. settle() saw both balances restored and reported paid = 0, so the lock finalised and the empty vault passed PositionCalculator.checkSafe(), while supply() had minted the attacker supply tokens for the whole pool. Two withdraw() calls after the lock closed burned those supply tokens and removed everything. The violated invariant is that a locker's take() must be repaid with assets that create no offsetting claim; a balance delta cannot distinguish repayment from a new deposit that mints its own LP position.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 463890.0417986188,
-      "valuationTimestamp": 1715672488,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-9",
-        "source-10"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-          "symbol": "USDC"
-        },
-        "amount": "219585.737814",
-        "usdValue": 219537.8681231565,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1715672488,
-          "unitPriceUsd": 0.999782,
-          "sourceIds": [
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "83.910994929830029848",
-        "usdValue": 244352.1736754622,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1715672488,
-          "unitPriceUsd": 2912.04,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion in the single exploit transaction: PredyPool 0x9215748657319b17fecb2b5d086a3147bfbc8613 holds 219,585.737814 USDC and 83.910994929830029848 WETH at block 211107441 and zero of both at block 211107442. The attacker contract 0xb79714634895f52a4f6a75eceb58c96246370149 is created inside the exploit transaction and holds no USDC or WETH beforehand, so none of the drained amount is attacker-supplied capital; the take() and supply() legs inside the lock net to zero and are not double counted. The pool's USDC balance is still zero at blocks 211200000, 212000000 and 215000000, so no onchain restitution reached the pool. Priced with DefiLlama at the exploit timestamp, 0.999782 for Arbitrum USDC and 2912.04 for WETH, the total is 463,890.04 USD, which reproduces the 464k USD commonly reported."
-  },
+  "summary": "PredyPool settles a trade lock by comparing raw token balances around the locker's callback. take() pays the locker without recording a debt and supply() is reachable inside the callback, so the attacker registered a pair, took the pool's WETH and USDC in a zero-size trade, supplied them back to mint itself supply tokens, then withdrew everything.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9215748657319b17fecb2b5d086a3147bfbc8613",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x7b8b944ab2f24c829504a7a6d70fce5298f2147c",
-        "codeHash": "0xad1258d3efcc0729989ff1de4b0854817c7ac42e6a1928afbca454c331e7a76c"
-      },
-      "deployment": {
-        "timestamp": 1705461789,
-        "blockNumber": 171222327,
-        "transactionHash": "0xbc05551a0e18fdcf10addaaa7d482ef4ee3ff604ac0a578f801a67654cc239c1",
-        "transactionIndex": 3,
-        "creatorAddress": "0x4f071924d66bbc71a5254217893cc7d49938b1c4"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1714024654,
-        "blockNumber": 204580992,
-        "transactionHash": "0x4d562dddd2233208d83555c98de9b8bd3c8ee4f7ad629baa6408d0b8c9d0afe4",
-        "transactionIndex": 9,
-        "logIndex": 37,
-        "mechanism": {
-          "type": "event",
-          "address": "0x9215748657319b17fecb2b5d086a3147bfbc8613",
-          "eventTopic": "0x5570d70a002632a7b0b3c9304cc89efb62d8da9eca0dbd7752c83b7379068296",
-          "codeAddressLocation": "topic2-address"
-        },
-        "description": "EIP173Proxy.upgradeTo(0x7b8b944ab2f24c829504a7a6d70fce5298f2147c) by the proxy owner 0x4f071924d66bbc71a5254217893cc7d49938b1c4, emitting ProxyImplementationUpdated(0x1eb565e53b8d9e8d3d66af87d22c0229a7911b21, 0x7b8b944ab2f24c829504a7a6d70fce5298f2147c). It is the last of nine implementation changes before the exploit; the earlier install of the same implementation at block 204572392 was reverted at block 204578244 and does not survive to the exploit."
-      },
-      "codeAgeSeconds": 1647834,
-      "failureModeId": "failure:predy-lock-settlement-balance-delta-credited-to-supply",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-7",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x9215748657319b17fecb2b5d086a3147bfbc8613",
+      "code": "0x7b8b944ab2f24c829504a7a6d70fce5298f2147c",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x4d562dddd2233208d83555c98de9b8bd3c8ee4f7ad629baa6408d0b8c9d0afe4"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xbe163f651d23f0c9e4d4a443c0cc163134a31a1c2761b60188adcfd33178f50f"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-05/PredyFinance_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Anchor: 0xbe163f651d23f0c9e4d4a443c0cc163134a31a1c2761b60188adcfd33178f50f, block 211107442 index 3, timestamp 1715672488, receipt status 0x1, 28 logs. It is the only transaction of the campaign: attacker EOA 0x76b02ab483482740248e2ab38b5a879a31c6d008 has 50-plus Arbitrum transactions and I traced every earlier call into its launcher 0x8affdd350eb754b4652d9ea5070579394280cad9 (0xb0321ae0..., 0x9f63d18d..., 0xc10a301e..., 0xcedc357e...) plus the two immediately following it (0x925502d2..., 0x30df153a...); none of them contains the PredyPool address at any trace depth, so there is no earlier defect-executing success and no later drain. Defect, read from the verified source of implementation 0x7b8b944ab2f24c829504a7a6d70fce5298f2147c (PredyPool, solc 0.8.19) and reproduced against the 42-frame call trace: registerPair() carries no access modifier, so the attacker registered pair 7 with poolOwner and priceFeed set to its own contract and the WETH/USDC Uniswap v3 pool 0xc6962004f452be9203591991d15f6b388e09e8d0; trade() with zero tradeAmount and tradeAmountSqrt reaches TradeLogic 0xde12aa19734dacbd34cedde14f8290a70a85537f, which calls GlobalDataLibrary.initializeLock (snapshotting quoteReserve and baseReserve as balanceOf(pool)), then predyTradeAfterCallback on the caller, then finalizeLock. Inside the callback the trace shows exactly the published sequence: take(false, attacker, 83.910994929830029848 WETH) as a direct transfer from the implementation, supply(pairId, false, same amount) delegating to SupplyLogic 0x5e8d28bd2abe77e9d3e9dd8ccc1727eda616ace0 which transferFrom's the WETH back and mints the base supply token 0x3dd636919d4180b59d9225370cb84f1ba849aba2, and the same pair of calls for 219,585.737814 USDC with supply token 0x0b9f4dfb6eb2a8c2f26e98c4538422e6b8c4599f. settle() therefore computes paid = 0 on both sides, BaseTokenNotSettled does not fire, the vault margin update is zero and PositionCalculator.checkSafe passes on an empty vault. Two withdraw() calls after the lock closes burn the supply tokens and move both balances out. trade() is the only one of supply, withdraw, reallocate, execLiquidationCall and trade without nonReentrant, which is why supply is reachable from the callback. Boundary test: riskRatio, the interest-rate parameters, the fee, whitelistEnabled and the pair set are all parameters, and none of them makes a raw-balance settlement able to tell repayment of take() from a deposit that mints its own claim; whitelisting the pair would only restrict who can do it. This is defective accounting in deployed code. Target: execution context is the EIP173Proxy 0x9215748657319b17fecb2b5d086a3147bfbc8613, created by top-level CREATE from 0x4f071924d66bbc71a5254217893cc7d49938b1c4 in 0xbc05551a0e18fdcf10addaaa7d482ef4ee3ff604ac0a578f801a67654cc239c1 at block 171222327 index 3, timestamp 1705461789 (receipt contractAddress equals the proxy). Its EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc holds 0x7b8b944ab2f24c829504a7a6d70fce5298f2147c at block 211107441 and the proxy delegatecalls that address in the anchor trace. Code history, corrected: the proxy emits ProxyImplementationUpdated (topic 0x5570d70a002632a7b0b3c9304cc89efb62d8da9eca0dbd7752c83b7379068296) on every write, which the legacy migration missed because it only looked for the OpenZeppelin Upgraded topic. eth_getLogs for that topic from genesis to block 211107441 returns nine entries: 171222327 (0x0 -> 0xc993fb17), 173977978 (-> 0x28c06e8c), 176760215 (-> 0x0f03841a), 189900172 (-> 0xd6883cb5), 202012553 (-> 0xd5ccec97), 202029013 (-> 0x1eb565e5), 204572392 (-> 0x7b8b944a), 204578244 (back to 0x1eb565e5) and 204580992 index 9 log index 37 (-> 0x7b8b944a). eth_getStorageAt confirms each transition at the block boundary: 0x1eb565e5 at 204572391, 0x7b8b944a at 204572392 and 204578243, 0x1eb565e5 at 204578244 and 204580991, 0x7b8b944a at 204580992, 205000000, 208000000, 210000000 and 211107441. The seed row anchored the age to the reverted 204572392 install and reported 1,650,032 s; the surviving change is 204580992 at timestamp 1714024654, giving 1715672488 - 1714024654 = 1,647,834 s (19.07 days). The implementation's 24,xxx-byte runtime hashes to 0xad1258d3efcc0729989ff1de4b0854817c7ac42e6a1928afbca454c331e7a76c at its own creation block 204572377, at 204580992 and at 211107441, and it is a plain contract with no proxy slots. Its six solc external libraries are PUSH20 constants inside that runtime (0x0493a63109f37f08376fd0c321b012c34f946ca7, 0x2140f617e8cedb9e7f1b4f2c3f79cd064c7c088a, 0x2d756f7912b5c61f35ca3e5b310c7c133a90977c, 0x5e8d28bd2abe77e9d3e9dd8ccc1727eda616ace0, 0xde12aa19734dacbd34cedde14f8290a70a85537f, 0xe64ccc2549ed5e51417f30cc57b0830759a30e25), TradeLogic in turn links 0x8d9eb354b3858e9e93be3ffc8b2a98732804383c the same way, and all seven runtimes are byte-identical at blocks 204580992 and 211107441, so the implementation hash pins the whole executing code graph and cannot be repointed. Loss: the pool's USDC balance goes 219585737814 -> 0 and its WETH balance 83910994929830029848 -> 0 across the anchor; the attack contract is created in the same transaction and starts with nothing, and the pool is still empty of USDC at block 215000000."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xbc05551a0e18fdcf10addaaa7d482ef4ee3ff604ac0a578f801a67654cc239c1"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x819945df3921a2475f790ef7552c8befbc9c9a0efecec023fbe45564113e74e4"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x4d562dddd2233208d83555c98de9b8bd3c8ee4f7ad629baa6408d0b8c9d0afe4"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x564df87304685c001058c68d13f4e7125e5e08202f7ebcefbf5d76eb153d9c18"
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x7d2d4d10b072dbd9f1ac2b70bde27a541a50d2600a01f402cfb0857eda01fa51"
-    },
-    {
-      "id": "source-9",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1715672488/coingecko:weth",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-10",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1715672488/arbitrum:0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-      "observedAt": 1787663821
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 463890.04,
+    "assets": [
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "219585.737814",
+        "usd": 219537.87
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "83.910994929830029848",
+        "usd": 244352.17
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-05/PredyFinance_exp.sol"
+  ],
   "notes": [
-    "Review correction: the seed inventory recorded the last code change as an unlogged EIP-1967 storage write at block 204572392 (1,650,032 s of age). The proxy is an EIP173Proxy that emits ProxyImplementationUpdated on every write, and that implementation was rolled back at block 204578244 and reinstalled at block 204580992, which is the change that survived to the exploit. The corrected age is 1,647,834 s.",
-    "Seed-inventory flag: nonStandardUpgradeArchitecture=true. It is not a non-standard architecture; the migration simply did not know the EIP173Proxy upgrade topic."
+    "Reset: the implementation installed at block 204572392 was rolled back at 204578244 and reinstalled by this upgrade, the change that survived to the exploit; the later storage change before the exploit is the vault counter.",
+    "The pool held exactly these balances one block before and none after; the attacker contract was created in the exploit transaction, so no drained amount is attacker capital."
   ]
 }

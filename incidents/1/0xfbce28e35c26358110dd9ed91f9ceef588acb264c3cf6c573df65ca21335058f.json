@@ -1,174 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xfbce28e35c26358110dd9ed91f9ceef588acb264c3cf6c573df65ca21335058f",
-  "protocol": {
-    "name": "Reflexer",
-    "slug": "reflexer"
-  },
+  "protocol": "Reflexer",
   "name": "GebProxyActions quitSystem callable directly for library-owned SAFEs",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xfbce28e35c26358110dd9ed91f9ceef588acb264c3cf6c573df65ca21335058f",
-      "blockNumber": 25883379,
-      "transactionIndex": 175,
-      "timestamp": 1788277103
-    },
-    "attackerAddresses": [
-      "0xb929c7215c0ec8ebad5fbf73b1da63bccfff1896",
-      "0x6a213f0b5bd9eed865d3e2efc867b73dfe9039e7"
-    ]
-  },
-  "summary": "GebProxyActions is a shared library meant to be DELEGATECALLed from each user's DSProxy. Its quitSystem(manager, safe, dst) has no authentication and forwards to GebSafeManager.quitSystem, which only checks that msg.sender owns the SAFE. SAFEs 3, 5, 8 and 18 were opened with the library itself as owner in October 2020. Calling quitSystem directly on the library therefore passed the ownership check. In the post-shutdown system the attacker processed each SAFE, moved its free ETH-A collateral into its own SAFE, and exited 5.94 ETH.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 14528.080457024047,
-      "valuationTimestamp": 1788277103,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "5.943599831844387377",
-        "usdValue": 14528.080457024047,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1788277010,
-          "unitPriceUsd": 2444.3234517886053,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Free ETH-A collateral of SAFEs 3, 5, 8 and 18 after GlobalSettlement.processSAFE settled their RAI debt, exited through the ETH-A CollateralJoin as WETH and unwrapped by the attacker. Before the exploit the SAFEs held 2, 1.5, 0.7 and 2.5 ETH-A of locked collateral. A later direct quitSystem on SAFE 8 by 0x982deb98 (0xa452ecb59f35c03e8838ccc20161c6f9e9ab0b9b28bab7a338507bc496605142) found it already drained.",
-    "realizedAt": 1788277103
-  },
+  "summary": "GebProxyActions, a library meant to be delegatecalled from users' DSProxies, exposes quitSystem without authentication; GebSafeManager only checks that the caller owns the SAFE. Four SAFEs had been opened with the library itself as owner, so after shutdown the attacker processed each, called quitSystem directly to move their free collateral to itself and exited it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x84fe452d9fb495a335c74a225e6ad52c35eb8616",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x84fe452d9fb495a335c74a225e6ad52c35eb8616",
-        "codeHash": "0x5f2bd5155198fb25da38901b230a62a66f544fd374ff41ab8eb1868d486dac92"
-      },
-      "deployment": {
-        "timestamp": 1603568638,
-        "blockNumber": 11121055,
-        "transactionHash": "0x1302d0a0f684679574f107427c377c9438b4c49b58008eaa5fe2ec6e28289037",
-        "transactionIndex": 11,
-        "creatorAddress": "0xb27f5cb35f436c09ca4310ba2711d7a18c96be21"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1603986047,
-        "blockNumber": 11152529,
-        "transactionHash": "0x1eaee3907a335e2fca4ad9591e242de11cd0453d5357d8f3447f0b0b4e8dfb1b",
-        "transactionIndex": 3,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xdf88b73462abd08f145b4b31edf4966c7129b255",
-          "callData": "0xa2a4d76e0000000000000000000000000000000000000000000000000000000000000003",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x00000000000000000000000084fe452d9fb495a335c74a225e6ad52c35eb8616"
-        },
-        "description": "OpenSAFE(sender = library, owner = library, safe = 3) in GebSafeManager: ownsSAFE(3) became the GebProxyActions library address, the first SAFE the library could release through its own quitSystem. SAFEs 5, 8 and 18 were opened the same way at blocks 11152568, 11152621 and 11157462."
-      },
-      "codeAgeSeconds": 184291056,
-      "failureModeId": "failure:gebproxyactions-direct-quitsystem-library-owned-safe",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+      "address": "0x84fe452d9fb495a335c74a225e6ad52c35eb8616",
+      "reset": {
+        "kind": "config",
+        "tx": "0x1eaee3907a335e2fca4ad9591e242de11cd0453d5357d8f3447f0b0b4e8dfb1b",
+        "address": "0xdf88b73462abd08f145b4b31edf4966c7129b255",
+        "call": "0xa2a4d76e0000000000000000000000000000000000000000000000000000000000000003"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xfbce28e35c26358110dd9ed91f9ceef588acb264c3cf6c573df65ca21335058f"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1302d0a0f684679574f107427c377c9438b4c49b58008eaa5fe2ec6e28289037"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1eaee3907a335e2fca4ad9591e242de11cd0453d5357d8f3447f0b0b4e8dfb1b"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-08/ReflexerGEB_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:17:25Z",
-      "note": "Root cause, target and anchor. Verified source (Etherscan V2 getsourcecode, chainid=1) of GebProxyActions 0x84fe452d9fb495a335c74a225e6ad52c35eb8616: quitSystem(manager, safe, dst) is public without an auth check and calls ManagerLike(manager).quitSystem(safe, dst); GebSafeManager 0xdf88b73462abd08f145b4b31edf4966c7129b255 gates quitSystem only by safeAllowed(safe), i.e. msg.sender == ownsSAFE[safe] or an allowed address. eth_call ownsSAFE(3|5|8|18) at block 25883378 returns the library address for all four. Receipt of source-1 (block 25883379, index 175, EOA 0xb929c721 via 0x6a213f0b): four GebSafeManager QuitSystem(sender = library, safe 3/5/8/18, dst 0xb0f1ea5fce6ec33967c1c43a09bf73c8d7b20996) events, then WETH Transfer of 5943599831844387377 from ETH-A join 0xe843783144acdf485ff86d726bcb67dd316e0bbe to 0xb0f1ea5f and a Withdrawal of the same amount. Age: eth_getTransactionReceipt(source-2).contractAddress = library (block 11121055, index 11, creator 0xb27f5cb3); eth_getCode empty at 11121054; keccak256(runtime) = 0x5f2bd515...ac92 at 11121055 and 25883378; no proxy. OpenSAFE events with owner = library: safe 3 in source-3 (11152529:3, EOA 0x72bb8c60 via 0x9799b475), safe 5 in 0xa52ac557dc193bc75a508592f666d27f6e42d0f78813c210b1159411db0c3585 (11152568), safe 8 in 0x714aadbd8280008e9e81fb57b578fe3ab65bf62e8ac8bf70bf98c22c1bd06029 (11152621), safe 18 in 0xc3c0ef364e914872990f28188f8538711c9ccb96a8ff7dcf60d37c52872ff0d5 (11157462); ownsSAFE(3) is 0 at 11152528 and the library at 11152529. The Global Settlement shutdown changes how much collateral is free after processSAFE, not whether the library can move a library-owned SAFE, so it is not an age reset. Earliest exercise: Etherscan getLogs of all 23 QuitSystem (0xc819508e...) events from GebSafeManager since block 11000000 show the library as sender only in source-1 and in 0xa452ecb5 (block 25884508, SAFE 8, no collateral left); the library's Etherscan txlist has only its deployment and that call."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:17:25Z",
-      "note": "Loss. SAFEEngine.safes(ETH-A, handler) at block 25883378: SAFE 3 handler 0xf524b4df 2e18 collateral / 99.980e18 debt; SAFE 5 0xfc4462a8 1.5e18 / 99.980e18; SAFE 8 0x90a5cff1 0.7e18 / 84.983e18; SAFE 18 0xbfb28392 2.5e18 / 249.943e18. After processSAFE and freeCollateral the attacker exited 5943599831844387377 wei ETH-A (source-1 WETH Transfer and Withdrawal), which is the SAFE owners' remaining redeemable collateral. Valued at DefiLlama coingecko:ethereum 2444.3234517886053 (quote time 1788277010)."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788277000/coingecko:ethereum",
-      "observedAt": 1790623045
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5",
-      "source-6"
+  "loss": {
+    "usd": 14528.080457024047,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "5.943599831844387377",
+        "usd": 14528.080457024047
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-01:reflexer-geb"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-08/ReflexerGEB_exp.sol"
+  ],
+  "notes": [
+    "Reset: the first OpenSAFE that made the library a SAFE owner; before it the unauthenticated quitSystem could move nothing. The three later library-owned SAFEs only add loss. The library has no other path to these SAFEs, and SafeManager logs show no earlier quitSystem by it.",
+    "Loss is the four SAFEs' free ETH-A collateral after processSAFE settled their debt, exited as WETH. A later direct quitSystem on SAFE 8 by 0x982deb98 found it already empty and is not campaign."
   ]
 }

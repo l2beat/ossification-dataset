@@ -1,260 +1,65 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0xed62bb27bd1058d3d7cc93d55421d6d0001ced8cb4529b02773f5126a4edb08b",
-  "protocol": {
-    "name": "Internet Token",
-    "slug": "internet-token"
-  },
+  "protocol": "Internet Token",
   "name": "Internet Token LiquidityUnifier unvalidated V3 pool callback mint",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0xed62bb27bd1058d3d7cc93d55421d6d0001ced8cb4529b02773f5126a4edb08b",
-      "blockNumber": 51593878,
-      "transactionIndex": 101,
-      "timestamp": 1789977103
-    },
-    "attackerAddresses": [
-      "0x5f7ce6395818857ac20730dc990f614356d1ec68",
-      "0x4acac3ecb4912147cbbf9dc927368a046e35b5b6",
-      "0x94d9b828a9fa0d7d788127c827c8c0a268a35f69"
-    ]
-  },
-  "summary": "LiquidityUnifier.swapV3(token, pool) is permissionless and accepts any contract whose token0()/token1() return the reward token and the caller-chosen token; it never checks a Uniswap factory or registry. It stores the caller-supplied pool in currentPoolV3 and calls its swap(), and uniswapV3SwapCallback then mints INT to currentPoolV3 in an amount the caller controls, guarded only by msg.sender == currentPoolV3. The validateSupply modifier is defeated inside the same call by burning the minted INT through the Convertor and re-minting it after swapV3 returns. Any caller can therefore mint unbacked INT through the TOKEN_MINTER role the unifier holds and sell it into protocol-owned liquidity, breaking the invariant that INT is minted only against a genuine pool swap of the configured swapAmount.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 15560.723868247225,
-      "valuationTimestamp": 1789977103,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-6",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x4200000000000000000000000000000000000006",
-          "symbol": "WETH"
-        },
-        "amount": "5.846988019325688317",
-        "usdValue": 15500.478523404629,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789977100,
-          "unitPriceUsd": 2651.019374791235,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x4200000000000000000000000000000000000006",
-          "symbol": "WETH"
-        },
-        "amount": "0.009954538655408763",
-        "usdValue": 26.38967484259692,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789977100,
-          "unitPriceUsd": 2651.019374791235,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-9",
-          "source-10",
-          "source-11",
-          "source-13"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-          "symbol": "USDC"
-        },
-        "amount": "33.85567",
-        "usdValue": 33.85567,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1789979847,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-12",
-          "source-13"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Component 1 is the first exercise's depletion of the protocol-owned INT/WETH Uniswap V3 pool 0xdec6eadbd8ed3f655cba4bb4eeff6fb43b16969d. Components 2 and 3 are five later copycat transactions by other actors repeating the same swapV3 fake-pool mint before the TOKEN_MINTER role was revoked; they took WETH from the same pool and USDC from two Uniswap V4 USDC/INT pools. Unbacked INT kept by attackers (764,145,702.183763063166443405 INT by the first attacker, later burned) is dilution, not measured victim depletion. Copycat WETH is valued at the first-exercise quote; all merged transactions fall within 2,744 seconds.",
-    "realizedAt": 1789979847
-  },
+  "summary": "LiquidityUnifier.swapV3 accepts any contract reporting INT and a quote token as a Uniswap V3 pool, and its swap callback mints INT to that pool. The attacker passed its own contract, minted INT in the callback, cycled it through the Convertor so the supply check passed, and dumped INT into the real INT/WETH pool; copycats repeated it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x837dbabc4f5fa78baf177597edbda09645822032",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x837dbabc4f5fa78baf177597edbda09645822032",
-        "codeHash": "0x0a354aa58b3eb1ea65f098c481035da072b71395c47bf3f956a8d24b8b451bf3"
-      },
-      "deployment": {
-        "timestamp": 1776880841,
-        "blockNumber": 45045747,
-        "transactionHash": "0x8194a906b430511f49147a6e388352a1ffd3127476231b7aeb1b04405664a07c",
-        "transactionIndex": 64,
-        "creatorAddress": "0x58b680c580fd68cd896d8466768c4e85011a7f5c"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1776927379,
-        "blockNumber": 45069016,
-        "transactionHash": "0x3744fd63bcba86574c246ca27d1084bc585e9da69fc9fd2d3ea5e1103638bb13",
-        "transactionIndex": 29,
-        "mechanism": {
-          "type": "storage-write",
-          "address": "0xd5d1a16084a116f8a6c2c706c110dbad2e99be83",
-          "storageSlot": "0x9c9f4d035f1af5dfb4041dcb0d421c11d420d75ac503b5ca991eb586a4ed512f",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "The IntV3Initializer 0xc1494cb284c8d794497468c560ae301864e5bd26, executed by Safe 0x0c02d2d320c62d4088840a459fe8862c802fba78, granted LiquidityUnifier the TOKEN_MINTER role in RoleStore 0xd5d1a16084a116f8a6c2c706c110dbad2e99be83 (roleCache[unifier][TOKEN_MINTER] 0 -> 1). Without it the callback's RewardToken.mint reverts, so the role is necessary to the exploited condition; the unifier was deployed 23,272 blocks earlier without it and no later grant, revoke or unifier configuration call preceded the exploit."
-      },
-      "codeAgeSeconds": 13049724,
-      "failureModeId": "failure:internettoken-liquidityunifier-unvalidated-v3-pool-callback-mint",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-7"
-        ]
+      "address": "0x837dbabc4f5fa78baf177597edbda09645822032",
+      "reset": {
+        "kind": "config",
+        "tx": "0x3744fd63bcba86574c246ca27d1084bc585e9da69fc9fd2d3ea5e1103638bb13",
+        "address": "0xd5d1a16084a116f8a6c2c706c110dbad2e99be83",
+        "slot": "0x9c9f4d035f1af5dfb4041dcb0d421c11d420d75ac503b5ca991eb586a4ed512f"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xed62bb27bd1058d3d7cc93d55421d6d0001ced8cb4529b02773f5126a4edb08b"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/InternetToken_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x8194a906b430511f49147a6e388352a1ffd3127476231b7aeb1b04405664a07c"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x3744fd63bcba86574c246ca27d1084bc585e9da69fc9fd2d3ea5e1103638bb13"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Reviewed anchor, root cause and first exercise. Source-1 (Base block 51593878 index 101) is a contract creation by EOA 0x5f7ce6395818857ac20730dc990f614356d1ec68 creating 0x4acac3ecb4912147cbbf9dc927368a046e35b5b6, whose constructor creates fake pool 0x94d9b828a9fa0d7d788127c827c8c0a268a35f69. debug_traceTransaction(callTracer): the fake pool calls LiquidityUnifier 0x837dbabc4f5fa78baf177597edbda09645822032 swapV3 (0xd28e8f03) with token = INT 0x968d6a288d7b024d5012c0b25d67a889e4e3ec19 and pool = itself; the unifier calls the fake pool's swap, which re-enters uniswapV3SwapCallback (0xfa461e33) with delta 925411678379023085745037207; the unifier calls INT.mint (0x40c10f19) to the fake pool. Receipt Transfer logs 294-301: mint 925411678.379023085745037207 INT to the fake pool, burn of the same amount and release of the same amount of OptimismMintableERC20 0x1d34e08120dbd1ea9bdbcd90c2dc919b50ddff4c by Convertor 0x6b82fdfc0344bd76d5cb58bc24d0ffe947975516 (restoring totalSupply before validateSupply's post-check), then after swapV3 returns the OTHER token goes back to the Convertor and the same INT amount is re-minted (log 301). Logs 302/304: 161265976.195260022578593802 INT paid into INT/WETH pool 0xdec6eadbd8ed3f655cba4bb4eeff6fb43b16969d for 5.846988019325688317 WETH; log 306 sends 764145702.183763063166443405 INT and log 307 the WETH to the EOA. Verified LiquidityUnifier source (Etherscan V2 getsourcecode chainid=8453; v0.8.34+commit.80d5c536, optimizer 200 runs; SHA-256 of SourceCode 12e18e2e643fec9aeea469400f01bea1e9de9e66e3eb1d7171267fa9b5aadcd5): swapV3 has no role modifier; _validatePool checks only nonzero address, code length and _excludedPools (which holds only the real pool); _validatePoolV3Tokens compares token0()/token1() with {rewardToken, token}; uniswapV3SwapCallback checks only msg.sender == currentPoolV3 and mints the supplied positive delta. RewardToken source (SHA-256 bfce00d63f46d03f58f91825d93c987567d00959aece0348d058ec470a167d89) gates mint with onlyRole(TOKEN_MINTER) through RoleStore 0xd5d1a16084a116f8a6c2c706c110dbad2e99be83. Earliest exercise: eth_getLogs INT Transfer(topic1 = zero address) over blocks 45045747..51593878 in 200000-block chunks returns 3 logs in two transactions, the 23,600,000 INT initializer mint in source-4 and source-1; no swapV2 or swapV3 mint by the unifier precedes source-1. The Convertor (created block 12149087, 2024) behaves as designed; it only supplies the supply-neutral round trip and is not a separate target.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:19:25Z"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed complete gross loss. WETH.balanceOf(pool 0xdec6eadbd8ed3f655cba4bb4eeff6fb43b16969d) is 5847033390701967596 at block 51593877 and 45371376279279 at block 51593878; source-1 log 302 transfers 5846988019325688317 wei out. The pool is the protocol-owned INT/WETH V3 position (token0 WETH, token1 INT) and the only address in LiquidityUnifier.excludedPools. Merged copycats: eth_getLogs INT mints over blocks 51593878..51923974 yields 16 transactions through 0x075439c2390572b6a526e019f4c000da317a8ff067e446c22f5593be076f8be2 (block 51596204); callTracer shows each of the five with non-INT outflows calling swapV3 (0xd28e8f03) and the callback mint from a fresh fake pool. Receipt Transfer logs: source-9 (block 51593899:81) 3712433917999873, source-10 (51593967:89) 1421028680038599, source-11 (51593989:96) 4820048370009714 and source-13 (51595250:52) 1027687360577 wei WETH from pool 0xdec6eadb, total 9954538655408763 wei; USDC 0x833589fcd6edb6e08f4c7c32d4f71b54bda02913 from Uniswap V4 PoolManager 0x498581ff718922c3f8e6a244956af099b2652b2b in source-12 (51595134:58) 2424475 and source-13 28597052 + 2834143 units (6 decimals), total 33855670. The only PoolManager Swap events in those receipts are pool ids 0x20b126ee729d1f10a56e1c938c93855477604548e84d0542a025fa3355bae62d and 0x70d13ff7ed37e0e18b3e66a6f9800a43905ce47dfad3d63dd9d0648abc751616, whose Initialize events name currency0 USDC and currency1 INT. The other 11 mint transactions have no non-INT outflow. RoleStore.hasRole(unifier, TOKEN_MINTER) is true at block 51604090 and false at 51604091 (timestamp 1789997529), ending the fault window. The first attacker's remaining 764145702.183763063166443405 INT go to the zero address in 0x0f6615e7fe13ecd38339a131300c05788e07465b5ad2a2bf5ba271854c064262 (block 51604425) and are not counted. WETH is valued with the DefiLlama base:WETH quote at the anchor (source-8); USDC at par.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:19:25Z"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "note": "Reviewed artifact identity and age history. LiquidityUnifier 0x837dbabc4f5fa78baf177597edbda09645822032 is a direct, non-proxy runtime created top-level by 0x58b680c580fd68cd896d8466768c4e85011a7f5c in source-3 (block 45045747 index 64, timestamp 1776880841); eth_getCode is empty at block 45045746 and keccak256 of the runtime is 0x0a354aa58b3eb1ea65f098c481035da072b71395c47bf3f956a8d24b8b451bf3 at blocks 45045747 and 51593877. rewardToken is immutable (INT); constructor arguments (roleStore 0xd5d1a16084a116f8a6c2c706c110dbad2e99be83, INT, treasury 0xe05dd5b785f578337b2b8f695fbc521669c69403, swapAmount 1e27, keeperFee 1e8) do not bear on the defect. Causal configuration: RoleStore.hasRole(address,bytes32)(unifier, keccak256(abi.encode(\"TOKEN_MINTER\")) = 0xb77a48db4266813e82e1cdfbc47bca32aab994909c42cb5090bb0dd63e40bc1f) is false at block 45069015 and true at 45069016; binary search over eth_call fixes that block. roleCache is mapping slot 3, so the flag is storage slot keccak256(role . keccak256(pad(unifier) . pad(3))) = 0x9c9f4d035f1af5dfb4041dcb0d421c11d420d75ac503b5ca991eb586a4ed512f: eth_getStorageAt 0 at block 45069015, 1 at 45069016 and 51593877. debug_traceBlockByNumber(45069016, callTracer): the only RoleStore writes are in source-4 (index 29), Safe 0x0c02d2d320c62d4088840a459fe8862c802fba78 execTransaction -> IntV3Initializer 0xc1494cb284c8d794497468c560ae301864e5bd26, which calls grantRole(address,bytes32) (0xab2742dc) for the unifier with TOKEN_MINTER and TOKEN_BURNER, calls the unifier once (0xce4e5a59), and revokes its own temporary roles. Continuity: ROLE_ADMIN members are [0xe05dd5b785f578337b2b8f695fbc521669c69403 (GovTimelockController), Safe 0x0c02...] at blocks 45069015 and 51593877. Etherscan txlist for the Safe over 45069016..51593878 returns 11 execTransaction calls; callTracer on each finds no grantRole/revokeRole (0x208dd1ff) naming the unifier, no ROLE_ADMIN grant and no non-static call to the unifier except source-4. The timelock has no direct transactions in that window and its three CallExecuted transactions (0xe32171f919f3331a568e1a2a2163efbe7dbb278e60d19dccb626204248961c26, 0x090a5e06bbe11206e613464a5b7c51945e6b3cc390eb1d2134102b04e823782e, 0x640c8fd8615edab0457bc0a01df4254af60395918bf25a29ab3c2eddf1245cf1) target neither RoleStore nor the unifier. The grant is the latest pre-exploit change establishing the vulnerable code-and-state combination; code age 1789977103 - 1776927379 = 13049724 seconds.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:19:25Z"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789977103/base:0x4200000000000000000000000000000000000006",
-      "observedAt": 1790637551
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xf2514fa588fe38cbc393f390a951105ab1692cab71b083516fb3f9ce7db0cff5"
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x168f0ea40074f8b85fb709577f497a252abe2009a082e4290872e174c69fc092"
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x57bec62dbac48a5224762b12ae889c2ef1ddaf479fb876a2294f555bd78d29f4"
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x132fe7d5d0bae03fce0377acee2e2d48336f3aa6715107cea9fe1da53d807e27"
-    },
-    {
-      "id": "source-13",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xe5e00a08813db7df387ecd8e5162fe1847ffa7b0ec92414266d107961ae20582"
-    }
+  "campaign": [
+    "eip155:8453:0xf2514fa588fe38cbc393f390a951105ab1692cab71b083516fb3f9ce7db0cff5",
+    "eip155:8453:0x168f0ea40074f8b85fb709577f497a252abe2009a082e4290872e174c69fc092",
+    "eip155:8453:0x57bec62dbac48a5224762b12ae889c2ef1ddaf479fb876a2294f555bd78d29f4",
+    "eip155:8453:0xefa1e61b0e12be85c529ecd1c4911359ba26505fbff91b98cbf0b23c1c6c3ee8",
+    "eip155:8453:0x0af9d0529a2172e91f4a4e9bd34fce7387a810372606e0c2c5bbe8fa47234291",
+    "eip155:8453:0x132fe7d5d0bae03fce0377acee2e2d48336f3aa6715107cea9fe1da53d807e27",
+    "eip155:8453:0xe5e00a08813db7df387ecd8e5162fe1847ffa7b0ec92414266d107961ae20582",
+    "eip155:8453:0xae4f5028cdd1248e60eb46b779a0747dacc0ea5c2ab75b3d6fdd6ff49dc5cabe",
+    "eip155:8453:0xf04728f7532db525b1fc65d3aef5f8be53f1ba9c82555d4b2c55d3af61cbbdb7",
+    "eip155:8453:0x2d9279564071b966b6ffc888d92e69604be4acd24398de220bb15e11a13a107c",
+    "eip155:8453:0x76e401298b713eed5962447f1323afdcfc8f8f2b033bcf072b6a01fc37412733",
+    "eip155:8453:0x6e62538e553fd236466e2ca33eed9010d6a3382c413d6f2d35e7f7cef901b263",
+    "eip155:8453:0x6a4785dc8178b7d87bb2829ca1af775524cc0282aa6aee37447f40798e74adff",
+    "eip155:8453:0x5927af68bdf4b585bfcb12fa5d780dcf420f142f3e527c5fe1090eaafcf3f378",
+    "eip155:8453:0x075439c2390572b6a526e019f4c000da317a8ff067e446c22f5593be076f8be2"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5",
-      "source-6"
+  "loss": {
+    "usd": 15560.99,
+    "assets": [
+      {
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "5.857937599093738887",
+        "usd": 15529.56
+      },
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "31.431195",
+        "usd": 31.43
+      },
+      {
+        "token": "0x1d34e08120dbd1ea9bdbcd90c2dc919b50ddff4c",
+        "symbol": "INT",
+        "amount": "925411678.379023085745037206",
+        "usd": 0
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-21:internettoken"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/InternetToken_exp.sol"
+  ],
+  "notes": [
+    "The unifier can mint only through the TOKEN_MINTER role, granted by a Safe initializer a day after its deployment; that grant is the reset (rule 10).",
+    "Campaign: the 15 later fake-pool swapV3 calls by other actors, until the role was revoked. Minted INT kept by attackers is dilution, not depletion. The 925M bridged INT one copycat drained from the Convertor reserve was never sold; it is listed at its realised value of zero (rule 15).",
+    "The first attacker then used its minted INT to propose a treasury transfer to itself; the proposals were cancelled before execution."
   ]
 }

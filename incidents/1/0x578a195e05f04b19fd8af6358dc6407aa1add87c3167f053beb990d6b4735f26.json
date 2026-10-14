@@ -1,149 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
-  "protocol": {
-    "name": "ERC20TokenBank",
-    "slug": "erc20tokenbank"
-  },
+  "protocol": "ERC20TokenBank",
   "name": "ERC20TokenBank",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26",
-      "blockNumber": 17376907,
-      "transactionIndex": 0,
-      "timestamp": 1685512463
-    },
-    "attackerAddresses": [
-      "0xc0ffeebabe5d496b2dde509f9fa189c25cf29671",
-      "0x7c28e0977f72c5d08d5e1ac7d52a34db378282b3"
-    ]
-  },
-  "summary": "ExchangeBetweenPools.doExchange(uint256) is permissionless and sends the selected ERC20TokenBank balance through Curve with min_dy = 0. The attacker distorted the USDC/USDT yPool, invoked doExchange to force the bank's 119,023.523157 USDC through the manipulated price for 47.391213 USDT, then reversed the distortion and captured the difference.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 119023.523157,
-      "valuationTimestamp": 1685512463,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "119023.523157",
-        "usdValue": 119023.523157,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1685512463,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross victim depletion is the exact USDC balance decrease of from_bank 0x9ab872a34139015da07ee905529a8842a6142971, from 119,023.523157 USDC immediately before the transaction to zero afterward. The manipulated exchange returned only 47.391213 USDT to to_bank 0x21a3dbee594a3419d6037d6d8cee0b1e10bf345c. The attacker's exact 111,500.389841 USDC proceeds are smaller because Curve execution and the 120,000 USDC flash-loan fee are attacker costs; they do not reduce gross victim depletion."
-  },
+  "summary": "ExchangeBetweenPools.doExchange(uint256) is permissionless: as a trusted issuer it pulls the USDC ERC20TokenBank's balance and swaps it through the Curve y pool with min_dy 0. The attacker skewed the pool, called doExchange so the bank's whole USDC balance bought almost no USDT, then unwound the skew and kept the difference.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x765b8d7cd8ff304f796f4b6fb1bcf78698333f6d",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x765b8d7cd8ff304f796f4b6fb1bcf78698333f6d",
-        "codeHash": "0x584e03aa874e1603d9e375630d738a9a0b79bedd089ebd872eeeb7f22886da64"
-      },
-      "deployment": {
-        "timestamp": 1611740698,
-        "blockNumber": 11737078,
-        "transactionHash": "0x2456271d66958717cdaeb4ad49553a2b1c6de735365764afb7340efd31cc2c72",
-        "transactionIndex": 137,
-        "creatorAddress": "0x21b6938332b2ee40b92608d95a4ede5de729c657"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "ExchangeBetweenPoolsFactory created this direct 3,142-byte runtime with CREATE; the exploit calls doExchange(uint256) on it directly and its runtime hash is unchanged immediately before the exploit."
-      },
-      "codeAgeSeconds": 73771765,
-      "failureModeId": "failure:permissionless-zero-min-output-bank-exchange",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+      "address": "0x765b8d7cd8ff304f796f4b6fb1bcf78698333f6d",
+      "reset": {
+        "kind": "config",
+        "tx": "0x42618dd3d292680b3c3bfd8d35118c742d86e72410555bd4006e3459ba0f2e00",
+        "address": "0x7d8e92748f13e30f99386cd253f2ca7a0659321a",
+        "call": "0x42a6a44a000000000000000000000000765b8d7cd8ff304f796f4b6fb1bcf78698333f6d"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x578a195e05f04b19fd8af6358dc6407aa1add87c3167f053beb990d6b4735f26"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2023-05/ERC20TokenBank_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2456271d66958717cdaeb4ad49553a2b1c6de735365764afb7340efd31cc2c72"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://crypto.training/hacks/2023-05-erc20tokenbank/"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T11:52:00Z",
-      "note": "Reviewed the successful anchor receipt and call trace, verified target source, commit-pinned reproduction, victim and attacker balances, internal creation trace, and historical runtime. Attack contract 0x7c28e0977f72c5d08d5e1ac7d52a34db378282b3 first exchanges 120,000 USDC for 71,076.010673 USDT, then directly calls ExchangeBetweenPools.doExchange(119023523157). The target source has no caller restriction and invokes Curve.exchange_underlying(1,2,camount,0); transfer logs and balance snapshots show from_bank 0x9ab872a34139015da07ee905529a8842a6142971 losing exactly 119,023.523157 USDC while to_bank receives only 47.391213 USDT. The attacker reverses its trade, repays 120,012 USDC, and disposes the remaining 111,500.389841 USDC. In transaction 0x2456271d66958717cdaeb4ad49553a2b1c6de735365764afb7340efd31cc2c72, ExchangeBetweenPoolsFactory 0x21b6938332b2ee40b92608d95a4ede5de729c657 creates the target internally; its direct 3,142-byte runtime hashes to 0x584e03aa874e1603d9e375630d738a9a0b79bedd089ebd872eeeb7f22886da64 at both block 11737078 and block 17376906."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-05/ERC20TokenBank_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 119023.523157,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "119023.523157",
+        "usd": 119023.523157
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-05/ERC20TokenBank_exp.sol",
+    "https://crypto.training/hacks/2023-05-erc20tokenbank/"
+  ],
+  "notes": [
+    "The reset is the TrustList AddTrust of ExchangeBetweenPools, a day after its deployment: without that issuer grant (rule 10) doExchange could not pull from the bank. The bank's trust-list pointer was fixed at its construction.",
+    "The bank's nine earlier issues all came from doExchange calls by protocol operator accounts, and the anchor emptied the bank, so there is no earlier exploit or campaign.",
+    "Loss is the bank's USDC depletion, valued at par; the USDT the swap returned went to the separate USDT bank and does not offset it."
+  ]
 }

@@ -1,136 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x325999373f1aae98db2d89662ff1afbe0c842736f7564d16a7b52bf5c777d3a4",
-  "protocol": {
-    "name": "kTAF (kTeslaAppleFacebook market)",
-    "slug": "ktaf"
-  },
-  "name": "kTAF liquidation seize rounding",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x325999373f1aae98db2d89662ff1afbe0c842736f7564d16a7b52bf5c777d3a4",
-      "blockNumber": 18385886,
-      "transactionIndex": 110,
-      "timestamp": 1697736719
-    },
-    "attackerAddresses": [
-      "0x9b99d7ce9e39c68ab93348fd31fd4c99f79e4b19"
-    ]
-  },
-  "summary": "Repeated tiny liquidations rounded the seized kTAF collateral up, allowing more collateral to be redeemed than the DAI repaid was worth.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 8187.514103413431,
-      "valuationTimestamp": 1697736719,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "8187.514103413431539366",
-        "usdValue": 8187.514103413431,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1697736719,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt records an exact 8,187.514103413431539366 DAI transfer from the attack contract to the attacker after the 4,000 DAI Balancer flash loan was repaid."
-  },
+  "protocol": "kTAF (kTeslaAppleFacebook market)",
+  "name": "kTAF empty-market exchange-rate inflation and redeem rounding",
+  "summary": "kTAF, a Compound V2 fork market, let a donation inflate the exchange rate of a near-empty market and truncated the shares burned by redeemUnderlying. The attacker emptied kTAF by liquidating its only, underwater supplier, then per helper minted, donated TAF to leave 3 wei backing 3,300 TAF, borrowed DAI and redeemed nearly all TAF, leaving bad debt.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xf5140fc35c6f94d02d7466f793feb0216082d7e5",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xf5140fc35c6f94d02d7466f793feb0216082d7e5",
-        "codeHash": "0x99d334b97cbc99d6b743a08d40f02b2c14b425110fb646afa658fdd414b60d6a"
-      },
-      "deployment": {
-        "timestamp": 1595548921,
-        "blockNumber": 10518850,
-        "transactionHash": "0x8e5861f2ba6d0554684ca372efdc029259437ea95e51da5858255d0d8ee02bd2",
-        "transactionIndex": 22,
-        "creatorAddress": "0xa13b3e79f2ed49bc05af2274dc509d73a75cafe2"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The direct kTAF runtime was created by this transaction and its code hash remained unchanged through the exploit."
-      },
-      "codeAgeSeconds": 102187798,
-      "failureModeId": "failure:liquidation-seize-rounding",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0xf5140fc35c6f94d02d7466f793feb0216082d7e5",
+      "reset": {
+        "kind": "config",
+        "tx": "0x15a1a96211e2be873098efe4fa9ddbb88d300c3d1b5422b8f74efdfb0251a890",
+        "address": "0x959fb43ef08f415da0aea39beef92d96f41e41b3",
+        "call": "0x8e8f294b000000000000000000000000f5140fc35c6f94d02d7466f793feb0216082d7e5"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x325999373f1aae98db2d89662ff1afbe0c842736f7564d16a7b52bf5c777d3a4"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-10/kTAF_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8e5861f2ba6d0554684ca372efdc029259437ea95e51da5858255d0d8ee02bd2"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T00:00:00Z",
-      "note": "Reviewed the exploit receipt and call trace, DAI transfers, the creation transaction, the pre-exploit runtime, and the commit-pinned reproduction. The kTAF address is a top-level direct deployment with no DELEGATECALL or SELFDESTRUCT opcode. Its runtime hash is 0x99d334b97cbc99d6b743a08d40f02b2c14b425110fb646afa658fdd414b60d6a both at deployment block 10518850 and immediately before exploit block 18385886. After the flash loan was repaid, the attack contract transferred exactly 8,187.514103413431539366 DAI to the attacker."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 8183.13,
+    "assets": [
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "8187.514103413431539366",
+        "usd": 8183.13
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-10/kTAF_exp.sol"
+  ],
+  "notes": [
+    "The reset is kTAF's collateral factor, set 13 blocks after deployment; borrowing DAI against the inflated kTAF needs it. The fixed TAF price set in between is a price, not config.",
+    "The initial liquidations of 0x3cf7e9d9 hit a position already in shortfall and only emptied the market; the loss is the DAI kDAI lent to the helpers, each left with 1 wei of collateral. kTAF had no other supplier and no other exploit."
+  ]
 }

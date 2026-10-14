@@ -1,159 +1,100 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xf7c21600452939a81b599017ee24ee0dfd92aaaccd0a55d02819a7658a6ef635",
-  "protocol": {
-    "name": "Onyx Protocol",
-    "slug": "onyx-protocol"
-  },
+  "protocol": "Onyx Protocol",
   "name": "Onyx Protocol empty-market rounding",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xf7c21600452939a81b599017ee24ee0dfd92aaaccd0a55d02819a7658a6ef635",
-      "blockNumber": 18476513,
-      "transactionIndex": 2,
-      "timestamp": 1698832727
-    },
-    "attackerAddresses": [
-      "0x085bdff2c522e8637d4154039db8746bb8642bff",
-      "0x5083956303a145f70ba9f3d80c5e6cb5ac842706"
-    ]
-  },
-  "summary": "The freshly listed oPEPE market could be redeemed down to two wei of supply, while direct PEPE transfers increased cash without minting shares. This inflated the exchange rate used for collateral, and redeemUnderlying's integer division then burned only one wei to recover the donation, allowing the attacker to borrow the other Onyx markets nearly empty and recycle the manipulated collateral.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 2140000,
-      "valuationTimestamp": 1698832727,
-      "method": "reported",
-      "sourceIds": [
-        "source-3",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "1156.9",
-        "usdValue": 2088000,
-        "valuation": {
-          "method": "reported",
-          "timestamp": 1698832727,
-          "unitPriceUsd": null,
-          "sourceIds": [
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "MetaTrust reports approximately 1,156.9 ETH-equivalent ($2.088 million) from the anchor transaction and another $60,000 of MATIC, UNI, APE, USDP, and WETH in the follow-up transaction, for approximately $2.14 million gross across the incident. The structured WETH component records the anchor transaction's post-swap profit; exact per-token amounts for the follow-up are not published."
-  },
+  "summary": "The oPEPE market, listed as collateral with no supply, could be redeemed down to two wei of shares while donated PEPE raised the exchange rate. The attacker borrowed the other markets against the inflated collateral, then redeemUnderlying's truncating division burned one wei to recover the donation, leaving the debt unbacked; a copycat repeated it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x9dcb6bc351ab416f35aeab1351776e2ad295abc4",
-        "codeHash": "0x6fcf9b510e8d637527cd02c771298ca98e7326b40cba134805ef512381cd2ee0"
-      },
-      "deployment": {
-        "timestamp": 1698335891,
-        "blockNumber": 18435429,
-        "transactionHash": "0x37688007f4377a3c489c03977dc07b023f7edc74060f1e2a42cc7e92592e2574",
-        "transactionIndex": 75,
-        "creatorAddress": "0xb112e904ae10df48d87762d26e7e61c9e3e35200"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The oPEPE delegator was deployed with the older defect-bearing implementation selected in its constructor; the implementation pointer remained unchanged through both exploit transactions."
-      },
-      "codeAgeSeconds": 496836,
-      "failureModeId": "failure:empty-market-donation-rounding",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x5fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750",
+      "code": "0x9dcb6bc351ab416f35aeab1351776e2ad295abc4",
+      "reset": {
+        "kind": "config",
+        "tx": "0xb91e0731a0f1eb0abf884717a065f7282a5daaacd172a0db8d4a61609c978ed8",
+        "address": "0x7d61ed92a6778f5abf5c94085739f1edabec2800",
+        "call": "0x8e8f294b0000000000000000000000005fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xf7c21600452939a81b599017ee24ee0dfd92aaaccd0a55d02819a7658a6ef635"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T12:11:40Z",
-      "note": "Reviewed the incident anchor and live call trace, prior archive-RPC history audit, oPEPE creation transaction, implementation slot and runtime at deployment and immediately before the exploit, pinned reproduction, verified protocol code, MetaTrust incident analysis, and Onyx's official incident response. The exploit uses oPEPE delegator 0x5fdbcd61bc9bd4b6d3fd1f49a5d253165ea11750 and delegates the affected calls to the defect-bearing OErc20Delegate implementation 0x9dcb6bc351ab416f35aeab1351776e2ad295abc4. The implementation's exchange-rate and redeemUnderlying arithmetic lets an attacker reduce oPEPE supply to two wei, inflate cash by direct PEPE donation, value that dust as collateral, and recover the donation while burning one wei. The complete history scan from deployment block 18435429 through the later exploit found one NewImplementation event in the creation transaction, zero EIP-1967 Upgraded events, and the same implementation pointer in storage slot 18 at deployment and immediately before the exploit. Its 22,395-byte runtime has hash 0x6fcf9b510e8d637527cd02c771298ca98e7326b40cba134805ef512381cd2ee0 at both historical blocks. The applicable age is therefore 496,836 seconds from proxy deployment to the anchor transaction. MetaTrust reports $2.088 million from the anchor and $60,000 from a follow-up transaction."
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://metatrust.io/blogs/post/how-onyxs-governance-and-vulnerability-became-hackers-golden-shovels"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x37688007f4377a3c489c03977dc07b023f7edc74060f1e2a42cc7e92592e2574"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "d5167541cd4c982cd4d29e583089b2a1a5caa6e6",
-      "path": "src/test/2023-11/OnyxProtocol_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x27a3788d504af542681436bfdecf1823f7a8a691d04309ad33e6d3825e899746"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://community.onyx.org/t/the-onyxprotocol-experienced-an-exploit/1125"
-    }
+  "campaign": [
+    "eip155:1:0x27a3788d504af542681436bfdecf1823f7a8a691d04309ad33e6d3825e899746"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $2.14 million incident loss is reported across two exploit transactions; exact per-token gross outflows for the $60,000 follow-up are not published in the cited analysis."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 2269672.16,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "334.476442580295733159",
+        "usd": 603382.12
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "513987.927003",
+        "usd": 513987.93
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "13.12889484",
+        "usd": 452579.26
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "249534.20265",
+        "usd": 249783.74
+      },
+      {
+        "token": "0x45804880de22913dafe09f4980848ece6ecbaf78",
+        "symbol": "PAXG",
+        "amount": "81.375414746413246656",
+        "usd": 159572.31
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "10082.867210431152021424",
+        "usd": 111415.68
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "103657.601740278955029569",
+        "usd": 103636.46
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "6178.875176879081385217",
+        "usd": 25209.81
+      },
+      {
+        "token": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
+        "symbol": "MATIC",
+        "amount": "37221.33678810964954745",
+        "usd": 23507.62
+      },
+      {
+        "token": "0x4d224452801aced8b2f0aebe155379bb5d594381",
+        "symbol": "APE",
+        "amount": "14328.555242078578766788",
+        "usd": 18913.69
+      },
+      {
+        "token": "0x8e870d67f660d95d5be530380d0ec0bd388289e1",
+        "symbol": "USDP",
+        "amount": "7685.28967402742771876",
+        "usd": 7683.54
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://metatrust.io/blogs/post/how-onyxs-governance-and-vulnerability-became-hackers-golden-shovels",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2023-11/OnyxProtocol_exp.sol",
+    "https://community.onyx.org/t/the-onyxprotocol-experienced-an-exploit/1125"
+  ],
+  "notes": [
+    "The reset is the governance execution that listed oPEPE with a 50% collateral factor (rule 10 market listing), five blocks before the anchor and executed by the attacker's own EOA; before it the empty market could not back borrows.",
+    "APE has no DefiLlama quote at the copycat's block; it is valued at the CoinGecko price of 1.32 USD at that time. Victims are the eleven drained oToken markets; the copycat 0x50839563 drained the remaining UNI, MATIC, USDP and APE markets."
+  ]
 }

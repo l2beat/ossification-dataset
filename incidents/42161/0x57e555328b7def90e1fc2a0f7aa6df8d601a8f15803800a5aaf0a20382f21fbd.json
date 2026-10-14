@@ -1,240 +1,60 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd",
-  "protocol": {
-    "name": "WOOFi",
-    "slug": "woofi"
-  },
+  "protocol": "WOOFi",
   "name": "WOOFi WooPPV2 sPMM self-posted price collapse",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd",
-      "blockNumber": 187381785,
-      "transactionIndex": 3,
-      "timestamp": 1709653326
-    },
-    "attackerAddresses": [
-      "0x9961190b258897bca7a12b8f37f415e689d281c4",
-      "0x1759f791214168e0292ab6b2180da1c4cf9b764e",
-      "0x66634590d7d631e3bf85ef4cd6c89ca7479e22bc",
-      "0x2458464afec10e973ac61860718328ce8358be3a"
-    ]
-  },
-  "summary": "WooPPV2 both quotes swaps and rewrites the oracle price it will quote against next. _calcQuoteAmountSellBase() computes newPrice = (1e18 - 2*coeff*price*baseAmount/priceDec/baseDec) * price / 1e18 and _sellBase() writes it back through Wooracle.postPrice() with no floor, cap or relative-move bound, while the same call's payout coefficient only subtracts coeff*price*baseAmount, i.e. half as much. A single permissionless swap() sized so that 2*coeff*price*baseAmount just under-runs 1e18 therefore still pays out about half of notional and leaves the posted WOO price at 9 (1e-8 USD units) instead of 56,608,180. _calcBaseAmountSellQuote() then divides the next quote amount by that collapsed price with no sanity check and paid 10,232,908.094389174718777777 WOO out of the pool for 0.926342 USDC.e.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 8462826.793854104,
-      "valuationTimestamp": 1709653326,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-4",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "1369.87930679761355693",
-        "usdValue": 5197048.114128786,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1709653326,
-          "unitPriceUsd": 3793.8,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xcafcd85d8ca7ad1e1c6f82f651fa15e33aefd07b",
-          "symbol": "WOO"
-        },
-        "amount": "4173698.205095947120305521",
-        "usdValue": 2057973.1494633176,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1709654519,
-          "unitPriceUsd": 0.4930814467971356,
-          "sourceIds": [
-            "source-2",
-            "source-4",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-          "symbol": "USDC.e"
-        },
-        "amount": "1207805.530262",
-        "usdValue": 1207805.530262,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1709653326,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The three components are WooPPV2 0xeff23b4be1091b53205e35f3afcd9c7182bf3062's exact net token depletion across the three exploit transactions, summed from their Transfer logs: -1369.87930679761355693 WETH, -4173698.205095947120305521 WOO and -1207805.530262 USDC.e. Attacker-supplied inputs are already netted out inside each transaction: every flash loan (10.5M USDC.e from Uniswap V3 pool 0xc31e54c7a869b9fcbecc14363cf510d1c41fa443, 2.7M WOO from LB pair 0xb87495219c432fc85161e4283dff131692a528bd) and the 5.09M WOO borrowed from Silo 0x5c2b80214c1961db06f69dd4128bcffc6423d44f is repaid in the same transaction, and the WOO the attacker sold into the pool is counted as an inflow. WETH is valued at the DefiLlama ETH price at the anchor timestamp. WOO is valued at realised proceeds rather than spot because the attacker's own selling moved the price: the 4173657.742464672345895972 WOO taken out was fully sold in five Trader Joe LBRouter transactions between 1709653444 and 1709654519 for 542.451683823751274736 ETH, sliding from 0.00013219905 to 0.00011924248 ETH per WOO, which at the same ETH price is 0.4930814467971356 USD per WOO against a DefiLlama spot of 0.565311. Spot-marking the WOO instead would give 8764293 USD, close to WOO Network's reported 8.75M. USDC.e is valued at par. Financing fees and the builder payment are not deducted.",
-    "realizedAt": 1709654519
-  },
+  "summary": "WooPPV2's sPMM sell-base quote posted a new WOO price to WooracleV2 with no floor or relative-move bound, and the oracle's Chainlink bound check failed open because WOO had no reference feed. Flash-loaned WOO sold into the pool collapsed the price to near zero, letting the attacker buy back the pool's WOO for almost nothing, three times.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xeff23b4be1091b53205e35f3afcd9c7182bf3062",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xeff23b4be1091b53205e35f3afcd9c7182bf3062",
-        "codeHash": "0x99b27c98f51583a17011cce4994d129d5e1ce89cb201ed928e317525d90c861e"
-      },
-      "deployment": {
-        "timestamp": 1667903661,
-        "blockNumber": 36279764,
-        "transactionHash": "0x07eb8aa33a81ba53521af1c0988d0f633f9e2c1799d0efbb1c060a79b7550830",
-        "transactionIndex": 3,
-        "creatorAddress": "0x97471c0fdddb5e5cc34cb08cb17961bd3a53f38f"
-      },
-      "ageReset": {
+      "address": "0xeff23b4be1091b53205e35f3afcd9c7182bf3062",
+      "reset": {
         "kind": "deployment",
-        "description": "WooPPV2 is a plain non-proxy contract with no DELEGATECALL in its runtime. Its 24,428-byte runtime is byte-identical at the creation block, at the block before the exploit, and today, so the executed code dates from deployment."
-      },
-      "codeAgeSeconds": 41749665,
-      "failureModeId": "failure:woofi-spmm-unbounded-self-posted-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0x07eb8aa33a81ba53521af1c0988d0f633f9e2c1799d0efbb1c060a79b7550830"
+      }
+    },
+    {
+      "address": "0x73504eacb100c7576146618dc306c97454cb3620",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x44dd746057adcc8cdeca9a2fb294f7d760f5a8d0ca2a2dee0d47338bdd06d297"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Reviewed the three exploit receipts and the callTracer trace of the anchor, the verified WooPPV2 and WooracleV2_1 sources, historical runtime hashes, oracle state before and after, and the five WOO disposal receipts. The anchor 0x57e555328b7def90e1fc2a0f7aa6df8d601a8f15803800a5aaf0a20382f21fbd is a contract-creation transaction (status 1, block 187381785, index 3, timestamp 1709653326) whose constructor runs the attack from helper 0x1759f791214168e0292ab6b2180da1c4cf9b764e; it CALLs WooPPV2 0xeff23b4be1091b53205e35f3afcd9c7182bf3062 four times with selector 0x7dc20382 and no DELEGATECALL, and WooPPV2 CALLs Wooracle 0x73504eacb100c7576146618dc306c97454cb3620 postPrice (0xd5bade07) inside each swap. WooPPV2 was created by top-level CREATE from 0x97471c0fdddb5e5cc34cb08cb17961bd3a53f38f in 0x07eb8aa33a81ba53521af1c0988d0f633f9e2c1799d0efbb1c060a79b7550830 at block 36279764 index 3; there is no code at 36279763 and its runtime hashes to 0x99b27c98f51583a17011cce4994d129d5e1ce89cb201ed928e317525d90c861e at the creation block, at block 187381784 and at head, so codeAgeSeconds is 1709653326 - 1667903661 = 41749665 (483.21 days). Wooracle state(WOO) at block 187381784 is price 56608180, spread 5560000000000000, coeff 110000000000, woFeasible true; at block 187381785 the same call returns price 9 with woFeasible still true. In the anchor the attacker sells 7856868.8 WOO for 2246892.686007 USDC.e (about half of notional, consistent with coef = 1e18 - coeff*price*amount - spread while the posted price uses 2*coeff*price*amount) and then buys 10232908.094389174718777777 WOO for 0.926342 USDC.e, an implied 9.05e-8 USD per WOO. Boundary test: for every strictly positive coeff and every spread below 5e17 the deployed code permits one swap of size baseAmount = (1e18 - epsilon)/(2*coeff*price) that drives the posted price arbitrarily close to zero, and _calcBaseAmountSellQuote then divides by it with no floor; coeff = 0 would remove all price impact and is not a working configuration of the sPMM. WOOFi's remediation confirms this: the contract is non-upgradeable and was abandoned paused with zero pool size, and the replacement WooPPV2 0xed9e3f98bbed560e66b89aac922e29d4596a9642 adds new maxGamma and maxNotionalSwap TokenInfo fields with require(gamma <= maxGamma) and require(notionalSwap <= maxNotionalSwap) and changes the price update from (1 - 2*gamma) to (1 - gamma), i.e. new code rather than a re-tuning of existing parameters. Loss: WooPPV2's net token deltas summed over the three exploit receipts are -1369.87930679761355693 WETH, -4173698.205095947120305521 WOO and -1207805.530262 USDC.e; the attacker EOA received 1680.698072727181536732 ETH from the three transactions and a further 542.451683823751274736 ETH from selling 4173657.742464672345895972 WOO, so realised proceeds reconcile with pool depletion. Independent WOOFi deployments on other chains were not attacked; WOO Network states that no other network had both the WOO token and a WOO lending market."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x07eb8aa33a81ba53521af1c0988d0f633f9e2c1799d0efbb1c060a79b7550830"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 42161,
-      "transactionHashes": [
-        "0x40e1b8c78083fc666cb7598efcecd0ae0af313fc41441386e4db716c2808ce07",
-        "0xe80a16678b5008d5be1484ec6e9e77dc6307632030553405863ffb38c1f94266",
-        "0xe0f798c3c42201a134014a21e8118433fc23bd457ee9cc40cdbf01e7497b32ea",
-        "0xc382487fd8149dc8e2d40fb4cf7bb8a219c30d86a5479f7ea3fa7ef64c72bc77",
-        "0xdffbd1139150b2f524438a276e75d47a191f0c3fc9b24fab9c079ef962126d09",
-        "0x2031e31d612b23c2b9b531cd1ae8c22e47942e361785eece9f3b5078cd4e3f67",
-        "0xd2d9bd167565c15512fff5cc5235bd36eeef9f1893cd61bb1af707426c647235"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1709653326/coingecko:ethereum",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1709653326/arbitrum:0xcafcd85d8ca7ad1e1c6f82f651fa15e33aefd07b",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-7",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-03/Woofi_exp.sol"
-    },
-    {
-      "id": "source-8",
-      "type": "post-mortem",
-      "url": "https://woox.io/blog/en/woofi-spmm-exploit-post-mortem"
-    },
-    {
-      "id": "source-9",
-      "type": "post-mortem",
-      "url": "https://beosin.com/resources/another-price-manipulation---analysis-of-the-attack-on-the-wooppv2-contract-on-the-arbitrum"
-    },
-    {
-      "id": "source-10",
-      "type": "post-mortem",
-      "url": "https://www.cyfrin.io/blog/hack-analysis-into-woofi-exploit"
-    }
-  ],
-  "discovery": [
-    "seed:woofi:2024-03-05:woofi"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "WooracleV2_1 0x73504eacb100c7576146618dc306c97454cb3620 gates the posted price with woPriceInBound = cloPrice_ == 0 || within +/-1% of Chainlink, and cloAddress(WOO) was the zero address at block 187381784, so the bound check was vacuously satisfied. A registered WOO reference feed would have made the post-collapse swap infeasible. That fail-open validation is recorded as context rather than as a second target: the code-age anchor is WooPPV2's own unbounded price update and unfloored division, for which no coefficient or spread value is safe.",
-      "The WOO component uses the attacker's realised disposal price of 0.4930814467971356 USD per WOO rather than the 0.565311 DefiLlama spot, because the attacker's own selling moved the market by about 10% across the five disposals. Marking WOO at spot would raise the incident loss to about 8.76 million USD."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 8462826.793854104,
+    "assets": [
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "1369.87930679761355693",
+        "usd": 5197048.114128786
+      },
+      {
+        "token": "0xcafcd85d8ca7ad1e1c6f82f651fa15e33aefd07b",
+        "symbol": "WOO",
+        "amount": "4173698.205095947120305521",
+        "usd": 2057973.1494633176
+      },
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "1207805.530262",
+        "usd": 1207805.530262
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-03/Woofi_exp.sol",
+    "https://woox.io/blog/en/woofi-spmm-exploit-post-mortem",
+    "https://beosin.com/resources/another-price-manipulation---analysis-of-the-attack-on-the-wooppv2-contract-on-the-arbitrum",
+    "https://www.cyfrin.io/blog/hack-analysis-into-woofi-exploit"
+  ],
+  "notes": [
+    "WooracleV2_1 is a target: its postPrice bound check passes whenever cloAddress is zero, as it was for WOO. Its reset is WooPPV2.setWooracle pointing the pool at it; no later change to either contract's WOO configuration precedes the exploit.",
+    "Loss is WooPPV2's net depletion over the three attacker transactions, flash loans and the Silo WOO borrow netting out. WOO is valued at the 542.45 ETH the attacker realised selling 4.17M WOO on Trader Joe, about 0.493 USD per WOO against a 0.565 spot that its own sales moved; WETH at the anchor ETH price, USDC.e at par.",
+    "Large WooPPV2 outflows to other addresses in the following blocks are routine arbitrage through aggregators and MEV routers, not repeats of the collapse. WOO Network reported only the Arbitrum pool drained; the other chains' pools were paused the same day."
+  ],
+  "campaign": [
+    "eip155:42161:0x40e1b8c78083fc666cb7598efcecd0ae0af313fc41441386e4db716c2808ce07",
+    "eip155:42161:0xe80a16678b5008d5be1484ec6e9e77dc6307632030553405863ffb38c1f94266"
+  ]
 }

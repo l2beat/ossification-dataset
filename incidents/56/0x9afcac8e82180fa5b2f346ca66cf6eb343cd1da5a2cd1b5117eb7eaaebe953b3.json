@@ -1,151 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x9afcac8e82180fa5b2f346ca66cf6eb343cd1da5a2cd1b5117eb7eaaebe953b3",
-  "protocol": {
-    "name": "P719Token",
-    "slug": "p719token"
-  },
+  "protocol": "P719Token",
   "name": "P719 internal AMM mints its swap output and burns its swap input",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x9afcac8e82180fa5b2f346ca66cf6eb343cd1da5a2cd1b5117eb7eaaebe953b3",
-      "blockNumber": 43023423,
-      "transactionIndex": 6,
-      "timestamp": 1728650125
-    },
-    "attackerAddresses": [
-      "0xfeb19ae8c0448f25de43a3afcb7b29c9cef6eff6",
-      "0x3f32c7cfb0a78ddea80a2384ceb4633099cbdc98"
-    ]
-  },
-  "summary": "P719 is its own market maker: sending BNB to the token buys, and transferring the token to the token sells. Both legs quote a constant-product price from the token's own two balances, tokenOut = balanceOf(token) * bnbIn / (address(token).balance + bnbIn) and bnbOut = address(token).balance * tokenIn / (balanceOf(token) + tokenIn), but neither leg settles against the reserve it just priced. The buy leg mints 1.55x the quoted output instead of debiting balanceOf(token), paying the quote to the buyer, 10 percent and 5 percent of it to two fee sinks and retaining 40 percent, so the token reserve rises when it should fall. The sell leg takes 95 percent of the incoming tokens as the swap input and then burns exactly that amount, forwarding the remaining 5 percent to the fee sinks, so the token reserve does not rise while the BNB reserve is paid out. The product of the two reserves is therefore not preserved by a swap: over the exploit transaction it collapsed from 4.3015e43 to 1.3229e42, 3.1 percent of its starting value, and 3,440 BNB of buys were redeemed for 3,987.799074208829188341 BNB of sells.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 327728.3804863038,
-      "valuationTimestamp": 1728650125,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": null,
-          "symbol": "BNB"
-        },
-        "amount": "575.799074208829188341",
-        "usdValue": 327728.3804863038,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1728650125,
-          "unitPriceUsd": 569.171426572048,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact victim depletion from chain state: the P719 token contract's native BNB reserve, which backs every holder, fell from 675.766160064604403325 BNB to 99.967085855775214984 BNB inside the anchor transaction, a decrease of 575.799074208829188341 BNB. Reconstructed from the call trace, the attacker paid in 3,440 BNB over 47 buys and the contract paid out 4,015.799074208829188341 BNB over 142 payouts, of which 3,987.799074208829188341 BNB went to the attacker's helper contracts and 28 BNB to the token's own fee wallets on the small buy legs. Attacker-supplied inputs are therefore already netted out; the 4,000 BNB PancakeSwap V3 flash loan and its 0.4 BNB fee are financing and are excluded, leaving the attacker 547.399074208829188341 BNB better off, close to the 547.18 BNB the DeFiHackLabs proof of concept reports after it unwinds the attacker's own liquidity position. The residual 99.97 BNB left in the contract drained away over the following days through ordinary holder sells at the now-broken price and is not attributed to this incident."
-  },
+  "summary": "P719 is its own market maker: BNB sent to the token buys and tokens sent to it sell, both priced constant-product from its BNB and token balances. Buys minted 1.55x the quoted output instead of debiting the token reserve and sells burned their input, so the reserves' product fell with every swap; buying through many helpers and then selling drained the BNB reserve.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x6beee2b57b064eac5f432fc19009e3e78734eabc",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x6beee2b57b064eac5f432fc19009e3e78734eabc",
-        "codeHash": "0xef05b29aa08040486cb9d8a08c87f71ee853deea4c0d4f4558397a92da8f1e2f"
-      },
-      "deployment": {
-        "timestamp": 1728476126,
-        "blockNumber": 42965424,
-        "transactionHash": "0x97bb8b2b1c2d9947ccd9dce867d28c467cb275bb71611930d72549bcb83946e3",
-        "transactionIndex": 32,
-        "creatorAddress": "0x596d95fe94bbbdc1f8ff8fdc926916fcada4c2bc"
-      },
-      "ageReset": {
+      "address": "0x6beee2b57b064eac5f432fc19009e3e78734eabc",
+      "reset": {
         "kind": "deployment",
-        "description": "P719 is a plain non-upgradeable token with its market maker built into the same runtime. The 16,374-byte runtime is byte-identical at its creation block and at block 43023422, immediately before the exploit, and the exploit trace contains no DELEGATECALL out of the token, so deployment is the last executable-code change."
-      },
-      "codeAgeSeconds": 173999,
-      "failureModeId": "failure:p719-internal-amm-mints-output-and-burns-input",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The P719 runtime is not source-verified on BscScan. The pricing function, the reserve variables and the settlement asymmetry were established from the deployed bytecode's observable behaviour: the constant-product quote was reproduced arithmetically from the pre-exploit reserves, the token reserve was located at the balances mapping slot keccak256(abi.encode(0x6beee2b57b064eac5f432fc19009e3e78734eabc, 0)) through a prestateTracer state diff, and the mint, burn and fee splits were read from the transaction's own Transfer and swap events."
-        ],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x97bb8b2b1c2d9947ccd9dce867d28c467cb275bb71611930d72549bcb83946e3"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x9afcac8e82180fa5b2f346ca66cf6eb343cd1da5a2cd1b5117eb7eaaebe953b3"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-10/P719Token_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x97bb8b2b1c2d9947ccd9dce867d28c467cb275bb71611930d72549bcb83946e3"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Anchor confirmed, target confirmed, root cause rewritten from the deployed bytecode's behaviour, loss recomputed. 0x9afcac8e...953b3 is successful at block 43023423 index 6, timestamp 1728650125, sent by 0xfeb19ae8c0448f25de43a3afcb7b29c9cef6eff6 with nonce 5 to attack contract 0x3f32c7cfb0a78ddea80a2384ceb4633099cbdc98. Earliest-defect check: nonces 0 to 4 of that EOA were traced. Nonce 3 deploys the attack contract, nonce 4 (0x5acef1ae..., block 43023393) only makes 133 helper contracts call P719.approve and emits 133 Approval logs, and nonces 0 to 2 deploy and seed the attacker's own decoy token. None of them enters the buy or sell path, so the anchor is the first transaction that executes the defect and the snapshot row's anchor stands. The trace has 991 frames and calls the token 0x6beee2b57b064eac5f432fc19009e3e78734eabc 412 times, always directly and never through DELEGATECALL. Root cause reproduced arithmetically because the runtime is unverified. Immediately before the exploit the token's own token balance, at balances-mapping slot keccak256(abi.encode(token, 0)) = 0x46a07ad1ef0c7271976eb959ef27f26d429cf4b2ca5bde86d01ec3bf73f61118, is 63653.242351510302981331 and its native balance is 675.766160064604403325 BNB. The first 10 BNB buy emits a swap event with tokenOut 928.2062320706183869; the constant-product quote 63653.242351510302981331 * 10 / 685.766160064604403325 = 928.206232070618386926 reproduces it to 26 wei, which fixes both the formula and the identity of the two reserves. That buy then mints 1438.7196597094585 tokens from the zero address to the token itself and pays out 928.2062320706183869 to the buyer, 92.8206232070618 to sink 0x2222000000000000000000000000000000000000 and 46.4103116035309 to fee wallet 0x3d5d1e06e9e67908f940059d13fc0a655f81dd0b, leaving the token reserve 371.28 higher rather than 928.21 lower. Each sell takes 526.6362142896273 tokens in, prices 500.3044035751459 of them, burns exactly that priced amount to the zero address and forwards 21.0654 and 5.2664 to the two sinks, so the reserve never receives its swap input. Consequently the reserve product fell from 63653.242351510302981331 * 675.766160064604403325 = 4.30147e43 to 13233.371237062196534191 * 99.967085855775214984 = 1.32290e42, 3.08 percent of the starting value, inside one transaction. No parameter value repairs this: the buy leg mints its output instead of debiting the reserve and the sell leg destroys its input instead of crediting it, so the mispricing is structural rather than a fee setting. Target identity and history: the token is a direct, non-upgradeable runtime of 16,374 bytes hashing to 0xef05b29aa08040486cb9d8a08c87f71ee853deea4c0d4f4558397a92da8f1e2f at both its creation block 42965424 and block 43023422. Created by 0x596d95fe94bbbdc1f8ff8fdc926916fcada4c2bc in 0x97bb8b2b...46e3 at 42965424:32, timestamp 1728476126, which is not an attacker address. Code age 1728650125 - 1728476126 = 173999 s (2.01 days). Loss: the prestateTracer diff for the token shows its native balance falling from 675.766160064604403325 to 99.967085855775214984 BNB, and summing the value-bearing frames gives 3,440 BNB in over 47 buys against 4,015.799074208829188341 BNB out over 142 payouts, 28 BNB of which reached the token's own fee wallets. The attacker wrapped 4,547.799074208829188341 BNB and repaid 4,000.4 WBNB to the PancakeSwap V3 flash pool. Valued at the DefiLlama BNB price 569.171426572048 for the anchor timestamp, the 575.799074208829188341 BNB depletion is 327,728.38 USD, replacing the seed row's rounded 312,000 which came from the proof of concept header."
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1728650125/coingecko:binancecoin",
-      "observedAt": 1787705428
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 339088.98,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "597.560618488783125419",
+        "usd": 339088.98
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-10/P719Token_exp.sol"
+  ],
   "notes": [
-    "The whole campaign is one transaction. The attacker's later transactions from the same EOA target different tokens and are not part of this incident."
+    "Runtime is unverified; the pricing and the mint/burn asymmetry were reconstructed from the trace's Transfer events and the token's balances. The owner's trading-start block (slot 0xa, 154 blocks after deployment) is a trading gate, not a reset.",
+    "Loss is the token contract's net BNB outflow per transaction: the anchor (fees to the token's own wallets included, as they left the reserve holders back) and the copycat 0xac8107fc by 0xcd5e7b69, which repeated the buy/sell loop through the same selector two days later. Other later outflows are plain sells without buys in the same tx."
+  ],
+  "campaign": [
+    "eip155:56:0xac8107fcfc3384345215383b7deb8a4847ac57898ac9adb0ee3e24187ae95fe1"
   ]
 }

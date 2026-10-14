@@ -1,204 +1,44 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:324:0x35a0172fb6bd450ceb29aa67dc85221826dfd0b7528375400b4ccf15c1eed0d8",
-  "protocol": {
-    "name": "Venus (zkSync Era)",
-    "slug": "venus-zksync"
-  },
+  "protocol": "Venus (zkSync Era)",
   "name": "Venus zkSync uncapped wUSDM ERC-4626 oracle",
-  "incident": {
-    "chainId": 324,
-    "exploit": {
-      "transactionHash": "0x35a0172fb6bd450ceb29aa67dc85221826dfd0b7528375400b4ccf15c1eed0d8",
-      "blockNumber": 56669987,
-      "transactionIndex": 0,
-      "timestamp": 1740627926
-    },
-    "attackerAddresses": [
-      "0x16be708e257a0df0f4275ecd9b0f70ce4b45430c",
-      "0x68c8020a052d5061760e2abf5726d59d4ebe3506",
-      "0x4c0e4b3e6c5756fb31886a0a01079701ffec0561"
-    ]
-  },
-  "summary": "Venus selected an ERC4626Oracle that priced wUSDM by calling convertToAssets without bounding donation-driven appreciation. The attacker redeemed wUSDM, donated the resulting USDM directly to the vault to raise that conversion from 1.069434091624779268 to 1.763927342727284953, and used the inflated Venus valuation to liquidate one attacker-controlled account against another and extract WETH and wUSDM.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 261538.21857036703,
-      "valuationTimestamp": 1740627926,
-      "method": "other",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 324,
-          "tokenAddress": "0x5aea5775959fbc2557cc8789bc1bf90a239d9a91",
-          "symbol": "WETH"
-        },
-        "amount": "86.721142851973722607",
-        "usdValue": 202719.34353077377,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1740627782,
-          "unitPriceUsd": 2337.6,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 324,
-          "tokenAddress": "0xa900cbe7739c96d2b153a273953620a701d5442b",
-          "symbol": "wUSDM"
-        },
-        "amount": "55000.000000215426061874",
-        "usdValue": 58818.87503959324,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1740627924,
-          "unitPriceUsd": 1.0694340916247793,
-          "sourceIds": [
-            "source-1",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Measured as the exact net assets retained by the attacker-controlled recipients in the focal transaction. The EOA's WETH balance rises from zero by 86.721142851973722607 WETH and the helper's wUSDM balance rises from zero by 55,000.000000215426061874 wUSDM; the receiver retains neither asset. WETH uses the nearest DefiLlama ETH price at or before the incident. wUSDM uses its pre-exploit onchain redemption value of 1.069434091624779268 USDM per share with USDM at stablecoin par. The official later accounting of $902,159 outstanding bad debt and $716,789 net loss includes later users, liquidation fees, virtual debt, and recovery, so it is not added to this transaction-scoped amount."
-  },
+  "summary": "Venus priced wUSDM with an ERC4626Oracle that read convertToAssets without bounding donation-driven appreciation. The attacker borrowed wUSDM against flash-loaned WETH, redeemed and donated the USDM to the wUSDM vault to raise its rate, then liquidated its own wUSDM debt from a second account, seizing the WETH collateral at the inflated valuation.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f",
-        "codeHash": "0x3897e5999334374aae5e77374198eb936de3bd406ea6cb44333f7ed10929a4ef"
-      },
-      "deployment": {
-        "timestamp": 1737124562,
-        "blockNumber": 53901791,
-        "transactionHash": "0x8b123d3ca67d7bf2e50f5b025ca44b76a400f5ae4cd7ddc9c9b4c612f4d7a39d",
-        "transactionIndex": 0,
-        "creatorAddress": "0x9cef5d9701d9917baa35dd1fe2ba0802c2504c81"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1737987846,
-        "blockNumber": 54673888,
-        "transactionHash": "0x934dbd4b7d9e44b623c531e7040b3123b6ec875b9f97e907fee37811b94ab5e6",
-        "transactionIndex": 1,
-        "logIndex": 11,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xde564a4c887d5ad315a19a96dc81991c98b12182",
-          "callData": "0x8b855da4000000000000000000000000a900cbe7739c96d2b153a273953620a701d5442b0000000000000000000000000000000000000000000000000000000000000000",
-          "valueBefore": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-          "valueAfter": "0x0000000000000000000000007fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f0000000000000000000000000000000000000000000000000000000000000001"
-        },
-        "description": "The governance execution configured the vulnerable ERC4626Oracle as wUSDM's enabled main oracle. ResilientOracle.getOracle(wUSDM, MAIN) changes from (address(0), false) to (0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f, true) at the block boundary, and no later TokenConfigAdded, OracleSet, or OracleEnabled event for wUSDM occurs before exploitation."
-      },
-      "codeAgeSeconds": 2640080,
-      "failureModeId": "failure:venus-wusdm-uncapped-erc4626-conversion-oracle",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f",
+      "reset": {
+        "kind": "config",
+        "tx": "0x934dbd4b7d9e44b623c531e7040b3123b6ec875b9f97e907fee37811b94ab5e6",
+        "address": "0xde564a4c887d5ad315a19a96dc81991c98b12182",
+        "call": "0x8b855da4000000000000000000000000a900cbe7739c96d2b153a273953620a701d5442b0000000000000000000000000000000000000000000000000000000000000000"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 324,
-      "transactionHash": "0x35a0172fb6bd450ceb29aa67dc85221826dfd0b7528375400b4ccf15c1eed0d8"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://community.venus.io/t/post-mortem-wusdm-donation-attack-on-venus-zksync/5004"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2025-02/Venus_ZKSync_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/VenusProtocol/oracle",
-      "commit": "a50a7703eaa6297bb8b1288ec1f3f52d90551ef9",
-      "path": "contracts/oracles/ERC4626Oracle.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 324,
-      "transactionHash": "0x934dbd4b7d9e44b623c531e7040b3123b6ec875b9f97e907fee37811b94ab5e6"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 324,
-      "transactionHash": "0x8b123d3ca67d7bf2e50f5b025ca44b76a400f5ae4cd7ddc9c9b4c612f4d7a39d"
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1740627800/coingecko:ethereum",
-      "observedAt": 1787853262
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-27T17:54:22Z",
-      "note": "Reviewed the successful block-56669987 index-0 receipt and full call trace, the official post-mortem, commit-pinned reproduction and Venus oracle source, attacker-controlled balance deltas, pre-exploit wUSDM conversion value, oracle deployment, runtime history, and complete wUSDM oracle-configuration history. The exploit calls ERC4626Oracle 0x7fb95a0b7b933a9f3fe3ead4b69b0267bd8fe55f 129 times. Its code reads IERC4626(CORRELATED_TOKEN).convertToAssets(1e18) without any appreciation cap; the donation raises that call from 1.069434091624779268 at block 56669986 to 1.763927342727284953 at block 56669987. The oracle's immutable correlated token, underlying token, and ResilientOracle are respectively wUSDM 0xa900cbe7739c96d2b153a273953620a701d5442b, USDM 0x7715c206a14ac93cb1a6c0316a6e5f8ad7c9dc31, and 0xde564a4c887d5ad315a19a96dc81991c98b12182. The oracle was directly created by 0x9cef5d9701d9917baa35dd1fe2ba0802c2504c81 in 0x8b123d3ca67d7bf2e50f5b025ca44b76a400f5ae4cd7ddc9c9b4c612f4d7a39d at block 53901791 index 0, timestamp 1737124562; the address has no code in the preceding block and its runtime hashes to 0x3897e5999334374aae5e77374198eb936de3bd406ea6cb44333f7ed10929a4ef at deployment and immediately before exploitation. Governance transaction 0x934dbd4b7d9e44b623c531e7040b3123b6ec875b9f97e907fee37811b94ab5e6 at block 54673888 index 1, timestamp 1737987846, emitted TokenConfigAdded at log 11 and changed ResilientOracle.getOracle(wUSDM, MAIN) from (address(0), false) to this oracle enabled; the only relevant TokenConfigAdded, OracleSet, or OracleEnabled log through block 56669986 is that initial configuration. The age is therefore 1740627926 - 1737987846 = 2,640,080 seconds. In the exploit transaction the EOA gains exactly 86.721142851973722607 WETH from zero and helper 0x4c0e4b3e6c5756fb31886a0a01079701ffec0561 retains exactly 55,000.000000215426061874 wUSDM from zero, while receiver 0x68c8020a052d5061760e2abf5726d59d4ebe3506 retains neither asset. At 2,337.6 USD/WETH and the pre-attack 1.069434091624779268 USDM-per-wUSDM redemption value at stablecoin par, those exact net proceeds total 261,538.218570367017680915724683779760428232 USD."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2025-02/Venus_ZKSync_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 702965.57,
+    "assets": [
+      {
+        "token": "0xa900cbe7739c96d2b153a273953620a701d5442b",
+        "symbol": "wUSDM",
+        "amount": "466021.574784542863912267",
+        "usd": 498177.06
+      },
+      {
+        "token": "0x5aea5775959fbc2557cc8789bc1bf90a239d9a91",
+        "symbol": "WETH",
+        "amount": "87.771142851973722607",
+        "usd": 204788.51
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://community.venus.io/t/post-mortem-wusdm-donation-attack-on-venus-zksync/5004",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-02/Venus_ZKSync_exp.sol",
+    "https://github.com/VenusProtocol/oracle/blob/a50a7703eaa6297bb8b1288ec1f3f52d90551ef9/contracts/oracles/ERC4626Oracle.sol"
+  ],
+  "notes": [
+    "The governance execution configured the vulnerable ERC4626Oracle as wUSDM's enabled main oracle. The vwUSDM listing, collateral factor and caps were set in the same transaction; no later wUSDM oracle or market change precedes the exploit.",
+    "Loss is the vWETH and vwUSDM markets' net outflow in the exploit, with the 71.34 WETH liquidation share paid to Venus's ProtocolShareReserve netted back. It matches Venus's reported net loss of about $717k; the attacker kept only 86.72 WETH and 55,000 wUSDM, the rest of the wUSDM went into the donation.",
+    "Seventeen bot liquidations of other wUSDM borrowers in the following ~500 blocks used the still-inflated price but did not exercise the defect themselves, and are not listed as campaign."
+  ]
 }

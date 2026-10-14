@@ -1,159 +1,77 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x636be30e58acce0629b2bf975b5c3133840cd7d41ffc3b903720c528f01c65d9",
-  "protocol": {
-    "name": "Convergence Finance",
-    "slug": "convergence-finance"
-  },
+  "protocol": "Convergence Finance",
   "name": "CvxRewardDistributor claimMultipleStaking",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x636be30e58acce0629b2bf975b5c3133840cd7d41ffc3b903720c528f01c65d9",
-      "blockNumber": 20434450,
-      "transactionIndex": 21,
-      "timestamp": 1722524387
-    },
-    "attackerAddresses": [
-      "0x03560a9d7a2c391fb1a087c33650037ae30de3aa"
-    ]
-  },
-  "summary": "claimMultipleStaking() did not check that entries of the claimContracts array were registered staking contracts, so a caller-supplied fake contract was invoked as a staking service and returned reward amounts that minted 58M CVG to the attacker.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 210000,
-      "valuationTimestamp": 1722524387,
-      "method": "reported",
-      "sourceIds": [
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "60.058285738671884767",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x3175df0976dfa876431c2e9ee6bc45b65d3473cc",
-          "symbol": "crvFRAX"
-        },
-        "amount": "15925.234299672041310152",
-        "usdValue": null,
-        "valuation": null,
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Gross swap proceeds transferred to the attacker in the exploit transaction. Asset amounts are exact token Transfer events; the aggregate USD value is reported by Verichains."
-  },
+  "summary": "CvxRewardDistributor.claimMultipleStaking accepted caller-supplied staking contracts without checking them, minted CVG for whatever claimable amount they returned and paid out other reward tokens. The attacker passed its own contract, minted 58.7M CVG and dumped it into the CVG/WETH and CVG/crvFRAX Curve pools; a copycat later used the same call to take the distributor's reward tokens.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x2b083beaac310cc5e190b1d2507038ccb03e7606",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x47c69e8c909ce626af73c955a5e34a20b7c71f19",
-        "codeHash": "0xf1b8713cb142b59fc2a050752e1b999516d71d5e611edb039e27606841e2ef22"
-      },
-      "deployment": {
-        "timestamp": 1720974971,
-        "blockNumber": 20305978,
-        "transactionHash": "0xf52827a8730c83fb015e18063db9800dbd600f38b63872d67b9db08f78ee4c8f",
-        "transactionIndex": 39,
-        "creatorAddress": "0xfffde9a2bb7c9a6dfd1f0235f5af4f599e3265ec"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1720974971,
-        "blockNumber": 20305978,
-        "transactionHash": "0xf52827a8730c83fb015e18063db9800dbd600f38b63872d67b9db08f78ee4c8f",
-        "transactionIndex": 39,
-        "logIndex": 31,
-        "mechanism": {
-          "type": "event",
-          "address": "0x2b083beaac310cc5e190b1d2507038ccb03e7606",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The proxy's sole pre-exploit Upgraded event selected the defect-bearing implementation during proxy deployment."
-      },
-      "codeAgeSeconds": 1549416,
-      "failureModeId": "failure:staking-claim-contract-not-validated",
-      "evidence": {
-        "identitySourceIds": [
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x2b083beaac310cc5e190b1d2507038ccb03e7606",
+      "code": "0x47c69e8c909ce626af73c955a5e34a20b7c71f19",
+      "reset": {
+        "kind": "config",
+        "tx": "0x6c99697ef524a1b40e5874d335c596fbca8a0f87ed986d9d4c7a850954d07002",
+        "address": "0xb0afc8363b8f36e0cce5d54251e20720ffaeaee7",
+        "call": "0x06df27190000000000000000000000002b083beaac310cc5e190b1d2507038ccb03e7606"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x636be30e58acce0629b2bf975b5c3133840cd7d41ffc3b903720c528f01c65d9"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://blog.verichains.io/p/convergence-incident-how-a-simple"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-08/Convergence_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T11:52:27Z",
-      "note": "Reviewed the exploit receipt and call trace, proxy creation receipt, complete Upgraded(address) log range from block 20305978 through the exploit block, pre-exploit implementation hash, pinned reproduction, and Verichains analysis. The exploit calls CvxRewardDistributor proxy 0x2b083beaac310cc5e190b1d2507038ccb03e7606, which delegates claimMultipleStaking to 0x47c69e8c909ce626af73c955a5e34a20b7c71f19. Its sole pre-exploit Upgraded event is creation log 31 and selects that implementation. The unvalidated caller-supplied staking contract inflated the CVG claim. The exploit receipt records 60.058285738671884767 WETH and 15925.234299672041310152 crvFRAX transferred from the swap pools to the attacker; Verichains reports approximately $210,000."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xf52827a8730c83fb015e18063db9800dbd600f38b63872d67b9db08f78ee4c8f"
-    }
+  "campaign": [
+    "eip155:1:0xec625fa7b775f14eda874f61754d265dcbe26f918f85af43962f19809bcfbf7c",
+    "eip155:1:0xe0ab65fae16ecbfee825295ae2a55853fa24af56a4102d81df3435fb848ccae4"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The USD value is reported rather than independently reconstructed from incident-time prices."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 207566.67,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "60.058285738671884767",
+        "usd": 189032.85
+      },
+      {
+        "token": "0x3175df0976dfa876431c2e9ee6bc45b65d3473cc",
+        "symbol": "crvFRAX",
+        "amount": "15925.234299672041310152",
+        "usd": 15910.65
+      },
+      {
+        "token": "0x4591dbff62656e7859afe5e45f6f47d3669fbb28",
+        "symbol": "mkUSD",
+        "amount": "948",
+        "usd": 943.92
+      },
+      {
+        "token": "0x2191df768ad71140f9f3e96c1e4407a4aa31d082",
+        "symbol": "cvgCVX",
+        "amount": "238",
+        "usd": 721.34
+      },
+      {
+        "token": "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+        "symbol": "CVX",
+        "amount": "147",
+        "usd": 480.69
+      },
+      {
+        "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "symbol": "CRV",
+        "amount": "1160",
+        "usd": 317.56
+      },
+      {
+        "token": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+        "symbol": "crvUSD",
+        "amount": "160",
+        "usd": 159.66
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://blog.verichains.io/p/convergence-incident-how-a-simple",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/Convergence_exp.sol"
+  ],
+  "notes": [
+    "The mint went through CVG.mintStaking, which requires ControlTower.isStakingContract(distributor); the multisig set that grant 13,104 s after the proxy's deployment, so the mint grant is the reset.",
+    "Victims are the two Curve pools the minted CVG was dumped into (their CVG gain not subtracted) and the distributor, whose reward tokens copycat 0x98250d30 took with the same call and sold."
+  ]
 }

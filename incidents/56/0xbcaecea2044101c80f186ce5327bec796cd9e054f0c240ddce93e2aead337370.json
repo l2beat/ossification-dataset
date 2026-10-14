@@ -1,192 +1,44 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xbcaecea2044101c80f186ce5327bec796cd9e054f0c240ddce93e2aead337370",
-  "protocol": {
-    "name": "APC",
-    "slug": "apc"
-  },
+  "protocol": "APC",
   "name": "APC TransSwap swaps inventory at the live APC/USDT spot quote",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xbcaecea2044101c80f186ce5327bec796cd9e054f0c240ddce93e2aead337370",
-      "blockNumber": 23527084,
-      "transactionIndex": 0,
-      "timestamp": 1669885836
-    },
-    "attackerAddresses": [
-      "0xc578d755cd56255d3ff6e92e1b6371ba945e3984",
-      "0x02a1d194914bfda8d5d46333cf6dda485923c4c4",
-      "0xca4925f8bd1615515f599af5e2c6de28b880ceca",
-      "0x0fd03ca89545c2ca342c8b9785c2383b8b8eabc5"
-    ]
-  },
-  "summary": "The TransSwap proxy's swap(tokenA, tokenB, amount) prices APC against MUSD from the APC/USDT PancakeSwap pair's live reserves (getReserves then router getAmountOut of 1 APC) and pays the output from its own inventory. A flash-loan buy pumped APC, the attacker swapped APC into MUSD at the inflated quote, dumped APC, swapped the MUSD back into more APC at the depressed quote and sold it, draining TransSwap's APC inventory in two transactions.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 51704.129153250784,
-      "valuationTimestamp": 1669888307,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x2aa504586d6cab3c59fa629f74c586d78b93a025",
-          "symbol": "APC"
-        },
-        "amount": "106931.580629195942203962",
-        "usdValue": 44077.14201949305,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1669885836,
-          "unitPriceUsd": 0.412199480828197,
-          "sourceIds": [
-            "source-1",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x2aa504586d6cab3c59fa629f74c586d78b93a025",
-          "symbol": "APC"
-        },
-        "amount": "35561.130660443051608553",
-        "usdValue": 7626.987133757735,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1669888307,
-          "unitPriceUsd": 0.214475383434355,
-          "sourceIds": [
-            "source-2",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Gross depletion of the TransSwap proxy's APC inventory in the two campaign transactions; its MUSD leg nets to zero in each. Each component is valued at what the attacker realised selling it into the APC/USDT pair: the pair's net USDT outflow in that transaction, with USDT at par. The attackers' own dumping moved APC from a pre-attack spot of about 0.789 USDT, so spot-marking the drained APC is not used. DODO flash-loan fees (3,600 and 1,500 USDT) are financing costs and are not deducted; attacker EOAs netted 40,477.142 and 6,126.987 USDT. The second transaction was sent by a different EOA and contract 2,471 seconds later against the same implementation, before the proxy was upgraded.",
-    "realizedAt": 1669888307
-  },
+  "summary": "The TransSwap proxy priced APC against MUSD from the APC/USDT PancakeSwap pair's live reserves and paid from its own inventory. With flash-loaned USDT the attacker pumped APC, swapped APC for MUSD at the inflated quote, dumped APC, swapped the MUSD back for more APC at the depressed quote and sold it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5a88114f02bffb04a9a13a776f592547b3080237",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xc6fc79db585bf2cc613913f3c24b999a676944ac",
-        "codeHash": "0x0f0048065391d279dbb5ad2ecc1c9ef61ba3ce2f9ecc7d0c7557e8cde6b84ecc"
-      },
-      "deployment": {
-        "timestamp": 1669323051,
-        "blockNumber": 23341864,
-        "transactionHash": "0x59f65f48da08f3fbd79ea7e97ee6a9a057015b7be298e4b0dae5110de51a0553",
-        "transactionIndex": 115,
-        "creatorAddress": "0x0f8470262ac99e91751b26e37aae4ebf1e666666"
-      },
-      "ageReset": {
+      "address": "0x5a88114f02bffb04a9a13a776f592547b3080237",
+      "code": "0xc6fc79db585bf2cc613913f3c24b999a676944ac",
+      "reset": {
         "kind": "deployment",
-        "description": "The TransparentUpgradeableProxy constructor selected implementation 0xc6fc79db585bf2cc613913f3c24b999a676944ac and initialized the MUSD, pair, USDT and APC addresses in the same transaction. No later Upgraded event or configuration transaction preceded the exploit."
-      },
-      "codeAgeSeconds": 562785,
-      "failureModeId": "failure:apc-transswap-spot-quote-swap",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The implementation is unverified; the pricing path is established from the callTracer trace rather than source."
-        ],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+        "tx": "0x59f65f48da08f3fbd79ea7e97ee6a9a057015b7be298e4b0dae5110de51a0553"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbcaecea2044101c80f186ce5327bec796cd9e054f0c240ddce93e2aead337370"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xf2d4559aeb945fb8e4304da5320ce6a2a96415aa70286715c9fcaf5dbd9d7ed2"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x59f65f48da08f3fbd79ea7e97ee6a9a057015b7be298e4b0dae5110de51a0553"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xad0c97b2d2ad5194b04f825363dedbf40e440304c230231bc64f2f07d283958a"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-12/APC_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:16:30Z",
-      "note": "Root cause, anchor and age. debug_traceTransaction(callTracer) of source-1 (block 23527084, index 0; sender 0xc578d755cd56255d3ff6e92e1b6371ba945e3984 -> contract 0x02a1d194914bfda8d5d46333cf6dda485923c4c4, DODO 0xfeafe253802b77456b4627f8c2306a9cebb5d681 flash loan of 1,200,000 USDT): after buying APC in pair 0x3de032d5d11c94d2d79dba0c34d7851ffaa05dd8 (token0 APC, token1 USDT), the contract calls proxy 0x5a88114f02bffb04a9a13a776f592547b3080237 swap(APC, MUSD 0x473c33c55be10bb53d81fe45173fcc444143a13e, 100000e18) (selector 0xdf791e50), which DELEGATECALLs 0xc6fc79db585bf2cc613913f3c24b999a676944ac; that code STATICCALLs pair getReserves and PancakeRouter 0x10ed43c718714eb63d5aa57b78b54704e256024e getAmountOut(1e18, 1892088.32e18, 3477898.61e18) = 1.833530705879737e18 and pays 181519.539882093974385000 MUSD (100000 x quote x 0.99, receipt log 31). After dumping APC, swap(MUSD, APC, 181519.54e18) quotes getAmountOut(1e18, 2754005.42e18, 2397639.28e18) = 0.868423968622209e18 and pays 206931.580629195942203962 APC (log 63). The swap output thus comes from the manipulable same-block spot reserve ratio with no TWAP, bound or external oracle. Implementation is unverified (Etherscan V2 getsourcecode empty). Age: the proxy's EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc holds 0xc6fc79db... at blocks 23341864 and 23527083. Etherscan V2 getLogs topic0 0xbc7cd75a (Upgraded) for the proxy returns three events: construction (block 23341864, tx index 115, log 197) selecting 0xc6fc79db..., then 0x649cb4c0a02779847bb3d62148b5b2b18d556fa9 at block 23528802 (tx 0x929ddb5db9ed2f5071e121dde4d4bc19c949ecc3b632d04c5424d83f6a4852d1) and 0x5f936ed0aa40b4ad9afce7bfdd09732bac9357f7 at block 23543035, both after the campaign. eth_getCode: proxy empty at 23341856, keccak 0xfc1ea81db44e2de921b958dc92da921a18968ff3f3465bd475fb86dd1af03986 at 23341864 and 23527083; implementation empty at 23341855, keccak 0x0f0048065391d279dbb5ad2ecc1c9ef61ba3ce2f9ecc7d0c7557e8cde6b84ecc at 23341856, 23341864 and 23527083. Source-3 (to null, creator 0x0f8470262ac99e91751b26e37aae4ebf1e666666) creates the proxy with constructor data initialize(MUSD, pair, USDT, APC) (selector 0xf8c8765e); source-4 (block 23341856, index 11, same creator) creates the implementation. Etherscan V2 txlist for the proxy through block 23527084 returns 365 transactions: that creation and 364 swap calls (355 successful), no configuration call. Earliest exercise: tokentx for the proxy through block 23540000 yields 376 transaction hashes; 366 are top-level calls to the proxy (txlist), and the 10 others are 7 inbound funding transfers (APC from 0x269de4c696cbfd1aa2f89a4d30b659b5777f0c64 and 0xb75e90aa3a0cbfab5bd7c3eaa5ad9077e46c0ba9, MUSD from 0x889241650d1ef054e8a1ad5ed93887b7235f3163), source-1, source-2 and a plain APC transfer at block 23530560. All earlier swaps were single top-level EOA calls, which cannot move the pair within the same transaction, so source-1 is the first manipulated swap."
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:16:30Z",
-      "note": "Loss. Receipt Transfer logs touching the proxy: source-1 logs 29/31/43/63 are 100000e18 APC in, 181519.539882093974385000 MUSD out and back, 206931.580629195942203962 APC out, net APC depletion 106931.580629195942203962. Source-2 (block 23527907, index 0, sender 0xca4925f8bd1615515f599af5e2c6de28b880ceca -> contract 0x0fd03ca89545c2ca342c8b9785c2383b8b8eabc5, 500,000 USDT DODO flash loan) logs 29/31/43/63: 100000e18 APC in, 112565.616880285973943000 MUSD out and back, 135561.130660443051608553 APC out, net 35561.130660443051608553. APC decimals 18. Realised value: USDT 0x55d398326f99059ff775485246999027b3197955 Transfer logs of the pair in source-1: in 1,200,000 (log 2) and out 1,080,259.326055712378388287 (log 40) and 163,817.815963780670675249 (log 70), the APC tax swapback legs via 0xeabe34b7c959065fc0c3c2eb651f99c721d0368a (logs 14/18/23 and 48/52/57) net zero, giving 44,077.142019493049063536 USDT net outflow; the attack contract's APC balance ends at zero. Source-2: in 500,000, out 403,436.034909674363294289 and 104,190.952224083371240486, net 7,626.987133757734534775. Pair reserves at block 23527083 were 2,886,351.06 APC / 2,277,898.61 USDT (about 0.789 USDT per APC). Block timestamps 1669885836 and 1669888307. The fix upgrade at block 23528802 ends the episode; no other contract-mediated swap occurred between the two attacks."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6",
-      "source-7"
+  "loss": {
+    "usd": 51704.12915325078,
+    "assets": [
+      {
+        "token": "0x2aa504586d6cab3c59fa629f74c586d78b93a025",
+        "symbol": "APC",
+        "amount": "106931.580629195942203962",
+        "usd": 44077.14201949305
+      },
+      {
+        "token": "0x2aa504586d6cab3c59fa629f74c586d78b93a025",
+        "symbol": "APC",
+        "amount": "35561.130660443051608553",
+        "usd": 7626.987133757735
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2022-12/APC_exp.sol",
-    "seed:apc:2022-12-01:apc-transswap-spot-price-swap"
+  "refs": [
+    "eip155:56:0xad0c97b2d2ad5194b04f825363dedbf40e440304c230231bc64f2f07d283958a",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/APC_exp.sol"
+  ],
+  "notes": [
+    "The proxy constructor selected implementation 0xc6fc79db and initialized the MUSD, pair, USDT and APC addresses in the same transaction; no upgrade or configuration change preceded the exploit. Of 367 swap calls before the 0x929ddb5d upgrade, only these two came from flash-loan contracts; the rest are EOA swaps.",
+    "Gross APC drained from the TransSwap inventory, each transaction valued at what the attacker realised: the APC/USDT pair's net USDT outflow, USDT at par. The MUSD legs net to zero and the attackers' own dump crashed APC, so spot-marking is not used."
+  ],
+  "campaign": [
+    "eip155:56:0xf2d4559aeb945fb8e4304da5320ce6a2a96415aa70286715c9fcaf5dbd9d7ed2"
   ]
 }

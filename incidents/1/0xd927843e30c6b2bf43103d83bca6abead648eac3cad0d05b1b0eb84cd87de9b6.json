@@ -1,144 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xd927843e30c6b2bf43103d83bca6abead648eac3cad0d05b1b0eb84cd87de9b6",
-  "protocol": {
-    "name": "OMPx",
-    "slug": "ompx"
-  },
+  "protocol": "OMPx",
   "name": "OMPxContract treasury-inventory mispricing",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xd927843e30c6b2bf43103d83bca6abead648eac3cad0d05b1b0eb84cd87de9b6",
-      "blockNumber": 20468780,
-      "transactionIndex": 74,
-      "timestamp": 1722938291
-    },
-    "attackerAddresses": [
-      "0x40d115198d71cab59668b51dd112a07d273d5831"
-    ]
-  },
-  "summary": "getBuyBackPrice divides the contract's ETH reserve by token.totalSupply() even though the contract itself held ~79% of that supply as unsold inventory, so purchase() sold that inventory for a fraction of the reserve share it entitles the buyer to and buyBack() immediately redeemed it at the full per-supply price, letting a flash-loaned purchase/buyBack loop drain the reserve.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 10782.19,
-      "valuationTimestamp": 1722938291,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "4.372869914943298279",
-        "usdValue": 10782.19,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1722938291,
-          "unitPriceUsd": 2465.7,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exact amount is the victim contract's net ETH outflow across seven purchase/buyBack rounds in the exploit trace. It excludes the attacker's flash-loan principal and transaction gas."
-  },
+  "summary": "getBuyBackPrice divides the contract's ETH reserve by token.totalSupply() although the contract held most of that supply as unsold inventory, so purchase() sold inventory below its reserve share and buyBack() redeemed it at the full per-supply price; a flash-loaned purchase/buyBack loop drained the reserve.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x09a80172ed7335660327cd664876b5df6fe06108",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x09a80172ed7335660327cd664876b5df6fe06108",
-        "codeHash": "0x3d5e00bc4c97981d2b270895a01c69466c564f9a42f4140b9d7eeae4bae1b9bf"
-      },
-      "deployment": {
-        "timestamp": 1523389343,
-        "blockNumber": 5417094,
-        "transactionHash": "0x5a7263218038dfab1e1593bd86ff51c7c780a78c4d793608c9adbb23ed10c788",
-        "transactionIndex": 62,
-        "creatorAddress": "0xeb79db7b4ce44bfb549104cafc8f51cc93a686fb"
-      },
-      "ageReset": {
+      "address": "0x09a80172ed7335660327cd664876b5df6fe06108",
+      "reset": {
         "kind": "deployment",
-        "description": "The verified non-proxy runtime was created in this transaction and remained byte-identical through the exploit."
-      },
-      "codeAgeSeconds": 199548948,
-      "failureModeId": "failure:buyback-total-supply-mispricing",
-      "evidence": {
-        "identitySourceIds": [
-          "source-2",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x5a7263218038dfab1e1593bd86ff51c7c780a78c4d793608c9adbb23ed10c788"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xd927843e30c6b2bf43103d83bca6abead648eac3cad0d05b1b0eb84cd87de9b6"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-08/OMPxContract_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T12:11:40Z",
-      "note": "Reviewed the exploit receipt and complete call trace, direct creation receipt, runtime at creation and immediately before exploitation, verified OMPxContract source, pinned reproduction, exploit-time state, and historical ETH price. OMPxContract 0x09a80172ed7335660327cd664876b5df6fe06108 is a direct Solidity 0.4 deployment whose runtime hash 0x3d5e00bc4c97981d2b270895a01c69466c564f9a42f4140b9d7eeae4bae1b9bf is unchanged from block 5417094 through the exploit. At pre-exploit state it held 1,799,614 of 2,269,323 OMPX supply as inventory. Pricing buybacks against total supply therefore valued purchased inventory as if it were an external reserve claim. The trace executes seven purchase/buyBack rounds; its fourteen victim-to-attacker ETH payments total 704.372869914943298279 ETH against 700 ETH paid in, draining exactly 4.372869914943298279 ETH. At DefiLlama's $2,465.70 incident-time ETH observation, the loss is $10,782.19."
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1722938291/coingecko:ethereum?searchWidth=4h",
-      "observedAt": 1787573500
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5a7263218038dfab1e1593bd86ff51c7c780a78c4d793608c9adbb23ed10c788"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 10796.36,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "4.384001750910895479",
+        "usd": 10796.36
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/OMPxContract_exp.sol"
+  ],
+  "notes": [
+    "The verified non-proxy runtime was created in its deployment transaction and remained byte-identical through the exploit.",
+    "Loss is the contract's net ETH outflow in the anchor and two copycat purchase/buyBack loops by other senders (next block, and December 2025), found by campaign.mjs; flash-loan principal is excluded."
+  ],
+  "campaign": [
+    "eip155:1:0xa7f0319bb32347a3088250deea117fcdc1f203d67ad658773446b1165554e48c",
+    "eip155:1:0x2f402291433df8c8e19a261ef943931a59ed3394653e168b5411d92cd1ed63f8"
+  ]
 }

@@ -1,168 +1,44 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x805d273a63d905d7827d43f6dc051eafdcd0cb69a07c7eb74358c6a5c6255b47",
-  "protocol": {
-    "name": "LML",
-    "slug": "lml"
-  },
-  "name": "LML staking rewards sized at a stale stored price",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x805d273a63d905d7827d43f6dc051eafdcd0cb69a07c7eb74358c6a5c6255b47",
-      "blockNumber": 89867310,
-      "transactionIndex": 17,
-      "timestamp": 1774989542
-    },
-    "attackerAddresses": [
-      "0x03811ea796a084a78356cdedc27de8676457dfa3",
-      "0x3c00b00007f11c84a6cf0bea4dff8de79be8fb51",
-      "0x982e1dc183313ae16002a88aff460c0e6a20e1b6"
-    ]
-  },
-  "summary": "The LML staking implementation converts USDT-denominated rewards into LML at a stored LML/USDT price that updatePrice() refreshes at most once per 3600 seconds, while the LML paid out is sold at the live pair price with no deviation check. The token's swapBack() refills the reward source by moving LML straight out of the LML/USDT pair and calling sync(). The attacker pumped the pair with flash-loaned USDT, claimed rewards for 11 pre-staked EIP-7702 accounts at the stale price, and sold the LML back into the drained pair.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1189704.8,
-      "valuationTimestamp": 1774989542,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "1189704.802567281029313963",
-        "usdValue": 1189704.8,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1774989542,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Net USDT depletion of the LML/USDT pair in the single exploit transaction, equal to its reserve drop. The reported ~$950k is the attacker's profit after flash-loan and swap costs. Burned and redistributed LML is not valued."
-  },
+  "protocol": "LML",
+  "name": "LML pair-funded staking rewards claimed against a pumped pair",
+  "summary": "LML.swapBack() refills the reward contract with LML taken out of the LML/USDT pair (then sync()), and staking sizes LML rewards at a stored price that ignores the live pair. The attacker pumped the pair by buying LML to 0xdead, claimed rewards for 11 pre-staked accounts until swapBack emptied the pair's LML, and sold LML back for the USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xae406f357541f45f01bec21f9f28c43757f202e4",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xbe97138647a993d9d1aabb25f10b3611c0adce19",
-        "codeHash": "0x734bc803374a82eea2dbf5331b8815bedda2e0c70f6cc2da87a0a240838cdb66"
-      },
-      "deployment": {
-        "timestamp": 1772612376,
-        "blockNumber": 84591765,
-        "transactionHash": "0x53e48b13271bc3acb76a9947357ce416d718644a63b9bcf279a460deeef80c04",
-        "transactionIndex": 95,
-        "creatorAddress": "0x178b661324ecdbb2b12ec11bef711d24c43235b9"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1773116825,
-        "blockNumber": 85712582,
-        "transactionHash": "0x3a680138ef741f4d09164e9bf99c7d7814bda64c4af5b20fbfae50684b8fe2ee",
-        "transactionIndex": 89,
-        "logIndex": 372,
-        "mechanism": {
-          "type": "event",
-          "address": "0xae406f357541f45f01bec21f9f28c43757f202e4",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Owner upgradeTo() replaced implementation 0xe14d8fe18a1f5a49e666de2aebe3e5a8712c6df5 with the exploited implementation, which stayed in the EIP-1967 slot through the exploit."
-      },
-      "codeAgeSeconds": 1872717,
-      "failureModeId": "failure:lml-staking-stale-price-reward-conversion",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The staking implementation is unverified; the defect is established from the exploit trace and stored-price views, with BlockSec's decompiled analysis (source-6) as corroboration.",
-          "ALML token 0x737d5b7a41749ab426f41c36a242959e4d0b9e46 swapBack() amplifies the drain by moving pair reserves without payment; it is described, not targeted, because its internally settable configuration history was not reviewed."
-        ],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+      "address": "0xae406f357541f45f01bec21f9f28c43757f202e4",
+      "code": "0xbe97138647a993d9d1aabb25f10b3611c0adce19",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x3a680138ef741f4d09164e9bf99c7d7814bda64c4af5b20fbfae50684b8fe2ee"
+      }
+    },
+    {
+      "address": "0x737d5b7a41749ab426f41c36a242959e4d0b9e46",
+      "reset": {
+        "kind": "config",
+        "tx": "0x91d392c44af00648c44cde76ee06f080fa84cd2964fe95e732949ff034cac8f3",
+        "address": "0x59b86d8836c097fbefcd7cc4a73a016c9104fe6d",
+        "slot": "0x109"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x805d273a63d905d7827d43f6dc051eafdcd0cb69a07c7eb74358c6a5c6255b47"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x53e48b13271bc3acb76a9947357ce416d718644a63b9bcf279a460deeef80c04"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x3a680138ef741f4d09164e9bf99c7d7814bda64c4af5b20fbfae50684b8fe2ee"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:11:27Z",
-      "note": "Loss. Source-1 receipt: three USDT 0x55d398326f99059ff775485246999027b3197955 Transfer logs touch pair 0x4be51ecae1860e5a5fd6db56bc4486ab1e4afad7 and net -1189704802567281029313963 base units (18 decimals). getReserves() at blocks 89867309/89867310 gives USDT 1195841114420464768996189 -> 6136311853183739682226 and LML 21564734628127094666272 -> 52449733330256701192, the same USDT drop. The largest USDT recipient is 0x3c00b00007f11c84a6cf0bea4dff8de79be8fb51 (950370.694349 USDT); the rest routes through PancakePairs 0xcaaf3c41a40103a23eeaa4bba468af3cf5b0e0d8 and 0x9996874dbd891c3ecd601eab79d51f92e92d50ee to repay WBNB borrowings. Scanning every USDT Transfer to or from the pair from its creation (block 84813647) to block 89900000 (3039 transactions) finds no other transaction netting more than 20,000 USDT out of it. DefiLlama quotes USDT at 0.99931 at the exploit; valued at par."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T17:11:27Z",
-      "note": "Root cause, anchor and age. debug_traceTransaction(callTracer) of source-1 (block 89867310, index 17): 57 DELEGATECALLs from staking proxy 0xae406f357541f45f01bec21f9f28c43757f202e4 to implementation 0xbe97138647a993d9d1aabb25f10b3611c0adce19, reached from the attacker's EIP-7702 accounts' BNB sends that trigger reward claims, with token swapBack moving LML from the pair to the reward source. getPrice() on the proxy returns 55307984387690599050 at both blocks 89867309 and 89867310 while the pair's spot price moves from 55.45 to 117 USDT per LML. The one earlier attacker-side transaction, 0x70f7f898987ad159b678633805fad5c55452b3073d5f4c2500121633ee2f3572 (block 88437811), only buys LML, adds liquidity and stakes through the proxy. Age: eth_getStorageAt EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc at block 89867309 is the implementation; Etherscan V2 getLogs for Upgraded on the proxy returns only its creation (0xe14d8fe18a1f5a49e666de2aebe3e5a8712c6df5, source-2, block 84591765) and source-3 (block 85712582, sent by owner 0x178b661324ecdbb2b12ec11bef711d24c43235b9). eth_getCode of the implementation is empty at block 85712517, and keccak256 of its runtime is the recorded hash at blocks 85712518 and 89867309. Owner transactions to the proxy after source-3 are only transferOwnership (0x4bbfdde78e329fc5380dee26183f340277a51016e1e1fa794bba181d3eaf37ef, block 87292083)."
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-30-apr-5-2026"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-5"
+  "loss": {
+    "usd": 1189704.8,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "1189704.802567281029313963",
+        "usd": 1189704.8
+      }
     ]
   },
-  "discovery": [
-    "web:2026-03-31:lml-staking"
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-30-apr-5-2026"
+  ],
+  "notes": [
+    "Both halves were needed: stored-price rewards stay normal-sized while the pair is pumped, and swapBack pays them by confiscating the pair's LML; the claims took the pair's LML reserve to near zero before the sell. The staking upgrade is the later reset.",
+    "LML's reset is MAIN.setTokenAdd(11, LML), the registry pointer through which the reward contract (PROOF.sendMining) calls LML.swapBack(); it was set 78 blocks after LML's deployment. The staking implementation is unverified; its role is read from the exploit trace.",
+    "Net USDT depletion of the LML/USDT pair in the single exploit transaction. LML the pair lost (mostly burned to 0xdead by the attacker's own pump) is not valued; no other transaction drained the pair."
   ]
 }

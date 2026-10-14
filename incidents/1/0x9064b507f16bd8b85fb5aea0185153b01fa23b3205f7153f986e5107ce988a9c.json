@@ -1,224 +1,78 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x9064b507f16bd8b85fb5aea0185153b01fa23b3205f7153f986e5107ce988a9c",
-  "protocol": {
-    "name": "Aave V3",
-    "slug": "aave"
-  },
+  "protocol": "Aave V3",
   "name": "Aave V3 wstETH CAPO snapshot ratio/timestamp misalignment",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x9064b507f16bd8b85fb5aea0185153b01fa23b3205f7153f986e5107ce988a9c",
-      "blockNumber": 24626860,
-      "transactionIndex": 1,
-      "timestamp": 1773143171
-    },
-    "attackerAddresses": [
-      "0x07de4e70ff80bc47546ef7c5d081a4a1ff8bd98e",
-      "0x193e08fd4375444017caff5f24c0fbc3f273f846",
-      "0x1f2f10d1c40777ae1da742455c65828ff36df387",
-      "0x34cc4c9e8b94b8482da66dcc0332baf832a3a060",
-      "0x36331e299247e5d0d3261e1d9852f6e0cffee95c",
-      "0x89364376be6d9b3a793320de6abb4e70bc5f6d07",
-      "0x95324830563c01f740eb2ac6f7cc11e4ec798dfd",
-      "0xb441dea845a1a03a3e7aee81c03662fd9a1b6fda",
-      "0xbd32122bad41a09f2405bb374a83877d8245079c",
-      "0xe08d97e151473a848c3d9ca3f323cb720472d015",
-      "0xe0f3ce29f5591c6d33ab1b8b165bf8ed21483a85",
-      "0xf00002236e516b0820a85a5887a8b10ea3a7e7bb"
-    ]
-  },
-  "summary": "WstETHPriceCapAdapter caps the wstETH/stETH ratio at snapshotRatio plus a growth allowance accrued since snapshotTimestamp. A Chaos Labs risk-oracle update through AaveCapoAgent raised snapshotRatio only to the rate-limited 1.1919 while moving snapshotTimestamp to a 7-day-old point meant for 1.2282, so the cap fell to about 1.1939 against a live ratio of 1.2288. The 2.85% underpricing of wstETH collateral on Aave Core and Prime made 36 healthy E-Mode positions liquidatable, and liquidators seized 10,938.59 wstETH.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 1004900.99,
-      "valuationTimestamp": 1773143171,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-4",
-        "source-5",
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [],
-    "confidence": "high",
-    "notes": "Borrower net loss: collateral removed (liquidatedCollateralAmount plus protocol fee) valued at the market wstETH price minus debt repaid. 10949.42795971905436333 wstETH x $2532.3941577119963 = $27,728,267.40, less 12943.591932140673786512 WETH x $2064.601277371386, 0.003485279480993781 cbETH x $2321.4657190935527 and 0.000855546946009702 osETH x $2198.374477556695 = $26,723,366.41; net $1,004,900.99 (486.73 ETH). Valuing wstETH at its 1.2288 redemption ratio instead gives about 512 ETH, the post-mortem's figure. BuilderNet refunds, fee recapture and DAO compensation do not reduce incident-time loss.",
-    "realizedAt": 1773143255
-  },
+  "summary": "WstETHPriceCapAdapter caps the wstETH ratio at snapshotRatio grown since snapshotTimestamp. An automated update wrote a rate-limited snapshotRatio 1.1919 with a 7-day-old snapshotTimestamp meant for 1.2282, capping the ratio near 1.194 vs a live 1.229. Underpriced ~2.85%, wstETH collateral made healthy Core and Prime E-Mode positions liquidatable.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe1d97bf61901b075e9626c8a2340a7de385861ef",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe1d97bf61901b075e9626c8a2340a7de385861ef",
-        "codeHash": "0x6de4f6626dff78615c352681d35d4971f88e41c7dc4f1047b38a131a7e430ab5"
-      },
-      "deployment": {
-        "timestamp": 1744063883,
-        "blockNumber": 22219918,
-        "transactionHash": "0x9485a222d3a811bbaa445dfef5a35a0cf63f90e0277e05651b81c6dc3cad6463",
-        "transactionIndex": 72,
-        "creatorAddress": "0x914d7fec6aac8cd542e72bca78b30650d45643d7"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1773143171,
-        "blockNumber": 24626860,
-        "transactionHash": "0x32c64151469cf2202cbc9581139c6de7b34dae2012eba9daf49311265dfe5a1e",
-        "transactionIndex": 0,
-        "logIndex": 1,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xe1d97bf61901b075e9626c8a2340a7de385861ef",
-          "callData": "0x50d25bcd",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000003b0456da0d",
-          "valueAfter": "0x00000000000000000000000000000000000000000000000000000039573a3905"
-        },
-        "description": "CapParametersUpdated set snapshotRatio 1157209899495068171 -> 1191926196478762900 and snapshotTimestamp 1708004591 -> 1772535647; latestAnswer() fell from 2534.75871245 to 2462.76569349 USD as isCapped() turned true."
-      },
-      "codeAgeSeconds": 0,
-      "failureModeId": "failure:aave-capo-wsteth-snapshot-misalignment",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-9"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "AaveCapoAgent 0xcc18be380838956aad41fd22466085ed66aabb46 range-checks snapshotRatio and maxYearlyRatioGrowthPercent but not snapshotTimestamp against the constrained ratio; the liquidations never executed it, so it is described, not targeted."
-        ],
-        "reviewSourceIds": [
-          "source-9"
-        ]
+      "address": "0xe1d97bf61901b075e9626c8a2340a7de385861ef",
+      "reset": {
+        "kind": "config",
+        "tx": "0x5fc1591814a2591ab0b7945ed429baa4d1eed78b51790880b58f4842b0f139a6",
+        "address": "0xc2aacf6553d20d1e9d78e365aaba8032af9c85b0",
+        "call": "0x91d148548aa855a911518ecfbe5bc3088c8f3dda7badf130faaf8ace33fdc33828e18167000000000000000000000000cc18be380838956aad41fd22466085ed66aabb46"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9064b507f16bd8b85fb5aea0185153b01fa23b3205f7153f986e5107ce988a9c"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x32c64151469cf2202cbc9581139c6de7b34dae2012eba9daf49311265dfe5a1e"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x9485a222d3a811bbaa445dfef5a35a0cf63f90e0277e05651b81c6dc3cad6463"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x9064b507f16bd8b85fb5aea0185153b01fa23b3205f7153f986e5107ce988a9c",
-        "0x8f47b5e821530e9b9fc2262cde6dbb7427311f13116de995650fd7709df2fa67",
-        "0x6b9c0d3292b51fc1612fba7cc26258357b2b705ab2699d2a4f0014c09a9b96cc",
-        "0x60f3fd66c0f13927ff8b827228dcf209d6f2a5501ec5050e119f0c09300992db",
-        "0xac1cad7fdcab60d1174cd785ac993d36b8230caa5517541b7ee8b7a370fd66fb",
-        "0x33fc18a92afeccaa00e1cab0f406b9f03f516b1d38cd15a7d58d8f9094c6c31b",
-        "0xfdac8cca66fc49bc709ef0eb3471458db1f2833815192c166950910c9e9aeded",
-        "0xb27dd3350490a750ee92494b0c0d9b33f2ad1cf0cbeadff8dae52104a1ead99b",
-        "0x83c6cad0319f1b6a4777dd4cfffa2b07c3ffad5dbb6a340f475179a7676bdcb1",
-        "0xf7b0ff68402cee6f68bb746f91f00503e13d35ef87471df10fb1d66117d49e1e",
-        "0x7872defdef7b839d43e79797ce4c4461b9727861db6aa9e72347f8e995812f5f",
-        "0x058203b57c37d0700a2caccf9303a25ce1a3cbe7b751c26c8b9a02dd24f49f65",
-        "0x5444c97b90d957420b8d1b1e53117525cf498e6f2c3aefb66ac34034c461db19",
-        "0xd1ac5af3abbaaf1a0acc0fd257a71dbb28924368ddbc68f6dd8cb45c85eeeb78",
-        "0xf7ef63d5b2da12a3ff3dedca42156174f5970f073777e24349a064af6fb5c566",
-        "0x545558c91855f69185390957af3dacc7422c5d72758cc3b0ebc2a81bd3f79f77",
-        "0xc5aa4bf15e6b762bf9e75e33897fa143afe619b47a9789f03e2e532cd620b1f3",
-        "0x4054c372cb927fa5386a8786d59ec5f09d17be697e4a116c7631361e76174495",
-        "0x61031c5559992e6a72996aa549fa7d209fb1877913dafcf84a6559ab60fc334c",
-        "0x66f6d449111cb67ce2fc491f6a6be0c4096d2e468579bf1b348dcb230ce51647",
-        "0xef7217a8a72b236b3c00640e88e78e66fa8b23a3507e411c617cfb7712289c5a",
-        "0x3bee9cc474c6bb9d0e03d6ce8b5efe89cf5098d791c35c62cbb0ab504f6f27db",
-        "0xd7418255899739b2579c4f12ed244ea8e1c670062280e1afea01c8286d5515b5",
-        "0x047b6265d7ab3def4054bea0f805c65f5e78c58a966a92323f08ad09c3af7186",
-        "0x31482796d23b1c04b47852f85aabf98b0351d3fdae07f23b1200e8cb41a5f159",
-        "0x02796db103e92e98f68cfe1e3d9cf712a0edfe67903ac246eba086c32f0f205b",
-        "0xedacc685c672873fb90b0e5250387261583c2e9b0acdda54873a5a6042ea1a54",
-        "0xc59881ec4233833ddc7e0eb3b78a4e4654d86a6f79aa7e6ed948e13f2f52a7d6",
-        "0xffb974f5e9618c5f774a7eeb0ee1f89e7a048cf9d55ec9aa914446981f141c7e",
-        "0x602afac70192ed1903ceade622731c2430d68974618a211308da3ca0c17c9584",
-        "0x2b043f918b90e572130d35f41533c38e823a1b5f1a777a441b19912e93c1bb55",
-        "0xecb8f9bc4fbae98456aed6ce93e9578a0c742c7fe0b0b5a4193ffc24226ea73e",
-        "0x499fe5661104e3bdd301aae517c32f1fd10b9adc3dcfdbca74db54e8eb711b11",
-        "0x896a41b851cd5162b2fd9841b7fb7344cf0e40aea6621a9b48e4c7939302c346",
-        "0xbf9bcadd9dc090cda315bceb565641b1c3296b00b71199d6322b14894d44c0aa",
-        "0x90181b3cde4da6b467a7844d58230d2d5d6c21f4f9ff8fa22a6d249e6295e378",
-        "0xca6082d51fcf0e47f2581d4f9be0092e03f02cd783fd343e73c541df690c080d",
-        "0x98e993438697cdf7c8faade4a15f9b9bce74fda0a91fe29fc1762740826458bd",
-        "0x0269621586a95336197fd4194ec0fa964de27b283516c856713625f9540def47",
-        "0x0fb57c3cba7aaedcd7b3033be6ab17e354cd78883b241d93dce11cb17229b5ce",
-        "0xa6367dca45597724f06d499bec95a86bea0475243bca975331ecf2338fa20452"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773143171/ethereum:0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
-      "observedAt": 1790612263
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773143171/ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      "observedAt": 1790612263
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773143171/ethereum:0xbe9895146f7af43049ca1c1ae358b0541ea49704",
-      "observedAt": 1790612263
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773143171/ethereum:0xf1c9acdc66974dfb6decb12aa385b9cd01190e38",
-      "observedAt": 1790612263
-    },
-    {
-      "id": "source-9",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T16:18:40Z",
-      "note": "Anchor, root cause and age. AaveOracle getSourceOfAsset(wstETH) on Core 0x54586be62e3c3580375ae3723c145253060ca0c2 and Prime 0xe3c061981870c0c7b1f3c4f4bb36b95f1f260be6 both return adapter 0xe1d97bf61901b075e9626c8a2340a7de385861ef. debug_traceTransaction(callTracer) of source-2 (block 24626860, index 0): Chainlink KeeperRegistry 0x6593c7de001fc8542bb1703532ee1e5aa0d458fd -> 0xd298355a03537af04dc2004b19811a30b698f16b -> ChainlinkAgentHub 0x5cfc96c396325724d49dff95da103feddbf48e05 -> AgentHub proxy 0x95e3015c67ef62b866cc28ca5a9ab5017a55e336 -> AaveCapoAgent 0xcc18be380838956aad41fd22466085ed66aabb46 -> adapter setCapParameters (0xc1b8c2e0), emitting CapParametersUpdated at log 1. Adapter views at blocks 24626859/24626860: getSnapshotRatio 1157209899495068171/1191926196478762900, getSnapshotTimestamp 1708004591/1772535647, getRatio 1228848994065905999 at both, isCapped false/true, latestAnswer as recorded. Verified source (Etherscan V2 getsourcecode, WstETHPriceCapAdapter): latestAnswer() returns base price x min(getRatio(), _getMaxRatio()), and _setCapParameters only requires the new timestamp to exceed the stored one. The corrective update 0xb883ad2f1101df8d48f014ba308550f3251c2e0a401e7fc9cf09f9c2a158259d (block 24628089) set 1228282498700325540/1772535659 and isCapped false. LiquidationCall logs with collateral wstETH on Pool 0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2 (Core) and 0x4e033931ad43597d96d6bcc25c280717730b58b1 (Prime), blocks 24620000..24640000: 49 events in 41 transactions (source-4), all in blocks 24626860..24626867; source-1 at index 1 immediately after the reset is the first. getUserAccountData at block 24626859 gives every liquidated user a health factor between 1.0016 and 1.0287, so each liquidation required the reset. Age: eth_getCode is empty at block 22219917 and keccak256 of the runtime is the recorded hash at blocks 22219918 and 24626859; source-3 creates the adapter through factory 0x914d7fec6aac8cd542e72bca78b30650d45643d7 and emits its initial CapParametersUpdated. CapParametersUpdated logs from the adapter in blocks 22219918..24626859 are only that initial one, so source-2 is the latest pre-exploit reset and the code age is zero. Loss: for each event, the collateral aToken (Core 0x0b925ed163218f6662a35e0f0371ac234f9e9371, Prime 0xc035a7cf15375ce2706766804551791ad035e0c2) BalanceTransfer from the user to treasury 0x464c71f6c2f760dda6093dcb91c24c39e5d6e18c, value x index / 1e27, is the protocol fee. Sums: liquidatedCollateralAmount 10938586743174578071374, fee 10841216544476291956, debtToCover WETH 12943591932140673786512, cbETH 3485279480993781, osETH 855546946009702 (18 decimals). Last liquidation 0xa6367dca45597724f06d499bec95a86bea0475243bca975331ecf2338fa20452, block 24626867, timestamp 1773143255."
-    }
+  "campaign": [
+    "eip155:1:0x8f47b5e821530e9b9fc2262cde6dbb7427311f13116de995650fd7709df2fa67",
+    "eip155:1:0x6b9c0d3292b51fc1612fba7cc26258357b2b705ab2699d2a4f0014c09a9b96cc",
+    "eip155:1:0x60f3fd66c0f13927ff8b827228dcf209d6f2a5501ec5050e119f0c09300992db",
+    "eip155:1:0xac1cad7fdcab60d1174cd785ac993d36b8230caa5517541b7ee8b7a370fd66fb",
+    "eip155:1:0x33fc18a92afeccaa00e1cab0f406b9f03f516b1d38cd15a7d58d8f9094c6c31b",
+    "eip155:1:0xfdac8cca66fc49bc709ef0eb3471458db1f2833815192c166950910c9e9aeded",
+    "eip155:1:0xb27dd3350490a750ee92494b0c0d9b33f2ad1cf0cbeadff8dae52104a1ead99b",
+    "eip155:1:0x83c6cad0319f1b6a4777dd4cfffa2b07c3ffad5dbb6a340f475179a7676bdcb1",
+    "eip155:1:0xf7b0ff68402cee6f68bb746f91f00503e13d35ef87471df10fb1d66117d49e1e",
+    "eip155:1:0x7872defdef7b839d43e79797ce4c4461b9727861db6aa9e72347f8e995812f5f",
+    "eip155:1:0x058203b57c37d0700a2caccf9303a25ce1a3cbe7b751c26c8b9a02dd24f49f65",
+    "eip155:1:0x5444c97b90d957420b8d1b1e53117525cf498e6f2c3aefb66ac34034c461db19",
+    "eip155:1:0xd1ac5af3abbaaf1a0acc0fd257a71dbb28924368ddbc68f6dd8cb45c85eeeb78",
+    "eip155:1:0xf7ef63d5b2da12a3ff3dedca42156174f5970f073777e24349a064af6fb5c566",
+    "eip155:1:0x545558c91855f69185390957af3dacc7422c5d72758cc3b0ebc2a81bd3f79f77",
+    "eip155:1:0xc5aa4bf15e6b762bf9e75e33897fa143afe619b47a9789f03e2e532cd620b1f3",
+    "eip155:1:0x4054c372cb927fa5386a8786d59ec5f09d17be697e4a116c7631361e76174495",
+    "eip155:1:0x61031c5559992e6a72996aa549fa7d209fb1877913dafcf84a6559ab60fc334c",
+    "eip155:1:0x66f6d449111cb67ce2fc491f6a6be0c4096d2e468579bf1b348dcb230ce51647",
+    "eip155:1:0xef7217a8a72b236b3c00640e88e78e66fa8b23a3507e411c617cfb7712289c5a",
+    "eip155:1:0x3bee9cc474c6bb9d0e03d6ce8b5efe89cf5098d791c35c62cbb0ab504f6f27db",
+    "eip155:1:0xd7418255899739b2579c4f12ed244ea8e1c670062280e1afea01c8286d5515b5",
+    "eip155:1:0x047b6265d7ab3def4054bea0f805c65f5e78c58a966a92323f08ad09c3af7186",
+    "eip155:1:0x31482796d23b1c04b47852f85aabf98b0351d3fdae07f23b1200e8cb41a5f159",
+    "eip155:1:0x02796db103e92e98f68cfe1e3d9cf712a0edfe67903ac246eba086c32f0f205b",
+    "eip155:1:0xedacc685c672873fb90b0e5250387261583c2e9b0acdda54873a5a6042ea1a54",
+    "eip155:1:0xc59881ec4233833ddc7e0eb3b78a4e4654d86a6f79aa7e6ed948e13f2f52a7d6",
+    "eip155:1:0xffb974f5e9618c5f774a7eeb0ee1f89e7a048cf9d55ec9aa914446981f141c7e",
+    "eip155:1:0x602afac70192ed1903ceade622731c2430d68974618a211308da3ca0c17c9584",
+    "eip155:1:0x2b043f918b90e572130d35f41533c38e823a1b5f1a777a441b19912e93c1bb55",
+    "eip155:1:0xecb8f9bc4fbae98456aed6ce93e9578a0c742c7fe0b0b5a4193ffc24226ea73e",
+    "eip155:1:0x499fe5661104e3bdd301aae517c32f1fd10b9adc3dcfdbca74db54e8eb711b11",
+    "eip155:1:0x896a41b851cd5162b2fd9841b7fb7344cf0e40aea6621a9b48e4c7939302c346",
+    "eip155:1:0xbf9bcadd9dc090cda315bceb565641b1c3296b00b71199d6322b14894d44c0aa",
+    "eip155:1:0x90181b3cde4da6b467a7844d58230d2d5d6c21f4f9ff8fa22a6d249e6295e378",
+    "eip155:1:0xca6082d51fcf0e47f2581d4f9be0092e03f02cd783fd343e73c541df690c080d",
+    "eip155:1:0x98e993438697cdf7c8faade4a15f9b9bce74fda0a91fe29fc1762740826458bd",
+    "eip155:1:0x0269621586a95336197fd4194ec0fa964de27b283516c856713625f9540def47",
+    "eip155:1:0x0fb57c3cba7aaedcd7b3033be6ab17e354cd78883b241d93dce11cb17229b5ce",
+    "eip155:1:0xa6367dca45597724f06d499bec95a86bea0475243bca975331ecf2338fa20452"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-9"
+  "loss": {
+    "usd": 1004900.99,
+    "assets": [
+      {
+        "token": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+        "symbol": "wstETH",
+        "amount": "396.818553612456135767",
+        "usd": 1004900.99
+      }
     ]
   },
-  "discovery": [
-    "web:2026-03-12:aave-v3-capo-configuration"
+  "refs": [
+    "eip155:1:0x5fc1591814a2591ab0b7945ed429baa4d1eed78b51790880b58f4842b0f139a6"
+  ],
+  "notes": [
+    "The CAPO snapshot is pushed by AaveCapoAgent in normal operation, so its write is a live value (rule 10). The reset is governance granting the agent RISK_ADMIN on the Core and Prime ACLManagers, which let it write the misaligned snapshot.",
+    "AaveCapoAgent 0xcc18be38 range-checks snapshotRatio but not snapshotTimestamp; the liquidations did not execute it, so it is described, not targeted.",
+    "Loss: 10,949.43 wstETH collateral removed from liquidated borrowers (incl. protocol fee) at market, minus the WETH, cbETH and osETH debt it repaid, netted as liabilities (rule 16) and stated as the net wstETH equivalent. Refunds and DAO compensation are not subtracted."
   ]
 }

@@ -1,153 +1,38 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xbeea4ff215b15870e22ed0e4d36ccd595974ffd55c3d75dad2230196cc379a52",
-  "protocol": {
-    "name": "MetaWin (unverified BSC staking)",
-    "slug": "metawin-0x431abb"
-  },
+  "protocol": "MetaWin (unverified BSC staking)",
   "name": "MetaWin staking USD reward settled at FCN/USDT pair balance spot price",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xbeea4ff215b15870e22ed0e4d36ccd595974ffd55c3d75dad2230196cc379a52",
-      "blockNumber": 33972131,
-      "transactionIndex": 112,
-      "timestamp": 1701429640
-    },
-    "attackerAddresses": [
-      "0xa9edec4496bd013dac805fb221edefc53cbfaf05",
-      "0x791626eb05e60fac973646ac8d67b008b939fe88",
-      "0xfd8043814f72a500f01ddcbbb375a1d56bb1ee17"
-    ]
-  },
-  "summary": "The staking contract 0x431abb27dab05f4e7cdeaa18390fe39364197500 accrues each staker a reward denominated in USD and settles it in FCN at a price it derives, inside the paying transaction, from two raw balanceOf reads on the PancakeSwap V2 FCN/BSC-USD pair 0xacb496dd4a8b6b9d1b99d422b8700f6ef932bc10. In the anchor transaction the claim entry point, selector 0xd9574d4c, reads the caller's stored 10e18 USD entitlement from slot 0x9c6375cda627d083cbb712ee89f8748935cee8e2ed0be5ca571a2fdf7ae3eba3, reads BSC-USD.balanceOf(pair) = 0.02 and FCN.balanceOf(pair) = 0.501971077397338362, and pays out 10 / (0.02 / 0.501971077397338362) = 250.985538698669186971 FCN. Those pair balances are what the caller had just set: the same transaction is a PancakeSwap flash swap that removed 512963.341056079475662703 BSC-USD from that exact pair before calling the claim. The invariant violated is that a fixed USD liability may not be settled at an instantaneous, caller-controllable AMM quote; there is no TWAP, no minimum-reserve or deviation guard, no getReserves-versus-balance check and no re-entrancy or flash-loan protection on the read. No parameter value repairs it: the reward rate, the priced pair and the fee split are configuration, and at any non-zero entitlement a claimer who can move the pair's balances within the transaction converts that entitlement into an arbitrary quantity of FCN.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 502963.341056,
-      "valuationTimestamp": 1701429640,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "BSC-USD"
-        },
-        "amount": "502963.341056079475662703",
-        "usdValue": 502963.341056,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1701429640,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depletion of the PancakeSwap V2 FCN/BSC-USD pair 0xacb496dd4a8b6b9d1b99d422b8700f6ef932bc10 in the anchor transaction: its BSC-USD balance fell from 512963.361056079475662703 to 10000.020000000000000000. The flash swap took 512963.341056079475662703 BSC-USD and was repaid with 10000 BSC-USD and 85 FCN, and the attacker's contract forwarded 503468.345335579475662703 BSC-USD to its EOA in the same transaction, so the realised proceeds and the pool depletion agree to the ~505 BSC-USD the contract already held. BSC-USD is taken at par. The staking contract's whole FCN reward pool was also taken - its balance fell from 252.989548188125072069 to 2.004009489455885098 FCN, 225.886984828802268274 FCN to the attacker and 25.098553869866918697 FCN to the protocol fee address 0x19c4a6b4abfe88161f07c4fa2229a4120acfd7d5 - but that FCN is not valued separately: its only realisable value was the BSC-USD the attacker took out of the same pair, so counting both would double count, and FCN could never have been marked at the pair's pre-attack implied price of about 1,021,900 USD per token against a 0.501971077397338362 FCN reserve. The attacker sold part of the residual FCN back into the same pair over the following two days; that tail is mixed with third-party trading in the pool balance and is not attributed here, so this figure is a lower bound on the campaign total."
-  },
+  "summary": "The unverified staking contract settled USD-denominated rewards in FCN at a spot price computed from raw balanceOf reads on the FCN/USDT PancakeSwap pair. Inside a flash swap that emptied the pair's USDT, the attacker claimed its reward at the collapsed price, received the pool's FCN and repaid the swap with part of it, keeping the USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x431abb27dab05f4e7cdeaa18390fe39364197500",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x431abb27dab05f4e7cdeaa18390fe39364197500",
-        "codeHash": "0x792ee11bff922205f25d997d5ca9e1e947faa1c6fad59f93eabf832b17243102"
-      },
-      "deployment": {
-        "timestamp": 1701321645,
-        "blockNumber": 33936242,
-        "transactionHash": "0x915773440ce6cde56acba4ed06104cb415924a93b9a3bc53e0c38d2ca52bbc6e",
-        "transactionIndex": 42,
-        "creatorAddress": "0x1abeab1ab075a7188d23dded842b2c7f41cf3e11"
-      },
-      "ageReset": {
+      "address": "0x431abb27dab05f4e7cdeaa18390fe39364197500",
+      "reset": {
         "kind": "deployment",
-        "description": "Created by a top-level creation from the EOA 0x1abeab1ab075a7188d23dded842b2c7f41cf3e11, which also deployed the FCN token and is not an attacker address. The 7,131-byte runtime hashes to 0x792ee11bff922205f25d997d5ca9e1e947faa1c6fad59f93eabf832b17243102 at the creation block, at the block before the exploit and at block 33990000, and the address is empty at block 33936241; the EIP-1967 implementation slot reads zero at the pre-exploit block and the exploit trace contains no DELEGATECALL out of the contract, so the runtime is direct and immutable and deployment is the only executable-code change."
-      },
-      "codeAgeSeconds": 107995,
-      "failureModeId": "failure:metawin-usd-reward-settled-at-pair-balance-spot-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The staking contract 0x431abb27dab05f4e7cdeaa18390fe39364197500 is unverified on BscScan, so the root cause is established from the call trace, the exact call arguments and return values of its two balanceOf reads, the prestateTracer read of its 10e18 entitlement slot and the arithmetic identity 10 / (0.02 / 0.501971077397338362) = 250.985538698669186971 rather than from source. Function names are therefore given as selectors."
-        ],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x915773440ce6cde56acba4ed06104cb415924a93b9a3bc53e0c38d2ca52bbc6e"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbeea4ff215b15870e22ed0e4d36ccd595974ffd55c3d75dad2230196cc379a52"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Phalcon_xyz/status/1730625352953901123"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-12/UnverifiedContr_0x431abb_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Root cause replaced. The seed row's summary said any address could call buy() and bindParent() to be its own referrer and farm referral rewards; the trace does not support that. What the anchor actually executes is a price manipulation. The attacker's helper 0x791626eb05e60fac973646ac8d67b008b939fe88 opens a PancakeSwap V2 flash swap on the FCN/BSC-USD pair 0xacb496dd4a8b6b9d1b99d422b8700f6ef932bc10, taking 512963.341056079475662703 BSC-USD and leaving the pair with 0.02 BSC-USD against 0.501971077397338362 FCN, and from inside pancakeCall it calls selector 0xd9574d4c on the staking contract 0x431abb27dab05f4e7cdeaa18390fe39364197500. That call makes exactly two reads for pricing, both captured in the callTracer output with their return data: BSC-USD.balanceOf(0xacb496dd...) returning 0x470de4df820000 and FCN.balanceOf(0xacb496dd...) returning 0x6f75c090bc9d8fa, and prestateTracer shows the only storage it touches is slot 0x9c6375cda627d083cbb712ee89f8748935cee8e2ed0be5ca571a2fdf7ae3eba3 holding 0x8ac7230489e80000 = 10e18. It then transfers 225.886984828802268274 FCN to the caller and 25.098553869866918697 FCN to the fee address 0x19c4a6b4abfe88161f07c4fa2229a4120acfd7d5; the sum 250.985538698669186971 equals 10 * 0.501971077397338362 / 0.02 to the wei, which fixes the formula as USD entitlement divided by the pair's live balance ratio. Boundary test applied and failed: no configured value makes a fixed USD liability safe to settle at a quote the claimer can move inside the same transaction, so this is a code defect, treated the same way as Whalebit and the other spot-quote redemption rows. Anchor kept. The attacker EOA 0xa9edec4496bd013dac805fb221edefc53cbfaf05 has 94 BSC transactions; the only ones that reach 0x431abb27 are nonce 30, transaction 0xb650e9f4b9eb023ea65b55ca4d088323e3d5bda377880dedb149a7fd3fd5c15f at block 33972112, which buys an NFT and calls selectors 0x1f6b08a4 and 0x61b761d5 twice at honest, unmanipulated pair balances to create the entitlement, and nonce 31, this transaction, which is the only execution of the defective 0xd9574d4c conversion in the whole campaign. All 666 external transactions the contract ever received are 0x1f6b08a4, 0x61b761d5 and 0xd9574d4c from ordinary users; the 458 non-attacker FCN payouts total 0.253 FCN with a maximum of 0.041 FCN, against the attacker's single 250.99 FCN, and the attacker's 200e18 stake argument is the modal value among the 98 users who used it, which independently rules out the reward simply scaling with stake. Target: the contract is unverified but direct - its EIP-1967 implementation slot is zero at block 33972130 and the exploit trace shows no DELEGATECALL from it - created by a top-level creation from 0x1abeab1ab075a7188d23dded842b2c7f41cf3e11 in 0x915773440ce6cde56acba4ed06104cb415924a93b9a3bc53e0c38d2ca52bbc6e at block 33936242 index 42; runtime hash 0x792ee11bff922205f25d997d5ca9e1e947faa1c6fad59f93eabf832b17243102 holds at 33936242, 33972130 and 33990000 and the address is empty at 33936241, giving 107,995 s or 1.25 days. Loss: the pair's BSC-USD balance fell 512963.361056079475662703 to 10000.02 and the helper forwarded 503468.345335579475662703 BSC-USD to the EOA in the same transaction; the staking contract's FCN reward pool fell 252.989548188125072069 to 2.004009489455885098, and the project had funded it with exactly 253 FCN at block 33943758, so a single claim took 99.2 percent of it."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x915773440ce6cde56acba4ed06104cb415924a93b9a3bc53e0c38d2ca52bbc6e"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb650e9f4b9eb023ea65b55ca4d088323e3d5bda377880dedb149a7fd3fd5c15f"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-12/UnverifiedContr_0x431abb_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 513028.52,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "512520.611250928422493828",
+        "usd": 513028.52
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://twitter.com/Phalcon_xyz/status/1730625352953901123",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/UnverifiedContr_0x431abb_exp.sol",
+    "eip155:56:0xb650e9f4b9eb023ea65b55ca4d088323e3d5bda377880dedb149a7fd3fd5c15f"
+  ],
+  "notes": [
+    "The contract is unverified and immutable (no DELEGATECALL, runtime unchanged from creation to the exploit), so deployment is the reset; the attacker's setup stake 0xb650e9f4 used ordinary staking functions and is not an exploit.",
+    "Loss is the FCN/USDT pair's USDT outflow in the anchor and in the attacker's later sale of FCN it took from the staking pool (0xee487b9e). The staking pool's FCN is not valued separately: its only realisable value is that same USDT."
+  ],
+  "campaign": [
+    "eip155:56:0xee487b9ec3c48bfeb3896f8acbbe3d416247059a3863d6db5658b4be2cd042a3"
+  ]
 }

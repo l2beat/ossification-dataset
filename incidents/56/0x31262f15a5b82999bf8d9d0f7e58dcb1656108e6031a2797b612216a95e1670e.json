@@ -1,159 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x31262f15a5b82999bf8d9d0f7e58dcb1656108e6031a2797b612216a95e1670e",
-  "protocol": {
-    "name": "Wault Finance",
-    "slug": "wault-finance"
-  },
+  "protocol": "Wault Finance",
   "name": "Wault Finance WUSDMaster unbounded spot WEX swap and pro-rata redeem",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x31262f15a5b82999bf8d9d0f7e58dcb1656108e6031a2797b612216a95e1670e",
-      "blockNumber": 9728756,
-      "transactionIndex": 6,
-      "timestamp": 1628041745
-    },
-    "attackerAddresses": [
-      "0x886358f9296de461d12e791bc9ef6f5a03410c64",
-      "0xaa895873a268a387e38bd841c51d2804071197a1",
-      "0x50afa9383ea476bdf626d6fba62afd0b01c8fea1"
-    ]
-  },
-  "summary": "WUSDMaster.stake() spends wexPermille/1000 of every deposit on WEX through wswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens with the minimum-output argument hard-coded to 0 and the swap path fixed to the WaultSwap USDT/WEX pair, so the contract buys WEX at whatever the instantaneous pool reserves say and mints WUSD 1:1 regardless of what it received. redeem() then pays the redeemer wex.balanceOf(address(this)) * amount / wusd.totalSupply(), a pro-rata slice of the contract's entire live WEX balance. The attacker flash-borrowed WUSD, redeemed 16,839,004.009795997 WUSD to strip 106,502,606.0093368 WEX out of the contract, pushed 23,000,000 USDT into the WEX pair, and then called stake(250000e18) 68 times: the contract paid 1,700,000 USDT for only 12,334,530.242676107 WEX, about nine times over the 0.0149971 USDT per WEX implied by the pair's pre-attack reserves of 11,740,520.220497909455619647 USDT and 782,853,295.192672429820266117 WEX. Boundary test: the zero minimum output is a literal in the deployed code, maxStakeAmount only caps a single call and was defeated by looping 68 times at its exact 250,000 limit, and wexPermille, treasuryPermille, feePermille and swapPath scale or redirect the swap without bounding its execution price, so no parameter value makes the deployed code correct.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 931525.9082680431,
-      "valuationTimestamp": 1628041745,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
-          "symbol": "ETH"
-        },
-        "amount": "370.191870506716646228",
-        "usdValue": 931525.9082680431,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1628038918,
-          "unitPriceUsd": 2516.332697941139,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Measured as the attacker's realised proceeds, the only quantity here that can be marked honestly. The whole campaign is one transaction and every attacker contract ends it with a zero net token position; the single surviving output is 370.191870506716646228 Binance-Peg ETH transferred to the attacker EOA 0x886358f9296de461d12e791bc9ef6f5a03410c64, priced at 2516.332697941139 USD from the DefiLlama coingecko:ethereum series - the pegged BSC token has no series of its own, and the nearest sample at or before the anchor is the 1628038918 observation. Gross victim depletion is separable in token terms - WUSDMaster's WEX balance falls from 107,739,444.54141636554395014 to 13,571,368.774755662847316589, a 94,168,075.766660702696633551 WEX outflow, partly offset by a 144,896.391183601501991305 USDT gain, while WUSD supply rises by 160,995.990204001668879227 - but it cannot be marked: the attacker's own dump of that WEX into a pool holding 11.74 million USDT is what set every available WEX quote, so the DefiLlama post-incident quote of 0.015024859194697595 USD, which would value the outflow at 1,414,862 USD, is not a price at which the position could have been sold. Flash-loan principal (the WUSD borrowed from the WUSD/BUSD pair and the 40,000,000 USDT borrowed from the WBNB/USDT pair) is netted inside the same transaction and is not counted; gas is not deducted."
-  },
+  "summary": "WUSDMaster.stake() swapped a share of each USDT deposit into WEX at the pair's spot price with zero minimum output and minted WUSD 1:1, while redeem() paid a pro-rata slice of the contract's WEX. The attacker redeemed flash-borrowed WUSD for WEX, pumped the pair, staked 68 times so the contract bought WEX at inflated prices, then sold the WEX back.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa79fe386b88fbee6e492eeb76ec48517d1ec759a",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa79fe386b88fbee6e492eeb76ec48517d1ec759a",
-        "codeHash": "0xad6a391f7800d21a11ecc5557e205b5d7fa6a6151e2ad50f8eee60a8ccec2e7a"
-      },
-      "deployment": {
-        "timestamp": 1627983863,
-        "blockNumber": 9710147,
-        "transactionHash": "0xc6af3503f42a2d2744045c949b3afb0a4f570284479459a8a9b1331be5a7a4cd",
-        "transactionIndex": 0,
-        "creatorAddress": "0x8beca4a43148213b57e650a24ab7562b79dd5448"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "WUSDMaster is a plain non-delegating deployment with no proxy or upgrade mechanism; wusd and wswapRouter are immutable and every other setter writes configuration, not code. The account is empty at block 9710146 and its runtime hashes to 0xad6a391f7800d21a11ecc5557e205b5d7fa6a6151e2ad50f8eee60a8ccec2e7a at the creation block, at block 9720000, at block 9728755 immediately before the exploit, and in the anchor transaction's prestate, so the deployment is the last executable-code change."
-      },
-      "codeAgeSeconds": 57882,
-      "failureModeId": "failure:wusdmaster-unbounded-spot-wex-swap-and-pro-rata-redeem",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0xa79fe386b88fbee6e492eeb76ec48517d1ec759a",
+      "reset": {
+        "kind": "config",
+        "tx": "0x5c8ebb7cee4aa5def6612dadb42d9d564e8b35b9b9bc66d0cb1b6d49a409505e",
+        "address": "0x3ff997eaea488a082fb7efc8e6b9951990d0c3ab",
+        "slot": "0x6"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x31262f15a5b82999bf8d9d0f7e58dcb1656108e6031a2797b612216a95e1670e"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T20:05:00Z",
-      "note": "Reviewed the anchor receipt and its 802 logs, the Etherscan-verified WUSDMaster source, the live pre-exploit parameter values, the creation transaction, historical runtimes and the attacker's full transaction list. The anchor 0x31262f15a5b82999bf8d9d0f7e58dcb1656108e6031a2797b612216a95e1670e is status 1 at block 9728756 index 6, timestamp 1628041745; it is a contract creation from 0x886358f9296de461d12e791bc9ef6f5a03410c64 whose constructor runs the whole exploit and deploys 0xaa895873a268a387e38bd841c51d2804071197a1. It is the earliest successful defect-executing transaction: the sender's only earlier attempts are a reverted creation at block 9728661 and a successful but log-free attack-contract deployment at block 9728718 that never touches WUSDMaster, and every later transaction only launders the proceeds. WUSDMaster 0xa79fe386b88fbee6e492eeb76ec48517d1ec759a emits exactly one Redeem for 16,839,004.009795997 WUSD and 68 Stake events inside the anchor. Its state before the exploit at block 9728755 is maxStakeAmount 250000e18, wexPermille 100, treasuryPermille 7, feePermille 0, treasury 0x9d83728e7552f3e9f2ac90e81e117ca0c119dbed, and the WaultSwap USDT/WEX pair 0x50e8d9aa83ebde9608074ec1faadfd2e792d9b81 holds 11,740,520.220497909455619647 USDT against 782,853,295.192672429820266117 WEX. Across the transaction the contract receives 17,000,000 USDT and 12,334,530.242676107 WEX and pays out 16,855,103.6088164 USDT and 106,502,606.0093368 WEX, so its balances move from 15,331,103.209233676240437287 USDT and 107,739,444.54141636554395014 WEX to 15,475,999.600417277742428592 USDT and 13,571,368.774755662847316589 WEX while WUSD supply rises from 17,034,559.121370751378263637 to 17,195,555.111574753047142864. WUSDMaster was created by top-level CREATE from 0x8beca4a43148213b57e650a24ab7562b79dd5448 in 0xc6af3503f42a2d2744045c949b3afb0a4f570284479459a8a9b1331be5a7a4cd at block 9710147 index 0, timestamp 1627983863, an address unrelated to the attacker; the account is empty at block 9710146 and hashes to 0xad6a391f7800d21a11ecc5557e205b5d7fa6a6151e2ad50f8eee60a8ccec2e7a at the creation block, at block 9720000, at block 9728755 and in the anchor prestate, giving codeAgeSeconds 1628041745 - 1627983863 = 57,882 (16.08 hours). Loss taken from the receipt's Transfer logs as the 370.191870506716646228 Binance-Peg ETH the attacker EOA ends with, valued at the DefiLlama ETH price 2516.332697941139 observed at 1628038918, the nearest sample at or before the anchor; the seed row's 390 ETH at 2523.91 is close but is not the receipt figure."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc6af3503f42a2d2744045c949b3afb0a4f570284479459a8a9b1331be5a7a4cd"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://inspexco.medium.com/wault-finance-incident-analysis-wex-price-manipulation-using-wusdmaster-contract-c344be3ed376"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1628040000/coingecko:ethereum",
-      "observedAt": 1787684543
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2021-08/WaultFinance_exp.sol"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2021-08/WaultFinance_exp.sol",
-    "seed:wault-finance:2021-08-04:wault-finance-wusdmaster-wex-spot-price-manipulation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "Loss is the attacker's realised Binance-Peg ETH proceeds rather than gross victim depletion: the 94,168,075.766660702696633551 WEX that left WUSDMaster was priced only by the attacker's own dump, so no contemporaneous quote for it is usable."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 972089.38,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "967977.713716521479617862",
+        "usd": 972089.38
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://inspexco.medium.com/wault-finance-incident-analysis-wex-price-manipulation-using-wusdmaster-contract-c344be3ed376",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-08/WaultFinance_exp.sol"
+  ],
+  "notes": [
+    "The reset is WUSD's setMinter to WUSDMaster, the mint grant stake() and redeem() need; the master itself was deployed 465 blocks earlier and never changed. Its later permille and ownership changes only scale the swap or move a role.",
+    "Loss is the net USDT outflow of the victims taken together: the WEX/USDT pair, WUSDMaster and its treasury. The 94.17M WEX that left WUSDMaster ended back in the pair, so WEX nets to zero and needs no price. It is close to the attacker's 370.19 ETH of realised proceeds."
+  ]
 }

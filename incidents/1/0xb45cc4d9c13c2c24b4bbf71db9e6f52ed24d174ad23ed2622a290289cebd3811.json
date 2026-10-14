@@ -1,150 +1,35 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xb45cc4d9c13c2c24b4bbf71db9e6f52ed24d174ad23ed2622a290289cebd3811",
-  "protocol": {
-    "name": "BoostHook",
-    "slug": "boosthook"
-  },
+  "protocol": "BoostHook",
   "name": "BoostHook leveraged longs financed at a manipulable spot price",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xb45cc4d9c13c2c24b4bbf71db9e6f52ed24d174ad23ed2622a290289cebd3811",
-      "blockNumber": 25080848,
-      "transactionIndex": 4,
-      "timestamp": 1778610731
-    },
-    "attackerAddresses": [
-      "0xb0a019dd22c363e82fa4f96ae1e4b993341f5104",
-      "0xb64bff7b5199abcbb98fee2bf4014265fca85a6d"
-    ]
-  },
-  "summary": "BoostHook is a Uniswap V4 hook whose openLong lends ETH from the protocol's own liquidity bands and swaps collateral plus loan into BOOST. Which bands are borrowable (those entirely above the current tick, i.e. ETH-only) and the price of the leveraged buy both come from the pool's instantaneous slot0 state; the hook keeps TWAP observations but consults them only for liquidations. The attacker flash-borrowed 120 WETH, bought 93,762 BOOST with 100 ETH, which moved the tick down and converted more band liquidity into borrowable ETH, opened nine 5x longs with 2 ETH each that borrowed 72 ETH of band ETH to buy BOOST at the inflated price, then sold its BOOST back into the pool for 140.93 ETH, leaving the positions insolvent.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 47683.69,
-      "valuationTimestamp": 1778610723,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "20.932897159743547",
-        "usdValue": 47683.69,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1778610723,
-          "unitPriceUsd": 2277.9307002692126,
-          "sourceIds": [
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The loss is the ETH that left the protocol: the attacker's input was 120 WETH flash-borrowed from Morpho 0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb (log 162) and repaid (log 287), and it received 20.932897159743547 WETH net (log 288). callTracer value flows in the anchor agree: the V4 PoolManager 0x000000000004444c5dc75cb358380d2e3de08a90 lost 24.056259757316713 ETH, of which 2.403362597573167 ETH went to the hook and 0.72 ETH to BoostStaking 0x4ae2458e6d087aaa3625d81242f22f0b513bca07 as protocol fees and stayed in the protocol. The 72 ETH of band ETH lent to the nine positions (PositionOpened debt 8 ETH each) was spent inside the pool and is not added again; the positions' residual BOOST is illiquid and not credited. DefiLlama lists USD 187k, which likely counts the band debt; this record keeps the realised extraction. ETH is valued at DefiLlama coingecko:ethereum at 1778610723."
-  },
+  "summary": "BoostHook's openLong lends ETH from the hook's own Uniswap v4 liquidity bands and spends collateral plus loan on BOOST at the pool's instantaneous price, with caller-set slippage. The attacker bought BOOST, opened 5x longs that pumped the price with band ETH, then sold its BOOST into the pumped pool, leaving the longs insolvent.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x3db1ebb71c735980d12422f153987d89f4d7eacc",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x3db1ebb71c735980d12422f153987d89f4d7eacc",
-        "codeHash": "0xaab52e779f171b68a2c7cacd9b0a8a9dea167cfb31e0a95e08dbe2c99b485fe6"
-      },
-      "deployment": {
-        "timestamp": 1778579279,
-        "blockNumber": 25078238,
-        "transactionHash": "0xffb9f74ebc659c48886bd91c8c8c79281eb82d958d43a929a0d122f7390a7caf",
-        "transactionIndex": 193,
-        "creatorAddress": "0x4e59b44847b379578588920ca78fbf26c0b4956c"
-      },
-      "ageReset": {
+      "address": "0x3db1ebb71c735980d12422f153987d89f4d7eacc",
+      "reset": {
         "kind": "deployment",
-        "description": "The deterministic CREATE2 deployer 0x4e59b44847b379578588920ca78fbf26c0b4956c created the non-upgradeable BoostHook runtime at its hook-permission address for sender 0x38e5bd272372c2a76f39dd480f3d2f57fe77e166; the runtime hash was unchanged through the exploit and the later owner calls (setStaking, initializePool, seedBands) only initialised and filled bands."
-      },
-      "codeAgeSeconds": 31452,
-      "failureModeId": "failure:boosthook-openlong-spot-price-band-borrow",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0xffb9f74ebc659c48886bd91c8c8c79281eb82d958d43a929a0d122f7390a7caf"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb45cc4d9c13c2c24b4bbf71db9e6f52ed24d174ad23ed2622a290289cebd3811"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xffb9f74ebc659c48886bd91c8c8c79281eb82d958d43a929a0d122f7390a7caf"
-    },
-    {
-      "id": "source-3",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1778610700/coingecko:ethereum?searchWidth=1h",
-      "observedAt": 1790636914
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:09:42Z",
-      "note": "Anchor: debug_traceTransaction(callTracer) of 0xb45cc4d9... (block 25080848, tx index 4, status 1) from EOA 0xb0a019dd22c363e82fa4f96ae1e4b993341f5104 to its contract 0xb64bff7b5199abcbb98fee2bf4014265fca85a6d (created by the EOA in 0x34639c65..., block 25080827): Morpho flashLoan of 120 WETH, unwrap, Sat1SwapRouter 0x9c65d15a671d814ef7be25418fd46139e7366c07 swap of 100 ETH for 93762.12699441651 BOOST (0x6c6be583c45075a5a3da03f81c2874607ac111f8, log 166), nine BoostHook.openLong (0x6c2ee359) calls with 2 ETH each returning position ids 200-208, each emitting PositionOpened (topic0 0xb0f6910a...) with collateral 1.92, debt 8 ETH and 3495.94 down to 1612.25 BOOST, then a sell of 93762.12699441651 BOOST (log 257) for 140.93289715974356 ETH during which afterSwap liquidates five of the new positions (BOOST back to the PoolManager at logs 260-281), re-wrap, 120 WETH to Morpho and 20.932897159743547 WETH to the EOA; the EOA sent 20 ETH to Tornado Cash router 0xd90e2f925da726b50c4ed8d0fb90ad053324f31b within five minutes. Root cause (Etherscan verified BoostHook.sol): openLong reads poolManager.getSlot0 and _handleOpenLong walks bands with v4TickLower > currentTick, removes ETH-only liquidity up to 40% of each band and swaps effectiveCol + borrowed ETH into BOOST via _swapEthForToken with no price check; _twapTick is used only in _scanAndLiquidate. Earliest exercise: eth_getLogs PositionOpened on the hook from deployment block 25078238 to 25080848 returns 208 events, 9 of them in the anchor, which is the only transaction with more than one; the largest earlier debt is 4 ETH; after the anchor (to block 25200000) 135 more openings occur, none in a multi-open transaction and none with debt above 4 ETH."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:09:42Z",
-      "note": "Identity: BoostHook 0x3db1ebb71c735980d12422f153987d89f4d7eacc (Etherscan getsourcecode: BoostHook, Proxy 0) has no code at block 25078237 and 24139 bytes with keccak 0xaab52e779f171b68a2c7cacd9b0a8a9dea167cfb31e0a95e08dbe2c99b485fe6 at 25078238 and 25080847; callTracer of 0xffb9f74e... (tx index 193, sender 0x38e5bd272372c2a76f39dd480f3d2f57fe77e166) shows CREATE2 from 0x4e59b44847b379578588920ca78fbf26c0b4956c. The anchor frames CALL 0xb64bff7b -> 0x3db1ebb7 (0x6c2ee359) execute this runtime. Owner txs to the hook before the anchor: setStaking and initializePool (blocks 25078239-25078240) and seedBands(uint256,uint256) (0x33e87193) through block 25078498; they seed liquidity and do not change the openLong logic, so the deployment is the age basis. Code age = 1778610731 - 1778579279 = 31452 s (8.7 hours)."
-    }
+  "campaign": [
+    "eip155:1:0x5c4f18bc5db59a64b7c5b0bf7457c192d6e3c2e51c007768b0c5553d2f9db6d3",
+    "eip155:1:0xbb8af01e02543a507c730f5b9d4ba00fba63a09dff5fd63620ff16e2c9b8a41b",
+    "eip155:1:0x83b220a51f5e63e72c115d4b2db404d61879f8819417ca25992438e6a7c0ba40",
+    "eip155:1:0xe5a8ee7a87759753aa959f38c82ee8a4a56d6586ef5f64086123196a2d2bf033"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The loss is the attacker's realised ETH extraction; the reported USD 187k (DefiLlama) is not reproduced and may include the band debt left by the insolvent positions."
-    ],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 68657.42,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "30.150573154829587808",
+        "usd": 68657.42
+      }
     ]
   },
-  "discovery": [
-    "web:2026-05-12:boosthook"
+  "notes": [
+    "Loss is the ETH the pool's bands lost in the PoolManager per transaction. The 1% swap and borrow fees the hook credited to the team fee recipient and BoostStaking are not subtracted (rule 14); BOOST moved from the pool into the hook's position holdings stays in protocol custody and is not counted.",
+    "Campaign: the four later contract txs that buy BOOST, call openLong and sell within one transaction (copycats incl. c0ffeebabe); all earlier openLong calls come straight from EOAs as ordinary trades. Later owner calls only seeded bands and set staking, gates and liquidity, not resets."
   ]
 }

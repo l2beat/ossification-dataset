@@ -1,143 +1,34 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x906394b2ee093720955a7d55bff1666f6cf6239e46bea8af99d6352b9687baa4",
-  "protocol": {
-    "name": "CS Token",
-    "slug": "cs-token"
-  },
+  "protocol": "CS Token",
   "name": "CS Token stale sellAmount pair burn",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x906394b2ee093720955a7d55bff1666f6cf6239e46bea8af99d6352b9687baa4",
-      "blockNumber": 28466977,
-      "transactionIndex": 32,
-      "timestamp": 1684860210
-    },
-    "attackerAddresses": [
-      "0x2cdeee9698ffc9fcabc116b820c24e89184027ba",
-      "0x90fa57d23b85cdd52c46b85636f44c47926ee2e3"
-    ]
-  },
   "summary": "CS stores the current sell size in a global sellAmount variable, then lets a later qualifying transfer consume that stale value to burn 80% of it directly from the CS/USDT pair before calling pair.sync(). The attacker repeatedly paired a sale with a self-transfer to contract the CS reserve and drain USDT.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 954285.0018263389,
-      "valuationTimestamp": 1684860210,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "954285.001826338883421706",
-        "usdValue": 954285.0018263389,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1684860210,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt's 515 USDT Transfer logs net to exactly 954,285.001826338883421706 USDT leaving the CS/USDT pair. The flash pair supplied 80,000,000 USDT principal and received 80,240,000 USDT, so the attacker EOA retained exactly 714,285.001826338883421706 USDT after the 240,000 USDT flash fee. Gross victim assets lost, rather than attacker net proceeds, is the comparable loss measure."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8bc6ce23e5e2c4f0a96429e3c9d482d74171215e",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8bc6ce23e5e2c4f0a96429e3c9d482d74171215e",
-        "codeHash": "0x98906396418da3f9987939e89914b04a834ea8a4d9e456ce8ba93fb583d70bd7"
-      },
-      "deployment": {
-        "timestamp": 1684753996,
-        "blockNumber": 28431614,
-        "transactionHash": "0x5b67a37abf45b11964ee3ff8bdd96c27f9e14220baac75f83bb424ad50b314b3",
-        "transactionIndex": 76,
-        "creatorAddress": "0x0ea934e6653ab74e92be3ba1ea29b814c1a7fb46"
-      },
-      "ageReset": {
+      "address": "0x8bc6ce23e5e2c4f0a96429e3c9d482d74171215e",
+      "reset": {
         "kind": "deployment",
-        "description": "Plain CS deployment; its 21,408-byte runtime is unchanged from creation through the exploit."
-      },
-      "codeAgeSeconds": 106214,
-      "failureModeId": "failure:cs-token-stale-sell-amount-pair-burn",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+        "tx": "0x5b67a37abf45b11964ee3ff8bdd96c27f9e14220baac75f83bb424ad50b314b3"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x906394b2ee093720955a7d55bff1666f6cf6239e46bea8af99d6352b9687baa4"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-05/CS_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/BlockSecTeam/status/1661098394130198528"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5b67a37abf45b11964ee3ff8bdd96c27f9e14220baac75f83bb424ad50b314b3"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-25T10:21:40Z",
-      "note": "The attacker EOA's only successful call into its final helper is transaction 0x906394b2...baa4 at block 28466977 index 32; its six earlier nonce transactions are helper deployments or a self-transfer, and their receipts contain no CS-token or CS/USDT-pair logs. The anchor trace directly enters CS 1,686 times: 595 state-changing CALLs and 1,091 STATICCALLs, with no DELEGATECALL. Verified CS source shows _transfer storing sellAmount on a sell, a later qualifying transfer calling sync(), and sync() burning sellAmount * 800 / 1000 from the pair before pair.sync(); the exploit repeatedly sells 3,000 CS and self-transfers 2 wei to consume the stale global value. The direct CS contract was created by 0x0ea934e6...fb46 in transaction 0x5b67a37a...14b3 at block 28431614 index 76. Its code is empty one block earlier, and the 21,408-byte runtime hash 0x98906396...0bd7 is identical at creation and immediately before the exploit; the EIP-1967 implementation, beacon and admin slots are zero. Code age is 106,214 seconds. Summing all 515 USDT Transfer logs in the exploit receipt by address gives the CS/USDT pair a net -954,285.001826338883421706 USDT, the flash pair +240,000 USDT, the attacker helper zero, and the attacker EOA +714,285.001826338883421706 USDT. The flash leg was 80,000,000 USDT out and 80,240,000 USDT back: 240,000 is the fee, not the loan principal."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 954285.0018263389,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "954285.001826338883421706",
+        "usd": 954285.0018263389
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/CS_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1661098394130198528"
+  ],
+  "notes": [
+    "Plain CS deployment; its 21,408-byte runtime is unchanged from creation through the exploit.",
+    "The exploit receipt's 515 USDT Transfer logs net to exactly 954,285.001826338883421706 USDT leaving the CS/USDT pair. The flash pair supplied 80,000,000 USDT principal and received 80,240,000 USDT, so the attacker EOA retained exactly 714,285.001826338883421706 USDT after the 240,000 USDT flash fee. Gross victim assets lost, rather than attacker net proceeds, is the comparable loss measure."
+  ]
 }

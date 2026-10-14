@@ -1,55 +1,58 @@
 # Ossification Dataset
 
-An auditable dataset of EVM exploits: code age at failure, reset by code or
-causal critical-state changes, and loss, all measured onchain. One incident is
-one fault episode, one knot, and one loss. L2BEAT consumes the generated release
-to present an ossification score.
-
-`METHODOLOGY.md` defines the cohort, the measurements, and how the curve is
-built. `CONTRIBUTING.md` is the workflow for adding a record.
+EVM exploits with the age of the exploited code and the loss, measured
+onchain. L2BEAT's ossification score is the share of these exploits that hit
+code younger than a project's clock. `METHODOLOGY.md` defines what counts.
 
 ## Layout
 
 ```text
-incidents/<chainId>/<exploitTx>.json  source records, id eip155:<chainId>:<exploitTx>
-schema/incident.schema.json           source schema
-schema/release-*.schema.json          generated-interface schemas
-research/candidates.json              discovery-lead coverage ledger
-research/raw/                         discovery inputs: seed inventory, DFHL coverage, web list, adjudications
-dist/latest/incidents.json            curve rows and excluded records
-dist/latest/manifest.json             cohort rules, counts, and source hashes
-scripts/check.mjs                     schema and cross-record validation
-scripts/verify.mjs                    fail-closed onchain anchor verification
-scripts/enrich.mjs                    mechanical anchor and code-hash enrichment
-scripts/build.mjs                     deterministic distribution builder
-scripts/build-candidates.mjs          deterministic research-ledger builder
+incidents/<chainId>/<exploitTx>.json  one incident's claims (schema/incident.schema.json)
+dist/latest/incidents.json            one row per incident with its derived onchain facts, by age
+dist/latest/curve.json                the ages L2BEAT's score uses, ascending
+research/queue.json                   leads and unfinished records awaiting research
+research/excluded.json                leads outside the cohort, with reasons
+research/leads.json                   discovery leads mapped to the record that answers them
+scripts/derive.mjs                    derive and check one record's facts onchain
+scripts/resets.mjs                    every change before the exploit that could reset the age
+scripts/campaign.mjs                  earlier exploits and further campaign transactions
+scripts/loss.mjs                      gross victim depletion, priced
+scripts/build.mjs                     write dist/latest, deriving only changed claims
+scripts/check.mjs                     validate everything offline
 ```
 
-## Consuming the release
+## Adding an incident
 
-Each row of `incidents` in `dist/latest/incidents.json` is one reviewed
-incident: its summary, its loss, and the `codeAgeSeconds` and `ageResetKind`
-of the target that supplied the knot. Rows are sorted by age. Every other record
-appears in `excluded` with its `exclusionReasons` — use those to pick work by
-missing claim rather than by file order. Evidence, targets and verification stay
-in `incidents/` and are hashed in `dist/latest/manifest.json`, which also
-publishes the cohort rules and counts.
+1. Take a lead from `research/queue.json`, or a new exploit.
+2. Write `incidents/<chainId>/<exploitTx>.json` for its earliest exploit:
+   the summary, every target with its reset, the loss by asset, refs, and a
+   note for each choice a reader could question.
+3. Check it with the tools: `resets.mjs` for the latest reset,
+   `campaign.mjs` for the earliest exploit and the campaign, `loss.mjs` for
+   the loss. Run `npm run derive -- <file>` until it reports no failures,
+   then `npm run build` and `npm test`.
+4. Remove the lead from `research/queue.json`, point its entry in
+   `research/leads.json` at the new id, and open a pull request.
 
 ## Commands
 
-Node 22.
+Node 22. Deriving needs an RPC per chain: `RPC_URL_FOR_CHAIN_<id>`, or the
+variables listed in `scripts/rpc.mjs`. Traces and historical state need an
+archive node; without them a check is listed as unverified, not failed.
 
 ```bash
-npm test                                              # validate everything
-npm run build                                         # regenerate dist/latest
-npm run candidates                                    # regenerate the ledger
-npm run verify -- incidents/1/<file>.json --curve-ready
-npm run verify -- --all --quiet
-npm run enrich -- --all
+npm test                      # offline: schema, research files, dist freshness
+npm run derive -- <file>      # onchain facts and contradictions for one record
+node scripts/resets.mjs <file> [--watch 0x..]
+node scripts/campaign.mjs <file> [--chains 1,56]
+node scripts/loss.mjs <file> [--victims 0x..] [--json]
+npm run build                 # update dist/latest
+npm run build -- --all        # re-derive every record
+npm run build -- --only <files>   # re-derive these records
 ```
 
-The verifier succeeds when every declared anchor reaches `PASS_ANCHORS`;
-`--allow-incomplete` retains partial results for exploratory sweeps. It reads
-the RPC from the chain's variable in `scripts/verify.mjs`, else from
-`RPC_URL_FOR_CHAIN_<id>`; trace checks need archive `debug_traceTransaction` or
-`trace_transaction`.
+CI runs `npm test` on every change; it is offline and fails when
+`dist/latest` was not rebuilt after a claim changed. Deriving needs archive
+RPCs and runs locally: rebuild with `npm run build` before opening a pull
+request, and reviewers re-derive changed records with
+`npm run build -- --only <files>` and `git diff dist/latest`.

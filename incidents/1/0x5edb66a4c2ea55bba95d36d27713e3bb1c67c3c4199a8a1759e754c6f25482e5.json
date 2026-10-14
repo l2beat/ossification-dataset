@@ -1,199 +1,120 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x5edb66a4c2ea55bba95d36d27713e3bb1c67c3c4199a8a1759e754c6f25482e5",
-  "protocol": {
-    "name": "giddyvaultv3_compound_auth",
-    "slug": "giddyvaultv3-compound-auth"
-  },
-  "name": "GiddyVaultV3 compound signature covers only the swap payload hash",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x5edb66a4c2ea55bba95d36d27713e3bb1c67c3c4199a8a1759e754c6f25482e5",
-      "blockNumber": 24942492,
-      "transactionIndex": 0,
-      "timestamp": 1776945467
-    },
-    "attackerAddresses": [
-      "0x50a5312bf627b6be07e60015ed3d418e992d76eb",
-      "0x81fe3d7d35dfefa15b9e6800b6aefc3358e7b156"
-    ]
-  },
-  "summary": "GiddyVaultV3.compound() authenticates the caller with an EIP-712 signature whose digest binds only keccak256 of each SwapInfo.data field, leaving the accompanying fromToken, toToken, amount and aggregator addresses outside the signed scope. The attacker replayed a signature the operator had already produced, substituted its own token and aggregator parameters, and had the vault route the strategies’ balances out through an aggregator it controlled.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1255949.6087202514,
-      "valuationTimestamp": 1776945467,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-3",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
-          "symbol": "cbBTC"
-        },
-        "amount": "6.70925926",
-        "usdValue": 521084.7586950399,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1776945467,
-          "unitPriceUsd": 77666.51108591084,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-          "symbol": "WBTC"
-        },
-        "amount": "6.04749743",
-        "usdValue": 468442.0298542516,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1776945467,
-          "unitPriceUsd": 77460.47605252998,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-3"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x18084fba666a33d37592fa2633fd49a74dd93a88",
-          "symbol": "tBTC"
-        },
-        "amount": "3.435705122670142444",
-        "usdValue": 266422.8201709599,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1776945467,
-          "unitPriceUsd": 77545.31039727382,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit transaction credits the attacker with 3.531384449443560254 g(yb-tBTC), 6.935949844931976725 g(yb-cbBTC) and 6.274444990265641146 g(yb-WBTC). Six follow-up transactions redeem those shares into yb-tBTC, yb-cbBTC and yb-WBTC and then unwrap them, ending in exactly the three amounts recorded here; the components are therefore the realised BTC-denominated value of the stolen shares rather than a mark on the share tokens themselves. DefiLlama observations are within 130 seconds of the incident timestamp. Nothing was recovered."
-  },
+  "protocol": "Giddy",
+  "name": "Giddy Vault V3 compound signature omits swap parameters",
+  "summary": "GiddyVaultV3.compound checks an EIP-712 signature whose digest covers each swap's calldata but not its aggregator, fromToken or amount. With a freshly signed compound authorisation the attacker named its own contract as aggregator and the strategy's staked gauge token as fromToken at an unlimited amount; the strategy approved the contract, which pulled the stake.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x5f0ad32c00641d1d2bb628ff341e0d4bb4494318",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x5f0ad32c00641d1d2bb628ff341e0d4bb4494318",
-        "codeHash": "0x679791b0c174dd7ef0ebeca701cd4b3e039f8fa100162ec3dcc406d4b5ccf577"
-      },
-      "deployment": {
-        "timestamp": 1776722711,
-        "blockNumber": 24923987,
-        "transactionHash": "0xdd4c062770002783962b8ad80bcefaac670568bfb2162cf1bfae80284cf1f3f8",
-        "transactionIndex": 136,
-        "creatorAddress": "0x16bcac66daa7c866192512a0eb157bb0486e3183"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Non-upgradeable contract. The runtime code hash is 0x679791b0c174dd7ef0ebeca701cd4b3e039f8fa100162ec3dcc406d4b5ccf577 both at the deployment block 24923987 and at block 24942491, and the EIP-1967 implementation slot is zero, so no code change occurred between deployment and the exploit."
-      },
-      "codeAgeSeconds": 222756,
-      "failureModeId": "failure:giddy-vaultv3-compound-signature-partial-scope",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x9c247ccd24c23eddba399701cda24051ebf605b7",
+      "code": "0x5f0ad32c00641d1d2bb628ff341e0d4bb4494318",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd7776fa268121f58329d3f8affc581d61e1d73b49450349c5797b7e58e6b0b91"
+      }
+    },
+    {
+      "address": "0x51b9e3e9871247ed7c2f07539b99cb97ae99d080",
+      "code": "0x5f0ad32c00641d1d2bb628ff341e0d4bb4494318",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd7776fa268121f58329d3f8affc581d61e1d73b49450349c5797b7e58e6b0b91"
+      }
+    },
+    {
+      "address": "0x1d85e7bceac3605d469debe006b46e9062238e67",
+      "code": "0x5f0ad32c00641d1d2bb628ff341e0d4bb4494318",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd7776fa268121f58329d3f8affc581d61e1d73b49450349c5797b7e58e6b0b91"
+      }
+    },
+    {
+      "address": "0xc99fc715e73294fd03b7c09d9a438a98f6c76ec3",
+      "code": "0x6163b1820da41aaba4192305371278ae00bda459",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xee8a1182283127e4e4e1c17335e73ff3172254e022d4d73b8d48121417b5d125"
+      }
+    },
+    {
+      "address": "0x0d5e628a44e7ec94a2054a6c454127cfe5fcb690",
+      "code": "0x6163b1820da41aaba4192305371278ae00bda459",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xee8a1182283127e4e4e1c17335e73ff3172254e022d4d73b8d48121417b5d125"
+      }
+    },
+    {
+      "address": "0x870fcd63db2c68d8079166e311b1118b8aa26ed7",
+      "code": "0x6163b1820da41aaba4192305371278ae00bda459",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xee8a1182283127e4e4e1c17335e73ff3172254e022d4d73b8d48121417b5d125"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5edb66a4c2ea55bba95d36d27713e3bb1c67c3c4199a8a1759e754c6f25482e5"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-04/giddyvaultv3_compound_auth_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x06fae7531e279885d63e9f88860e71d2feb69515637f44dc42146dbafb252e8a",
-        "0x08337d6efe54a3ab423a2811172bc84eb003d16f359e0fc0522a3972902854e7",
-        "0x17c1128b4d844edde33c8936e35792f69daf7dcad1c89bb728d38768224dda99",
-        "0x5edb66a4c2ea55bba95d36d27713e3bb1c67c3c4199a8a1759e754c6f25482e5",
-        "0x9d22a843a76cb530fb68027981c312c99f6009c6cc093ad3ec9d64aace07b270",
-        "0xdb7733de5563691dc5eb3a202e3e875e8a51cffb925eece1eaecf247117d715f",
-        "0xfcc2ff747825e96148ac6ac052616f1314431ff07da9dad9933e4e730c3255e7"
-      ]
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1776945467/ethereum:0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf,ethereum:0x2260fac5e5542a773aa44fbcfedf7c193bc2c599,ethereum:0x18084fba666a33d37592fa2633fd49a74dd93a88",
-      "observedAt": 1787645696
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xdd4c062770002783962b8ad80bcefaac670568bfb2162cf1bfae80284cf1f3f8"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T12:30:00Z",
-      "note": "The anchor is the attacker’s exploit-contract creation whose constructor calls GiddyVaultV3.compound() at 0x5f0ad32c00641d1d2bb628ff341e0d4bb4494318 with an operator signature and three SwapInfo entries naming aggregator 0x7326a1ab0d696ae317958d136d6e4c693ea34528 and attacker-chosen tokens; it is the earliest transaction the attacker EOA sent against Giddy. The vault is not upgradeable: identical runtime code hash at the deployment block 24923987 and at block 24942491 with a zero EIP-1967 slot, so the exploited code is 2.58 days old, deployed by 0x16bcac66daa7c866192512a0eb157bb0486e3183, which is not an attacker address. The loss is traced end to end: the three g-share balances credited in the anchor are redeemed one for one into yb-tBTC, yb-cbBTC and yb-WBTC and then unwrapped into 3.435705122670142444 tBTC, 6.70925926 cbBTC and 6.04749743 WBTC, which is what the components record."
-    }
+  "campaign": [
+    "eip155:1:0x0004d8ceffea3d83688aab5ef58208a73535ef81967173355e0e8c4410a882a7",
+    "eip155:137:0xfaf93668954835a0301a2665dae7743038b04d6cf6b45b57b42003af737d4335",
+    "eip155:137:0x9c519c02c63084b9a589ba47a8d6f47a183a5914cce19071e55e0fa447ae7e5a",
+    "eip155:137:0xcac670b821482e7e0345691c0bdcb8c6c7e80fd4e503a528581b267f546ee1b5",
+    "eip155:137:0x5d18ba3d7d4f59f5f99033a3ddcf38d607d3a7b6930ad6338e25818d23e78b98"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 1385878.27,
+    "assets": [
+      {
+        "token": "0x30ba8b27f2128c770b90c965ff671e08b9310d21",
+        "symbol": "g(yb-tBTC)",
+        "amount": "3.531384449443560255",
+        "usd": 266422.82
+      },
+      {
+        "token": "0xf3081a2eb8927c0462864ec3fdbe927c842a0893",
+        "symbol": "g(yb-cbBTC)",
+        "amount": "6.935949844931976727",
+        "usd": 521084.76
+      },
+      {
+        "token": "0xbc56e3edb67b56d598ace07668b138815f45d7aa",
+        "symbol": "g(yb-WBTC)",
+        "amount": "6.274444990265641148",
+        "usd": 468442.03
+      },
+      {
+        "token": "0x985ca600257bfc1adc2b630b8a7e2110b834a20e",
+        "symbol": "stLINK-ng-gauge",
+        "amount": "2884.851826223716060017",
+        "usd": 27125.46
+      },
+      {
+        "chainId": 137,
+        "token": "0x41cb0cb61c11039459dc81db76bd64d3ede704f2",
+        "symbol": "MAIUSDC.e-f-gauge",
+        "amount": "52659.452052158389374193",
+        "usd": 53897.12
+      },
+      {
+        "chainId": 137,
+        "token": "0xf5c81d25ee174d83f1fd202ca94ae6070d073ccf",
+        "symbol": "compWETH",
+        "amount": "20.65984175650645343",
+        "usd": 48906.08
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-04/giddyvaultv3_compound_auth_exp.sol",
+    "eip155:1:0x06fae7531e279885d63e9f88860e71d2feb69515637f44dc42146dbafb252e8a",
+    "eip155:1:0x08337d6efe54a3ab423a2811172bc84eb003d16f359e0fc0522a3972902854e7",
+    "eip155:1:0x17c1128b4d844edde33c8936e35792f69daf7dcad1c89bb728d38768224dda99",
+    "eip155:1:0x9d22a843a76cb530fb68027981c312c99f6009c6cc093ad3ec9d64aace07b270",
+    "eip155:1:0xdb7733de5563691dc5eb3a202e3e875e8a51cffb925eece1eaecf247117d715f",
+    "eip155:1:0xfcc2ff747825e96148ac6ac052616f1314431ff07da9dad9933e4e730c3255e7"
+  ],
+  "notes": [
+    "Targets are the three vault beacon proxies the anchor called and their three YieldBasis strategy proxies, whose swapRewardTokens approved the attacker-named aggregator for the staked gauge token. Both beacons were upgraded about two days before the exploit; the strategy beacon upgrade is the later one.",
+    "Gauge shares are valued at the underlying the attacker redeemed (tBTC, cbBTC and WBTC via the yb LT tokens, LINK and stLINK via the Curve pool, WETH via the Polygon Morpho vault); the MAI/USDC.e gauge carries its DefiLlama price. The signed deadline was 90 s after the block, so the signature was freshly issued.",
+    "The campaign adds a fourth Ethereum vault (Curve stLINK strategy) and two Polygon Giddy vaults: setup transactions that granted the approval, then the pulls that moved value. Approval scans of every Giddy strategy on Ethereum, Base and Arbitrum show no other unknown spender."
+  ]
 }

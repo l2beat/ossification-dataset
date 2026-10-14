@@ -1,149 +1,33 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3e9bcee951cdad84805e0c82d2a1e982e71f2ec301a1cbd344c832e0acaee813",
-  "protocol": {
-    "name": "GROK",
-    "slug": "grok"
-  },
-  "name": "GROK token pair-balance accounting",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3e9bcee951cdad84805e0c82d2a1e982e71f2ec301a1cbd344c832e0acaee813",
-      "blockNumber": 18538679,
-      "transactionIndex": 158,
-      "timestamp": 1699584695
-    },
-    "attackerAddresses": [
-      "0x864e656c57a5a119f332c47326a35422294db5c9",
-      "0x03e7b13bcd9b8383f403696c1494845560607eca"
-    ]
-  },
-  "summary": "GROK's transfer logic let the attacker shrink the Uniswap V3 pool's own GROK balance during a flash swap, so the position could be closed against a manipulated pool balance and the pool's WETH extracted.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 55943.49097823476,
-      "valuationTimestamp": 1699584601,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "26.382963431285374891",
-        "usdValue": 55943.49097823476,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1699584601,
-          "unitPriceUsd": 2120.44,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "After the 30 WETH Uniswap V3 flash loan and 0.003 WETH fee were repaid, the trace records exactly 26.382963431285374891 ETH transferred from the attack helper to the attacker EOA. Transaction gas is excluded."
-  },
+  "protocol": "GROK",
+  "name": "GROK token triggerable zero-slippage swapback",
+  "summary": "GROK's _transfer sells the token contract's own accumulated GROK on Uniswap V2 with zero minimum output whenever a transfer to the pair finds that balance above a fixed threshold. The attacker topped the balance up by direct transfer, sandwiched the triggered sale inside flash loans, bought back cheaply and arbitraged the GROK against the V3 pool.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x8390a1da07e376ef7add4be859ba74fb83aa02d5",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x8390a1da07e376ef7add4be859ba74fb83aa02d5",
-        "codeHash": "0x87d5fb9afd866781fae3b6fbfb561840327721e0fadf7a5d84b7300726dfa420"
-      },
-      "deployment": {
-        "timestamp": 1699071551,
-        "blockNumber": 18496252,
-        "transactionHash": "0x1934f3ed51f63b7121b037f7d6dd549b4ca1769c2d803d31089759ae309b414d",
-        "transactionIndex": 32,
-        "creatorAddress": "0xf9387ac9f61cc22994a59a6008f827435ce744b6"
-      },
-      "ageReset": {
+      "address": "0x8390a1da07e376ef7add4be859ba74fb83aa02d5",
+      "reset": {
         "kind": "deployment",
-        "description": "The exploitable balance-dependent transfer logic executes directly in GROK's immutable token runtime. The address had no code immediately before the creation transaction, and its 6,646-byte runtime hash at deployment matches the pre-exploit hash."
-      },
-      "codeAgeSeconds": 513144,
-      "failureModeId": "failure:grok-transfer-pair-balance-reserve-desync",
-      "evidence": {
-        "identitySourceIds": [
-          "source-2",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x1934f3ed51f63b7121b037f7d6dd549b4ca1769c2d803d31089759ae309b414d"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3e9bcee951cdad84805e0c82d2a1e982e71f2ec301a1cbd344c832e0acaee813"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-11/grok_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Phalcon_xyz/status/1722841076120130020"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:12:14Z",
-      "note": "Reviewed the selected exploit receipt and call trace, the commit-pinned reproduction, the GROK creation trace, and bytecode at the pre-deployment, deployment, and pre-exploit boundaries. The helper manipulates the token and pool balances through direct GROK transfers during nested Uniswap flash and swap callbacks; GROK performs no delegatecall. The runtime first appears in the recorded creation transaction and remains hash-identical through the block before the exploit. The trace establishes exact post-flash-loan proceeds of 26.382963431285374891 ETH."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1934f3ed51f63b7121b037f7d6dd549b4ca1769c2d803d31089759ae309b414d"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1699584600/coingecko:ethereum",
-      "observedAt": 1787577134
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 55835.85,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "26.382963431285374891",
+        "usd": 55835.85
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/grok_exp.sol",
+    "https://twitter.com/Phalcon_xyz/status/1722841076120130020"
+  ],
+  "notes": [
+    "Victims are the swapback (token balance and tax wallet) and the two GROK pools: their GROK flows cancel and their ETH/WETH net equals the attacker's ETH take plus the 0.003 WETH flash fee, so the loss is that ETH.",
+    "openTrading, 12 blocks after deployment, only opened trading and created the pair (launch, pause-like) and does not move the reset."
+  ]
 }

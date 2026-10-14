@@ -1,242 +1,42 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12",
-  "protocol": {
-    "name": "SummerFi",
-    "slug": "summerfi"
-  },
-  "name": "Lazy Summer USDC fleets capped-ark NAV donation",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12",
-      "blockNumber": 25471348,
-      "transactionIndex": 0,
-      "timestamp": 1783315079
-    },
-    "attackerAddresses": [
-      "0x7bf716167b48cf527725722c6d79494b45b3bdca",
-      "0x0514f827c129c16418a0933e03c99a6af982fc61"
-    ]
-  },
-  "summary": "Each FleetCommander prices shares from totalAssets summed over its active arks, crediting tokens donated directly into an ark at that ark's valuation without minting shares. The attacker donated a stale-valued Silo Varlamore position into the LowerRisk Silo ark, which had been capped to zero for offboarding but never removed from the active set, inflating its share price 1.0665 to 1.1678 and redeeming liquid positions; the same transaction donated freshly minted Term shares into the HigherRisk Term ark and redeemed its buffer.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 6040000,
-      "valuationTimestamp": 1783315079,
-      "method": "reported",
-      "sourceIds": [
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "6016754.998120906520734632",
-        "usdValue": 6016754.998120907,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1783315079,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The DAI component is the exact onchain sweep to the attacker EOA inside the exploit transaction (6016754.998120906520734632 DAI). The $6.04M headline is the reported campaign estimate (about $5.64M LowerRisk plus $0.40M HigherRisk); residual kept-share claims on illiquid remainder are not separately valued. Repaid Morpho flash loans (65,419,171.88 USDC plus 1,000,000 USDT) and the attacker-supplied donated positions left behind are excluded."
-  },
+  "protocol": "SummerFi",
+  "name": "Lazy Summer USDC fleets ark donation NAV inflation",
+  "summary": "Summer arks valued their position as convertToAssets of their own share balance, and each FleetCommander priced shares from the sum of its arks. The attacker donated Varlamore Silo shares, still valued near par after the Stream collapse, to the LowerRisk Silo ark and LowerRisk-backed Term shares to the HigherRisk Term ark, redeeming both fleets at inflated prices.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe9cda459bed6dcfb8ac61cd8ce08e2d52370cb06",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe9cda459bed6dcfb8ac61cd8ce08e2d52370cb06",
-        "codeHash": "0x5d91085e9b8eb0c47f826e506205b6bae15415ec6f62e9161d29ce8bb9eb1e8d"
-      },
-      "deployment": {
-        "timestamp": 1747306379,
-        "blockNumber": 22488041,
-        "transactionHash": "0xb32281e0196497cab06fb71ab9a0bec10955ca8b4b0c0db2cdfeb68b7dc4860b",
-        "transactionIndex": 159,
-        "creatorAddress": "0xb0f758323d3798a6a567c1601d84f30d1bcaaa0b"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1762461551,
-        "blockNumber": 23742679,
-        "transactionHash": "0x5231796eef08cdc9e63efc7685013879618647030f4279f83920cc8451cf0c66",
-        "transactionIndex": 225,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0xe9cda459bed6dcfb8ac61cd8ce08e2d52370cb06",
-          "callData": "0xef2fc472000000000000000000000000fd899321b1fd8d75e255119766d9097c98568519",
-          "valueBefore": "0x00000000000000000000000000000000000000000000000000000061c9f36800",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000000"
-        },
-        "description": "The HigherRisk Term ark deposit cap was set to zero while the ark stayed in the active set: getEffectiveArkDepositCap returns 0x61c9f36800 at block 23742678 and zero at block 23742679, and the ark emits DepositCapUpdated(0) in the reset transaction. The emptied, still-priced ark is the donation target the exploit exercises."
-      },
-      "codeAgeSeconds": 20853528,
-      "failureModeId": "failure:summer-fleetcommander-empty-ark-nav-donation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0x61d7063041d83c8ca3e42c39181dfd14b3bc76c2",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x474ed77a40b1d24f5f50176995400009ad2150c04e22cefa2ca0b7158cebb0a1"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x98c49e13bf99d7cad8069faa2a370933ec9ecf17",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x98c49e13bf99d7cad8069faa2a370933ec9ecf17",
-        "codeHash": "0xa34ebc31002898bc9132a7143bc7ede9335581a8c009b61da3dd043c908ecf05"
-      },
-      "deployment": {
-        "timestamp": 1738936343,
-        "blockNumber": 21795049,
-        "transactionHash": "0x195c7acaca09e33cb67396c1f4175fa6415f459cc419a3854c113ea53d9c61ca",
-        "transactionIndex": 61,
-        "creatorAddress": "0x8888013451507e8dd7996509735e15f591886cd2"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1761825143,
-        "blockNumber": 23690024,
-        "transactionHash": "0x1143847e4a297f630788503f06da8a68c168e1e7d3c4301cfd3d49d4f46649f7",
-        "transactionIndex": 149,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x98c49e13bf99d7cad8069faa2a370933ec9ecf17",
-          "callData": "0xef2fc47200000000000000000000000061d7063041d83c8ca3e42c39181dfd14b3bc76c2",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000000000000a02ffee00",
-          "valueAfter": "0x0000000000000000000000000000000000000000000000000000000000000000"
-        },
-        "description": "The LowerRisk Silo Varlamore ark deposit cap was set to zero while the ark stayed in the active set: getEffectiveArkDepositCap returns 0x0a02ffee00 at block 23690023 and zero at block 23690024, and the ark emits DepositCapUpdated(0) in the reset transaction. The stale-valued, still-priced ark is the donation target the exploit exercises."
-      },
-      "codeAgeSeconds": 21489936,
-      "failureModeId": "failure:summer-fleetcommander-stale-ark-nav-donation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-6",
-          "source-7"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-6",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: the HigherRisk Term-ark reset at block 23742679 is later, so target-1 supplies the incident's curve age."
-        ],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0xfd899321b1fd8d75e255119766d9097c98568519",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x0bbf67fb47f1c92afc848911a6cb9e30df2434cc5e9083bb5484d08d8edd7341"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x195c7acaca09e33cb67396c1f4175fa6415f459cc419a3854c113ea53d9c61ca"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1143847e4a297f630788503f06da8a68c168e1e7d3c4301cfd3d49d4f46649f7"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xb32281e0196497cab06fb71ab9a0bec10955ca8b4b0c0db2cdfeb68b7dc4860b"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x5231796eef08cdc9e63efc7685013879618647030f4279f83920cc8451cf0c66"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://blog.summer.fi/lazy-summer-usdc-vault-exploit-post-mortem-what-happened-and-what-comes-next/"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://gist.github.com/halaprix/52bd5e32b35be100dc40ba30539e4169"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Muse Spark",
-      "reviewedAt": "2026-09-04T14:00:00Z",
-      "note": "Anchor 0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12 is the single atomic exploit at block 25471348 index 0: sender 0x7bf716167b48cf527725722c6d79494b45b3bdca calls executor 0x0514f827c129c16418a0933e03c99a6af982fc61, whose receipt logs touch both FleetCommanders and end with the exact 6016754.998120906520734632 DAI sweep to the sender. Root cause is the capped-but-active ark state priced into NAV: both fleets are immutable direct contracts (zero DELEGATECALL opcodes, byte-identical runtimes at deployment and pre-exploit blocks, no Upgraded events), so code history is complete and the measured resets are the cap-zeroing transactions. Target-2 reset: curator Safe 0xa16f07b4dd32250dec69c63ecd0aef6cd6096d3d batch-calls setArkDepositCap(siloArk 0x61d7063041d83c8ca3e42c39181dfd14b3bc76c2, 0) on LowerRisk plus companion zeroings; the ark's DepositCapUpdated log history shows this is the last cap change before the exploit and the view-call reproduces 0x0a02ffee00 to zero across the reset block. Target-1 reset: the same Safe zeroes the HigherRisk Term ark 0xfd899321b1fd8d75e255119766d9097c98568519 cap at block 23742679 after four earlier cap adjustments; the view-call reproduces 0x61c9f36800 to zero and the ark emits DepositCapUpdated(0) there, so target-1 is the later reset and the knot. Loss covers the full single-transaction campaign across both vaults; DAI at par values the exact exit while the reported $6.04M headline is retained for comparability."
-    },
-    {
-      "id": "source-9",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-07/SummerFi_exp.sol"
-    }
-  ],
-  "discovery": [
-    "adjudication:14",
-    "seed:summerfi:2026-07-06:summerfi",
-    "dfhl:src/test/2026-07/SummerFi_exp.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $6.04M headline is a reported campaign estimate; the structured DAI component reproduces the exact onchain sweep and residual kept-share claims are not separately valued."
-    ],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 6037935.36,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "6039584.81752",
+        "usd": 6037935.36
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://blog.summer.fi/lazy-summer-usdc-vault-exploit-post-mortem-what-happened-and-what-comes-next/",
+    "https://gist.github.com/halaprix/52bd5e32b35be100dc40ba30539e4169",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/SummerFi_exp.sol"
+  ],
+  "notes": [
+    "Resets are the ArkAdded transactions that put each ark into its fleet's NAV. The later zero deposit caps do not count: a donation inflates totalAssets whatever the cap, and the capped ark was never withdrawn from in the exploit.",
+    "Loss is the USDC the two fleets paid out net of what the attacker put in during the transaction: LowerRisk 5,640,412.58 (including the 490,636.89 that entered via the Term strategy) and HigherRisk 399,172.24. The donated positions and the attacker's unredeemed fleet shares are not counted."
+  ]
 }

@@ -1,308 +1,61 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x7e448bbf1566c20b6973d2cbdb49092d5c6fca90ad7f1a1fc4b102e8095899d2",
-  "protocol": {
-    "name": "FEG",
-    "slug": "feg"
-  },
+  "protocol": "FEG",
   "name": "FEG SmartBridge relayer whitelists forged Wormhole source on superAdmin payload",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x7e448bbf1566c20b6973d2cbdb49092d5c6fca90ad7f1a1fc4b102e8095899d2",
-      "blockNumber": 45289131,
-      "transactionIndex": 84,
-      "timestamp": 1735448527
-    },
-    "attackerAddresses": [
-      "0xcb96dde53f43035f7395d8dbdb652987f7630b3c",
-      "0xef7bd1543bdacadd7e42822e3f15dd0af0410fda",
-      "0xe7ba8de3adf9d6cc12b8ceeb4a654ee1a276a03c"
-    ]
-  },
-  "summary": "The unverified FEG relayer's receiveWormholeMessages sets whitelist[sourceAddress] = true whenever DataReader.superAdmin(payload.user) is true, before requiring that the Wormhole source address be whitelisted. The attacker sent a Wormhole message from its own contract naming the FEG superAdmin as user with amount 0, which whitelisted the attacker contract, then sent a second message that made SmartBridge.registerWithdraw credit the attacker. On BSC, Base and Ethereum it withdrew about 99.5% of each SmartBridge's FEG reserve and sold it into FEG liquidity pools for ETH and BNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1080453.3057903463,
-      "valuationTimestamp": 1735451495,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-5",
-        "source-6",
-        "source-12",
-        "source-13",
-        "source-14",
-        "source-15",
-        "source-16",
-        "source-17",
-        "source-18"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
-          "symbol": "FEG"
-        },
-        "amount": "45715693242.627421547897258927",
-        "usdValue": 506843.74450715736,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1735451482,
-          "unitPriceUsd": 1.108686555002414e-05,
-          "sourceIds": [
-            "source-5",
-            "source-17"
-          ]
-        },
-        "sourceIds": [
-          "source-5",
-          "source-12"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
-          "symbol": "FEG"
-        },
-        "amount": "95809472542.067884409468186734",
-        "usdValue": 247916.1792851705,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1735451481,
-          "unitPriceUsd": 2.587595701211233e-06,
-          "sourceIds": [
-            "source-5",
-            "source-16"
-          ]
-        },
-        "sourceIds": [
-          "source-5",
-          "source-13"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
-          "symbol": "FEG"
-        },
-        "amount": "57532022461.471026362052505299",
-        "usdValue": 325693.3819980185,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1735451495,
-          "unitPriceUsd": 5.661080004898734e-06,
-          "sourceIds": [
-            "source-5",
-            "source-15"
-          ]
-        },
-        "sourceIds": [
-          "source-5",
-          "source-14"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the SmartBridge FEG reserve released on three chains, valued at the native currency that its sale drew out of FEG liquidity. FEG totalSupply() is 1e29 base units (100B) on each chain, and each bridge held the reserve backing other chains' supply, so the released quantities are far larger than market depth. Marking them at the DefiLlama FEG quote (0.00028162 USD on BSC at 1735448339) would give about 56M USD, which could never have been realised. The measured native outflows are 712.031620461321275236 BNB, 73.302005631133881587 ETH (Base) and 96.330488612250354544 ETH (Ethereum). They are valued at the DefiLlama native quotes nearest each withdrawal: 711.8275789195656, 3382.12 and 3381 USD. Unit prices are realisation rates (proceeds / released FEG), not market prices. Attacker-paid Wormhole fees and msg.value are inputs, not loss. FEG tax transfers to fee and dead addresses inside the sale are part of the released quantity. Later relays by other senders (see source-3) registered withdrawals but moved no FEG. realizedAt is the Ethereum withdrawal, the last of the three.",
-    "realizedAt": 1735451495
-  },
+  "summary": "FEG's unverified relayer whitelists a Wormhole message's source address whenever the payload's user is a superAdmin, so any contract can make itself a trusted source. The attacker sent such a message naming the FEG admin, then a second one that made SmartBridge.registerWithdraw credit it, and withdrew and sold nearly all bridged FEG on BSC, Base and Ethereum.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x3a3709b8c67270a84fe96291b7e384044160c6b1",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1716674965,
-        "blockNumber": 39042585,
-        "transactionHash": "0x13b0468ca3b1135f1833aaa0dbdbb8489afa56cb75f81c68236d9bcb2fa26e21",
-        "transactionIndex": 12,
-        "creatorAddress": "0x46b6df78388284088e07aa8f5dda4b5a3ef3f861"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Direct non-proxy FEG relayer runtime. The superAdmin-payload source whitelisting is in its bytecode. Post-deployment admin calls only set gas and threshold parameters and outbound peer addresses, none of which the exploited condition depends on."
-      },
-      "codeAgeSeconds": 18773562,
-      "failureModeId": "failure:feg-relayer-superadmin-payload-whitelists-source",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x3a3709b8c67270a84fe96291b7e384044160c6b1",
-        "codeHash": "0x868e41c90cad94645520bc8c47b5cbdbd0802718574fa83ea4820b26bff4043e"
+      "address": "0x3a3709b8c67270a84fe96291b7e384044160c6b1",
+      "reset": {
+        "kind": "config",
+        "tx": "0xd287d87eb929bec6b4123219122b34d14f5617782946e3e5189c4d11584c09b0",
+        "address": "0xdae383661587232fbd254b05a395cb8e35e6e7b6",
+        "slot": "0xbb93bfbda904c4b6fc557603fd2d9758180c9d603afc19c49e6ff1cd2b2a1f6f"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x7e448bbf1566c20b6973d2cbdb49092d5c6fca90ad7f1a1fc4b102e8095899d2"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x13b0468ca3b1135f1833aaa0dbdbb8489afa56cb75f81c68236d9bcb2fa26e21"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "Reviewed anchor, root cause, earliest exercise and campaign. Relayer 0x3a3709b8c67270a84fe96291b7e384044160c6b1 (same address on chains 1/8453/56) is unverified. Its runtime (17149 hex chars, keccak in target-1) is byte-identical across the three chains except the CBOR metadata hash (bytes 8530..8561 of 8573). debug_traceTransaction(callTracer) of source-1 (BSC block 45289131, tx index 84): the Wormhole relayer 0x27428dd2d3dd32a4d7f7c497eaaa23130d894911 calls the FEG relayer receiveWormholeMessages(bytes,bytes[],bytes32,uint16,bytes32) 0x529dca32. Arguments: sourceAddress word = 0xef7bd1543bdacadd7e42822e3f15dd0af0410fda (attacker contract, created by attacker EOA 0xcb96dde53f43035f7395d8dbdb652987f7630b3c in Base tx 0x810aee5d6d7a633dd36157872665144cb61aeb109502e0e6108102d91ffa623f), sourceChain 30, payload (token 0x4b01518524845a2e32ca4b136e8d05cc0ef1ca78, user 0xbcd824fbd11ad363de83e36408a4fa47cccf2810, amount 0, flag 0, id 0). The FEG relayer then STATICCALLs DataReader 0xdae383661587232fbd254b05a395cb8e35e6e7b6: sdDepAddy(), SDDeployer.SDOfCreator(0x4b01..) -> FEG 0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac, ffa44843(FEG) -> SmartBridge 0x8d5c8d2856d518a5edc7473a3127341492b56243, superAdmin(0xbcd8..) -> 1. It then CALLs SmartBridge.registerWithdraw(0xbcd8..,0,30,0). Structlog trace of the relayer frame (depth 3) and cast disassemble: pc 0xad3 (CALLER, EQ at 0xad4) requires msg.sender == slot0 (the Wormhole relayer); the source chain must be allowed in slot-3 mapping; slot-1 mapping records the delivery hash against replay. At pc 0xda3 a nonzero superAdmin(payload.user) return falls through to 0xda9..0xdc0, which SSTOREs keccak(sourceAddress,2) := 1. Here that slot is 0x8ee1092dcaec2f67145097266f8dabf1134d6dee7ca0d50befe412f9012b4066, 0 -> 1 (prestateTracer diffMode). Next, 0xdc2..0xe0e SLOADs the same slot and reverts 'invalid source' only when it is 0. So any Wormhole sender can whitelist itself by naming a superAdmin as payload user. SmartBridge (verified, SHA-256 of Etherscan SourceCode 01f2f4f674f3151ba6c8a5111537b6a02a6deec66869d70ed1640989a28a0597) trusts the relayer: registerWithdraw requires only msg.sender == relayer and credits balance[ad] += amount. Campaign. The attacker sent the Wormhole messages from its contracts in Base tx 0x08b06e5b5906308a6fa64e2bc965189ea4c6e3338d0037e1ba2b9b3db88dd6c0 and 0xfe6403f83c524a336623492ee0c3b4c574c42fe8b2d7b7a854c33c286317f02e, and in source-10 on BSC. Whitelist deliveries (user = superAdmin, amount 0): BSC source-1 at 1735448527, Base 0x7bd64979a1da87448a65643e33f1453ce06065533da087a971f1a5c9dd37b77b at 1735448529, Ethereum 0x039d16382474370361293b2ea11c4b782a343aced0bd4831f996bf160f4365a0 at 1735448531. Registrations: BSC 0x8d57aacd101b585ed5e68f9f5f79bea2082ec03862456615d9175d6c967289e4 credits 0xe7ba8de3adf9d6cc12b8ceeb4a654ee1a276a03c with 45715693242627421547897258927; Base 0x940fd735665d32afe4893c5e6370745206507c55cb900c18cea83f7c0a0dc330 credits 0xef7bd.. with 95809472542067884409468186734; Ethereum 0xaac5c0465103d01c9546c622dad64ac70f550f32c9f1e05a77e138a580432335 credits 0xef7bd.. with 57532022461471026362052505299. Withdrawals are source-12/13/14. Byte-identical relayers on Base and Ethereum were exercised 2 and 4 seconds after the anchor and are merged here as same-campaign legs. Earliest-use scan. Etherscan V2 logs.getLogs lists Wormhole Delivery events (topic0 0xbccc00b713f54173962e7de6098f643d8ebf53d488d71f4b2a5171496d038f9e, topic1 = FEG relayer), emitted by 0x27428dd2.. on chains 1/56 and 0x706f82e9bb5b0813501714ab5974216704980e31 on 8453, from block 0 to the block before the first attack delivery (21505906 / 24329590 / 45289130). Counts: 802/1079/1314 events, of which 800/1076/1314 have status 0. A callTracer of every successful one decodes the sourceAddress argument, and all 3190 equal the peer FEG relayer 0x3a3709..; no earlier delivery came from a foreign emitter. Cross-check: SmartBridge Withdrawal events (topic0 0x650fdf669e93aa6c8ff3defe2da9c12b64f1548e5e1e54e803f4c1beb6466c8e) before the attack have 104/508/415 distinct users. superAdmin(user) at the pre-attack block is true only for 0xbcd8.., whose pre-attack messages (1:3, 8453:6, 56:2) all carry the FEG relayer source. Later actors. Contracts 0x2218666f1f65addc44defff1ce71496dbb516fbd (BSC 0x893e0092e62fec6bd9d65a89df18d5c3aa30b50f54def42a4f7ce8533a9eb5b3) and 0xb1e2afdb2c5854df5ba1ff447dfa5f5d1beb0405 (Base 0x6451c454c2aee760aa5e66d837646b1f7340b654821dd010a5d6e183da8be90a, BSC 0xb72f9e0fab102e46882ae85a30dbba46b676ad9e5de17d302c8af8830324c1ce) repeated the whitelist trick between 1735456417 and 1735465327 and registered 9 x 599845113e18 FEG on Base and 4 x 5551605270.14e18 on BSC. They moved no FEG; see source-5.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:09:11Z"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "note": "Reviewed target identity and age history on BSC. The source-1 trace executes the FEG relayer as a direct CALL target with no DELEGATECALL out of its frame; its runtime has no DELEGATECALL or SELFDESTRUCT opcode. eth_getCode: empty at block 39042584; keccak 0x868e41c90cad94645520bc8c47b5cbdbd0802718574fa83ea4820b26bff4043e at blocks 39042585 and 45289130. Source-2 is a top-level creation (to = null, nonce 0) by 0x46b6df78388284088e07aa8f5dda4b5a3ef3f861, and cast compute-address(creator, 0) equals the relayer. It is at block 39042585, tx index 12, timestamp 1716674965. The creation code constructor writes slot0 = Wormhole relayer 0x27428dd2.., slot4 = DataReader 0xdae38366.., slot6 = 0xb803c271b6c94d71a759173ed580a23de939db20, slots 7/8/9 = fee and gas values, and slot-3 allowed source chains {2,4,30}. Admin review: Etherscan account.txlist for the relayer, blocks 0..45289131, returns 9 transactions (source-2 plus source-11), all successful and all from 0xbcd824fbd11ad363de83e36408a4fa47cccf2810. prestateTracer diffMode on each: 0x2d754ff3.. (0xd583c7d6) sets slot-5 outbound peers keccak(2,5) and keccak(30,5) = 0x3a3709..; 0x13806061.. setDistributeThreshold writes slot7; the six 0x32105a69/0x4af79001 calls write gas slots 8/9. None writes slot0, slot2, slot3 or slot4 or alters the superAdmin-payload branch. Every other state change comes from receiveWormholeMessages deliveries (slot-1 replay flags and slot-2 whitelist entries from genuine FEG-relayer sources; see source-3) or SmartBridge-initiated sends. The defect is code: whitelisting depends only on an attacker-chosen payload field. superAdmin(0xbcd8..) and allowed chain 30 are ordinary constructor/operator state, not erroneous values, so deployment supplies the age. codeAgeSeconds = 1735448527 - 1716674965 = 18773562. SmartBridge 0x8d5c8d28.. (created at BSC block 39042768) executed in the anchor but carries no defect: it correctly trusts its relayer. The Base and Ethereum relayers have the same executable bytecode and different metadata-only hashes (0x6a5bfe6532541099b1484326fe96a0a8a04e0a258b100f831515d7db29ea2376, 0x7a3c93a2fb41863c6c30900ee9969dfef38f112e5fb435e6188e00df6fb3579d). They were exercised later in the same campaign and are not separate targets.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:09:11Z"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Reviewed gross loss. For each withdrawal (source-12 BSC block 45290116 idx 2; source-13 Base block 24331067 idx 113; source-14 Ethereum block 21506154 idx 0), eth_getTransactionReceipt shows one FEG Transfer from SmartBridge 0x8d5c8d28.. to the attacker contract: BSC log 19, 45715693242627421547897258927; Base log 1049, 95809472542067884409468186734; Ethereum log 2, 57532022461471026362052505299. FEG decimals() is 18 and totalSupply() is 1e29 on each chain. SmartBridge FEG balanceOf at block-1 -> block is 45945420344349167384821365756 -> 229727101721745836924106829 (BSC), 96290927177957672773334861040 -> 481454635889788363866674306 (Base) and 57821128101980931017138196281 -> 289105640509904655085690982 (Ethereum). The attacker sold the released FEG in the same transaction. Native drawn from pools = wrapped-native Withdrawal events (topic0 0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65). BSC WBNB logs 32/52/78/98 (PancakeRouter 0x10ed43c7.., from pairs 0x73abb219.., 0xd1fbb349.., 0xe4aaaf8e.., 0x7623b101..) and log 102 (FEG contract 0xb803c271..) total 412317796352503677136 + 51856199387806846969 + 34197469687257566759 + 14494148282061439562 + 199166006751691744810 = 712031620461321275236 wei. Base WETH logs 1062 (router 0x4752ba5d.., pair 0xb8d33568..) and 1066 (0xb803c271..) total 70219646132251448473 + 3082359498882433114 = 73302005631133881587. Ethereum WETH logs 15 (router 0x7a250d56.., pair 0x671c6022..) and 19 (0xb803c271..) total 68089920426237388358 + 28240568186012966186 = 96330488612250354544. Cross-check against attacker EOA balance deltas at block-1 -> block, plus tx value, gas and L1 fee: BSC 0.560593113690915772 -> 712.584915770520152238 BNB, Base 0.038876377673263576 -> 73.340255624130098821 ETH, Ethereum 0.028228421015981939 -> 96.353672783770048574 ETH. Attacker contracts hold 0 before and after. Completeness: Etherscan logs.getLogs for FEG Transfer with topic1 = SmartBridge, from blocks 21505000/24329000/45289000 to latest, returns exactly one transfer per chain (the three above), so the later relays in source-3 moved no FEG. Valuation: native quantity x DefiLlama native price nearest each withdrawal (source-15/16/17): 96.330488612250354544 x 3381 = 325693.38; 73.302005631133881587 x 3382.12 = 247916.18; 712.031620461321275236 x 711.8275789195656 = 506843.74. Total 1080453.31 USD, consistent with the CertiK ~1M USD figure (96.3 ETH / 73.3 ETH / 712 BNB). The FEG quote of source-18 is not used, because selling the released reserve at that quote was impossible.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:09:11Z"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/resources/blog/feg-bridge-exploit-technical-analysis"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x8d57aacd101b585ed5e68f9f5f79bea2082ec03862456615d9175d6c967289e4",
-        "0x3de4f3584203d7545b252df73a3b7e75db691a2c12467de42028552ca3bbf04f"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction-set",
-      "chainId": 8453,
-      "transactionHashes": [
-        "0x08b06e5b5906308a6fa64e2bc965189ea4c6e3338d0037e1ba2b9b3db88dd6c0",
-        "0x7bd64979a1da87448a65643e33f1453ce06065533da087a971f1a5c9dd37b77b",
-        "0x940fd735665d32afe4893c5e6370745206507c55cb900c18cea83f7c0a0dc330"
-      ]
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x039d16382474370361293b2ea11c4b782a343aced0bd4831f996bf160f4365a0",
-        "0xaac5c0465103d01c9546c622dad64ac70f550f32c9f1e05a77e138a580432335"
-      ]
-    },
-    {
-      "id": "source-10",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x001d8ec72cd59b31172ee7414be198021b05733bda44c551e78c6d40f078be2b",
-        "0x987eda08bd482981ec062f7fdb8fc9c879a5a6d71cde385c9dd5e216ccd4a040"
-      ]
-    },
-    {
-      "id": "source-11",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0x2d754ff34983a2867b480830639d9f5217a6efb7361ff5246a360a2df3ebcd58",
-        "0x13806061e9411940ce0aee35a85869da0a7549df8c93784d99365aad636146d0",
-        "0xa1e786e00818a477c6ba5c7a946bfa48a601203334642fb872ff16b494c63825",
-        "0xc547a2615f9872691ea4faba08bec25c3a1a4af8c8a784906cdb310eb93754fb",
-        "0x8d158a543ce2c87a0d5811670ec26ab7973fd03f61abd98dd5d33362f90d11b5",
-        "0x1a6f23ed28ce0d5fceb35b4163a72e87bc048c33607b1c110363f6004a5f40ca",
-        "0xec99afc3b478945157277fa701f7672252feb81e2d050ea62297daeaf423d298",
-        "0xf832e852cd0ab0cc1afdf17268f54c05826a8b3bc624232d73fd4568586bd6f2"
-      ]
-    },
-    {
-      "id": "source-12",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x3de4f3584203d7545b252df73a3b7e75db691a2c12467de42028552ca3bbf04f"
-    },
-    {
-      "id": "source-13",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x60fd436dbd0e99c7585b775095048eced56bfc11e18331cfcb0cdad6f9fe7d87"
-    },
-    {
-      "id": "source-14",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x6c3cf48e9c8b22f60fc2b702b03f93926ee8624639b100fe851b757947e61759"
-    },
-    {
-      "id": "source-15",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1735451495/ethereum:0x0000000000000000000000000000000000000000",
-      "observedAt": 1790618193
-    },
-    {
-      "id": "source-16",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1735451481/base:0x0000000000000000000000000000000000000000",
-      "observedAt": 1790618193
-    },
-    {
-      "id": "source-17",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1735451482/bsc:0x0000000000000000000000000000000000000000",
-      "observedAt": 1790618193
-    },
-    {
-      "id": "source-18",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1735448000/bsc:0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
-      "observedAt": 1790618193
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 1080453.3,
+    "assets": [
+      {
+        "token": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
+        "symbol": "FEG",
+        "amount": "45715693242.627421547897258927",
+        "usd": 506843.74
+      },
+      {
+        "chainId": 8453,
+        "token": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
+        "symbol": "FEG",
+        "amount": "95809472542.067884409468186734",
+        "usd": 247916.18
+      },
+      {
+        "chainId": 1,
+        "token": "0xf3c7cecf8cbc3066f9a87b310cebe198d00479ac",
+        "symbol": "FEG",
+        "amount": "57532022461.471026362052505299",
+        "usd": 325693.38
+      }
     ]
   },
-  "discovery": [
-    "web:2024-12-29:feg",
-    "web:2024-12-29:fegex"
+  "refs": [
+    "https://www.certik.com/resources/blog/feg-bridge-exploit-technical-analysis",
+    "https://www.halborn.com/blog/post/explained-the-feed-every-gorilla-feg-hack-december-2024"
+  ],
+  "notes": [
+    "The reset is the SmartBridge deployment, which registered the bridge for FEG in DataReader (bridgeSD) and fixed its relayer; the relayer resolves the bridge through that entry. Later relayer admin calls set fees, gas and peers, which the exploited path does not read. The relayer runs the same code at the same address on Base and Ethereum.",
+    "BSC delivered the first forged message. Later forged messages by 0xb1e2afdb and 0x2218666f registered withdrawals but moved no FEG, so they are not campaign.",
+    "FEG is valued at the native currency its sales drew from FEG pools on each chain (rule 15): the released quantities far exceed market depth, so DefiLlama quotes would overstate the loss about fiftyfold."
+  ],
+  "campaign": [
+    "eip155:8453:0x7bd64979a1da87448a65643e33f1453ce06065533da087a971f1a5c9dd37b77b",
+    "eip155:1:0x039d16382474370361293b2ea11c4b782a343aced0bd4831f996bf160f4365a0",
+    "eip155:56:0x8d57aacd101b585ed5e68f9f5f79bea2082ec03862456615d9175d6c967289e4",
+    "eip155:8453:0x940fd735665d32afe4893c5e6370745206507c55cb900c18cea83f7c0a0dc330",
+    "eip155:1:0xaac5c0465103d01c9546c622dad64ac70f550f32c9f1e05a77e138a580432335",
+    "eip155:8453:0x60fd436dbd0e99c7585b775095048eced56bfc11e18331cfcb0cdad6f9fe7d87",
+    "eip155:56:0x3de4f3584203d7545b252df73a3b7e75db691a2c12467de42028552ca3bbf04f",
+    "eip155:1:0x6c3cf48e9c8b22f60fc2b702b03f93926ee8624639b100fe851b757947e61759"
   ]
 }

@@ -1,129 +1,74 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:10:0x45c0ccfd3ca1b4a937feebcb0f5a166c409c9e403070808835d41da40732db96",
-  "protocol": {
-    "name": "Sonne Finance",
-    "slug": "sonne-finance"
-  },
-  "name": "Sonne Finance",
-  "incident": {
-    "chainId": 10,
-    "exploit": {
-      "transactionHash": "0x45c0ccfd3ca1b4a937feebcb0f5a166c409c9e403070808835d41da40732db96",
-      "blockNumber": 120062493,
-      "transactionIndex": 8,
-      "timestamp": 1715723763
-    },
-    "attackerAddresses": [
-      "0x5d0d99e9886581ff8fcb01f35804317f5ed80bbb"
-    ]
-  },
-  "summary": "The Compound-v2 exchange-rate calculation let a direct VELO donation inflate the value of two wei of soVELO in an almost-empty market, which the attacker used as collateral to borrow assets from other Sonne markets.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 20000000,
-      "valuationTimestamp": 1715723763,
-      "method": "reported",
-      "sourceIds": [
-        "source-5"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Sonne Finance reported an approximately $20 million gross loss from the coherent two-transaction donation-attack campaign. The report does not publish a complete asset-by-asset valuation ledger."
-  },
+  "protocol": "Sonne Finance",
+  "name": "Sonne Finance soVELO empty-market donation",
+  "summary": "Sonne's timelock queued the listing of an empty soVELO market with a 35% collateral factor, executable by anyone after the delay. The attacker executed it, minted 2 wei of soVELO and donated VELO to inflate the Compound-v2 exchange rate, borrowed other markets' assets against that collateral, and recovered the donation via redeemUnderlying rounding.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xe3b81318b1b6776f0877c3770afddff97b9f5fe5",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xe3b81318b1b6776f0877c3770afddff97b9f5fe5",
-        "codeHash": "0xd255c945df578ea7ffdf6cfcd06c3455b5fb9fb72e674a0959ae1b14898e0f08"
-      },
-      "deployment": {
-        "timestamp": 1715348413,
-        "blockNumber": 119874818,
-        "transactionHash": "0x307b85a2fe776aad28ecc347e73170706850fea560479c78e7705c9332fb0feb",
-        "transactionIndex": 12,
-        "creatorAddress": "0xfb59ce8986943163f14c590755b29db2998f2322"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Direct deployment of the vulnerable non-delegating soVELO market runtime."
-      },
-      "codeAgeSeconds": 375350,
-      "failureModeId": "failure:sonne-compound-v2-empty-market-donation",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0xe3b81318b1b6776f0877c3770afddff97b9f5fe5",
+      "reset": {
+        "kind": "config",
+        "tx": "0x18ebeb958b50579ce76528ed812025949dfcff8c2673eb0c8bc78b12ba6377b7",
+        "address": "0x37ff10390f22fabdc2137e428a6e6965960d60b6",
+        "slot": "0x6f1709262f7fe490a83ecf3c44a61881b711649803f17d1d9d938428416cb08a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x45c0ccfd3ca1b4a937feebcb0f5a166c409c9e403070808835d41da40732db96"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T18:20:16Z",
-      "note": "Reviewed the two successful campaign transactions, the first transaction's call trace and receipt, the direct creation transaction, historical runtime, market storage and event history, Sonne Finance's post-mortem, and the commit-pinned reproduction. The first exploit transaction repeatedly calls soVELO 0xe3b81318b1b6776f0877c3770afddff97b9f5fe5 and exercises the donation-inflated Compound-v2 exchange rate. The market was directly deployed at block 119874818 by 0xfb59ce8986943163f14c590755b29db2998f2322. Its 14,896-byte runtime hashes to 0xd255c945df578ea7ffdf6cfcd06c3455b5fb9fb72e674a0959ae1b14898e0f08 both at creation and immediately before the exploit, contains no executable DELEGATECALL, has no implementation pointer, and emitted no implementation-change event. Deployment is therefore the latest executable-code change. The market configuration made the old defect exploitable shortly before the drain but did not change executable code. Sonne's approximately $20 million estimate covers both attack transactions."
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "note": "exploit tx backfilled and verified onchain (optimism block 120062493; victim in receipt logs): the first of two attack txs (DeFiHackLabs Attack Tx1); the second drain 0x9312ae377d7ebdf3c7c3a86f80514878deb5df51aad38b6191d55db53e42b7f0 followed 22 minutes later"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 10,
-      "transactionHash": "0x307b85a2fe776aad28ecc347e73170706850fea560479c78e7705c9332fb0feb"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://medium.com/@SonneFinance/post-mortem-sonne-finance-exploit-12f3daa82b06"
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-05/Sonne_exp.sol"
-    }
+  "campaign": [
+    "eip155:10:0x9312ae377d7ebdf3c7c3a86f80514878deb5df51aad38b6191d55db53e42b7f0",
+    "eip155:10:0x150a8ad61cdf9ba5a687b9cff95c90aa5eaa825ac1b07c016ccb905f97d511c3",
+    "eip155:10:0xfea20e78a94b3a34951031e3e6fc71f27c348eb7116dc24a777f46e6fe5a81f6",
+    "eip155:10:0x5729810d3cc325597be4f9c1a1c5d03ebad02c55750b966732ed6ab628a8f722",
+    "eip155:10:0x100ff0317251b899fe50baea8d0a107dd2fa9dd3b85dcff66f9841f25dfd1a4d",
+    "eip155:10:0x67632758ce19a41648f28fba6d3d87c7248202238234137bb4741da097cfa029",
+    "eip155:10:0xb43748ed668c1e44cf0a3e829ca0fe24eceaee7d33d06072bb11ca99afa7f448"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The project reports an approximate campaign total rather than an asset-by-asset valuation ledger."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 20787666.97,
+    "assets": [
+      {
+        "token": "0x68f180fcce6836688e9084f035309e29bf0a2095",
+        "symbol": "WBTC",
+        "amount": "162.92432767",
+        "usd": 10049085.57
+      },
+      {
+        "token": "0x1f32b1c2345538c0c6f582fcb022739c4a194ebb",
+        "symbol": "wstETH",
+        "amount": "1667.457311140082406821",
+        "usd": 5625634.13
+      },
+      {
+        "symbol": "ETH",
+        "amount": "795.380177899629515738",
+        "usd": 2302100.66
+      },
+      {
+        "token": "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
+        "symbol": "USDC",
+        "amount": "1264790.212281",
+        "usd": 1265077.85
+      },
+      {
+        "token": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
+        "symbol": "USDT",
+        "amount": "777632.562735",
+        "usd": 777660.06
+      },
+      {
+        "token": "0x7f5c764cbc14f9669b88837ca1490cca17c31607",
+        "symbol": "USDC.e",
+        "amount": "768933.765799",
+        "usd": 768108.7
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://medium.com/@SonneFinance/post-mortem-sonne-finance-exploit-12f3daa82b06",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/Sonne_exp.sol"
+  ],
+  "notes": [
+    "The reset is the timelock schedule of the soVELO listing, reserve factor, rate model, oracle and 35% collateral factor (one tx), not the market's deployment: the exploit needed the listing and the collateral factor, and with EXECUTOR_ROLE held by address(0) anyone could execute them once the delay passed.",
+    "Gross depletion of the 11 markets listed before the anchor, from loss.mjs. wstETH (unpriced on Optimism) uses Ethereum wstETH at the block and USDT is at par (DefiLlama quoted 1.021). The VELO donation the attacker redeemed is its own round trip; the helper-to-helper soVELO transfers are not exploits."
+  ]
 }

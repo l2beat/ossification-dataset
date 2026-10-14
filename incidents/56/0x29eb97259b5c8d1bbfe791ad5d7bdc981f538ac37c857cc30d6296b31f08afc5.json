@@ -1,217 +1,66 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x29eb97259b5c8d1bbfe791ad5d7bdc981f538ac37c857cc30d6296b31f08afc5",
-  "protocol": {
-    "name": "Amnext",
-    "slug": "amnext"
-  },
+  "protocol": "Amnext",
   "name": "Amnext prize strategy draws winners from a blockhash seed known to the completer",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x29eb97259b5c8d1bbfe791ad5d7bdc981f538ac37c857cc30d6296b31f08afc5",
-      "blockNumber": 120678535,
-      "transactionIndex": 78,
-      "timestamp": 1788867004
-    },
-    "attackerAddresses": [
-      "0xcfe8e7f43ba9d157395631897cf9c640a1e93a3c",
-      "0x9ce644a95f4a6596631719e7daf85671d3b314bd"
-    ]
-  },
-  "summary": "Amnext's PoolTogether-V3-fork MultipleWinners strategy lets anyone call completeAward(), which takes its seed from RNGBlockhash.randomNumber(); on first read that returns uint256(blockhash(block.number - 1)), a value every sender knows before its transaction executes. After no award had been completed since June 2022, about 436M AMC of staking yield sat in the AMCStakingPrizePool. The attacker deposited 46.06M AMC for 60.2% of tickets and called startAward, then sent completeAward in exactly the block after one of the only 3 of 367 eligible blockhashes that made all 10 draws land on its contract. It received 330.45M AMC of prize tickets, withdrew instantly and sold the AMC for 154.017 WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 102855.58774806794,
-      "valuationTimestamp": 1788867004,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x852e3a65d0cd8561edc0927012412d60aaaa9a4c",
-          "symbol": "AMC"
-        },
-        "amount": "330448338.92968331314898145",
-        "usdValue": 102855.58774806794,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1788867004,
-          "unitPriceUsd": 0.0003112607195461036,
-          "sourceIds": [
-            "source-6",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Stolen asset: the 10 x 33044833.892968331314898145 AMC of prize tickets awarded to the attacker contract (Awarded events), which it redeemed and sold in the same transaction. The contract withdrew 376508794.385313827402796135 tickets (its 46060455.455630514253814685 deposit plus the prize), paid a 4605160.587738330854694255 AMC exit fee to the pool owner, and sold the remaining 371903633.797575496548101880 AMC into PancakeSwap pair 0x01738bfbb67875417543fad4fe408299d31ea757 for 154.016960821795457015 WBNB. That sale doubled the pair's AMC reserve (463.05M to 834.95M) and cut the realised price to 0.000311 USD against a 0.000562 USD pre-sale spot, so the AMC is valued at the attacker's average realised proceeds: 154.016960821795457015 WBNB x 751.59899299391 USD (DefiLlama, source-7) / 371903633.797575496548101880 AMC, applied pro rata to the prize part. The attacker's own deposit (AMC bought for 31.4 BNB in txs from nonces 0, 1 and 4) and its exit fee are attacker inputs and are excluded. So is the 10% manager fee (36716482.10329814590544238 tickets minted to owner 0xd3ae60193ece30926f3a69351749e04afa3001a2), which the fork's award() takes on every prize. No fair-share offset is applied: the attacker's whole award rested on the draw it chose. A fair draw over the same balances would have given its just-in-time 60.2% ticket share an expected ~61% of the prize, so the predictable seed alone accounts for at least ~39% of this loss. The full sale proceeds of 115758.99 USD, which SlowMist and TenArmor report as about 116.1k USD, include the attacker's returned principal.",
-    "realizedAt": 1788867004
-  },
+  "summary": "Amnext's PoolTogether V3 fork MultipleWinners lets anyone call completeAward(), whose seed comes from RNGBlockhash.randomNumber(), i.e. blockhash(block.number - 1), known before the caller's transaction runs. After depositing for a ticket share and starting the award, the attacker completed it in a block whose seed made every draw land on its contract, then withdrew the prize.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x34c6ab54417f694bf2f982ca84942fc896ee35af",
-      "relationship": "minimal-proxy",
-      "codeArtifact": {
-        "address": "0xb291594597a5a2a2b8fa8be56098b7e26279cac5",
-        "codeHash": "0x463866f29b4a0d693d13363445e9dc93d07980288a735f3873920f9bb6b5fdb7"
-      },
-      "deployment": {
-        "timestamp": 1628180524,
-        "blockNumber": 9773501,
-        "transactionHash": "0x2729ce375468046cb7994cfb3d9ebe61a7c69b3eb4c1328b9cca6251dfdda630",
-        "transactionIndex": 146,
-        "creatorAddress": "0xb87987ab788b64ee825be3f699c50d39e58fb595"
-      },
-      "ageReset": {
+      "address": "0x34c6ab54417f694bf2f982ca84942fc896ee35af",
+      "code": "0xb291594597a5a2a2b8fa8be56098b7e26279cac5",
+      "reset": {
         "kind": "deployment",
-        "description": "EIP-1167 clone of MultipleWinners 0xb291594597a5a2a2b8fa8be56098b7e26279cac5, created and initialized with rng = RNGBlockhash 0xb1d89477d1b505c261bab6e73f08fa834544cd21 in the Amnext pool-builder transaction. The implementation address is fixed in the clone runtime and no RngServiceUpdated event was ever emitted, so this instance became exploitable, and first acquired the predictable RNG, at its creation."
-      },
-      "codeAgeSeconds": 160686480,
-      "failureModeId": "failure:amnext-prize-strategy-completer-known-blockhash-seed",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0x2729ce375468046cb7994cfb3d9ebe61a7c69b3eb4c1328b9cca6251dfdda630"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0xb1d89477d1b505c261bab6e73f08fa834544cd21",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xb1d89477d1b505c261bab6e73f08fa834544cd21",
-        "codeHash": "0x3a7adcf0ab03a05bafe0a0204d04779538e79df1f39e829b594e16e245e1c7e7"
-      },
-      "deployment": {
-        "timestamp": 1617061196,
-        "blockNumber": 6116161,
-        "transactionHash": "0xafa49740c8d6645a115236e020b9b6a298b78fa2a6dcd85a70a7135a8640b0e1",
-        "transactionIndex": 65,
-        "creatorAddress": "0xe0f4217390221af47855e094f6e112d43c8698fe"
-      },
-      "ageReset": {
+      "address": "0xb1d89477d1b505c261bab6e73f08fa834544cd21",
+      "reset": {
         "kind": "deployment",
-        "description": "Non-proxy RNGBlockhash created directly by an EOA; runtime hash unchanged from the deployment block to the block before the exploit."
-      },
-      "codeAgeSeconds": 171805808,
-      "failureModeId": "failure:rngblockhash-seed-is-prior-blockhash-at-first-read",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: this shared RNG predates the Amnext strategy clone (target-1), which became exploitable only when it was created with this RNG as its seed source on 2021-08-05."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xafa49740c8d6645a115236e020b9b6a298b78fa2a6dcd85a70a7135a8640b0e1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x29eb97259b5c8d1bbfe791ad5d7bdc981f538ac37c857cc30d6296b31f08afc5"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x2729ce375468046cb7994cfb3d9ebe61a7c69b3eb4c1328b9cca6251dfdda630"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:01:03Z",
-      "note": "Anchor txs from TenArmor alert (source-9). Setup: attacker EOA 0xcfe8e7f43ba9d157395631897cf9c640a1e93a3c created exploit contract 0x9ce644a95f4a6596631719e7daf85671d3b314bd (nonce 5, 120678120), then source-4 (nonce 7, 120678167:4) run(): deposits 46060455455630514253814685 AMC into AMCStakingPrizePool clone 0xd965ed56244016482d0597d989a0c2d8d3f62b53 (Ticket 0x7b8cfca6af10a34fa71d35ba757226109605bac9 minted 1:1; ticket totalSupply 30402350280365059090477423 -> 76462805735995573344292108, attacker 60.24%) and calls strategy startAward() (0xb9ee1e05), which records RNG request 1108 (0x454) with lockBlock 120678167. Anchor source-1 (nonce 8, 120678535:78, ts 1788867004, status 1) finish(): captureAwardBalance, strategy completeAward() (0xdfb2f13b) -> RNGBlockhash.randomNumber(1108) (0x9d2a5f98) emits RandomNumberCompleted(1108, 0xc405902cf2ccb3bc0f1a3c0f8db45812d7cff280acd00f103f4a4c3e7bc2e3ca) = eth_getBlockByNumber(120678534).hash; 10 Awarded(0xe2554529) events all to 0x9ce644..., each 33044833892968331314898145; then withdrawInstantlyFrom, sale for WBNB and a 0.01 BNB payment to 0x4848489f0b2bedd788c696e2d79b6b69d7484848 (48 Club bribe address, i.e. a targeted-block bundle). There is no attacker tx between source-4 and source-1. Grinding test (reproducible): for every block b in 120678168..120678534 (all seeds completeAward could use, since isRequestComplete needs block.number > lockBlock+1), seed_0 = blockhash(b), seed_w = keccak256(abi.encodePacked(seed_{w-1} + 499 + w*521)) for w=1..9 as in MultipleWinners._distribute, winner = eth_call Ticket.draw(uint256) (0x3b304147) at block 120678534. Result: 367 candidate blocks, attacker is main winner in 198, per-draw share 0.6109, and all 10 winners are the attacker only for b in {120678182, 120678398, 120678534}; the attacker completed in 120678535, consuming the third. Verified sources (source-5): PeriodicPrizeStrategy.completeAward() is external with only requireCanCompleteAward (rng requested and complete), reads rng.randomNumber(rngRequest.id) and calls _distribute; RNGBlockhash.randomNumber stores _getSeed() = uint256(blockhash(block.number - 1)) on first read. Invariant violated: a participant must not choose the draw outcome; here the completer knows the seed before sending and completion is permissionless, for every configuration of this RNG (executable-code defect, not a parameter). Strategy config at 120678166: rng = 0xb1d89477d1b505c261bab6e73f08fa834544cd21 (also at 9773501), numberOfWinners 10, prizePeriodSeconds 604800, prizePeriodStartedAt 1654768800 (last award June 2022), owner 0xd3ae60193ece30926f3a69351749e04afa3001a2. Etherscan getLogs RngServiceUpdated(address) topic 0xf935763c... on the strategy 0..120678535: none. Strategy txlist 0..120678535: 296 txs; admin calls are setTokenListener/setPeriodicPrizeStrategyListener (9773597, 9773654), addExternalErc20Award(AMC), transferOwnership, setNumberOfWinners(3) at 10707698 and (10) at 11677072, setPrizePeriodSeconds(604800) at 12942319, none touching the RNG. Earliest-use scan: 132 successful earlier completeAward txs (blocks 9794116..18630347); decoding Awarded logs from their receipts, the tx sender is among the winners only in 0xcf8c76f7893fe93fde551a6397288a11a77f24145140c17d86747480a0695e91 (block 12273793, 1 of 10 prizes, consistent with chance), and no earlier 10-winner draw gave all prizes to one address (minimum 4 distinct); source-1 is the first exercise. Code identity: strategy 0x34c6ab54417f694bf2f982ca84942fc896ee35af runtime is the 45-byte EIP-1167 clone of 0xb291594597a5a2a2b8fa8be56098b7e26279cac5 (clone keccak 0xe3cbc02f13514aa5244024add9bf5e4ed9d69cad4042246416987fe5ed571f01 at 9773501 and 120678534, empty at 9773500); implementation keccak 0x463866f29b4a0d693d13363445e9dc93d07980288a735f3873920f9bb6b5fdb7 at 9773500, 9773501 and 120678534. source-2 (9773501:146, from 0x88cd9d57d54acfe59e61c878d3ea85e4c8d0e4d0 to builder 0x182ce455e18ba087abca864d846894d51470332f) callTracer: CREATE frame 0xb87987ab788b64ee825be3f699c50d39e58fb595 -> 0x34c6ab54..., block timestamp 1628180524. RNGBlockhash: source-8 receipt contractAddress 0xb1d89477... at 6116161:65 from EOA 0xe0f4217390221af47855e094f6e112d43c8698fe, timestamp 1617061196; eth_getCode empty at 6116160, keccak 0x3a7adcf0ab03a05bafe0a0204d04779538e79df1f39e829b594e16e245e1c7e7 at 6116161 and 120678534. Knot = latest reset = strategy clone creation: codeAgeSeconds = 1788867004 - 1628180524 = 160686480 (5.09 y)."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x99c9969ab97f97b56766a9d75ec4f82a463bb8e7f9603eecc77b6bb57485d3ba"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified sources via Etherscan V2 contract.getsourcecode chainid=56. MultipleWinners 0xb291594597a5a2a2b8fa8be56098b7e26279cac5 (v0.6.12+commit.27d51765, 200 runs), SHA-256 of SourceCode string c2e23f6242fb1936a76d5eb888b852fef3d11b05ae182196494fb17cf2382fa2: inspect PeriodicPrizeStrategy.startAward/completeAward/requireCanCompleteAward and MultipleWinners._distribute. RNGBlockhash 0xb1d89477d1b505c261bab6e73f08fa834544cd21 (v0.6.6+commit.6c089d02, 200 runs), SHA-256 dbf6f777e65a30e74d2111cbc8567a93f372b96b6334de50550b2bb7d92d8e28: inspect randomNumber, _isRequestComplete and _getSeed. AMCStakingPrizePool implementation 0x6737b6bf20dc571c2ea2097fa624b9939763d2ec: PrizePool.award mints 10% of each prize to owner() and the rest to the winner."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T22:01:03Z",
-      "note": "Loss from the source-1 receipt: Awarded(winner=0x9ce644..., token=Ticket) data 33044833892968331314898145 at logIndex 946, 953, 960, 967, 974, 981, 988, 995, 1002 and 1009 (sum 330448338929683313148981450). Ticket burn from 0x9ce644... 376508794385313827402796135 (logIndex 1017) = 46060455455630514253814685 deposit + prize; pool withdrawal event topic 0x0271704a (logIndex 1031) third data word (exit fee) 4605160587738330854694255; AMC pool -> owner 0xd3ae6019... 4605160587738330854694255 (1029) and pool -> 0x9ce644... 371903633797575496548101880 (1030); 0x9ce644... -> pair 0x01738bfbb67875417543fad4fe408299d31ea757 371903633797575496548101880 (1033); WBNB pair -> router 154016960821795457015 (1035), unwrapped, 154.006960821795457015 BNB to the attacker EOA plus 0.01 BNB bribe. Pair getReserves (AMC, WBNB) at 120678534 = (463047969407845936294349239, 346260258326392772225) and at 120678535 = (834951603205421432842451119, 192243297504597315210). Unit value = 154016960821795457015e-18 x 751.59899299391 / 371903633797575496548101880e-18 = 0.00031126071954610358 USD per AMC; prize value = 330448338.92968331314898145 x that = 102855.587748 USD."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788867004/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790632787
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xafa49740c8d6645a115236e020b9b6a298b78fa2a6dcd85a70a7135a8640b0e1"
-    },
-    {
-      "id": "source-9",
-      "type": "post-mortem",
-      "url": "https://x.com/tenarmoralert/status/2097506987554808212"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 103249.57,
+    "assets": [
+      {
+        "token": "0x852e3a65d0cd8561edc0927012412d60aaaa9a4c",
+        "symbol": "AMC",
+        "amount": "330564361.99142285",
+        "usd": 102875.54
+      },
+      {
+        "token": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
+        "symbol": "vBNB",
+        "amount": "10.19200227",
+        "usd": 190.2
+      },
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "107.38126849199671723",
+        "usd": 107.2
+      },
+      {
+        "token": "0xfd5840cd36d94d7229439859c0112a4185bc0255",
+        "symbol": "vUSDT",
+        "amount": "2894.98940786",
+        "usd": 76.63
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-09:amnext"
+  "campaign": [
+    "eip155:56:0xaaeb540196872be681cca008db659ce7f5c3e1b3df84d5f1ba1488d170eb85d5",
+    "eip155:56:0xec1fe53b67b2c318ef8676854f37ced9636240b9f86fcaba8fe1aceceb9eef76",
+    "eip155:56:0x54d1766d20afa9413eb06d03c6fe97bbb53be807dca195e51c8223f48f00f1f2"
+  ],
+  "refs": [
+    "eip155:56:0x99c9969ab97f97b56766a9d75ec4f82a463bb8e7f9603eecc77b6bb57485d3ba",
+    "https://x.com/tenarmoralert/status/2097506987554808212"
+  ],
+  "notes": [
+    "The MultipleWinners clone was created and initialized with rng = RNGBlockhash in the pool-builder tx and setRngService was never called, so the clone's creation sets the age; the shared RNGBlockhash is older.",
+    "AMC is valued at the attacker's realised price (its 371.9M AMC sale halved the PancakeSwap price): 154.017 WBNB pro rata, applied to the 330.45M AMC prize (attacker deposit excluded, exit fee not subtracted) and to the copycat's 116,023 AMC prize.",
+    "Copycats completed awards with chosen blockhash seeds on sibling Amnext pools (AMC, BUSD/vBNB and USDT pools, same builder and owner) within hours; found as RNGBlockhash.randomNumber callers after the anchor whose winner was the caller's contract."
   ]
 }

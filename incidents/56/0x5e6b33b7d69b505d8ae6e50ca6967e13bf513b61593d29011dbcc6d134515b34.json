@@ -1,164 +1,42 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x5e6b33b7d69b505d8ae6e50ca6967e13bf513b61593d29011dbcc6d134515b34",
-  "protocol": {
-    "name": "ORB",
-    "slug": "orb"
-  },
+  "protocol": "ORB",
   "name": "ORBCore refund-before-sell reentrancy with pair-reserve burnLP",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x5e6b33b7d69b505d8ae6e50ca6967e13bf513b61593d29011dbcc6d134515b34",
-      "blockNumber": 121296110,
-      "transactionIndex": 64,
-      "timestamp": 1789145075
-    },
-    "attackerAddresses": [
-      "0xd8b49172b1a33e77c2619a78e08471facff5dad3",
-      "0x4f33733a40fae6c19c3a4faf9bc08ce9a1806831"
-    ]
-  },
-  "summary": "ORBToken forwards BNB it receives to ORBCore.addPoolAndSell, whose sell branch refunds the BNB to the caller before selling, and _sellToken pays the caller before calling ORBToken.burnLP, which burns up to 20% of the pair's ORB and syncs; none of this is reentrancy-guarded and Core's own swaps are tax-free. With flash-loaned and Venus-borrowed WBNB the attacker first bought almost all ORB out of the ORB/WBNB pair, then re-entered at the refunds so that 58 nested sells ran their burnLP calls against the emptied reserve on the way out, grinding its ORB side to dust, and a final sell drained the pair's WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 32753.437870103884,
-      "valuationTimestamp": 1789145075,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "44.955390042764518004",
-        "usdValue": 32753.437870103884,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1789145070,
-          "unitPriceUsd": 728.576436306006,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "WBNB depletion of the ORB/WBNB pair 0x64fad72e5dde70b2960497744b348fd64cb4788c across the transaction (45.318191861188781185 -> 0.335708357864918575), less the attacker's pre-held 3,483.438204554125976510 ORB valued at the pre-exploit reserve ratio (0.027093460559344606 WBNB). Sell taxes routed to leader2 are not deducted; borrowed legs are repaid in-transaction and excluded."
-  },
+  "summary": "ORBToken forwards received BNB to ORBCore.addPoolAndSell, whose sell branch refunds the BNB before selling and then calls ORBToken.burnLP, burning pair ORB and syncing, unguarded. The attacker moved most pair ORB to Core with flash-loaned WBNB, re-entered at the refunds so 58 nested burnLP calls ground the reserve to dust, then sold for the pair's WBNB.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x24b6308ab84b182d0598b73d21a42f4c2bb33c18",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x24b6308ab84b182d0598b73d21a42f4c2bb33c18",
-        "codeHash": "0xb6272aafdf42763b12a403556b1ffa7d94d2e7e72509ee69e08ee477a7745f57"
-      },
-      "deployment": {
-        "timestamp": 1783951402,
-        "blockNumber": 109760214,
-        "transactionHash": "0xbf814922309e2ca07e476ea20ae70d8b9a47f2c515551d2cc067ef20c77076de",
-        "transactionIndex": 33,
-        "creatorAddress": "0x008471fab0a89cbd5c789501d2afc92985bdea17"
-      },
-      "ageReset": {
+      "address": "0x24b6308ab84b182d0598b73d21a42f4c2bb33c18",
+      "reset": {
         "kind": "deployment",
-        "description": "Direct immutable ORBCore; the owner's wiring within 1,101 blocks of deployment (setOther, addFilterSpecialAddressArr, setLpTo, setMinterAddress, setBNBLimit and ORBToken.setAddress(core), last at block 109761315) only made it operational, and minBNB, whiteListOpen and the sell/burn ratios read the same at 109761119 and 121296109."
-      },
-      "codeAgeSeconds": 5193673,
-      "failureModeId": "failure:orb-core-refund-before-sell-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "ORBToken 0xc4d27261c06407053cad16cb825ecc0eee7ee7d7 (deployed earlier, block 109718211, runtime 0x437b1483ebe856784080bd939f5349ccf1e5faddf87dd03837371e231885b651) supplies the unguarded receive() forwarding and burnLP; it is the older artifact, so ORBCore's later deployment is the knot."
-        ],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xbf814922309e2ca07e476ea20ae70d8b9a47f2c515551d2cc067ef20c77076de"
+      }
+    },
+    {
+      "address": "0xc4d27261c06407053cad16cb825ecc0eee7ee7d7",
+      "reset": {
+        "kind": "config",
+        "tx": "0x8a5fa234e6985ab654e859645745e0aac0ff0834fb9faecc71cf9a6367e8b86e",
+        "address": "0xc4d27261c06407053cad16cb825ecc0eee7ee7d7",
+        "slot": "0x1a"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5e6b33b7d69b505d8ae6e50ca6967e13bf513b61593d29011dbcc6d134515b34"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbf814922309e2ca07e476ea20ae70d8b9a47f2c515551d2cc067ef20c77076de"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:43:31Z",
-      "note": "Reviewed root cause, first exercise, artifact identity and age. Verified sources (Etherscan V2 getsourcecode chainid=56, v0.8.17+commit.8df45f5f, optimizer 200): ORBCore SHA-256 e547dddb4e069e141dcf0f0e8e9efd9100302081154c44c99ab31ef469d700d0, ORBToken eb5eec1a1a2ad4b563ec4ae9bb2e12363d4f72416d7336d39b1cc21dae623ff5. ORBCore.addPoolAndSell (onlyTokenAddress): for SELL_BNB_LOWEST <= msg.value < minBNB it first safeTransferETH(account, BNBValue), then _sellToken, which swaps the caller's ORB through the router, safeTransferETH(account, userBNB) and only then IToken.burnLP(sellTokenAmount * sellBurnTokenRatio / 10000); ORBToken.burnLP (onlyCoreAddress) burns from the pair when amount < pair balance / 5 and syncs. No function has a reentrancy guard. debug_traceTransaction(callTracer) of source-1 (block 121296110, index 64, EOA 0xd8b49172b1a33e77c2619a78e08471facff5dad3 -> 0x4f33733a40fae6c19c3a4faf9bc08ce9a1806831): Moolah and Venus funded WBNB buys the pool's ORB through Core (_addPool path), the attack contract re-enters through ORBToken.receive() at each refund, and the receipt carries 58 AccountSell events; pair WBNB transfers net 896248.990050001200722372 in and 896293.495994033612676884 + 0.476539470911908098 out. First exercise: eth_getLogs on ORBCore from deployment to 121296110 returns 9,224 events, including 76 AccountSell (topic 0x4c4479f8...) in 19 transactions; source-1 is the only transaction with more than one, so no earlier reentrant sell occurred. Configuration: nonce bisection of owner 0x008471fab0a89cbd5c789501d2afc92985bdea17 between blocks 109718210 and 121296109 finds 24 transactions: token burnOwnership and addSafeAddresss, Core setOther (twice), addFilterSpecialAddressArr (6), setLpTo, setMinterAddress, setBNBLimit(0.01 BNB, ..., whiteListOpen=false) at 109761119 and ORBToken.setAddress(Core) at 109761315 (source-5), then only takeETH withdrawals, two everydayEarnArrPage runs, a timerDefl call and setSuperEarnRequireArr (114382966, referral tiers, not on the sell path). Artifact: eth_getCode(Core) 0x at 109760213; keccak256 0xb6272aafdf42763b12a403556b1ffa7d94d2e7e72509ee69e08ee477a7745f57 at 109760214 and 121296109; source-2 is its top-level creation (index 33) by the owner. No proxy or self-destruct path. Deployment supplies the age."
-    },
-    {
-      "id": "source-4",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/ORB_exp.sol"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8a5fa234e6985ab654e859645745e0aac0ff0834fb9faecc71cf9a6367e8b86e"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:43:31Z",
-      "note": "Reviewed loss. eth_call WBNB(0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c).balanceOf(pair) = 45318191861188781185 at block 121296109 and 335708357864918575 at 121296110 (depletion 44.98248350332386261 WBNB); ORB balances: pair 5826613420046537563551921 and attacker EOA 3483438204554125976510 at 121296109, EOA 0 after. The EOA's BNB balance rises from 0.01556476888 to 44.92605063421708. Attacker ORB input valued at 3483.438204554125976510 x 45.318191861188781185 / 5826613.420046537563551921 = 0.027093460559344606 WBNB; loss 44.955390042764518004 WBNB at USD 728.576436306006 (source-7)."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1789145075/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790638934
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-6"
+  "loss": {
+    "usd": 32753.437870103884,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "44.955390042764518004",
+        "usd": 32753.437870103884
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-11:orb"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/ORB_exp.sol"
+  ],
+  "notes": [
+    "ORBToken.setAddress(ORBCore) wired the token's receive() forwarding, the Core transfer exemption and burnLP/mint powers to this Core, after Core's deployment; the exploit needs that grant, so the token is a config-reset target and sets the age. Other wiring and minBNB, whiteListOpen and the sell/burn ratios were unchanged before the exploit.",
+    "WBNB depletion of the ORB/WBNB pair 0x64fad72e5dde70b2960497744b348fd64cb4788c across the transaction (45.318191861188781185 -> 0.335708357864918575), less the attacker's pre-held 3,483.438204554125976510 ORB valued at the pre-exploit reserve ratio (0.027093460559344606 WBNB). Sell taxes routed to leader2 are not deducted; borrowed legs are repaid in-transaction and excluded."
   ]
 }

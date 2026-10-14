@@ -1,194 +1,238 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xa17fdb804728f226fcd10e78eae5247abd984e0f03301312315b89cae25aa517",
-  "protocol": {
-    "name": "HedgeyFinance",
-    "slug": "hedgeyfinance"
-  },
-  "name": "Hedgey Finance ClaimCampaigns unvalidated locker approval (Ethereum)",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xa17fdb804728f226fcd10e78eae5247abd984e0f03301312315b89cae25aa517",
-      "blockNumber": 19687887,
-      "transactionIndex": 23,
-      "timestamp": 1713510359
-    },
-    "attackerAddresses": [
-      "0xded2b1a426e1b7d415a40bcad44e98f47181dda2",
-      "0xc793113f1548b97e37c409f39244ee44241bf2b3"
-    ]
-  },
-  "summary": "ClaimCampaigns.createLockedCampaign did not validate the claimLockup.tokenLocker address, so a campaign created with an attacker-controlled locker left ClaimCampaigns holding a token allowance to that locker that survived cancelCampaign, letting the attacker spend the protocol's full token balance afterwards.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1987902.6082287668,
-      "valuationTimestamp": 1713522155,
-      "method": "other",
-      "sourceIds": [
-        "source-3",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "1303910.12",
-        "usdValue": 1303910.12,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1713510359,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-8"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x88b9f5c66342ebaf661b3e2836b807c8cb1b3195",
-          "symbol": "NOBL"
-        },
-        "amount": "48019408",
-        "usdValue": 683992.4882287668,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1713522155,
-          "unitPriceUsd": null,
-          "sourceIds": [
-            "source-7",
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-7",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Loss is the main attacker campaign (0xded2b1a4 driving attack contract 0xc793113f) on Ethereum, measured as exact victim depletion of the ClaimCampaigns contract 0xbc452fdc. USDC: the contract's USDC balance went from 1,303,910.12 (1,303,910,120,000 base units) to 0; the drain transaction 0x2606d459 moved exactly that amount from ClaimCampaigns to the attacker EOA. In the anchor transaction the attacker's own 1,305,000 USDC flash-supplied to fund the campaign flows in and back out (net zero) and is an attacker-supplied input, not victim loss. NOBL (0x88b9f5c6): the attacker received exactly 48,019,408 NOBL from ClaimCampaigns (victim->attacker gross, with 0 NOBL sent back), then dumped it through DEX routers. NOBL is illiquid and was not spot-marked: valuation uses realised proceeds. The attacker's entire Ethereum haul was consolidated into a single 1,987,902.6082287668 DAI transfer to cash-out wallet 0xd84f48b7 in transaction 0x1c2fe7c2 (nonce 103). That net take decomposes as the 1,303,910.12 USDC (valued 1:1) plus 683,992.4882287668 DAI of NOBL sale proceeds (gross DAI received across the campaign was 2,038,902.61, of which ~51,000 DAI was the attacker's own spend acquiring ~684,313 seed NOBL, an excluded attacker input). This ~$1.99M matches Halborn's reported ~$2.1M Ethereum split. The same public vulnerability was independently exploited in separate transactions by other actors (0xf0cad3 drained 120,800 MASA, 0x462412 drained 22,393.28 BLOCK, 0xc0ffeebabe drained 72,688.46 ARC, 0xd1aff3 drained 1,957,142.85773 CO), each after the main campaign; those are distinct campaigns by distinct senders and are not counted here. Later recoveries/returns are not netted.",
-    "realizedAt": 1713522155
-  },
+  "protocol": "Hedgey Finance",
+  "name": "Hedgey Finance ClaimCampaigns unvalidated locker approval",
+  "summary": "ClaimCampaigns.createLockedCampaign approved the caller-supplied claimLockup.tokenLocker for the campaign amount and cancelCampaign refunded the tokens without revoking it. Creating and cancelling a campaign with an attacker contract as locker left an allowance that it spent with transferFrom to drain the contract's tokens, on Ethereum, Arbitrum, BNB Chain, Avalanche and Polygon.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xbc452fdc8f851d7c5b72e1fe74dfb63bb793d511",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xbc452fdc8f851d7c5b72e1fe74dfb63bb793d511",
-        "codeHash": "0x725bc4ce48b9a71a4fd491b1f7bdcf29c772d92f8ee7a5cd6c3264f570f70db4"
-      },
-      "deployment": {
-        "timestamp": 1700669051,
-        "blockNumber": 18628345,
-        "transactionHash": "0x49716bc8be54164fde7964d1284cd2a69058f39dc22b5dfd1bb3e515bcfbeb22",
-        "transactionIndex": 334,
-        "creatorAddress": "0x5a4bc2bda1f6b9929b6efdcef4728246bec4c635"
-      },
-      "ageReset": {
+      "address": "0xbc452fdc8f851d7c5b72e1fe74dfb63bb793d511",
+      "reset": {
         "kind": "deployment",
-        "description": "Top-level deployment of the direct, non-proxy ClaimCampaigns runtime. EIP-1967 implementation slot is zero and the runtime hash is byte-identical at the deployment block and immediately before the exploit."
-      },
-      "codeAgeSeconds": 12841308,
-      "failureModeId": "failure:hedgey-finance:unvalidated-claim-locker-approval",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+        "tx": "0x49716bc8be54164fde7964d1284cd2a69058f39dc22b5dfd1bb3e515bcfbeb22"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa17fdb804728f226fcd10e78eae5247abd984e0f03301312315b89cae25aa517"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2024-04/HedgeyFinance_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x2606d459a50ca4920722a111745c2eeced1d8a01ff25ee762e22d5d4b1595739"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x49716bc8be54164fde7964d1284cd2a69058f39dc22b5dfd1bb3e515bcfbeb22"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://medium.com/hedgey/hedgey-exploit-post-mortem-784e9860fd8d"
-    },
-    {
-      "id": "source-6",
-      "type": "post-mortem",
-      "url": "https://www.halborn.com/blog/post/explained-the-hedgey-finance-hack-april-2024"
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1c2fe7c247d9f470ef920195d4f55c1135a0d8158caf2fc8dab52bde8976d155"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5",
-      "reviewedAt": "2026-08-29T18:53:48Z",
-      "note": "Re-scoped the loss to exact Ethereum victim depletion and confirmed the anchor. The attacker EOA 0xded2b1a4 deployed attack contract 0xc793113f at nonce 1 (block 19687858) and made a no-op setup call to it at nonce 2 (block 19687872) whose call tree makes zero sub-calls and never touches ClaimCampaigns; the earliest transaction that executes the defect is nonce 3, the recorded anchor 0xa17fdb at block 19687887 index 23, whose call trace reaches ClaimCampaigns 0xbc452fdc 21 times through createLockedCampaign and cancelCampaign. ClaimCampaigns is a direct contract: its EIP-1967 implementation slot is zero, and its runtime hashes to 0x725bc4ce48b9a71a4fd491b1f7bdcf29c772d92f8ee7a5cd6c3264f570f70db4 both at deployment block 18628345 (top-level created by 0x5a4bc2bda1 in 0x49716bc8) and at block 19687886 immediately before the exploit, giving an age of 12,841,308 s. Loss: I measured ClaimCampaigns token balances with balanceOf at block 19687886 (pre-anchor) and block 19690000 (post-campaign). USDC fell from 1,303,910.12 to 0, and the drain transaction 0x2606d459 (nonce 4) transferred exactly 1,303,910,120,000 USDC base units from ClaimCampaigns to the attacker EOA; the 1,305,000 USDC the attacker flash-supplied inside the anchor flows in and back out net zero and is excluded as an attacker input. The attacker received exactly 48,019,408 NOBL from ClaimCampaigns (victim->attacker gross across the campaign, 0 returned) and dumped it via DEX routers. I summed every DAI Transfer to the attacker EOA over blocks 19687880-19700000: 2,038,902.6082287668 DAI received in total, all forwarded out; the single consolidation transfer to cash-out wallet 0xd84f48b7 in transaction 0x1c2fe7c2 was 1,987,902.6082287668 DAI, equal to the USDC drained (valued 1:1) plus 683,992.4882287668 DAI of NOBL proceeds after excluding ~51,000 DAI the attacker itself spent buying ~684,313 seed NOBL. NOBL is illiquid so it is valued at realised proceeds rather than spot. This ~$1.99M matches Halborn's ~$2.1M Ethereum figure. ClaimCampaigns also lost MASA, BLOCK, ARC and CO to the same bug in the same window, but each of those drains was sent by a different EOA (0xf0cad3, 0x462412, 0xc0ffeebabe, 0xd1aff3) in its own transaction after the main campaign, so they are separate copycat campaigns and are excluded from this incident's loss. The Arbitrum leg of this campaign is deliberately not recorded: the Arbitrum ClaimCampaigns (same address 0xbc452fdc, same deployer) held 77,948,800.12 BONUS (77.9% of the 100,000,000 supply), which attacker 0xc7241e27 drained via attack contract 0xbb52f172 anchored at 0x688aaa6f (block 202588688), but BONUS is deeply illiquid: the attacker's own seed purchase paid 0.002 WETH for ~10.29 BONUS and the attacker still holds 76,848,810 of the drained BONUS today, realising only ~0.016 ETH and 200 USDC. The reported ~$42.6M Arbitrum figure is an unrealisable spot-mark, so no defensible USD value or lower bound of >=1,000 exists for Arbitrum and it fails cohort admission."
-    }
+  "campaign": [
+    "eip155:1:0x2606d459a50ca4920722a111745c2eeced1d8a01ff25ee762e22d5d4b1595739",
+    "eip155:1:0x9ac9cb1ef78ebdad3dcc9d9b28c71d9c443265bd8b051f18f798f2d68bdd6f2c",
+    "eip155:1:0x017ce9593350cba65d506e1a87e52d2c20079fdfa80a350a89fe6fc875f2d9f9",
+    "eip155:1:0x47da1ac72d488f746865891c9196c1632ae04f018b285b762b2b564ad1d3a9e5",
+    "eip155:1:0xe4dbeba25b0c0d67f8ecaff5ec7c0a9569ddc10c817ab6815d5bc3dfb22e9ec0",
+    "eip155:1:0xd0c23f115c66a060ffab78c91c6f9085db5af6257a72858b7fd4def6b7735617",
+    "eip155:1:0x4eb093c25d111efa1e8b7f6dc32cc47573c4651b6ea2e30d74bf2449c796692f",
+    "eip155:1:0x51988f56315afb8417c48948092fb6c6b1007b52aac98e71b21010ddeafea95c",
+    "eip155:1:0x108a52c403fe206bafb34ce1880138f22591f82b0f45c6c77de7c8787dc6a834",
+    "eip155:1:0xf336ff5c7465893a87c79ac514abe2e3fac1b3e06cbe185c00ea6af18d4e7a84",
+    "eip155:1:0x9edb3c12cd3d3352ec56c8222aaa51bbec3e47b693deb9ffa3bcd0a0060a420c",
+    "eip155:1:0x0a92e83112a06fb63e26154c201913bd66c2a437c01565d76edef651c3de2494",
+    "eip155:1:0x21d51b17b6834f9837472c37e7271c75a55bf449d773f4e00c9aa316af7f5a5c",
+    "eip155:1:0x5ddd5192f012f79d6a5fbb97abe2f61705838f6a7c9c223ddcd7f37fd930707d",
+    "eip155:1:0x456d96e3040d5da6dfaa7f1c26523a3fc6adc8bfe84bc97bd736513f689cf15a",
+    "eip155:1:0x91ef02e6a99bf97cf5ff54d7084736f826fb280b1af14819c4d86a63c4145099",
+    "eip155:1:0x13de542bb28df2f1b07ea4a07c7073cb7efa38057e708e65851f8b00176eed79",
+    "eip155:1:0xc9e3f0329fe027782760f95477838d0a6c9203ef6f61cfb4a27b60f26b265afd",
+    "eip155:1:0xc52cc6980f0700d8d90fbebe32a5bee07f5ae4d62996bc425db4b76da687e3ec",
+    "eip155:1:0x6a9251b084ff7a5dd74281d8972a762461f4336c615776d34d5c0ec738b592f6",
+    "eip155:1:0xf42d9605eda58f2a164509a90465394c9b17f6a7d47b80859fc3bd288affcc9f",
+    "eip155:1:0xf423f2da0d8b672a43b5d88beb3404bb4d33d9f0dd1144b9462f1ed419f76735",
+    "eip155:1:0x302d20eae77336a913be1d8673b09456022c5fc110a114c0d79fb653015fe367",
+    "eip155:1:0x570147d83ca9c4377f53f1d8e9e18649bbe69431cc81b3fb3689cc3931b2b9ce",
+    "eip155:1:0x3211c2a21e069e6ccd8159216e0ac185f0a9ae08d36e08388307ace3f8c3c7df",
+    "eip155:1:0x9bd9a440aa0cc8487d9de5aafeb13e339d8d80c9d6497a27c9def7d582f52592",
+    "eip155:1:0xd89ed3da025e7875a8581d52beffba43340a18771fc2f71d939f91a31e39f535",
+    "eip155:1:0x79fad458486924cddd10d4316e4a8ebc2b387a9fccebc4fda79c659c8f0f3da0",
+    "eip155:1:0xf1b248b7f217b46a2f52bad1fb8fea294eea57ce0af85d63a14f52479e250220",
+    "eip155:1:0x45b2cf13abfa85be7fd277b357da4bc836dee221a7be55cc20b862c6121eb213",
+    "eip155:1:0x353a710d9a52a919a5d7220211f11e7851cf99f1243373376c8eb2e48a94b396",
+    "eip155:1:0x0929eccb3aca9dfb87a9998ffb821ca3f685e881255e8d96535f407c10253217",
+    "eip155:1:0x8b5ca7dabee5cdc74240d83f80a46fe79a86aa277002c354e83c639666732efc",
+    "eip155:1:0x2c21552118e50acff7cfe386604dd94dfce513ab977b78c23c9a3cc0c83623cd",
+    "eip155:1:0x411f4b8b5a3677a4407a80181ee1ad7f3429a7ae041aba11dbe750aa4ed2f911",
+    "eip155:1:0x4c3013ea6da796242363362b86f5f5c7e29d2698b37c0de0372912d7b44759c0",
+    "eip155:1:0x13b3b6bb3522f98ac686072f5ed764b1d4fa08b0db3929a741c08f7e70c71a68",
+    "eip155:1:0xdb30a3516ae3ea027bc6f2ee71136ef10878c1808c0841f90bdfdbce0b128c54",
+    "eip155:1:0xd51707b7a4de2d6d87f167976ec2818e67035098b3dc06cbb5b24df2a037b2a1",
+    "eip155:1:0x4728f9efaed3c20b5ef99262c7ce1aef6390d0eef4bd9faf553a3547b75b3c95",
+    "eip155:1:0x5945253eac8908d7a3ed1202c72fab84ea1b94ac41e0f1155ae8a6d84b4d3e1c",
+    "eip155:1:0xd2ed6cbf430f38571146e701e435a060afb40d55151c2d388fcdd6d726671d3f",
+    "eip155:1:0xc9409c66c17f33e46824b2bf55522cdeae104df1b299fd62655c2fcc3dca09bd",
+    "eip155:1:0x286b3e337b1e97d801350095a546339b450f1f753f25f3ca4b50d16f0081b1f0",
+    "eip155:1:0x97b4bcb4de1ace0c030ef83e8c0eaeb0f56a1bcd2fae2c4ac0216168c6d4b311",
+    "eip155:1:0x012567aaaee2d6a81143d28246fe097539a537299c62b03fae7fbd3c04b4a23e",
+    "eip155:1:0x64c4cda28c5f14c761fb34c86adbf07436c1deb179479525cb06ae4718b34509",
+    "eip155:1:0xe4c01e5e08bb60d443892a3776a5b93669d9b977fbd246cf01e9d31087544c7b",
+    "eip155:1:0x13ea56ad02087e331a49ae78d6fa93e6356d9df5fe48f236dbfe65b404b9dea4",
+    "eip155:1:0x01e5bef795b6d274e946d0013939916f43144f1a90c84058797cd00988f66bc8",
+    "eip155:1:0xf85369f91698a78eb4f42c533bec540c54f3752e7cb321eadd6eb6f7c1c1c305",
+    "eip155:1:0x43dcba00e16c051d3f638a8911d5165e753eba4d84c9cea826603321f2b20d47",
+    "eip155:1:0x1348fe639d2d7507ce2f2260a703e0b50b0bf4b6daddf85e826e27a220d84ddd",
+    "eip155:1:0x0e655a77d225838499f340f5ad928acb0571b8f0e6f6fde87e0ce5f3856422d0",
+    "eip155:1:0x83cf8aae6477932bcbde5fde814f8ca40c5acec4db04f5924c8f166401d34985",
+    "eip155:1:0xf790a2f5b855f9b16ffab328dbe9139a7007af7db2cf5b22b66c66858faf8b31",
+    "eip155:1:0x9215b87e49fdd5b0e9fd4688f2d315dfdefc73655be529cc68aa3547f8828879",
+    "eip155:1:0xe118170da24b23a7b05cffbb830fea48ca8b64bc5a0217322c68c30952004cab",
+    "eip155:1:0xad5e98afcddbf8f3bc4dfec5f74a49182977665c2c0f8fad15de18caad54fff8",
+    "eip155:1:0x03c73a343b5a481c9431af2f4a2146a0e77522a23e5cca9b2ea024778589967f",
+    "eip155:56:0x8dadcd001a7187cfff1b352d323460ac13c5ed5b039a58a5ce495d84b7e420c4",
+    "eip155:56:0xd59cd5d08a43468414b1d2aef8b0b38fc989df68eb9e82fc1d231b0103a9b8f8",
+    "eip155:56:0x7807b29a6a6fb67f8007207beb8b61d104df6ee6a1bdb3356ade3402e513f2c8",
+    "eip155:56:0xedec6a4c0ebca86ba325f62f3fd37536f57fa68c0bfd829ba1edd87b7163f75e",
+    "eip155:56:0x4e712ac7605e79f15d242fd89dbe1fab615b96498146a3ef43f402be5e89c6df",
+    "eip155:56:0x45a24427e868c587f54280bc03b99f514b714845e01fa1ced939bd7513e830fe",
+    "eip155:56:0xa9580e06a106c744c7e70203d3f34374db48164af7d4b459f8b25744fd4f91d5",
+    "eip155:56:0x6b3af579ab58eb3a1ef0d0b40c4947b94e2de99fe4217f5a8b338b7aed1b7973",
+    "eip155:137:0x9a346901e87f992decac83c31a9228be9cbe2125a49ff23e75866f5d6eac7e97",
+    "eip155:137:0x69f02158ba819c5182799c6c45f4625d6e3cdb0b5a170922e114d15e2a0e7b1c",
+    "eip155:137:0xfbb0fcc25130fa390a1f2ef626443bf9303da959bf60bef5f85415814f9b0b18",
+    "eip155:42161:0x688aaa6f16a6f7bbfd3e0c86c9b79f388967ce849343fc280c47dc792bde0624",
+    "eip155:42161:0xb9bc0b31352338f23d3576413c95e98af379fffd0433de071ddcba0c3a93e1d7",
+    "eip155:42161:0xd5d00d5f302d01c047703546b94caafcd7d03980a8b522561504d3da1efae6bd",
+    "eip155:42161:0xe91624f81b21db975325cc8eca43f0eac8e077b82f5b89977ca07fc9aa60782e",
+    "eip155:42161:0x00cba1395cb177d4677b97210fc2fe6adc45a97c2775ef51f3548ec0d186202d",
+    "eip155:42161:0x84917052aacc5c21328524a7c2691e85b09b2400af12bc1a81a68376f42d4c73",
+    "eip155:42161:0xaab5577e3cab3b7aba5a63a34ac9c5714979a44df856cb297a0cacde7f523cdd",
+    "eip155:42161:0x42b4f51db55c165b08c07a1ecaf86b094aa2ca9b0ebb8e9d8f4db3dfafb2e086",
+    "eip155:42161:0xaf5057d9371329f0686d686ebd03779769be9c7c0a2ec210e9c43c556a080439",
+    "eip155:42161:0xabb3390e51c095506862b75c6dbde99621c3b09c1acefe35b3308f68d257ea32",
+    "eip155:42161:0xaea07c82bd25c2bc1e5d4e6ce850f8271d91930acb187a7619a29864b4ae27db",
+    "eip155:42161:0xdd5b57cf99c5a29d74d76bf973535f6970a8456372efe70a2f2ef6066b6e438f",
+    "eip155:42161:0xa5de28a6ec3f582160f5988e75bde95eab4e1741b7e4f5092956d4af8c315d15",
+    "eip155:42161:0x4df320c1358d8f085db4763ed8a095b8237384f76bf5ae6476c53a65cc43bb77",
+    "eip155:42161:0x75c32f48f10b0ac11cc784ebbe9b87b513486e9167d1baee792b411b587458cc",
+    "eip155:42161:0xa9f83fb438b6dc741b392042fd76969e9e2ff53f141ecc6fd1e6f85b5b0d4290",
+    "eip155:42161:0x001ef761e63168bb5e0d05d6d258b8a46e6021fb15658208bee24cc391c7623f",
+    "eip155:42161:0x57379df7a69ebc470ec6bd6dbefa56de1e30f1adc5623e905f0d65d3eaa858a2",
+    "eip155:42161:0x76d9ad0d813420e860294e3810d86ee5cb05cdde4a20763bc4a3f67208e53214",
+    "eip155:42161:0x0965c1625ec0a0293b3010783a0e118c7e12937e54ca9e7eadce6840155130a6",
+    "eip155:42161:0x59ad100bcc25494902495dfb03920c4d2223796b92cda21cfcbae1c06c8a333b",
+    "eip155:42161:0x04732ec18e161308426a6b553166181237766bcd5c585704b39d87999a7464d0",
+    "eip155:42161:0xcebf40002e3eef38fae2928e3552899c76a737b19a2015d4f8d3ddb23a5c9c0e",
+    "eip155:42161:0x9dea875ccff2183e796596decd211e66bc0e6a02027fc39b4028f51320fa6b55",
+    "eip155:42161:0x662ad80049483c1602eb72c3279ace949f2e4dca08d7e3515936abd6c0c708b0",
+    "eip155:43114:0x1f83099a0ac68324267684d34bbc03ab2cb59a1548acc7451e4ee5731464fbab",
+    "eip155:43114:0xd9aadd7f90ac0e7369afffe249454f23bee36d510a7eba0d251436faff99ee94",
+    "eip155:43114:0x71db7d1229e604ac557ed4195b14c398e1f2ae5cf0e0a3a50c58092b3ba5bf8f",
+    "eip155:43114:0x048ebe34dc107a2e0a65611b2f8e0bcc8ad57fbf2931495dfdc16aa8af126b30",
+    "eip155:43114:0x2a7808020a6b3e8c7fa3ea7aebbe0b673bb9a2409204faf20628acac8e8017c4",
+    "eip155:43114:0xf4c678030d369bb7b05959e0bbed61d7937496cbf0f035445fa540e70dd46329",
+    "eip155:43114:0x4a289e62448161cc5f163a687e8a3b693fe9517d592df3e5b4c683ad8724d471",
+    "eip155:43114:0xc2cd715bb7e56e59bd5f7e49746332c2b3865a14c4da4738eb4e693fff166a20",
+    "eip155:43114:0x7f2cdfc82c7dbd9d9bd84b128d57abe213e05eb369f9315b2139d01efdef8239",
+    "eip155:43114:0xd7bb35d124b17b5f1c4caae83115bbe9e7464671d0cd5f8ee37b9838a6ea0b8f"
   ],
-  "discovery": [
-    "seed:hedgeyfinance:2024-04-19:hedgeyfinance"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 2298739.56,
+    "assets": [
+      {
+        "chainId": 42161,
+        "token": "0x7f7d7806f4eb90d63b0b278daf32a2db2c2001bd",
+        "symbol": "BONUS",
+        "amount": "77948800.12",
+        "usd": 93
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1303910.12",
+        "usd": 1305214.03
+      },
+      {
+        "token": "0x944824290cc12f31ae18ef51216a223ba4063092",
+        "symbol": "MASA",
+        "amount": "120800",
+        "usd": 20479.71
+      },
+      {
+        "token": "0x2903bd7db50f300b0884f7a15904baffc77f3ec7",
+        "symbol": "ARC",
+        "amount": "72688.46",
+        "usd": 8248.61
+      },
+      {
+        "chainId": 43114,
+        "token": "0x7979871595b80433183950ab6c6457752b585805",
+        "symbol": "SECOND",
+        "amount": "485312.5",
+        "usd": 4107.81
+      },
+      {
+        "token": "0x8fc17671d853341d9e8b001f5fc3c892d09cb53a",
+        "symbol": "BLOCK",
+        "amount": "22393.28",
+        "usd": 3706.42
+      },
+      {
+        "chainId": 56,
+        "token": "0x22514ffb0d7232a56f0c24090e7b68f179faa940",
+        "symbol": "QORPO",
+        "amount": "2415.87",
+        "usd": 1635.26
+      },
+      {
+        "chainId": 56,
+        "token": "0xde5bdcbd4d7dfa86e527fef9971bd6ca6a76eefb",
+        "symbol": "IVPAY",
+        "amount": "34022.61",
+        "usd": 1532.35
+      },
+      {
+        "chainId": 56,
+        "token": "0xcbd9f6d748dd3d19416f8914528a65c7838e27d8",
+        "symbol": "RGAME",
+        "amount": "32729",
+        "usd": 490.16
+      },
+      {
+        "chainId": 56,
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "450",
+        "usd": 448.52
+      },
+      {
+        "chainId": 43114,
+        "token": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+        "symbol": "USDC",
+        "amount": "195.6",
+        "usd": 195.53
+      },
+      {
+        "chainId": 137,
+        "token": "0xe3f2b1b2229c0333ad17d03f179b87500e7c5e01",
+        "symbol": "AEG",
+        "amount": "1671",
+        "usd": 130.23
+      },
+      {
+        "chainId": 42161,
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "100",
+        "usd": 100
+      },
+      {
+        "token": "0x88b9f5c66342ebaf661b3e2836b807c8cb1b3195",
+        "symbol": "NOBL",
+        "amount": "134983341.4390014",
+        "usd": 952357.93
+      },
+      {
+        "chainId": 43114,
+        "token": "0xc2732f160b3d116146617134c1e83572910f6037",
+        "symbol": "STAAV",
+        "amount": "13029",
+        "usd": 0
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-04/HedgeyFinance_exp.sol",
+    "https://medium.com/hedgey/hedgey-exploit-post-mortem-784e9860fd8d",
+    "https://www.halborn.com/blog/post/explained-the-hedgey-finance-hack-april-2024"
+  ],
   "notes": [
-    "Scoped to the main attacker campaign on Ethereum. The same public ClaimCampaigns defect was independently exploited by several other actors on Ethereum (draining MASA, BLOCK, ARC and CO in separate transactions) and on Arbitrum (BONUS); those are distinct campaigns and are not counted here.",
-    "The Arbitrum leg is intentionally not recorded as a separate incident: its only material victim asset was BONUS, an illiquid token the attacker could not sell (still holding ~76.8M of the ~77.9M drained), so no evidenced USD value or lower bound of at least 1,000 is available and the reported ~$42.6M is an unrealisable spot-mark."
+    "Campaign: every setup and allowance drain by the main attacker 0xded2b1a4 and the copycats on each chain, all after the anchor. Owners cancelling their own campaigns (0xd1aff3c9's CO, 0xdf7f4b82's BONUS) and their refunds are not counted.",
+    "Rule 15, realised value: BONUS at the attacker's onchain sales (430 for 43 USDT0, about 166 via a Uniswap V3 range for 50 USDC); it still holds 76.85M and sent 200k to exchange hot wallet 0xf89d7b9c (proceeds not onchain). NOBL at the 308.73 WETH ($3,084.73) its NOBL/WETH pool paid out from first drain to reserve low.",
+    "STAAV (Avalanche) has no price and no identified sale and is listed at $0. ClaimCampaigns has identical code at the same address on every chain; Ethereum's copy executed first."
   ]
 }

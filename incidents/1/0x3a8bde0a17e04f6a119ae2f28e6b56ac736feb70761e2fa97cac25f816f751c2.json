@@ -1,153 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x3a8bde0a17e04f6a119ae2f28e6b56ac736feb70761e2fa97cac25f816f751c2",
-  "protocol": {
-    "name": "Goldfinch",
-    "slug": "goldfinch"
-  },
+  "protocol": "Goldfinch",
   "name": "Goldfinch legacy Pool unauthenticated collectInterestRepayment",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x3a8bde0a17e04f6a119ae2f28e6b56ac736feb70761e2fa97cac25f816f751c2",
-      "blockNumber": 23924517,
-      "transactionIndex": 344,
-      "timestamp": 1764663203
-    },
-    "attackerAddresses": [
-      "0x2c2ec35549bfb2f983c2025dfb2ab1c0f69c1ee9",
-      "0x716420e787d20b255eeed9f6d442fa454f1d7d5b"
-    ]
-  },
-  "summary": "Pool.collectInterestRepayment(address from, uint amount) is declared `external whenNotPaused` with no caller restriction, so any address can make the deprecated 2020 Goldfinch Pool call USDC.transferFrom(from, pool, amount) against any account that still holds a standing approval to the Pool, and then credit the pulled amount to sharePrice as `sharePrice += amount * mantissa / totalShares`. The Pool held only 28.05 shares, so the attacker deposited 1,000 USDC to own 99.997% of totalShares, pulled the entire 340,567.004224 USDC USDC balance of legacy depositor 0x526c7665c5dd9cd7102c6d42d407a0d9dc1e431d into the Pool through that function, and redeemed the inflated share price with 37 withdraw(uint256) calls capped by the 10,000 USDC transactionLimit.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 340567.004224,
-      "valuationTimestamp": 1764663203,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "340567.004224",
-        "usdValue": 340567.004224,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1764663203,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact pre-recovery depletion of the single victim: the ERC-20 Transfer netting of the anchor receipt shows 0x526c7665c5dd9cd7102c6d42d407a0d9dc1e431d at -340,567.004224 USDC, which is the amount argument of the one collectInterestRepayment call. Of that, 330,999.000000 USDC reached the attacker EOA, 9,567.004224 USDC stayed stranded in the deprecated Pool because the attacker's shares ran out, and 1.000000 USDC paid the Uniswap V3 flash fee. The attacker's own 1,000 USDC deposit was flash-borrowed from the USDC/WETH pool 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640 and repaid inside the transaction, so it is not victim loss; the flash fee is not netted off gross depletion. Valued at par."
-  },
+  "summary": "The deprecated Goldfinch V1 Pool's collectInterestRepayment(from, amount) had no caller check: it pulls USDC from any address that approved the pool and adds it to the share price. The attacker flash-borrowed USDC, bought nearly all pool shares, pulled a stale approver's USDC in and withdrew the inflated shares; a copycat took the rest.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x0689aa2234d06ac0d04cdac874331d287afa4b43",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x7dbe30fde1eca6856806ff14fc456ec6791c73fe",
-        "codeHash": "0xbaf4e3c66f0ef4451be9a96769b71ad7500e2ab94fcee4a658cb70d4f0d27717"
-      },
-      "deployment": {
-        "timestamp": 1601004714,
-        "blockNumber": 10929405,
-        "transactionHash": "0x406f2ebd8e70c2c11e5f3022b311f2d477edbe1a0906e194b0dafe07fcf7890a",
-        "transactionIndex": 95,
-        "creatorAddress": "0xc840b3e21ff0eba77468ad450d868d4362cf67fe"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "The TransparentProxy installed implementation 0x7dbe30fde1eca6856806ff14fc456ec6791c73fe in its creation transaction (ProxyImplementationUpdated 0x0 -> 0x7dbe30fd, log index 256) and never pointed anywhere else before the exploit: its only two later ProxyImplementationUpdated events, at blocks 10948041 and 10953821, both carry previousImplementation == newImplementation == 0x7dbe30fd."
-      },
-      "codeAgeSeconds": 163658489,
-      "failureModeId": "failure:goldfinch-pool-unauthenticated-interest-collection",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x0689aa2234d06ac0d04cdac874331d287afa4b43",
+      "code": "0x7dbe30fde1eca6856806ff14fc456ec6791c73fe",
+      "reset": {
+        "kind": "config",
+        "tx": "0xb16bd39e08c5f36bc9a64ab444756d07b9829ba9f9e0d83a3566cbcfdaa32303",
+        "address": "0x0689aa2234d06ac0d04cdac874331d287afa4b43",
+        "slot": "0xcf"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x3a8bde0a17e04f6a119ae2f28e6b56ac736feb70761e2fa97cac25f816f751c2"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://x.com/PeckShieldAlert/status/1995774198564966434"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://www.cryptopolitan.com/goldfinch-finance-user-deltatiger-eth-hacked/"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x406f2ebd8e70c2c11e5f3022b311f2d477edbe1a0906e194b0dafe07fcf7890a"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe2c2d3b16d493431ae6312e3a7be724b458e4444cebe8860d0370e36b0e49389"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Anchor: the receipt of 0x3a8bde0a... is status 1 at block 23924517 index 344, timestamp 1764663203, from EOA 0x2c2ec35549bfb2f983c2025dfb2ab1c0f69c1ee9 at nonce 1. That EOA has 24 transactions in total: it was funded at block 23924499, deployed the helper 0x716420e787d20b255eeed9f6d442fa454f1d7d5b at nonce 0, ran this exploit at nonce 1, and every later nonce (2-21) is a cash-out transfer to 0xd90e2f925da726b50c4ed8d0fb90ad053324f31b or 0xb4ef209ccee95de23a8e1f7627ac7e676ff0739d, so the campaign is a single defect-executing transaction and the deployment at nonce 0 is correctly not the anchor. The Pool itself emitted no logs at all between blocks 12929405 and this transaction, so no earlier third party exercised the defect either. Root cause read from Etherscan's verified Pool source (solc 0.6.8): collectInterestRepayment(address,uint256) carries only `external whenNotPaused`, calls doERC20Transfer(from, address(this), amount) which is a plain USDC.transferFrom against the victim's standing approval, and then does sharePrice = sharePrice + amount * mantissa / totalShares. No parameter value repairs that, so it is an authorization defect and not a configuration one. Reproduced state at block 23924516: sharePrice 1000152, totalShares 28054737, mantissa 1e6, transactionLimit 10000000000, totalFundsLimit 25000000000, paused false, owner 0x8ac850b0d2251643218cb6608ef9ba91417d0676, capitalProviders[helper] 0. The anchor's callTracer shows exactly one deposit(uint256) 0xb6b55f25 with 1000000000, one collectInterestRepayment 0x64de8a07 with (0x526c7665c5dd9cd7102c6d42d407a0d9dc1e431d, 340567004224) and 37 withdraw(uint256) 0x2e1a7d4d calls, each frame reaching implementation 0x7dbe30fde1eca6856806ff14fc456ec6791c73fe by DELEGATECALL from the Pool. Target and code history: the Pool is a Goldfinch TransparentProxy created by 0xc840b3e21ff0eba77468ad450d868d4362cf67fe (not the attacker) in transaction 0x406f2ebd... at block 10929405 index 95; that transaction's ProxyImplementationUpdated event (topic 0x5570d70a002632a7b0b3c9304cc89efb62d8da9eca0dbd7752c83b7379068296, log index 256) moves the implementation from the zero address to 0x7dbe30fde1eca6856806ff14fc456ec6791c73fe. eth_getLogs for that topic over the proxy's whole pre-exploit life returns exactly three events; the other two, at blocks 10948041 and 10953821, both have previousImplementation == newImplementation == 0x7dbe30fd, so they are no-ops. eth_getStorageAt on the EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc returns 0x...7dbe30fde1eca6856806ff14fc456ec6791c73fe at blocks 10929405, 10929406, 10948040, 10948041, 10953820, 10953821, 10953822, 11500000, 12929405, 15000000, 18000000, 21000000, 23000000 and 23924516. The 1,361-byte proxy runtime is byte-identical at creation and at block 23924516 (0x445f8053ee2f420300f43b2c32c4caf21ab34af2c7a91bdf30808977e77d37a8) and the 7,178-byte implementation runtime hashes to 0xbaf4e3c66f0ef4451be9a96769b71ad7500e2ab94fcee4a658cb70d4f0d27717 at its own creation block 10929401, at the proxy's creation block and at block 23924516. Deployment is therefore the correct basis and codeAgeSeconds = 1764663203 - 1601004714 = 163658489 s (1894.2 days). Goldfinch's response, a fourth ProxyImplementationUpdated setting the implementation to the zero address, lands after the exploit at block 23928695 and does not affect the age. Loss: netting the receipt's USDC transfers gives victim 0x526c7665... -340,567.004224, attacker EOA +330,999.000000, Pool +9,567.004224, Uniswap V3 pool +1.000000."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 350064.69,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "350137.004224",
+        "usd": 350064.69
+      }
     ]
   },
-  "notes": [
-    "The proxy signals implementation changes with a custom ProxyImplementationUpdated event rather than EIP-1967 Upgraded, but it does keep the implementation in the EIP-1967 slot."
+  "campaign": [
+    "eip155:1:0xd462ce892166e041f303af47340ae50d22b3cadc55be65cecbfcab8f5d48e149"
   ],
-  "discovery": [
-    "web:2025-12-02:goldfinch-old-contract"
+  "refs": [
+    "https://x.com/PeckShieldAlert/status/1995774198564966434",
+    "https://www.cryptopolitan.com/goldfinch-finance-user-deltatiger-eth-hacked/",
+    "eip155:1:0xe2c2d3b16d493431ae6312e3a7be724b458e4444cebe8860d0370e36b0e49389"
+  ],
+  "notes": [
+    "Reset is setTotalFundsLimit raising the pool cap from 0, the last setting the exploit needed: deposit() requires poolWithinLimit, so no shares could be bought before it. The two later ProxyImplementationUpdated events re-set the same implementation and change no code.",
+    "Loss is gross per transaction (rule 14): the approver's USDC in the anchor plus the USDC the copycat took from the pool, most of which the anchor had stranded there. The 1,000 and 10,000 USDC deposits were flash-borrowed and withdrawn in the same transactions."
   ]
 }

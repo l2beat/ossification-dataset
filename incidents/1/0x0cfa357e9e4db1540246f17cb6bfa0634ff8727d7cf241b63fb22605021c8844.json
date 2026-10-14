@@ -1,152 +1,32 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x0cfa357e9e4db1540246f17cb6bfa0634ff8727d7cf241b63fb22605021c8844",
-  "protocol": {
-    "name": "NovaBox",
-    "slug": "novabox"
-  },
-  "name": "NovaBox uninitialised dividend checkpoints",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x0cfa357e9e4db1540246f17cb6bfa0634ff8727d7cf241b63fb22605021c8844",
-      "blockNumber": 25281768,
-      "transactionIndex": 1,
-      "timestamp": 1781030939
-    },
-    "attackerAddresses": [
-      "0x3690c5efc63eea1167c4d92a3f2dd8afdb85c294"
-    ]
-  },
-  "summary": "NovaBox adds new dual ETH/NOVA depositors to the dividend list without initialising their dividend checkpoints, and its extcodesize guard is bypassed from a constructor, so a fresh depositor could immediately withdraw and collect the whole stale historical ETH dividend.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 93470.32648434088,
-      "valuationTimestamp": 1781028000,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": null,
-          "symbol": "ETH"
-        },
-        "amount": "56.942794338375078272",
-        "usdValue": 93470.32648434088,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1781028000,
-          "unitPriceUsd": 1641.4776895019543,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the 56.942794338375078272 ETH paid above the attacker's 427.5 ETH campaign input. NovaBox's larger 65.022544338375078272 ETH balance decrease also includes 8.07975 ETH in transaction-generated owner fees sourced from that input, so those fees are not victim loss. The latest CoinGecko ETH observation before the transaction values the stolen ETH at $93,470.33."
-  },
+  "protocol": "NovaBox",
+  "name": "NovaBox self-credited deposit dividends",
+  "summary": "NovaBox checkpoints a depositor's dividends before distributing its own ETH deposit fee, divides that fee by totals that exclude the depositor, then lists it with its full contribution. From a constructor (bypassing the extcodesize guard) the attacker deposited dust NOVA and a flash-loaned 427.5 ETH, withdrew and collected most of the pool's ETH as dividends.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xbc4191167d4b0251cab5201a527daa8a7d3846b0",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xbc4191167d4b0251cab5201a527daa8a7d3846b0",
-        "codeHash": "0xe0167c74ecb266b7eb8584596b24b397e4d43138014269e4dd0823ee8b344fc3"
-      },
-      "deployment": {
-        "timestamp": 1539267344,
-        "blockNumber": 6495455,
-        "transactionHash": "0x53b96d5853a7adbdb14bb1aa0b04214f30a0ec0c339bb50347db2401f975da02",
-        "transactionIndex": 28,
-        "creatorAddress": "0x01e806d7fca11320e96480f7a6e55ad98356237a"
-      },
-      "ageReset": {
+      "address": "0xbc4191167d4b0251cab5201a527daa8a7d3846b0",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct NovaBox deployment installed the dividend-accounting runtime, which remained unchanged through the exploit."
-      },
-      "codeAgeSeconds": 241763595,
-      "failureModeId": "failure:uninitialised-dividend-checkpoints",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0x53b96d5853a7adbdb14bb1aa0b04214f30a0ec0c339bb50347db2401f975da02"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x0cfa357e9e4db1540246f17cb6bfa0634ff8727d7cf241b63fb22605021c8844"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://coinkyt.com/blog/kak-nepravilnyj-poryadok-dvuh-strok-koda-pozvolil-ukrast-56-73-eth-iz-novabox"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-06/NovaBox_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-28T11:20:41Z",
-      "note": "Reviewed the exploit receipt and call trace, verified NovaBox source, commit-pinned reproduction, creation trace, historical runtime, and balances. A constructor helper first deposits NOVA, then bypasses the fallback's extcodesize check to deposit 427.5 ETH; addToList activates it without initialising four dividend checkpoints, and withdrawEth immediately pays stale dividends. The trace returns 484.442794338375078272 ETH to the helper and pays 8.07975 ETH in owner fees, reducing NovaBox from 65.112960940830125829 ETH to 0.090416602455047557 ETH. All failure-bearing calls execute directly at 0xbc4191167d4b0251cab5201a527daa8a7d3846b0. Its creator deployed a 6,336-byte runtime at block 6495455; its hash is 0xe0167c74ecb266b7eb8584596b24b397e4d43138014269e4dd0823ee8b344fc3 both at deployment and immediately before exploit block 25281768, with no DELEGATECALL, SELFDESTRUCT, or CREATE2 opcode."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x53b96d5853a7adbdb14bb1aa0b04214f30a0ec0c339bb50347db2401f975da02"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1781023739&to=1781030939&precision=full",
-      "observedAt": 1787915684
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 107250.43,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "65.022544338375078272",
+        "usd": 107250.43
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://coinkyt.com/blog/kak-nepravilnyj-poryadok-dvuh-strok-koda-pozvolil-ukrast-56-73-eth-iz-novabox",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/NovaBox_exp.sol"
+  ],
+  "notes": [
+    "Loss is NovaBox's ETH balance decrease, which backed other depositors' claims. The 8.08 ETH of 1% owner fees paid in the exploit went to the deployer/owner, a protocol party, and is not netted against depositors' loss."
+  ]
 }

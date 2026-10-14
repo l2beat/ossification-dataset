@@ -1,153 +1,39 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x1194e1d6085885ce054a7ff8cd3cd0c3fa308ec87e4ccde8dd0549842fef4f1b",
-  "protocol": {
-    "name": "unverified_0x452E25",
-    "slug": "unverified-452e"
-  },
+  "protocol": "unverified_0x452E25",
   "name": "unverified_0x452E25 unauthenticated uniswapV3SwapCallback",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x1194e1d6085885ce054a7ff8cd3cd0c3fa308ec87e4ccde8dd0549842fef4f1b",
-      "blockNumber": 20223095,
-      "transactionIndex": 10,
-      "timestamp": 1719974843
-    },
-    "attackerAddresses": [
-      "0xabee16e74dd268105f166c27a847edc2b8e7cc4e"
-    ]
-  },
-  "summary": "The contract's uniswapV3SwapCallback() paid out the requested amount to msg.sender without verifying that the caller was a genuine Uniswap V3 pool, so a direct call with a fabricated delta and token address transferred 27.3 WETH out.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 92308.05981134587,
-      "valuationTimestamp": 1719972000,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-3",
-        "source-4",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "27.349",
-        "usdValue": 92308.05981134587,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1719972000,
-          "unitPriceUsd": 3375.1895795585165,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3",
-          "source-4"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The exploit receipt records exactly 27.349 WETH leaving the victim and then being forwarded unchanged to the attacker EOA."
-  },
+  "summary": "An unverified MEV bot contract implements uniswapV3SwapCallback without checking that the caller is a pool it called, and pays the token and amount encoded in the callback data to msg.sender. The attacker called the callback directly to have the bot transfer its WETH.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x452e253eeb3bb16e40337d647c01b6c910aa84b3",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x452e253eeb3bb16e40337d647c01b6c910aa84b3",
-        "codeHash": "0x2a53150aacb3d4eed3b4647ec5c8c87cba1ad62dc23890697c72389d142e1059"
-      },
-      "deployment": {
-        "timestamp": 1719390359,
-        "blockNumber": 20174655,
-        "transactionHash": "0xca5e3a4285eeda28c26d467c6a7e1b7f19096bd33b8263afc9a6358ab26a51fc",
-        "transactionIndex": 268,
-        "creatorAddress": "0x0e36ea265ee9317c2ad274a987c2c0f337175955"
-      },
-      "ageReset": {
+      "address": "0x452e253eeb3bb16e40337d647c01b6c910aa84b3",
+      "reset": {
         "kind": "deployment",
-        "description": "The direct runtime containing the callback defect was installed by this top-level contract creation."
-      },
-      "codeAgeSeconds": 584484,
-      "failureModeId": "failure:unverified-452e-unvalidated-uniswap-v3-callback-caller",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+        "tx": "0xca5e3a4285eeda28c26d467c6a7e1b7f19096bd33b8263afc9a6358ab26a51fc"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x1194e1d6085885ce054a7ff8cd3cd0c3fa308ec87e4ccde8dd0549842fef4f1b"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://x.com/SlowMist_Team/status/1808334870650970514"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-07/UnverifiedContr_0x452E25_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T13:01:12Z",
-      "note": "Reviewed the exploit receipt and call trace, the direct creation receipt, runtime bytecode at deployment and immediately before the exploit, and the pinned reproduction. The attacker contract directly calls 0x452e253eeb3bb16e40337d647c01b6c910aa84b3 with selector 0xfa461e33 and fabricated positive deltas of 27.349 WETH. The victim's own runtime handles the call without authenticating msg.sender as the expected Uniswap V3 pool and transfers exactly 27.349 WETH to the caller; the caller forwards that exact amount to the attacker EOA. Transaction 0xca5e3a4285eeda28c26d467c6a7e1b7f19096bd33b8263afc9a6358ab26a51fc is the successful top-level creation of the direct target, whose runtime hash is identical at deployment block 20174655 and pre-exploit block 20223094."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xca5e3a4285eeda28c26d467c6a7e1b7f19096bd33b8263afc9a6358ab26a51fc"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "CoinGecko",
-      "url": "https://pro-api.coingecko.com/api/v3/coins/ethereum/market_chart/range?vs_currency=usd&from=1719888443&to=1719982043",
-      "observedAt": 1787576136
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4"
+  "loss": {
+    "usd": 92291.32,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "27.349638501953291492",
+        "usd": 92291.32
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://x.com/SlowMist_Team/status/1808334870650970514",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/UnverifiedContr_0x452E25_exp.sol"
+  ],
+  "notes": [
+    "The direct runtime containing the callback defect was installed by this top-level contract creation; the deployer created no other contract and no Etherscan label names the operator.",
+    "Three later direct callback calls from two other senders took small WETH remainders and are listed as campaign; loss covers all four."
+  ],
+  "campaign": [
+    "eip155:1:0x30a1f34896cbd561a2f482db6e65fda66d056b917a9ad303c40061a658b27a85",
+    "eip155:1:0xbbffef9d4088cf755dc2a1de7a6c70189cf8634004d08fc87237c84707be6186",
+    "eip155:1:0xd972a516d0c0873e4a36997d5f4ea9d3b0a8667672955fe4d34887cbf642b8a2"
+  ]
 }

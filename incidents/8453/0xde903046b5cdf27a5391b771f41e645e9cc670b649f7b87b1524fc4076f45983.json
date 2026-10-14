@@ -1,242 +1,98 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:8453:0xde903046b5cdf27a5391b771f41e645e9cc670b649f7b87b1524fc4076f45983",
-  "protocol": {
-    "name": "ImpermaxV3",
-    "slug": "impermaxv3"
-  },
+  "protocol": "ImpermaxV3",
   "name": "Impermax V3 permissionless reinvest collateral-value destruction",
-  "incident": {
-    "chainId": 8453,
-    "exploit": {
-      "transactionHash": "0xde903046b5cdf27a5391b771f41e645e9cc670b649f7b87b1524fc4076f45983",
-      "blockNumber": 29437439,
-      "transactionIndex": 2,
-      "timestamp": 1745664225
-    },
-    "attackerAddresses": [
-      "0xe3223f7e3343c2c8079f261d59ee1e513086c7c3",
-      "0x98e938899902217465f17cf0b76d12b3dca8ce1b",
-      "0x615f6c29b2a7b34773592eaac0a7324b703f8da7",
-      "0x2b4d6d1697a6f75a17b21c9e2b80d33da423c390",
-      "0x4c5c6af67b411b4b67a60880f760be6d1c614a63",
-      "0xe9f853d2616ac6b04e5fc2b4be6eb654b9f224cd"
-    ]
-  },
-  "summary": "TokenizedUniswapV3Position.reinvest(tokenId, bountyTo) is permissionless and hands the position's collected Uniswap V3 fees to the autocompounder module, which mints them back as liquidity at the pool's unvalidated spot price; the only post-condition is newLiquidity > 0. Impermax values the same position with an independent Chainlink-derived oracle price through getPositionData, so a caller who first pushes the pool price far away from the oracle can burn essentially all of a position's fee value in one call. In the anchor transaction the attacker wash-traded a self-owned position to accrue 388,058.868833 USDC plus 0.26990816645136616 WETH of fees, borrowed the borrowable's entire WETH cash of 201.360672 WETH against a position ImpermaxV3Collateral.canBorrow correctly valued at 60.130663332976091010 WETH plus those fees, then called reinvest with the 0.02% pool pushed to tick -102035 against an oracle tick near -201290. The fees became only 1.1615 WETH of extra oracle-valued liquidity, the position's collateral collapsed to 61.292130049975177013 WETH with realY 0, and the equally permissionless ImpermaxV3Collateral.restructureBadDebt then wrote the fresh debt down to 29.847% through ImpermaxV3Borrowable.restructureDebt, socialising the shortfall onto the borrowable's depositors.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 206903.699636158,
-      "valuationTimestamp": 1745664225,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-4",
-        "source-5",
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x4200000000000000000000000000000000000006",
-          "symbol": "WETH"
-        },
-        "amount": "46.892639217622610644",
-        "usdValue": 84742.03296210393,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1745664225,
-          "unitPriceUsd": 1807.15,
-          "sourceIds": [
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-7",
-          "source-8"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-          "symbol": "USDC"
-        },
-        "amount": "55251.959409",
-        "usdValue": 55249.03105491,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1745664225,
-          "unitPriceUsd": 0.999947,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-7",
-          "source-8"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 8453,
-          "tokenAddress": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
-          "symbol": "cbBTC"
-        },
-        "amount": "0.70907568",
-        "usdValue": 66912.63561888,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1745664225,
-          "unitPriceUsd": 94366,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-7",
-          "source-8"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "Multi-transaction campaign spanning blocks 29437393 to 29628142 (2025-04-26 to 2025-04-30). The six Impermax V3 borrowables that emitted RestructureDebt in that window are cWETH 0x5d93f216f17c225a8b5ffa34e74b7133436281ee and cUSDC 0xbc303acda8b2a0dcd3d17f05adddf854edd6da59 of the WETH/USDC pool, cWETH 0xd9a5628f5d0f95421d70e880c17f174d9ea305e0 and ccbBTC 0x0513d232dfcb378d9cbbcd0827106fa12076b048 of the WETH/cbBTC pool, and cUSDC 0x900370e14093e3508b056c81c7a21e687bc350eb and ccbBTC 0xb362479915f2d24a284dd5e6742c4f619ad0453a of the USDC/cbBTC pool. The written-off notional in those 23 events is not the loss: it includes debt the attacker created against his own manufactured collateral and never funded, for example 1,081.02814389 cbBTC. The measured loss is instead the exact net underlying depletion of those six contracts, obtained by summing every ERC20 Transfer between them and the attacker address set over the campaign window: WETH 5,586.139197377487930567 out against 5,539.246558159865319923 in, USDC 26,569,239.607412 out against 26,513,987.648003 in, cbBTC 1,055.99507805 out against 1,055.28600237 in. Flash-loan principal and the attacker's own deposits are therefore excluded by construction. Confidence is medium on completeness rather than on the arithmetic: the attacker's realised proceeds were 121.0926644 ETH delivered to 0xe9f853d2616ac6b04e5fc2b4be6eb654b9f224cd, about 6.6 ETH more than the 114.49 ETH equivalent of the three components, the remainder plausibly being autocompounder bounties, the 1,344,342 imxB that passed through his contracts, and swap profit; that surplus is not attributed to any victim contract and is not counted.",
-    "realizedAt": 1746045631
-  },
+  "summary": "TokenizedUniswapV3Position.reinvest is permissionless and mints collected fees back as liquidity at the pool's unchecked spot price, while Impermax values positions at an oracle price. The attacker wash-traded fees into its own position, borrowed against them, skewed the pool, reinvested to destroy the value and wrote the debt down via restructureBadDebt.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xa68f6075ae62ebd514d1600cb5035fa0e2210ef8",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xa68f6075ae62ebd514d1600cb5035fa0e2210ef8",
-        "codeHash": "0x291d0b7fa6526e31c19dba03c5ca0e561bf8c5f217398669284e1e11cdc68ad4"
-      },
-      "deployment": {
-        "timestamp": 1740426785,
-        "blockNumber": 26818719,
-        "transactionHash": "0x7b68b305993dd5f4391872fbcbfc1d1299c907925533bf92cb6bee514efd1adf",
-        "transactionIndex": 118,
-        "creatorAddress": "0x6c0255140afc054679dbf0bef6b6808fcf0aa410"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "CREATE2 deployment of the WETH/USDC TokenizedUniswapV3Position by the Impermax deployer 0x6c0255140afc054679dbf0bef6b6808fcf0aa410; the 23,271-byte runtime is byte-identical at block 26818719 and block 29437438 and the contract exposes no upgrade path."
-      },
-      "codeAgeSeconds": 5237440,
-      "failureModeId": "failure:permissionless-reinvest-at-unvalidated-spot-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-8"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "Representative target under the sibling rule: the campaign hit three Impermax V3 pools whose TokenizedUniswapV3Position contracts 0xa68f6075ae62ebd514d1600cb5035fa0e2210ef8, 0xd7024c29ef5caf97e5d36737c009f1f16e5e7356 and 0x10fc34b6fca7b6b5e4f4f85bbc368db14f3a4fb9 all carry the same runtime hash; this is the one the anchor reaches.",
-          "The liquidity mint that destroys the value happens one call deeper, inside the autocompounder module 0x77eb9ceca49b87cf52d4f0c4e8fc9f86cbdd16c1 that reinvest() fetches from the factory. It is reached by CALL, not DELEGATECALL, and is not modelled as a separate target; a reviewer who considers the missing spot-versus-oracle bound to live in that module rather than in reinvest() would age it from its own deployment at block 26818413, timestamp 1740426173, 372 seconds earlier."
-        ],
-        "reviewSourceIds": [
-          "source-8"
-        ]
+      "address": "0xa68f6075ae62ebd514d1600cb5035fa0e2210ef8",
+      "reset": {
+        "kind": "config",
+        "tx": "0xc8ff0ba0e8b289d0313e050d56a14a7cb4a6a88e0022a9521152e022cb499df5",
+        "address": "0xc1d49fa32d150b31c4a5bf1cbf23cf7ac99eaf7d",
+        "slot": "0x8"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0xde903046b5cdf27a5391b771f41e645e9cc670b649f7b87b1524fc4076f45983"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2025-04/ImpermaxV3_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 8453,
-      "transactionHash": "0x7b68b305993dd5f4391872fbcbfc1d1299c907925533bf92cb6bee514efd1adf"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1745664225/base:0x4200000000000000000000000000000000000006",
-      "observedAt": 1787718087
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1745664225/base:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "observedAt": 1787718087
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1745664225/base:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-      "observedAt": 1787718087
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 8453,
-      "transactionHashes": [
-        "0xde903046b5cdf27a5391b771f41e645e9cc670b649f7b87b1524fc4076f45983",
-        "0xeac783b852250dd703dfa2f49649a41729dfb84b781ee400943112bcdaaa3436",
-        "0xcbcf6ff1f8403e8c87f59eb5728376e8cb51e167bb688e9302255cad81e08304",
-        "0x1bfaee630d14ddb9fb2ac14ef72ec290a55df33a194a048dc20a996de63e1caf",
-        "0x6644c68689848a600868cf169693a6bea179588593ccda235598247aaac60657",
-        "0x237752d48215e3bb8c9bf4f9b901a39d43dfdecbd097c8355613e691e51c91e9",
-        "0x6cada34301f9d365e3f8b157ca3f6b6ec83ff31e0aa1704cbb49b37a6796d728",
-        "0xa53396558a2b929e2c2d50345781faf5c883c20c205ef63cbd95e29ad6488ef4",
-        "0xf00cc245e22c7de1c5f02b246b2ddba077f882c49fa05d154c7161d9ea9a18ff",
-        "0x14ea5b572a01234c9499174ada90d6a20af016749458297a8b071d8271f3ed77",
-        "0x0b9d9d8a2e865171d68abc28c4bae24cc1df5e5f345cdbd73a6a6c9d8eaf5316",
-        "0x2885f1a65d4aede7772b3e934e09b7a5e295a0b96d69aac22b8c4e090d3f2e02",
-        "0xc51685ba9133f52f0b348f85ffed54e284c2698823acbeeef0de40c895de6b53",
-        "0x58e0de6f630be09a3a717a2be53b4677ccf26a310abb6a1f37bd04e368a0a85b",
-        "0x46f63662fe73a8bf6049aba6577608884acaacbf1dc48a321b6b5eaca5c1b50c",
-        "0x4cd7ad6c22a18e5055d7383f4e6f3c3695331c1ce059faa7741788b0da86d9b5",
-        "0xdb8712509d3f1fb1e17d1af762964de7a516d2c9bd62f0e01675918caf00a89f",
-        "0x9ab7d93bceae46087b99da11b373ba2db41b56e80b03bc0ed9e33f64b03bf2fd",
-        "0xb9dc1682b6556812323af077132b7d82195f4c3f925085542dd5ed6e5505ad05",
-        "0x51d1aff4036c5fc2c5daff81375bea5e5ea846693c7af41a592f4b6a852f3976",
-        "0x7b5b2c709da92d53d617cd16ddbcc27a047bd99e92b27c72f78341dfa2e6e616"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T04:32:37Z",
-      "note": "Anchor: EOA 0xe3223f7e3343c2c8079f261d59ee1e513086c7c3 has 1,904 Base transactions starting at block 29437393; nonces 0 to 2 deploy 0x98e938899902217465f17cf0b76d12b3dca8ce1b and set its owner and touch no Impermax contract, and nonce 3 is this anchor at 29437439:2. An eth_getLogs sweep for RestructureDebt(uint256,uint256,uint256,uint256,uint256,uint256), topic 0x965da1d1e29951d89d7c1c523c77aeeb7aeae975d46af1f25e6491d9a6aac4fc, over blocks 29400000 to 29700000 returns 23 events in 21 transactions across six borrowables, the first of them in this anchor, so the anchor is the earliest defect-executing success of the campaign. Root cause reproduced from the verified sources of ImpermaxV3Borrowable, ImpermaxV3Collateral and TokenizedUniswapV3Position (solc 0.5.16) and from the anchor call trace. ImpermaxV3Borrowable.restructureDebt requires msg.sender == collateral and ImpermaxV3Collateral.restructureBadDebt only requires getPostLiquidationCollateralRatio() < 1e18, so neither is the locus; the decisive step is TokenizedUniswapV3Position.reinvest, which is external, unguarded, and whose only post-condition on the autocompounder's mint is newLiquidity > 0. Measured from the two getPositionData return payloads inside the anchor: before reinvest, at trace path 0.11.1.3.1.227.3.2, priceSqrtX96 3370384940116703740184565, currentPrice (60130663332976091010, 388058868833) and lowest and highest both (60117167924653522702, 368655925391), which decomposes into 59.860755166524724850 WETH of liquidity plus 0.26990816645136616 WETH and 388058.868833 USDC of fees at the 100% and 95% FEE_COLLECTED_WEIGHT weights; after reinvest, at 0.11.1.3.1.229.2, the same oracle price returns currentPrice (61292130049975177013, 0) and lowest and highest (61278634820173138500, 0). The fees therefore bought only 1.1615 WETH of oracle-valued liquidity while 388,058.868833 USDC of collateral value vanished, because the mint executed against pool 0x1c450d7d1fd98a0b04e30decfc83497b33a4f608 at tick -102035 while the Chainlink-derived oracle sat near tick -201290, below the position range -196216 to -102028. canBorrow at 0.11.1.3.1.227.3 correctly returned 1 for a 201.360672 WETH borrow before that call, and restructureBadDebt at 0.11.1.3.1.229 then instructed a write-down to 0.298470... The recorded seed row's target, the borrowable 0x5d93f216f17c225a8b5ffa34e74b7133436281ee, is the loss-bearing contract and the one DeFiHackLabs labels vulnerable, but its code behaves correctly; the target has been moved to 0xa68f6075ae62ebd514d1600cb5035fa0e2210ef8 without changing the anchor. Target code history: created by CREATE2 from Impermax deployer 0x6c0255140afc054679dbf0bef6b6808fcf0aa410 inside transaction 0x7b68b305... at 26818719:118, timestamp 1740426785, sender 0xee5ca68bae98c3e36bfbfeffb104f22e4ff34cf7; runtime hash 0x291d0b7fa6526e31c19dba03c5ca0e561bf8c5f217398669284e1e11cdc68ad4 identical at blocks 26818719 and 29437438; codeAgeSeconds 1745664225 - 1740426785 = 5237440, 60.6 days. Loss recomputed as the exact net underlying depletion of the six affected borrowables over blocks 29437393 to 29633945; see loss.notes for the gross in and out figures. The seed row's round 300000 USD had no provenance and exceeds what the chain supports."
-    }
+  "campaign": [
+    "eip155:8453:0xeac783b852250dd703dfa2f49649a41729dfb84b781ee400943112bcdaaa3436",
+    "eip155:8453:0xcbcf6ff1f8403e8c87f59eb5728376e8cb51e167bb688e9302255cad81e08304",
+    "eip155:8453:0x1bfaee630d14ddb9fb2ac14ef72ec290a55df33a194a048dc20a996de63e1caf",
+    "eip155:8453:0x6644c68689848a600868cf169693a6bea179588593ccda235598247aaac60657",
+    "eip155:8453:0x6cada34301f9d365e3f8b157ca3f6b6ec83ff31e0aa1704cbb49b37a6796d728",
+    "eip155:8453:0xf00cc245e22c7de1c5f02b246b2ddba077f882c49fa05d154c7161d9ea9a18ff",
+    "eip155:8453:0x14ea5b572a01234c9499174ada90d6a20af016749458297a8b071d8271f3ed77",
+    "eip155:8453:0xf7446294ed2df45de73cc7585519cb1fbaacac73fdcfc2bd91b79d197ba4f44c",
+    "eip155:8453:0xad4fc3156666d5402f00dcfd5c183493d283f4166a6dd581dd8c0a895e826a56",
+    "eip155:8453:0x69e5d4d64ed4f53faa1875feadbe7b30285ea23f027856583350ae3dc1deb35e",
+    "eip155:42161:0xaafafcbb0dcd86ed78e3a0facc4748c48a36ca5a74d107c383e807b0b89758e3",
+    "eip155:42161:0x9491b9c6caffdb47f9087e0a57d2d5af37f0af27925ead50ac9952778d670385",
+    "eip155:42161:0x11d7bd2262c9e7b34b85bc0296ce0c237c9e475d8988b12e623df2e174352fb4"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The campaign ran 1,904 attacker transactions over five days; only the 21 that emitted RestructureDebt are enumerated as the transaction set, and the loss is measured from token flows over the whole window rather than transaction by transaction."
-    ],
-    "reviewSourceIds": [
-      "source-8"
+  "loss": {
+    "usd": 303719.44,
+    "assets": [
+      {
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "46.892639217622610644",
+        "usd": 84741.36
+      },
+      {
+        "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+        "symbol": "cbBTC",
+        "amount": "0.70907568",
+        "usd": 66934.02
+      },
+      {
+        "chainId": 42161,
+        "token": "0xba5ddd1f9d7f570dc94a51479a000e3bce967196",
+        "symbol": "AAVE",
+        "amount": "370.777221830537231889",
+        "usd": 62943.14
+      },
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "51207.391583",
+        "usd": 51204.95
+      },
+      {
+        "chainId": 42161,
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "10.868510717655154727",
+        "usd": 19688.2
+      },
+      {
+        "chainId": 42161,
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "0.06717552",
+        "usd": 6342.65
+      },
+      {
+        "chainId": 42161,
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT0",
+        "amount": "6086.304359",
+        "usd": 6086.3
+      },
+      {
+        "chainId": 42161,
+        "token": "0x11cdb42b0eb46d95f990bedd4695a6e3fa034978",
+        "symbol": "CRV",
+        "amount": "8366.836388289376864466",
+        "usd": 5778.82
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-04/ImpermaxV3_exp.sol"
+  ],
+  "notes": [
+    "The position contract only became collateral when ImpermaxV3Collateral._initialize pointed the WETH/USDC lending pool at it, about three minutes after its deployment. That listing is the latest change the exploit needed; later safety-margin and fee changes only scale the loss.",
+    "Campaign: the transactions, from either attacker EOA, that depleted the six Base borrowables and the five on Arbitrum (sibling pools of the same factory code). The roughly 4,800 other attacker transactions moved nothing, and later third-party restructureBadDebt calls touched only dust.",
+    "Loss is each transaction's net underlying outflow from those borrowables; the attacker's flash-funded lender deposits net out within each transaction."
+  ]
 }

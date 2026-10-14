@@ -1,157 +1,36 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x72f8dd2bcfe2c9fbf0d933678170417802ac8a0d8995ff9a56bfbabe3aa712d6",
-  "protocol": {
-    "name": "SHIDO",
-    "slug": "shido"
-  },
+  "protocol": "SHIDO",
   "name": "SHIDO permissionless V1-to-V2 migration arbitrage",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x72f8dd2bcfe2c9fbf0d933678170417802ac8a0d8995ff9a56bfbabe3aa712d6",
-      "blockNumber": 29365172,
-      "transactionIndex": 0,
-      "timestamp": 1687561240
-    },
-    "attackerAddresses": [
-      "0x69810917928b80636178b1bb011c746efe61770d",
-      "0xcdb3d057ca0cfdf630baf3f90e9045ddeb9ea4cc"
-    ]
-  },
-  "summary": "ShidoLock let anyone deposit a current V1 balance after the global unlock time and redeem the same token count of V2, without a holder snapshot, cutoff, cap, or value check. The attacker flash-bought cheap V1, immediately migrated it 1:1 into the more valuable V2 inventory, and sold the V2 into its WBNB pool.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 248758.00248634774,
-      "valuationTimestamp": 1687561064,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          "symbol": "WBNB"
-        },
-        "amount": "1016.085297305562276696",
-        "usdValue": 248758.00248634774,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1687561064,
-          "unitPriceUsd": 244.82,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The SHIDO/WBNB pair transferred exactly 1,016.085297305562276696 WBNB to the attacker helper in the exploit transaction. DefiLlama's nearest preceding BNB observation prices that gross victim-asset outflow at $248,758.00248634774. The helper repaid the separate 40 WBNB flash loan and sent 976.975297305562276696 WBNB to the attacker EOA; financing is not netted from gross loss. The onchain measurement replaces the seed row's $230,000 estimate."
-  },
+  "summary": "ShidoLock.lockTokens()/claimTokens() swap SHIDO V1 for V2 one to one for any caller, with no snapshot of pre-migration holders, while V1 traded about twenty times cheaper. The attacker flash-borrowed WBNB, bought 10.4B V1 from its thin pool, locked it, claimed 10.4B V2 out of the reward wallet's approved balance and sold the V2 into the V2/WBNB pool.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xaf0ca21363219c8f3d8050e7b61bb5f04e02f8d4",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xaf0ca21363219c8f3d8050e7b61bb5f04e02f8d4",
-        "codeHash": "0xbac1c9e3a7b5a23257ae4bfbf91544f26375719b63264a2ac394115024389636"
-      },
-      "deployment": {
-        "timestamp": 1687507711,
-        "blockNumber": 29347371,
-        "transactionHash": "0x8ff564c3a0308d727c6a30391a79f16ecdeb7d02bb7ce742cbb22d2f5499dc99",
-        "transactionIndex": 412,
-        "creatorAddress": "0x01757124cc90a1aa116966191c623c994399a464"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "ShidoLock is a non-proxy direct contract. It first has code in its successful creation transaction at block 29347371; its 1,089-byte runtime hash is identical there and immediately before exploitation, and the exploit trace calls lockTokens and claimTokens directly without delegatecall."
-      },
-      "codeAgeSeconds": 53529,
-      "failureModeId": "failure:shido-permissionless-fixed-rate-migration",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0xaf0ca21363219c8f3d8050e7b61bb5f04e02f8d4",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4e28b3f8083bf3e2b23a76977d399befc3b719fb81a86b790c2b082341c40aa9",
+        "address": "0xa963ee460cf4b474c35ded8fff91c4ec011fb640",
+        "call": "0xdd62ed3e0000000000000000000000007ef6e527969054afbc0980e00c51d2e645b4a5ef000000000000000000000000af0ca21363219c8f3d8050e7b61bb5f04e02f8d4"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x72f8dd2bcfe2c9fbf0d933678170417802ac8a0d8995ff9a56bfbabe3aa712d6"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-06/SHIDO_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-06/SHIDO_exp2.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8ff564c3a0308d727c6a30391a79f16ecdeb7d02bb7ce742cbb22d2f5499dc99"
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1687561120/coingecko:binancecoin",
-      "observedAt": 1787847900
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-27T16:29:00Z",
-      "note": "Reviewed the exploit receipt and call trace, both commit-pinned reproductions, direct contract creation, historical runtimes and storage, getter calls, migration-token decimals, pair outflow, flash-loan repayment, and historical BNB price. The attacker EOA called helper 0xcdb3d057ca0cfdf630baf3f90e9045ddeb9ea4cc, which borrowed 40 WBNB, used 39 WBNB to acquire V1 SHIDOINU, and finished with 10,436,986,704.133494387 V1 tokens. It called ShidoLock 0xaf0ca21363219c8f3d8050e7b61bb5f04e02f8d4 directly. Runtime bytecode shows lockTokens reads the caller's entire V1 balance, adds it to userShidoV1, and transfers it to rewardWallet; claimTokens only checks the single global lockTimestamp, multiplies the recorded raw V1 balance by 1,000,000,000, clears it, and transfers that raw V2 amount from rewardWallet. Onchain getters and storage identify the 9-decimal V1 token 0x733af324146dcfe743515d8d77dc25140a07f9e0, 18-decimal V2 token 0xa963ee460cf4b474c35ded8fff91c4ec011fb640, unlock timestamp 1687528800, and reward wallet 0x7ef6e527969054afbc0980e00c51d2e645b4a5ef. Thus a caller could acquire cheap V1 after the unlock and immediately convert the same token count into valuable V2; there is no snapshot, cutoff, per-user cap, price check, or holding-period check. The reward wallet transferred exactly 10,436,986,704.133494387 V2 to the helper, whose taxed sale made the SHIDO/WBNB pair transfer 1,016.085297305562276696 WBNB. The helper repaid 40 WBNB and sent 976.975297305562276696 WBNB to the attacker. The gross pair outflow is worth $248,758.00248634774 at the nearest preceding DefiLlama BNB observation of $244.82. ShidoLock was directly created by 0x01757124cc90a1aa116966191c623c994399a464 in transaction 0x8ff564c3a0308d727c6a30391a79f16ecdeb7d02bb7ce742cbb22d2f5499dc99, block 29347371 index 412, timestamp 1687507711. It has no code in the preceding block. Its 1,089-byte runtime hash is 0xbac1c9e3a7b5a23257ae4bfbf91544f26375719b63264a2ac394115024389636 at deployment and at block 29365171, and the exploit trace contains no delegatecall from it. Code age is 1687561240 - 1687507711 = 53,529 seconds."
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-06/SHIDO_exp.sol",
-    "dfhl:src/test/2023-06/SHIDO_exp2.sol"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 248869.77,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "1016.085297305562276696",
+        "usd": 248869.77
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/SHIDO_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/SHIDO_exp2.sol"
+  ],
+  "notes": [
+    "claimTokens() pays V2 by transferFrom from the reward wallet, so the wallet's unlimited V2 approval to ShidoLock, given about 1,000 blocks after deployment, is a custody grant the exploit needed and sets the reset (rule 10).",
+    "Loss is the WBNB the V2/WBNB pool paid for the claimed V2 (its realised value, as V2 is unpriced). The 39.1 WBNB the attacker spent on V1 and its flash loan are not netted. No earlier or later claim of comparable size: the next largest pre-exploit claims were under 0.8B V2 by ordinary holders, and claims stopped soon after."
+  ]
 }

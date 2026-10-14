@@ -1,165 +1,59 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x86efdf5b45ee833e696be15bddf0b60f6c449f73a45e39edd4838d9ece316223",
-  "protocol": {
-    "name": "Goose Finance",
-    "slug": "goose-finance"
-  },
+  "protocol": "Goose Finance",
   "name": "Goose Finance StrategyGooseEgg prices deposits before folding harvested EGG into wantLockedTotal",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x86efdf5b45ee833e696be15bddf0b60f6c449f73a45e39edd4838d9ece316223",
-      "blockNumber": 86181136,
-      "transactionIndex": 80,
-      "timestamp": 1773327751
-    },
-    "attackerAddresses": [
-      "0x1e959ce51e70ff93278c470bf05a0f09b3c850de",
-      "0x978447c289daf3dd5e2615af97e93a3bc4f53562",
-      "0xd7e9763d79eb9011e518129c79455e7ea65e0cbf"
-    ]
-  },
-  "summary": "StrategyGooseEgg._deposit mints shares as amount * sharesTotal / wantLockedTotal and only then calls _farm(), which adds the strategy's whole idle EGG balance to wantLockedTotal. _withdraw calls MasterChef.withdraw, which harvests pending EGG rewards into the strategy as idle EGG. With flash-swapped EGG, the attacker ran two VaultChef deposit/withdraw rounds: each withdraw harvested rewards, and the next deposit bought shares at the stale denominator before those rewards were counted. It then sold 2.66M extracted EGG for 13.04 WBNB.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 8432.83,
-      "valuationTimestamp": 1773327751,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-5",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xf952fc3ca7325cc27d15885d37117676d25bfda6",
-          "symbol": "EGG"
-        },
-        "amount": "2656027.479668645715929789",
-        "usdValue": 8432.83,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1773327751,
-          "unitPriceUsd": 0.003174979684770549,
-          "sourceIds": [
-            "source-5",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "EGG extracted from the vault beyond the attacker's deposits, measured as the attacker's net EGG sales into the EGG/BUSD pair 0x19e7cbecdd23a16dfa5573df54d98f7caae03019 (1,327,968.604 EGG) and the EGG/WBNB pair 0xd1b59d11316e87c3a0a069e80f590ba35cd8d8d3 (1,328,058.875 EGG) after the flash swaps were settled. The attacker received 13.042529647721630412 WBNB in total, valued at the DefiLlama WBNB price as realised proceeds."
-  },
+  "summary": "StrategyGooseEgg._deposit mints shares against wantLockedTotal before _farm() adds the strategy's whole idle EGG balance, including rewards harvested on earlier withdrawals. With flash-swapped EGG the attacker ran VaultChef deposit/withdraw rounds that captured the idle rewards and sold the surplus; 22 later transactions by others repeated it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x09806632aabc99ae43a8644f336f38f9f559b26b",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x09806632aabc99ae43a8644f336f38f9f559b26b",
-        "codeHash": "0x3c5bc90fcb368aa33e424f1c579a7675c4ba26dddea0b29fefa67e7d0932be6d"
-      },
-      "deployment": {
-        "timestamp": 1618497133,
-        "blockNumber": 6589644,
-        "transactionHash": "0x4cf6c1f474569342b4b18ffe02675c988359fb77830dff3dc6b60fa092a05d91",
-        "transactionIndex": 86,
-        "creatorAddress": "0x9e40abb0b3d27b285e8c6c383888285762a649e2"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Direct immutable StrategyGooseEgg runtime (no DELEGATECALL or SELFDESTRUCT); its only transactions are the creation and transferOwnership to VaultChef at 6589646, and the share-pricing order needs no configured value."
-      },
-      "codeAgeSeconds": 154830618,
-      "failureModeId": "failure:goose-strategy-deposit-before-harvest-accounting",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x09806632aabc99ae43a8644f336f38f9f559b26b",
+      "reset": {
+        "kind": "config",
+        "tx": "0x30f9e0bc5ad84eed646ec8ce21897a2dd843e22462a970454014b69cd57abd44",
+        "address": "0x3f648151f5d591718327aa27d2ee25edf1b435d8",
+        "slot": "0x405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5bfe"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x86efdf5b45ee833e696be15bddf0b60f6c449f73a45e39edd4838d9ece316223"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x4cf6c1f474569342b4b18ffe02675c988359fb77830dff3dc6b60fa092a05d91"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:50:17Z",
-      "note": "source-1 (86181136:80): contract creation by EOA 0x1e959ce5 deploying 0x978447c2, which creates 0xd7e9763d. callTracer: flash swaps on the EGG/BUSD and EGG/WBNB pairs; two rounds of VaultChef 0x3f648151 deposit(uint256,uint256) (0xe2bbb158) -> StrategyGooseEgg 0x09806632 deposit(address,uint256) (0x47e7ef24) -> WrappedEgg deposit + GooseChef 0xe70e9185 deposit, and VaultChef withdraw (0x441a3e70) -> strategy withdraw (0xf3fef3a3) -> GooseChef withdraw (mints and pays pending EGG) -> unwrap -> EGG to VaultChef -> attacker. Receipt EGG nets: strategy -3689861.478111647027651406, GooseChef mint +373418.74 (Transfer from 0x0), dev 0x3378d043 +33947.16, pairs +1327968.604428104201996991 and +1328058.875240541513932798. Verified source (source-8) StrategyGooseEgg._deposit computes sharesAdded from wantLockedTotal before _farm() adds balanceOf(this) (including harvested rewards) to wantLockedTotal; _withdraw calls GooseChef.withdraw, which pays pending rewards to the strategy. Artifact: eth_getCode empty at 6589643; keccak(runtime) 0x3c5bc90fcb368aa33e424f1c579a7675c4ba26dddea0b29fefa67e7d0932be6d at 6589644 and 86181135; source-2 creates it at 6589644:86 from 0x9e40abb0b3d27b285e8c6c383888285762a649e2; no DELEGATECALL/SELFDESTRUCT; Etherscan txlist of the strategy: creation and transferOwnership (6589646) only. First exercise: Etherscan tokentx of EGG for the strategy over its whole history (blocks 6590804..86181136, paged; about 45,800 transactions): source-1 is the only transaction with both a VaultChef->strategy deposit transfer and a strategy->VaultChef withdraw transfer. codeAgeSeconds = 1773327751 - 1618497133 = 154830618."
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T23:50:17Z",
-      "note": "Loss: source-1 WBNB Transfer nets: EGG/WBNB pair -6548711762876648311, BUSD/WBNB pair 0x1b96b923 -6493817884844982101 (for the 4234.069486649598989008 BUSD taken from the EGG/BUSD pair), attacker 0xd7e9763d +13042529647721630412. 13.042529647721630412 x DefiLlama WBNB 646.5642415935305 (source-6) = 8,432.83 USD, attributed to the 2,656,027.479668645715929789 EGG sold (0.00317498 USD per EGG)."
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1773327751/bsc:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-      "observedAt": 1790639403
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-9-mar-15-2026"
-    },
-    {
-      "id": "source-8",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-29T03:57:56Z",
-      "note": "Verified StrategyGooseEgg source at https://bscscan.com/address/0x09806632aabc99ae43a8644f336f38f9f559b26b#code; reproduce with Etherscan V2 contract.getsourcecode chainid=56: v0.6.12+commit.27d51765, optimizer 5000 runs, SHA-256 of returned SourceCode eee712251ae04d0c5f5ecf1d92284485c407d2c3cc453b1bd28bb155d582fc08. Inspect _deposit, _farm and _withdraw."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3",
-      "source-5"
+  "loss": {
+    "usd": 12154.48,
+    "assets": [
+      {
+        "token": "0xf952fc3ca7325cc27d15885d37117676d25bfda6",
+        "symbol": "EGG",
+        "amount": "4700818.66",
+        "usd": 12154.48
+      }
     ]
   },
-  "discovery": [
-    "web:2026-03-14:goose-finance"
+  "campaign": [
+    "eip155:56:0xfac3f983164e2c12d8699414b50c03e20f28581c239a7da597e9881b11d3de18",
+    "eip155:56:0x89a20ff3b2ae7b016738263d463541e9e4714bce27949b24aae6a41bdccde29b",
+    "eip155:56:0xfb6c59f33d9fb941de6afd4a5475d9227ad8f45d1114872b29042086cfab9dff",
+    "eip155:56:0x2b85777bab0bfc5976e10c090a1acb821b962051e3e7219c5ff6bc5a59d03298",
+    "eip155:56:0x35851c866baf9d1f1518b3e50b87af0333d332fe106dd131804c293d0c45715c",
+    "eip155:56:0xeda4b273fc5c5b9d4fb5b7c0a5675d9e35bb23a5df67d39003253aae92e292b5",
+    "eip155:56:0xc9b9cf70482a893969d52e482c881067c534f0619e503d3f2c37b8130fe35396",
+    "eip155:56:0x004f893bb2c9707b1dd491ea4ae56fd2d8071300f60c8219af524904267d3b4f",
+    "eip155:56:0x3928c9e84fa5efcf6b9304c631184651ccb573a49350d3b317c1fd3584687e12",
+    "eip155:56:0x929d18ccb2e21d26b6f03072079c6015dc6a3ba52356abf8842c926485b0b538",
+    "eip155:56:0xcc0dd479a464af8b0ff46b7961a8e4bd1fcdd525fb61adccd5814eee884bc5be",
+    "eip155:56:0x387966d4502e12ad24b40cd9860a47cc5d257db40bca237dab7570f82b6c320c",
+    "eip155:56:0xa6298d0f8da59287429889fee5b9ff0e402d1f1f9b74d07bf477b614f9f7a378",
+    "eip155:56:0x94f5e0f9b2d2378d090b3829e418228cba4e4f108a8ec7476a430676cf705fb2",
+    "eip155:56:0x0980dc08dde04d50fa8b86c3041660ad77d7923a4635cacb4efb9aee8b330847",
+    "eip155:56:0xa371557a98089a17b9fc3d79df437f0c4cffa1264561113d0cd8a21d485df7dc",
+    "eip155:56:0x4335944d35e61cedf3f4674f8d058d2ffa6fdf96ced1f2efbf8d81246710d8b6",
+    "eip155:56:0x203e0b851956b6c40c910bbf31efe8f6e5100d0ff68a0ca93f22a139214494bc",
+    "eip155:56:0x25fa0e1c81e5a3e4fc46cef93f4b30ef1624dbd9dd259a50889ba9153e9a9f07",
+    "eip155:56:0xd50f6dedcd679cb300dc7f9322217ad03e99b6a87f29bc39454fd5b3309bf91c",
+    "eip155:56:0xf7fdf3399ea771e54352ca4456263b5d2f2f0b7025ca946e9e5eadc4a50b2aed",
+    "eip155:56:0xf35764c1c4cddef37dd86b1a238d396c05168986a77ba49eb0aa46f61c893271"
+  ],
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-9-mar-15-2026"
+  ],
+  "notes": [
+    "Reset is VaultChef.add registering the strategy as pool 60, the route the exploit took (the strategy only accepts calls from VaultChef); it follows the strategy's deployment and ownership transfer by seconds.",
+    "Campaign: every transaction with both a VaultChef Deposit and Withdraw for pool 60 and a net EGG gain; none precede the anchor. Loss is each transaction's net EGG gain, the anchor's valued at the 13.04 WBNB it realised and the copycats' at DefiLlama prices."
   ]
 }

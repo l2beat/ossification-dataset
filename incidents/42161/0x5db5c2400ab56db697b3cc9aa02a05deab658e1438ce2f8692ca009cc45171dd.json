@@ -1,203 +1,80 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd",
-  "protocol": {
-    "name": "dForce",
-    "slug": "dforce"
-  },
+  "protocol": "dForce",
   "name": "dForce LPCurveGaugeAggregatorModel read-only reentrancy",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd",
-      "blockNumber": 59527634,
-      "transactionIndex": 2,
-      "timestamp": 1675984222
-    },
-    "attackerAddresses": [
-      "0xe0d551017c0111ac11108641771897aa33b2817c",
-      "0xee29b6aee6e4783db176946e4e8f1e5fdcd446a7"
-    ]
-  },
-  "summary": "LPCurveBaseAggregatorModel._getPrice(), the code behind dForce's wstETHCRV-gauge vault aggregator, prices the collateral as priceOracle.getUnderlyingPrice(pool.coins(0)) * pool.get_virtual_price(). get_virtual_price() is an unguarded external view on the Curve ETH/wstETH pool 0x6eb2dc694eb516b16dc9fbc678c60052bbdd7d80 and returns D * PRECISION / token_supply, so while remove_liquidity() is paying out native ETH through raw_call the LP supply has already been reduced but the balances have not fully settled and the ratio is wrong. The aggregator performs the read with no reentrancy probe, so re-entering from the pool's ETH refund let the attacker have dForce value the vwstETHCRV-gauge collateral at a distorted price, seize a 1,019.577317265394873995 gauge-token position and mint 1,219,437.439363481229905117 USX of unbacked debt in the same transaction.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 2812370.1394740613,
-      "valuationTimestamp": 1675984222,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-4"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x098ef55011b6b8c99845128114a9d9159777d697",
-          "symbol": "wstETHCRV-gauge"
-        },
-        "amount": "1019.577317265394873995",
-        "usdValue": 1592932.7001105803,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1675984222,
-          "unitPriceUsd": 1562.3461537796663,
-          "sourceIds": [
-            "source-1",
-            "source-2",
-            "source-4"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x641441c631e2f909700d2f41fd87f0aa6a6b4edb",
-          "symbol": "USX"
-        },
-        "amount": "1219437.439363481229905117",
-        "usdValue": 1219437.4393634812,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1675984222,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Both components are measured from the anchor receipt. The vwstETHCRV-gauge market 0x2ce498b79c499c6bb64934042eba487bd31f75ea held 1,048.408829854823855419 gauge tokens at block 59527633 and 28.831512589428981424 at block 59527634, and its iToken supply falls by the same 1,019.577317265394873995 at an exchange rate of exactly 1e18, all of it taken from depositor 0x916792f7734089470de27297903bed8a4630b26d. The gauge token is valued the way dForce's own aggregator values it outside reentrancy: get_virtual_price 1.011371298035750307 at block 59527633 times the DefiLlama ETH price 1544.78, i.e. 1562.3461537796664 USD, giving 1,031.17 ETH-equivalent, which matches dForce's own public figure of 1,031.42 ETH liquidated on Arbitrum. USX net minted in the transaction is 1,219,437.439363481229905117 (mints minus burns against the zero address) and is valued at par; dForce publicly put the protocol debt created across both chains at 2.3 million USD, of which this Arbitrum leg is 1.22 million. Cross-check on the attacker side: the attacker EOA's native balance rises by exactly 1,236.654369923464 ETH in this transaction and it also keeps 719,437.439363481229905117 USX, the remaining 500,000 USX having been swapped to 493,757.29376 USDC.e and then to WETH inside the transaction; realised proceeds are slightly below gross depletion because of flash-loan and swap costs. Attacker-supplied capital was 0.5 ETH staged in transaction 0x5f238693 and is not deducted from these victim-side figures. Aave, Balancer and Uniswap V3 flash loans are repaid within the transaction and are not loss. The attacker returned 1,237 ETH to dForce on 2023-02-13; per methodology that later recovery does not reduce gross depletion. The same-day Optimism campaign against the mirror deployment (exploit 0x6c19762186c9f32c81eb2a79420fc7ad4485aa916cab37ec278b216757bfba0d) is a separate incident and none of its loss is counted here."
-  },
+  "summary": "dForce's new Curve wstETH/ETH vault market priced collateral with LPCurveGaugeAggregatorModel, which reads get_virtual_price with no reentrancy check. The attacker borrowed USX against vault collateral, then, from remove_liquidity's ETH callback with the price distorted, liquidated its own and other users' positions to seize collateral; it repeated this on Optimism.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9a0b57024ff206a658e46ffe9f60c7c14cf30b80",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x9a0b57024ff206a658e46ffe9f60c7c14cf30b80",
-        "codeHash": "0x750361161bc48c1e68bd25c9e611a11c9c7303cfba9e8187c0806a25fb0fe3f6"
-      },
-      "deployment": {
-        "timestamp": 1675764145,
-        "blockNumber": 58758631,
-        "transactionHash": "0x88fce0d647f91014611d718b014a3f63a070d728361adac985d8d714f3c0179f",
-        "transactionIndex": 1,
-        "creatorAddress": "0xde6d6f23aabbdc9469c8907ece7c379f98e4cb75"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "LPCurveGaugeAggregatorModel is a plain non-proxy contract with no DELEGATECALL in its runtime. Its runtime is byte-identical at the creation block, at the block before the exploit, and today, so the executed pricing code dates from deployment two days and 13 hours earlier."
-      },
-      "codeAgeSeconds": 220077,
-      "failureModeId": "failure:curve-virtual-price-read-only-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-8"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x9a0b57024ff206a658e46ffe9f60c7c14cf30b80",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4a7c5bbb8001cfd6d75273d1faab82436f9536a6c235357bab46842fcc1c427b",
+        "address": "0x15962427a9795005c640a6bf7f99c2ba1531ad6d",
+        "call": "0xfa5e42960000000000000000000000002ce498b79c499c6bb64934042eba487bd31f75ea"
+      }
+    },
+    {
+      "address": "0x2ce498b79c499c6bb64934042eba487bd31f75ea",
+      "reset": {
+        "kind": "config",
+        "tx": "0xcd32a5fd5336fd0929d75ffce5514d9c24e50daba6339a1e971f6a8bd0611f13",
+        "address": "0x61afb763bc265bd372e8af8dac00196c9a5ecea0",
+        "call": "0x8e8f294b0000000000000000000000002ce498b79c499c6bb64934042eba487bd31f75ea"
+      }
+    },
+    {
+      "address": "0xc462ff1063172bac6f6823a17ed181a0586f0fc8",
+      "reset": {
+        "kind": "config",
+        "tx": "0x5450ef49a381d834539233e63b987324341a396e825b3c2e5a87bf7fff7e1e7f",
+        "address": "0x38a5585d347e8dfc3965c1914498eafbded7c5ff",
+        "slot": "0xbbcf3bcd1aaf33f2180211ce78015904433edef5f3dcb65af133a68457257429"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x5db5c2400ab56db697b3cc9aa02a05deab658e1438ce2f8692ca009cc45171dd"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Reviewed the anchor receipt (113 logs) and its 851-frame callTracer trace, the verified LPCurveGaugeAggregatorModel and LPCurveBaseAggregatorModel sources, historical runtime hashes, archive eth_calls on the Curve pool and the dForce market, and all four Arbitrum transactions of the campaign. The anchor is status 1 at block 59527634 index 2, timestamp 1675984222. The trace shows the reentrant path directly: Curve pool 0x6eb2dc694eb516b16dc9fbc678c60052bbdd7d80 remove_liquidity (0x5b36389c) CALLs the attacker contract 0xee29b6aee6e4783db176946e4e8f1e5fdcd446a7 with 62,125.420362800134 ETH of value, which re-enters Controller 0x61afb763bc265bd372e8af8dac00196c9a5ecea0 (0xc488847b), which STATICCALLs PriceOracleV2 0x15962427a9795005c640a6bf7f99c2ba1531ad6d getUnderlyingPrice (0xfc57d4df), which CALLs AggregatorProxy 0x0d535ca4c27f0c25a20e2d474ee3e99c1316bafe (0xaf9a6df8), which CALLs LPCurveGaugeAggregatorModel 0x9a0b57024ff206a658e46ffe9f60c7c14cf30b80 getAssetPrice (0xb3596f07), which STATICCALLs the same pool's get_virtual_price (0xbb7b8b80) while that pool is still inside remove_liquidity. The aggregator is reached by CALL, never DELEGATECALL, and appears in 14 frames. Boundary test: LPCurveGaugeAggregatorModel has no configurable parameters at all - the pool, LP token and quote coin are resolved from the asset at call time and the formula is fixed - so there is no parameter value at which the deployed code is correct. dForce's response was to pause mint and borrow on the affected markets 68 minutes later (block 59539644) and later set supplyCapacity to zero; the aggregator was never rewritten and is still wired to the retired market, so the product was withdrawn rather than reconfigured. The aggregator was created by top-level CREATE from 0xde6d6f23aabbdc9469c8907ece7c379f98e4cb75 in 0x88fce0d647f91014611d718b014a3f63a070d728361adac985d8d714f3c0179f at block 58758631 index 1; no code exists at 58758630 and its runtime hashes to 0x750361161bc48c1e68bd25c9e611a11c9c7303cfba9e8187c0806a25fb0fe3f6 at the creation block, at block 59527633 and at head, so codeAgeSeconds is 1675984222 - 1675764145 = 220077 (2.55 days). The earlier campaign transactions are not defect-executing: 0xe02227a0 only deploys the exploit contract, 0xb2b66de5 emits six Approval events, and 0x5f238693 stakes 0.5 ETH through 0x37f9ae2e without touching the dForce oracle. This aggregator is the artifact rather than the seed row's iToken proxy 0x2ce498b79c499c6bb64934042eba487bd31f75ea, whose implementation 0x45b5636b01091336f02194d327374924d54a0772 is a stock dForce iToken; the two were listed together, which is why both are about 2.5 days old. Losses are recorded only for Arbitrum; the mirror aggregator 0xa3ffff751db57b30aabb847d8f3d70c5567ffe11 on Optimism was exploited in a separate transaction and belongs to a separate incident."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x88fce0d647f91014611d718b014a3f63a070d728361adac985d8d714f3c0179f"
-    },
-    {
-      "id": "source-4",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1675984222/coingecko:ethereum",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1675984222/arbitrum:0x641441c631e2f909700d2f41fd87f0aa6a6b4edb",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x97f7510ade6118552e9d206b5441b13ba1c8910fdd4f82fcf7482de2cf340ecb"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://chainsecurity.com/curve-lp-oracle-manipulation-post-mortem/"
-    },
-    {
-      "id": "source-8",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-02/dForce_exp.sol"
-    },
-    {
-      "id": "source-9",
-      "type": "post-mortem",
-      "url": "https://www.certik.com/resources/blog/curve-conundrum-the-dforce-attack-via-a-read-only-reentrancy-vector-exploit"
-    },
-    {
-      "id": "source-10",
-      "type": "post-mortem",
-      "url": "https://rekt.news/dforce-network-rekt"
-    }
+  "campaign": [
+    "eip155:10:0x6c19762186c9f32c81eb2a79420fc7ad4485aa916cab37ec278b216757bfba0d"
   ],
-  "discovery": [
-    "seed:dforce:2023-02-09:dforce-itoken-curve-read-only-reentrancy"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The gauge-token component is valued with the Curve pool's own pre-exploit virtual price times the DefiLlama ETH price rather than a market quote, because wstETHCRV-gauge has no third-party price feed. The resulting 1,031.17 ETH-equivalent agrees with dForce's own published figure of 1,031.42 ETH.",
-      "USX is dForce's own stablecoin. It is valued at par here; DefiLlama quoted 1.035 at the anchor timestamp while the attacker's own disposals realised about 0.97, so par sits between the two marks."
-    ],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 4286188.02,
+    "assets": [
+      {
+        "token": "0x098ef55011b6b8c99845128114a9d9159777d697",
+        "symbol": "wstETHCRV-gauge",
+        "amount": "1019.577317265394873995",
+        "usd": 1591646.76
+      },
+      {
+        "token": "0x641441c631e2f909700d2f41fd87f0aa6a6b4edb",
+        "symbol": "USX",
+        "amount": "1219437.439363481229905117",
+        "usd": 1219437.44
+      },
+      {
+        "chainId": 10,
+        "token": "0xdfec2ea848cf8fda096503f8d9f37afac6e0ecf2",
+        "symbol": "vwstETHCRV-gauge",
+        "amount": "205.007571311291599",
+        "usd": 321118.29
+      },
+      {
+        "chainId": 10,
+        "token": "0xbfd291da8a403daaf7e5e9dc1ec0aceacd4848b9",
+        "symbol": "USX",
+        "amount": "1153985.533579168105062225",
+        "usd": 1153985.53
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://chainsecurity.com/curve-lp-oracle-manipulation-post-mortem/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/dForce_exp.sol",
+    "https://www.certik.com/resources/blog/curve-conundrum-the-dforce-attack-via-a-read-only-reentrancy-vector-exploit",
+    "https://rekt.news/dforce-network-rekt"
+  ],
+  "notes": [
+    "The vault market (controller, iToken, iMUSX) launched two days before the exploit; the latest wiring it needed was the MSDController mint cap granting iMUSX the right to mint USX. A fork replay of the anchor with that cap cleared reverts; the model, oracle aggregator and market listings are older.",
+    "Loss per chain: vault shares (1:1 with the Curve LP) seized from other depositors at the DefiLlama LP price, plus USX minted net of burns (which nets the users' debt the liquidations repaid) at par. Collateral the attacker left behind and its post-bounty return of funds are not netted.",
+    "The Optimism leg 40 seconds later used the same attacker contract against dForce's mirror vault market (same bug and codebase), so it joins this incident's campaign."
+  ]
 }

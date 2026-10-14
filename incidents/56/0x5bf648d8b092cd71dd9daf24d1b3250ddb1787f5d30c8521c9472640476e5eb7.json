@@ -1,187 +1,53 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
-  "protocol": {
-    "name": "OSN",
-    "slug": "osn"
-  },
+  "protocol": "OSN",
   "name": "OSN LP dividend weights not reduced on LP transfer",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7",
-      "blockNumber": 38134376,
-      "transactionIndex": 122,
-      "timestamp": 1713944782
-    },
-    "attackerAddresses": [
-      "0x71940b7264a1a0396a1d1f16acd59a1b6362def5",
-      "0xf003ffa9b144c51a5aa5186363a251b0690e54b9",
-      "0x835b45d38cbdccf99e609436ff38e31ac05bc502",
-      "0x4a5acac3b62ef37cf6aaf21baf133323a18dafc2"
-    ]
-  },
-  "summary": "OSN's _transfer hook sets an account's LP-dividend weight only on router liquidity adds (lpAmount += estimated liquidity) and on liquidity removals, where it overwrites lpAmount with the recipient's full current pair-token balance and pushes it to the dividend tracker. Plain LP-token transfers never reduce the sender's weight. LP moved to another address that then makes a tiny add and remove is therefore counted twice, and one LP position can register full weight in any number of accounts. The first such duplication is a probe: 0xf003ffa9 sends 1 LP to 0x71940b72, which adds and then removes dust liquidity. The May 2024 campaign by 0x835b45 cycled flash-loaned LP through 100 helper contracts, withdrew the LP, generated taxed swaps and collected the dividends.",
-  "loss": {
-    "kind": "net-loss",
-    "usd": {
-      "amount": 109672.365414208,
-      "valuationTimestamp": 1715099820,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "109672.365414208009944720",
-        "usdValue": 109672.365414208,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1715099820,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The attacker's realised net USDT: attack contract 0x4a5acac3 paid its EOA 109,682.365414208009944720 USDT across 16 campaign transactions, less the EOA's 10-USDT funding. All flash loans are repaid within each receipt, and the contract ends with zero USDT, OSN and LP. Every unit of that gain was extracted from third parties: pair LPs, drained by the tax sales that fund the tracker, and holders whose tracker dividends were diverted. Victim depletion is therefore at least this amount. The same receipts also pay the marketing wallet 0xea1f5740 and PancakeV3 flash fees, which are not added because gross third-party depletion cannot be separated from the attacker's own swap taxes. Excluded as unrealised or immaterial: 14.030326252660469 USDT of tracker dividends paid to the helper contracts after the campaign (to block 45000000), and at most 0.47 USDT of dividends to the probe addresses.",
-    "realizedAt": 1715099820
-  },
+  "summary": "OSN's _transfer set LP-dividend weight only on router adds and on removals, where it took the recipient's full pair-token balance, while plain LP transfers never cut the sender's weight. LP passed through addresses that each made a dust add and remove was counted many times, and the attacker collected the tax-funded USDT dividends.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
-        "codeHash": "0xddce666d829127978e102b141ddfdaa508d5657f4a44aaaa5248f9b54bfcee95"
-      },
-      "deployment": {
-        "timestamp": 1713163426,
-        "blockNumber": 37874409,
-        "transactionHash": "0x8fe82398d2070b9a983e33c9b91b7a8eef5ba5b9a1699ee7a01e6e38813f97c9",
-        "transactionIndex": 147,
-        "creatorAddress": "0xeac1d1cebf3165a5dbbd6367eba726a28266e81d"
-      },
-      "ageReset": {
-        "kind": "configuration-change",
-        "timestamp": 1713367542,
-        "blockNumber": 37942319,
-        "transactionHash": "0x1956a7679ca6187611dab8440f6d7a6595b6bebfe3727d5651ac18c3910221bf",
-        "transactionIndex": 56,
-        "mechanism": {
-          "type": "view-call",
-          "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
-          "callData": "0x070a6e76",
-          "valueBefore": "0x0000000000000000000000000000000000000000000000056bc75e2d63100000",
-          "valueAfter": "0x000000000000000000000000000000000000000000000000000000006620c7fc"
-        },
-        "description": "setStartTime replaces the constructor sentinel startSwapTime = 1e20 with 1713424380. Until then, every transfer between non-fee-excluded addresses (including the liquidity adds and removals that register dividend weight) reverts with 'not start', so the duplication path is unreachable for ordinary accounts. Later owner actions (fee exclusions, setSellFees, renounceOwnership) change only fees or exposure."
-      },
-      "codeAgeSeconds": 577240,
-      "failureModeId": "failure:osn-lp-dividend-weight-not-reduced-on-lp-transfer",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-9"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-4"
-        ]
+      "address": "0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8fe82398d2070b9a983e33c9b91b7a8eef5ba5b9a1699ee7a01e6e38813f97c9"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x5bf648d8b092cd71dd9daf24d1b3250ddb1787f5d30c8521c9472640476e5eb7"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/SlowMist_Team/status/1787330586857861564"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-05/OSN_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:46:02Z",
-      "note": "Root cause, first exercise and target age. Verified source: Etherscan V2 contract.getsourcecode chainid=56, address 0x810f4c6ae97bcc66da5ae6383cc31bd3670f6d13, contract OSN, v0.8.19+commit.7dd6d404, 200 runs; SHA-256 of SourceCode fb30bf3d72522ec5ff86ce262edc12a3feeb3090f92ea62b3d98a07affd77d03. In _transfer, a router add to the pair does _userInfo[from].lpAmount += _isAddLiquidity(amount) and calls lpDividendTracker.setBalance(from, lpAmount). A transfer from the pair classified by _strictCheckBuy as a removal sets _userInfo[to].lpAmount = pair.balanceOf(to) and calls setBalance(to, ...). Pair-token transfers invoke no OSN hook. The tracker (0x8e474bc29fb9a884b1fc297b0b4bbc465700a571, created in the OSN constructor; setBalance onlyOwner) only follows these token-supplied weights. First exercise: Etherscan getLogs Transfer on pair 0x4eeddcc7c8714a684311f8b01154b5686a0f612f over blocks 37874409-38474365 gives 879 logs: 583 mints, 129 to pair, 129 burns and 38 transfers between non-pair, non-zero addresses. Replaying them with the tracker's 576 Transfer (mint/burn = setBalance) logs over the same range, the only tracker update that registers LP received by transfer while the sender keeps stale weight is source-1. Sender 0xf003ffa9 adds liquidity in 0x7ac1ff4c359707a6f757fbe6049e7a580db0f81dfdc395409aaad32f976705d2 (block 38134165) and moves 1.0 LP to fresh EOA 0x71940b72 in 0x046a18585cabae570065886e6f4a83b8cf99d252cd5aaf9c35c075f453112497 (block 38134198). 0x71940b72 adds dust liquidity in 0x3f731c1af6b57f957dc3bcd82609e90c8f7e8777164d8a619ec73060e9bbcb1e (block 38134318), then source-1 removes it. eth_call tracker balanceOf at blocks 38134375 and 38134376: 0x71940b72 goes from 786501958856297 to 1000658974390296327, equal to its pair balance 1000658974390296327. 0xf003ffa9 stays at 2484051487383082677 while holding only 1397109685324674784 LP. Total weight therefore exceeds the LP held by 1.086941802058408, and duplicated entitlement starts here. Every other tracker update of a transfer recipient (0x992facfc, 0x539b2e6a, 0x3f940da3, 0x05328691, 0x1343424c) occurs while all of its LP senders hold zero weight. The remaining transfer recipients are never registered before the anchor. The 129 mints whose recipient differs from tx.from go to PancakeSwap feeTo 0x0ed943ce, never credited to a payer. Attack helpers' own dust adds (block 38474085) register only their own liquidity. The later campaign (source-6) repeats the same path with 100 helper contracts. Target: source-5 receipt shows a top-level creation by 0xeac1d1ce at block 37874409, index 147. keccak256(eth_getCode) is empty at 37874408 and 0xddce666d... at 37874409, 38134375 and 38518720. The runtime has no proxy or upgrade path. Etherscan account.txlist for the token over blocks 37874409-38474366 (4,763 transactions): the creator does transferOwnership to 0x3f93da77 (block 37874500); the owner does 10 excludeMultipleAccountsFromFees, 82 excludeFromBlacklist, setStartTime (block 37942319), 9 setSellFees (to 35/1000 at block 37963468) and renounceOwnership (block 37988848); the creator later calls claimStuckETH/claimStuckToken. None touches the weight logic or the probe addresses (isExcludedFromFees(0x71940b72) = false at block 38134376). Age reset: startSwapTime() (0x070a6e76) is 1e20 at blocks 37874409 and 37942318 and 1713424380 at 37942319 (source-9, index 56, no logs, from owner 0x3f93da77). _transfer requires block.timestamp >= startSwapTime inside the branch for non-excluded from/to, and the pair itself is not excluded (isExcludedFromFees(pair) = false). So no ordinary account could add or remove liquidity through the weight hook before this activation, the same trading-activation basis used for gated token defects. The later setSellFees and exclusion changes do not gate the path."
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x8fe82398d2070b9a983e33c9b91b7a8eef5ba5b9a1699ee7a01e6e38813f97c9"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T18:46:02Z",
-      "note": "Campaign and loss. Etherscan account.txlist for 0x835b45d38cbdccf99e609436ff38e31ac05bc502 over blocks 38300000-38700000: helper setup 0xbf22eabb5db8785642ba17930bddef48d0d1bb94ebd1e03e7faa6f2a3d1a5540 (block 38474074) and 0x69c64b226f8bf06216cc665ad5e3777ad1b120909326f120f0816ac65a9099c0 (block 38474085). Then 17 successful calls to attack contract 0x4a5acac3 from source-8 (block 38474366, index 59) through 0x5a968ab1045f3a76b834493a25a472694667ad94224211e34c13b9defb0fbe2e (block 38474556), plus 0x03db905062fe4afbae22a8abd5c1e76c709d03cda6d7a9baefc7dd7aa1ee6681 (block 38477509) and dd() source-7 (block 38518721, timestamp 1715099820); three calls at blocks 38474584-38474607 revert. In source-8, callTracer and receipt logs show 100 helpers each receiving 21.560369953624174131 LP, registering it via dust removal and returning it. The receipt has 101 tracker-token mints: 100 of 53032.907572135909520140 and one of 54956.380903767781849432. The attacker removes its LP (burn 21.560369953624174131), and the tracker pays 200 USDT transfers totalling 12163.4944871577282594 to helpers and receives 13 inflows totalling 13053.493813275104066036 USDT from tax sales. Etherscan tokentx (USDT 0x55d398326f99059ff775485246999027b3197955) for 0x4a5acac3 over all blocks (3,079 transfers, blocks 38474062-38518721): 16 transfers to the EOA totalling 109682.365414208009944720 USDT (from 1767.95874815960886141 in source-8 to 97.201443542754561466 in source-7) and one 10-USDT funding transfer from the EOA (0xa428d5230423d798c3e2fd3a2a0d56c865facb93988a9cb90a4234070e37dde3). balanceOf(0x4a5acac3) for USDT, OSN and LP at block 38518721 is 0. Tracker USDT outflows (getLogs Transfer topic1 = tracker) over blocks 38518722-45000000 total 14.286368086159536, of which 14.030326252660469 goes to the 101 source-8 tracker-mint recipients. The probe addresses receive 0.13394954946396895 (0x71940b72) and 0.3325180884300536 (0xf003ffa9) USDT of tracker dividends from source-1 through block 38600000. USDT (BSC-USD, 18 decimals) is valued at par."
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xb8acd0ea3cd3118c309854074c797ec28f5f5a12c5ec8b5fbe54f3279607e22f"
-    },
-    {
-      "id": "source-8",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc7927a68464ebab1c0b1af58a5466da88f09ba9b30e6c255b46b1bc2e7d1bf09"
-    },
-    {
-      "id": "source-9",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x1956a7679ca6187611dab8440f6d7a6595b6bebfe3727d5651ac18c3910221bf"
-    }
+  "campaign": [
+    "eip155:56:0xbf22eabb5db8785642ba17930bddef48d0d1bb94ebd1e03e7faa6f2a3d1a5540",
+    "eip155:56:0xc7927a68464ebab1c0b1af58a5466da88f09ba9b30e6c255b46b1bc2e7d1bf09",
+    "eip155:56:0x75159a764d5aeab202958bb603a64f90f054b54204a9efc4690b703bd5936bcc",
+    "eip155:56:0x0eaad1b145cf5a130dc9026766c4f16f77979418ac627ff71b8b369e3461f9ff",
+    "eip155:56:0xf8b7fe905ff1f96329d2d99c869be1c62078e31daf429fdbb9fb40c220b15baa",
+    "eip155:56:0x8d5f28296d12ec67202d8a87945b2e951ea26a6f323047a76f4bbbecd33ddde1",
+    "eip155:56:0x8d01c0779c2789daa238803c4edbb1482a1284d6204b36644cf2fbe8da9f8e15",
+    "eip155:56:0x46ffca3ce8173786fd65de220439afbe46bcaba7dd2cacd7650695a3cc09383d",
+    "eip155:56:0x800cd9721909aa7e1083aaa62a8f5793ee04117544ee0fa0c1fe20659c3a9bc2",
+    "eip155:56:0x58a79fd701ed812b0b9574fe9c434f6768f8e476e84fe9ddc92f6c8c49edeeee",
+    "eip155:56:0x418dcbefe0d37959886d687476571d0478d732462e56bab341f39fc7e83432ca",
+    "eip155:56:0x628c07569fdcaabafaa012781ece51f1fc3aa207cc5aae8be3b10e29ea4a0567",
+    "eip155:56:0x5491473e8c5325ff8bdb22f4743d23690f2f272060a0ddd6e19048324b96269e",
+    "eip155:56:0xad5e4b9d9ee041bf217d6b574fe98871380da6900998cec2416baa76b4fb67bb",
+    "eip155:56:0x5a968ab1045f3a76b834493a25a472694667ad94224211e34c13b9defb0fbe2e",
+    "eip155:56:0x03db905062fe4afbae22a8abd5c1e76c709d03cda6d7a9baefc7dd7aa1ee6681"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-4",
-      "source-6"
+  "loss": {
+    "usd": 109672.37,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "109672.365414208009944720",
+        "usd": 109672.37
+      }
     ]
   },
-  "discovery": [
-    "dfhl:src/test/2024-05/OSN_exp.sol",
-    "seed:osn:2024-05-06:osn-lp-dividend-distribution-drain",
-    "web:2024-05-06:osn"
+  "refs": [
+    "https://twitter.com/SlowMist_Team/status/1787330586857861564",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/OSN_exp.sol"
+  ],
+  "notes": [
+    "Reset is the token deployment: the only later change on the path, setStartTime, lifts the 'not start' trading gate (pause state, rule 10) and shifts the tax schedule (loss size only).",
+    "The anchor is a dust probe by 0x71940b72 that registered duplicate weight; the May campaign by 0x835b45 through 0x4a5acac3 realised the loss.",
+    "Loss is the attacker's realised USDT (attack contract to EOA, minus its 10-USDT funding). The pair and tracker lost $188,931 USDT net over these transactions, but the pair took unpriced OSN in exchange, so realised proceeds are used (rule 15)."
   ]
 }

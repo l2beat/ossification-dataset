@@ -1,201 +1,62 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:100:0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098",
-  "protocol": {
-    "name": "Hundred Finance",
-    "slug": "hundred-finance"
-  },
+  "protocol": "Hundred Finance",
   "name": "Hundred Finance Gnosis ERC-677 transfer-hook reentrancy",
-  "incident": {
-    "chainId": 100,
-    "exploit": {
-      "transactionHash": "0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098",
-      "blockNumber": 21120320,
-      "transactionIndex": 0,
-      "timestamp": 1647340120
-    },
-    "attackerAddresses": [
-      "0xd041ad9aae5cf96b21c3ffcb303a0cb80779e358",
-      "0xdbf225e3d626ec31f502d435b0f72d82b08e1bdd"
-    ]
-  },
-  "summary": "Hundred’s Compound fork sends the underlying token to the borrower before it writes the new borrow balance. Gnosis bridged tokens are ERC-677, so the transfer hands control back to the borrower, who re-entered borrow() on the same and other markets while the accounting still showed no debt. The markets were drained of USDC, WBTC and WETH in one transaction. This is compound-finance/compound-protocol issue 141.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4317363.896745388,
-      "valuationTimestamp": 1647340120,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
-          "symbol": "USDC"
-        },
-        "amount": "3630474.307448",
-        "usdValue": 3630474.307448,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1647340120,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0x8e5bbbb09ed1ebde8674cda39a0c169401db4252",
-          "symbol": "WBTC"
-        },
-        "amount": "16.17030715",
-        "usdValue": 624309.350286066,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647340120,
-          "unitPriceUsd": 38608.37920361123,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 100,
-          "tokenAddress": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
-          "symbol": "WETH"
-        },
-        "amount": "24.715930916595319168",
-        "usdValue": 62580.23901132239,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1647340120,
-          "unitPriceUsd": 2531.979848240447,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Components are the market-side balance deltas in the single exploit transaction: the hUSDC market 0x243e33aa7f6787154a8e59d3c27a66db3f8818ee pays out 3630474.307448 USDC, the WBTC market 0xe4e43864ea18d5e5211352a4b810383460ab7fcc pays out 16.17030715 WBTC and the WETH market 0x8e15a22853a0a60a0fbb0d875055a8e66cff0235 pays out 24.715930916595319168 WETH. The attacker EOA keeps all of the WBTC and WETH and 3623974.824826 USDC; the 6499.482622 USDC difference is the fee taken by the flash-loan pool 0xa227c72a4055a9dc949cae24f54535fe890d3663 and still left the protocol. The v1 snapshot carried USD 1,700,000, which is well below the measured amount. Nothing was recovered."
-  },
+  "summary": "Hundred's Compound-fork CToken.borrow sends the underlying before recording the debt. On Gnosis the bridged USDC and WBTC are ERC677 tokens that call the recipient's onTokenTransfer, so the attacker re-entered from the hUSDC and hWBTC transfers and borrowed further markets while the comptroller still saw no debt, then left the collateral behind.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x243e33aa7f6787154a8e59d3c27a66db3f8818ee",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
-        "codeHash": "0x7437931c483c98fe794b58b5a2fe9be81fbbee9945bf832e53ff2468f815eaae"
-      },
-      "deployment": {
-        "timestamp": 1619347920,
-        "blockNumber": 15722098,
-        "transactionHash": "0xd750f99ab2b8b6d1ad3daced76c0377629e5db22458a15833fa81d32b3ffcee4",
-        "transactionIndex": 1,
-        "creatorAddress": "0xb16a11442878d6f1ef202ae63233a7c13e98fd7f"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1619347920,
-        "blockNumber": 15722098,
-        "transactionHash": "0xd750f99ab2b8b6d1ad3daced76c0377629e5db22458a15833fa81d32b3ffcee4",
-        "transactionIndex": 1,
-        "logIndex": 2,
-        "mechanism": {
-          "type": "event",
-          "address": "0x243e33aa7f6787154a8e59d3c27a66db3f8818ee",
-          "eventTopic": "0xd604de94d45953f9138079ec1b82d533cb2160c906d1076d1f7ed54befbca97a",
-          "codeAddressLocation": "data-word-1-address"
-        },
-        "description": "The delegator’s only NewImplementation event, log 2 of its own creation transaction, moved the implementation from the zero address to 0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d. The CErc20Delegator keeps the implementation in storage slot 18, which holds that address continuously from block 15722098 to the exploit block, and no EIP-1967 Upgraded event was ever emitted."
-      },
-      "codeAgeSeconds": 27992200,
-      "failureModeId": "failure:compound-fork-erc677-borrow-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-5"
-        ]
+      "address": "0x243e33aa7f6787154a8e59d3c27a66db3f8818ee",
+      "code": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
+      "reset": {
+        "kind": "config",
+        "tx": "0x16fce149d09f8bf29c679c3a5fe9bd551c35f5112162fc97333a041375f04afe",
+        "address": "0x0f390559f258eb8591c8e31cf0905e97cf36ace2",
+        "slot": "0xedcb51a2a2064ec512ea66ce7b12a3aa0bcec1f173af072fb43d7dc7e2c14e9e"
+      }
+    },
+    {
+      "address": "0xe4e43864ea18d5e5211352a4b810383460ab7fcc",
+      "code": "0xfcd8570ad81e6c77b8d252bebeba62ed980bd64d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x9f20cb07c4102ae7c84f015411d29b284d7db04da29b5706d59278646086ceb3"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 100,
-      "transactionHash": "0x534b84f657883ddc1b66a314e8b392feb35024afdec61dfe8e7c510cfac1a098"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://github.com/compound-finance/compound-protocol/issues/141"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2022-03/HundredFinance_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 100,
-      "transactionHash": "0xd750f99ab2b8b6d1ad3daced76c0377629e5db22458a15833fa81d32b3ffcee4"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T10:25:00Z",
-      "note": "The attacker EOA sent six transactions on Gnosis: one exploit-contract creation, the anchor, and four transfers of proceeds, so the anchor is the only defect-executing transaction. The hUSDC delegator emitted exactly one NewImplementation event, in its own creation block, and no EIP-1967 Upgraded event, so the exploited implementation is 324.0 days old. Its creator 0xb16a11442878d6f1ef202ae63233a7c13e98fd7f is not the attacker. The WBTC market 0xe4e43864ea18d5e5211352a4b810383460ab7fcc and the WETH market 0x8e15a22853a0a60a0fbb0d875055a8e66cff0235 were drained in the same transaction and run the same delegator pattern; they are not separate targets because they would group to the same (code hash, failure mode) pair as this one, and their losses are carried in the incident total. Loss is measured from the market-side token deltas in the exploit receipt."
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1647340120/coingecko:wrapped-bitcoin,coingecko:ethereum,coingecko:usd-coin",
-      "observedAt": 1787643981
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-5"
+  "loss": {
+    "usd": 6008863.61,
+    "assets": [
+      {
+        "token": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
+        "symbol": "USDC",
+        "amount": "3630474.307448",
+        "usd": 3631752.94
+      },
+      {
+        "symbol": "XDAI",
+        "amount": "1705455.029647284723520283",
+        "usd": 1690221.08
+      },
+      {
+        "token": "0x8e5bbbb09ed1ebde8674cda39a0c169401db4252",
+        "symbol": "WBTC",
+        "amount": "16.17030715",
+        "usd": 624309.35
+      },
+      {
+        "token": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
+        "symbol": "WETH",
+        "amount": "24.715930916595319168",
+        "usd": 62580.24
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/compound-finance/compound-protocol/issues/141",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/HundredFinance_exp.sol"
+  ],
+  "notes": [
+    "The attacker's helpers posted hUSDC (and hxDAI) as collateral before the re-entrant borrows. hUSDC's collateral factor was 0 until the comptroller set it to 0.9, after its February 2022 implementation upgrade, so that listing as collateral is the latest reset.",
+    "Loss is the net outflow of the four markets in the transaction, including the 1.7M xDAI borrowed from hxDAI inside the re-entry; flash-swapped funds and the attacker's own deposits net out within the transaction. No other multi-market borrow occurred on these markets before or after the anchor."
+  ]
 }

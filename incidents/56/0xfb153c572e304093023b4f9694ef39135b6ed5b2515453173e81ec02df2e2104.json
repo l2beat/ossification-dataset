@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Orion Protocol",
+  "name": "Orion ExchangeWithOrionPool depositAsset reentrancy",
+  "summary": "Orion's exchange credited swapThroughOrionPool callers with the exchange's balance change of the path's output token, and depositAsset had no reentrancy guard. A fake token in the path re-entered depositAsset with flash-loaned USDT mid-swap, so that USDT was credited both as a deposit and as swap output and then withdrawn twice over.",
+  "targets": [
+    {
+      "address": "0xe9d1d2a27458378dd6c6f0b2c390807aed2217ca",
+      "code": "0x34233e37717451562edd72dc7edc4d0a7128c010",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x8de105048ccde3ae93393d177e84a6e8e2c1894ac4672ab6e7f43a9c690342ab"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3045094.73,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "191606.635567209086337063",
+        "usd": 191438.02
+      },
+      {
+        "chainId": 1,
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "2844766.426324",
+        "usd": 2853656.71
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0xa6f63fcb6bec8818864d96a5b1bb19e8bd85ee37b2cc916412e720988440b2aa"
+  ],
+  "refs": [
+    "https://www.numencyber.com/analysis-of-orionprotocol-reentrancy-attack-with-poc/",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/Orion_exp.sol"
+  ],
+  "notes": [
+    "The same attacker hit Orion's BNB Chain exchange about 16 minutes before the Ethereum exchange, so the BNB Chain transaction anchors and the Ethereum leg (exchange 0xb5599f56, implementation 0x98a877bb, upgraded in 0xe2767275) is its campaign (rule 4). The BNB Chain implementation upgrade is the latest change on the anchored target.",
+    "No earlier swapThroughOrionPool call from a contract drained either exchange (campaign scan around the attack on both chains). Loss is each exchange's net USDT outflow; the attacker's 1 USDC and 0.5 USDC opening deposits are not netted."
+  ]
+}

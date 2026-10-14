@@ -1,0 +1,84 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "LI.FI",
+  "name": "LI.FI GasZipFacet unvalidated swap call",
+  "summary": "GasZipFacet.depositToGasZipERC20 passed caller-controlled swap data to LibSwap without the call-target allowlist other facets use, so the LI.FI diamond could be made to call ERC-20 transferFrom against wallets holding unlimited approvals to it.",
+  "targets": [
+    {
+      "address": "0x1231deb6f5749ef6ce6943a275a1d3e7486f4eae",
+      "code": "0xf28a352377663ca134bd27b582b1a9a4dad7e534",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xee96ca692ef8f6bdff087e0669d11950e71302896f3af5320b2504540f5d4f26"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0xd82fe84e63b1aa52e1ce540582ee0895ba4a71ec5e7a632a3faa1aff3e763873",
+    "eip155:1:0x86fe6933f03c14f75167e560e6635a23fab59b268e68c86d60c4d46afe0aeabc",
+    "eip155:1:0x606a49471ebcb608bf034abd982750d626b7eaf45a963118d5aae5baae4a2da2",
+    "eip155:1:0xa63052e97b989eecd789b76f670d6a5ed8a72334ce99831a36d7a642b087537f",
+    "eip155:1:0xde084e8c7cdec910d17ad7aeaa24a2973fc8c36add6d83a42de15446ddaaca5d",
+    "eip155:1:0x57ff54bda419773a31653fe63dbb00981b6e971b4c2b2b650c2f10b4342f8464",
+    "eip155:1:0x2191a8481a4023b7202bbcd6a6fe034e11130827194c6abcbcc64665f1463f8b",
+    "eip155:1:0x2cb7206f1067df3e9e4b9e5d05139c4a907f69e235f3ce0f64e424a874c65d54",
+    "eip155:1:0x65a92b189e4ae0b8a8a02cd59c5e9f6832586bd5167d41a24eb4f4d2ac692755",
+    "eip155:1:0x46c001fb4149c2381196c8e1428d966dc44dd46061f8ecf8383a5363adeee312",
+    "eip155:1:0x0729eda09a8b5743d7328a717019d51b2a05634d6fe764d5213fd6fb3e303f59",
+    "eip155:1:0xa67d8a6d59dc258e74a93a22abd26d49d159fb123dbe243d3c5b6b41a499086b",
+    "eip155:1:0x728c9bf98fcb1f35dd6551fb7a411e841570d2f73ac408916698cecdcffde36a",
+    "eip155:1:0xaa88931369fc09f507c9a02b9ccbc6bec1eca83845745ceb551c1f9fba157c4a",
+    "eip155:1:0x909f5000636dce99528ab9a14475744e481a6b4e060fc693cf6e0fca48fa7deb",
+    "eip155:1:0x047056478cabe20b7c32a85b34f558dd90e7b3235b77d1a4342fdc15b74c910f",
+    "eip155:1:0x96436532daf9d1028117945315c565b310f76a2d94e6d176b1aefe5cb0be9144",
+    "eip155:1:0x82f47783e8d3029767090ed9a5ac3e2774d04b8fe908c9ca1f959d1b8c6a83a9",
+    "eip155:42161:0x48be219ac50107de5a02b417624120f4148b4fe1c01a226c672f838a5e6e0986"
+  ],
+  "loss": {
+    "usd": 11582348.67,
+    "assets": [
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "6313071.181096",
+        "usd": 6313518.37
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "4938205.652694",
+        "usd": 4936757.62
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "169533.151064511556590547",
+        "usd": 169199
+      },
+      {
+        "chainId": 42161,
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC",
+        "amount": "82547.795004",
+        "usd": 82479.2
+      },
+      {
+        "chainId": 42161,
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "80490.1873",
+        "usd": 80394.48
+      }
+    ]
+  },
+  "refs": [
+    "https://li.fi/knowledge-hub/incident-report-16th-july",
+    "https://github.com/lifinance/contracts/blob/9adde379d80c23fe0d3cc30ec0d0575a54c24c21/src/Facets/GasZipFacet.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/Lifiprotocol_exp.sol"
+  ],
+  "notes": [
+    "The reset is the DiamondCut that routed selector 0x3d86ea87 to GasZipFacet; the DiamondCut five blocks later did not touch that selector.",
+    "Campaign: every successful 0x3d86ea87 call pulling third-party funds on Ethereum (attacker, whitehat c0ffeebabe and copycats) until the selector was removed, plus the attacker leg on Arbitrum; the facet was live briefly on other chains, where the known exploiters made no calls.",
+    "Victims are the approving wallets (EOAs and wallet proxies); the attacker's forwarding contracts and the Uniswap pool used to sell are excluded."
+  ]
+}

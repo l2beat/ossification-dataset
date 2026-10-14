@@ -1,136 +1,66 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c",
-  "protocol": {
-    "name": "DAO Maker",
-    "slug": "dao-maker"
-  },
+  "protocol": "DAO Maker",
   "name": "DAO Maker vesting unprotected init()",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c",
-      "blockNumber": 13155321,
-      "transactionIndex": 93,
-      "timestamp": 1630706304
-    },
-    "attackerAddresses": [
-      "0x2708cace7b42302af26f1ab896111d87faeff92f"
-    ]
-  },
-  "summary": "The vesting implementation's init() had no caller authentication or one-time initialization guard, so calling it again made the attacker the proxy's owner. The attacker then used the owner-only emergencyExit() path to sweep the proxy's vested sale tokens.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 4000000,
-      "valuationTimestamp": 1630706304,
-      "method": "reported",
-      "sourceIds": [
-        "source-4"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "SlowMist reports nearly $4 million taken across the DeRace, Coinspaid, Capsule Coin, and Showcase vesting proxies. The reported figure is treated as the gross campaign loss."
-  },
+  "summary": "The vesting implementations behind DAO Maker's EIP-1167 vesting clones let anyone call init() again, which made the caller the clone's owner. The attacker re-initialized six clones and used the owner-only emergencyExit() to sweep their vested sale tokens.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x2fd602ed1f8cb6deaba9bedd560ffe772eb85940",
-      "relationship": "minimal-proxy",
-      "codeArtifact": {
-        "address": "0xf17ca0e0f24a5fa27944275fa0cedec24fbf8ee2",
-        "codeHash": "0x4787954b831b9837cbdda088091451d0b4178aca24d129ce8896d410659bf024"
-      },
-      "deployment": {
-        "timestamp": 1627982213,
-        "blockNumber": 12951447,
-        "transactionHash": "0x6694dfda1b21cd87c058f5e0718369cc2e87c97d1ab16b68169511a11e055dc7",
-        "transactionIndex": 3,
-        "creatorAddress": "0x95626473b6782292d20f1b07a85a8b7f6ab63677"
-      },
-      "ageReset": {
+      "address": "0x2fd602ed1f8cb6deaba9bedd560ffe772eb85940",
+      "code": "0xf17ca0e0f24a5fa27944275fa0cedec24fbf8ee2",
+      "reset": {
         "kind": "deployment",
-        "description": "The EIP-1167 proxy deployment fixed the implementation address in its runtime. The proxy runtime and implementation runtime remained unchanged through the exploit."
-      },
-      "codeAgeSeconds": 2724091,
-      "failureModeId": "failure:dao-maker-vesting-unprotected-reinitialization",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3",
-          "source-7"
-        ]
+        "tx": "0x6694dfda1b21cd87c058f5e0718369cc2e87c97d1ab16b68169511a11e055dc7"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://twitter.com/Mudit__Gupta/status/1434059922774237185"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:36:01Z",
-      "note": "Reviewed the live Ethereum receipt and call trace for the earliest campaign init, the corresponding emergencyExit transaction, the proxy creation receipt and trace, historical proxy and implementation code, and the cited SlowMist analysis. The successful anchor directly calls init(uint256,uint256[],uint256[],address) on vesting proxy 0x2fd602ed1f8cb6deaba9bedd560ffe772eb85940, which delegatecalls 0xf17ca0e0f24a5fa27944275fa0cedec24fbf8ee2. The later transaction 0x96bf6bd14a81cf19939c0b966389daed778c3a9528a6c5dd7a4d980dec966388 calls emergencyExit(attacker) through the same artifact and transfers the proxy's DERC balance. The proxy was created at 12951447:3 by factory 0x95626473b6782292d20f1b07a85a8b7f6ab63677; code was absent one block earlier. Its 45-byte EIP-1167 runtime immutably embeds the implementation, and both runtimes remained unchanged through the exploit. SlowMist reports nearly $4 million gross across four affected vesting proxies."
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://slowmist.medium.com/slowmist-an-analysis-of-the-attack-on-dao-maker-627fcccd8fcb"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x6694dfda1b21cd87c058f5e0718369cc2e87c97d1ab16b68169511a11e055dc7"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x96bf6bd14a81cf19939c0b966389daed778c3a9528a6c5dd7a4d980dec966388"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-26T08:03:41Z",
-      "note": "Clone basis retained under the case-by-case rule: each vesting clone owned its initialization state, schedule, and sale-token balance; those instance-specific assets made the re-callable initializer profitable."
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The loss uses SlowMist's campaign estimate rather than a separately repriced ledger of all four volatile sale tokens."
-    ],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 4726133.78,
+    "assets": [
+      {
+        "token": "0x03be5c903c727ee2c8c4e9bc0acc860cca4715e2",
+        "symbol": "CAPS",
+        "amount": "13501274.90625",
+        "usd": 964542.4
+      },
+      {
+        "token": "0xcc0014ccb39f6e86b1be0f17859a783b6722722f",
+        "symbol": "SHO",
+        "amount": "20597395.836666668575",
+        "usd": 212578.83
+      },
+      {
+        "token": "0x9fa69536d1cda4a04cfb50688294de75b505a9ae",
+        "symbol": "DERC",
+        "amount": "7200000.8",
+        "usd": 3390970.33
+      },
+      {
+        "token": "0x9b31bb425d8263fa1b8b9d090b83cf0c31665355",
+        "symbol": "CPD",
+        "amount": "5000000",
+        "usd": 158042.22
+      }
     ]
-  }
+  },
+  "campaign": [
+    "eip155:1:0x96bf6bd14a81cf19939c0b966389daed778c3a9528a6c5dd7a4d980dec966388",
+    "eip155:1:0xe4bfea9d92eeb394711bfc17d1246d5bef9142a7eb11cdd7f3a7dbf647c7af3b",
+    "eip155:1:0xcb5be97496995d58da6f97491845040547b878e53a7b71f907a13408f3a54e5f",
+    "eip155:1:0x38009769ade06f0670e0e18d118f0f9a7ac9488b62663f0508b4ffddb3d040fe",
+    "eip155:1:0x4c273c2403aafd97e4b553f0e381cf1c63e5f2efebbe2ded7642a06f2b68c879",
+    "eip155:1:0x032f907ea185cab00e02b9eb80d5a3dc4691297ab73d4aa13d809e5150145cdc",
+    "eip155:1:0xec2115ddb7f5020b2410978bb13cd23a9a38291d35be310d7825e7faeb6df1f4",
+    "eip155:1:0x10ccd654b7751363386ddbf8cc76a57402bff61327a80b2d6a97f9edced27fa8",
+    "eip155:1:0x1692a57f19b5e8e4bc6a372ac3c83c77cd4a1ea78414377ea66d3d59f4a7d2b7",
+    "eip155:1:0xbc32e71c07f937ca752d93758a739956a366f6482c5f3297ee572cf35ed13978",
+    "eip155:1:0xdd0176475165b83c702d49a876d4dc888b73477ad8833582c72aa6ca5e0bacc3"
+  ],
+  "refs": [
+    "https://twitter.com/Mudit__Gupta/status/1434059922774237185",
+    "https://slowmist.medium.com/intelligence-of-slowmist-zone-dao-makers-vesting-system-was-hacked-5825e4828969"
+  ],
+  "notes": [
+    "Campaign: init and emergencyExit on the six drained clones of implementations 0xf17ca0e0 and 0x99b0ff1d (same vesting code). The attacker's inits on 0x9981eedc and 0xe7a1ec06 are excluded: DAO Maker re-initialized and emptied those clones first.",
+    "DERC and CPD have no DefiLlama price; they are valued at the DAI the attacker realised selling them through 1inch. CAPS and SHO use DefiLlama prices at the exits."
+  ]
 }

@@ -1,163 +1,46 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a",
-  "protocol": {
-    "name": "Jimbos Protocol",
-    "slug": "jimbos-protocol"
-  },
+  "protocol": "Jimbos Protocol",
   "name": "JimboController permissionless shift/reset rebalancing",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a",
-      "blockNumber": 95144405,
-      "transactionIndex": 1,
-      "timestamp": 1685233492
-    },
-    "attackerAddresses": [
-      "0x102be4bccc2696c35fd5f5bfe54c1dfba416a741",
-      "0xecbec9c30d357ed3aee8f087a34271904e28e4fb",
-      "0x72f8ab3def17e0e4a90b80fdbd8fd8f155cb3c4c",
-      "0xd4002233b59f7edd726fc6f14303980841306973"
-    ]
-  },
-  "summary": "JimboController.shift() and JimboController.reset() are public, callable by anyone, and gate only on pair.getActiveId() relative to the stored trigger and anchor bins. Both withdraw the protocol-owned Trader Joe v2 liquidity and redeploy it around whatever active bin the pair happens to be on at that instant, with no price reference, no TWAP, and no bound on how far the active bin may have moved; the only slippage guard in _addLiquidity is a 1% amountXmin/amountYmin on the router's own add, which does not constrain the price the liquidity is placed at. An attacker who flash-borrows WETH, pushes the JIMBO/WETH active bin up, calls shift(), pushes it back down and calls reset() therefore makes the contract redeposit the protocol's WETH into a bin range they control and then buys it out with JIMBO.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 7395118.603051347,
-      "valuationTimestamp": 1685233366,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-4",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "4046.421534086982319423",
-        "usdValue": 7395118.603051347,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1685233366,
-          "unitPriceUsd": 1827.57,
-          "sourceIds": [
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-4",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Aggregating WETH Transfer logs across the four campaign receipts, the JIMBO/WETH Trader Joe v2 pair 0x16a5d28b20a3fddecdcaf02df4b3935734df1a1f, which held Jimbos' protocol-owned liquidity, loses exactly 4046.421534086982319423 WETH and is the only net loser. Of that, 4026.421534086982376266 WETH ends up in the three attacker contracts (3039.463221773209170351 + 625.999745568426533282 + 360.958566745346672633) and 20.000000000000000000 WETH is the Aave v3 flash-loan premium paid to aWETH 0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8; the premium is a financing fee and does not reduce gross victim depletion. Aave's flash-loan principal is repaid inside each transaction and is not counted. The JIMBO the pair received in exchange is deliberately not credited against the loss: the attacker's own rebalancing and selling set that price, and the token had no independent market. The attacker later swept the WETH to the EOA and bridged it out; no recovery is netted out.",
-    "realizedAt": 1685233493
-  },
+  "summary": "JimboController.shift() and reset() were public and redeployed the protocol-owned ETH liquidity of the JIMBO/ETH Trader Joe LB pair around the current active bin, with no price bound. With flash-loaned WETH the attacker moved the active bin, called shift()/reset() so the ETH was placed at the manipulated price, and bought it out with JIMBO.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x271944d9d8ca831f7c0dbcb20c4ee482376d6de7",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x271944d9d8ca831f7c0dbcb20c4ee482376d6de7",
-        "codeHash": "0x6dfb8c6f1cc2538ffa4e23d34d0a484d3d36d39efde29bede9c579d93f2466e9"
-      },
-      "deployment": {
-        "timestamp": 1685039023,
-        "blockNumber": 94371845,
-        "transactionHash": "0x74c4a00b77a4a4018e79d4eb4de121199440af839c9cdc251a10ca2ab5cf9d21",
-        "transactionIndex": 1,
-        "creatorAddress": "0x371076d033849c014a3ef37f1a63c44916604cac"
-      },
-      "ageReset": {
+      "address": "0x271944d9d8ca831f7c0dbcb20c4ee482376d6de7",
+      "reset": {
         "kind": "deployment",
-        "description": "JimboController is an immutable non-proxy contract deployed in this transaction; its runtime is byte-identical at the deployment block, immediately before the exploit and today."
-      },
-      "codeAgeSeconds": 194469,
-      "failureModeId": "failure:jimbo-permissionless-rebalance-without-price-reference",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "tx": "0x74c4a00b77a4a4018e79d4eb4de121199440af839c9cdc251a10ca2ab5cf9d21"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T17:05:00Z",
-      "note": "Attacker EOA 0x102be4bccc2696c35fd5f5bfe54c1dfba416a741 was funded at block 95137871, deployed four exploit contracts between blocks 95142256 and 95143274, and then sent four successful calls with selector 0x76aa21c9 in consecutive blocks 95144405-95144408; four repeats at blocks 95144533-95144536 reverted. The anchor is the earliest of the four, 0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a at block 95144405 index 1, status 1, timestamp 1685233492. Its 4974-frame callTracer trace shows exploit contract 0xecbec9c30d357ed3aee8f087a34271904e28e4fb calling JimboController 0x271944d9d8ca831f7c0dbcb20c4ee482376d6de7 directly with shift() (0x12fc41ca) three times and reset() (0xd826f88f) twice, with no DELEGATECALL and no proxy in between; the controller drives LBRouter 0xb4315e873dbcf96ffd0acd8ea43f689d8c20fb30 and the JIMBO/WETH LBPair 0x16a5d28b20a3fddecdcaf02df4b3935734df1a1f, and the WETH used for the manipulation is flash-borrowed from Aave v3 pool 0x794a61358d6845594f94dc1db02a252b5b4814ad. The verified JimboController source confirms the defect: shift() only requires pair.getActiveId() > triggerBin and reset() only requires pair.getActiveId() < anchorBin, both are public, and _deployFloorLiquidity/_deployAnchorLiquidity place the recovered WETH at deltas relative to the live active bin, with the only guard being a 1% amountXmin/amountYmin inside _addLiquidity that constrains the router, not the price. No parameter value fixes this, so it is a code defect rather than configuration. Code history: the controller is a plain immutable contract, created by 0x371076d033849c014a3ef37f1a63c44916604cac in transaction 0x74c4a00b77a4a4018e79d4eb4de121199440af839c9cdc251a10ca2ab5cf9d21 at block 94371845 index 1, timestamp 1685039023; there is no proxy, no upgrade mechanism, and its runtime hashes to 0x6dfb8c6f1cc2538ffa4e23d34d0a484d3d36d39efde29bede9c579d93f2466e9 at the deployment block, at block 95144404 and today. The resulting age is 194469 seconds, 2.25 days, measured from deployment rather than from the protocol's earlier public launch. Loss recomputed from the four receipts as described in loss.notes: the LB pair loses exactly 4046.421534086982319423 WETH, 4026.421534086982376266 WETH reaches the attacker contracts and 20 WETH is the Aave premium."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0x74c4a00b77a4a4018e79d4eb4de121199440af839c9cdc251a10ca2ab5cf9d21"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction-set",
-      "chainId": 42161,
-      "transactionHashes": [
-        "0xf9baf8cee8973cf9700ae1b1f41c625d7a2abdbcbc222582d24a8f2f790d0b5a",
-        "0xfda5464e97043a2d0093cbed6d0a64f6a86049f5e9608c014396a7390188670e",
-        "0x3c6e053faecd331883641c1d23c9d9d37d065e4f9c4086e94a3c34bf8702618a",
-        "0x44a0f5650a038ab522087c02f734b80e6c748afb207995e757ed67ca037a5eda"
-      ]
-    },
-    {
-      "id": "source-5",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1685233492/coingecko:ethereum",
-      "observedAt": 1787665007
-    },
-    {
-      "id": "source-6",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "d5167541cd4c982cd4d29e583089b2a1a5caa6e6",
-      "path": "src/test/2023-05/Jimbo_exp.sol"
-    }
-  ],
-  "discovery": [
-    "seed:jimbos-protocol:2023-05-28:jimbos-protocol-rebalance-slippage"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 7513575.86,
+    "assets": [
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "4046.421534086982399714",
+        "usd": 7395118.6
+      },
+      {
+        "token": "0xc3813645ad2ea0ac9d4d72d77c3755ac3b819e38",
+        "symbol": "JIMBO",
+        "amount": "11735174.101723864203292378",
+        "usd": 118457.26
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/d5167541cd4c982cd4d29e583089b2a1a5caa6e6/src/test/2023-05/Jimbo_exp.sol",
+    "eip155:42161:0x5cd668b4ba1303f6e524f7e61882fd8858f0e26755627da23dead650f15c71a9",
+    "eip155:42161:0xa8bc0301f175d271965ccefeb256e4977cfefe76ef7ee2fe89a70ced2ca6f23d"
+  ],
+  "notes": [
+    "The controller is immutable and its later storage writes are bin ids it updates in normal operation, so its deployment is the reset.",
+    "Loss is the LB pair's net WETH depletion over the four txs plus the JIMBO the pair and controller lost; JIMBO has no market price and is valued at the 64.79 ETH the attacker realised selling it back into the pair (the two sales in refs)."
+  ],
+  "campaign": [
+    "eip155:42161:0xfda5464e97043a2d0093cbed6d0a64f6a86049f5e9608c014396a7390188670e",
+    "eip155:42161:0x3c6e053faecd331883641c1d23c9d9d37d065e4f9c4086e94a3c34bf8702618a",
+    "eip155:42161:0x44a0f5650a038ab522087c02f734b80e6c748afb207995e757ed67ca037a5eda"
+  ]
 }

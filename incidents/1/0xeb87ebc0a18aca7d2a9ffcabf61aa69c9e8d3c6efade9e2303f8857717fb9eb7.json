@@ -1,184 +1,37 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xeb87ebc0a18aca7d2a9ffcabf61aa69c9e8d3c6efade9e2303f8857717fb9eb7",
-  "protocol": {
-    "name": "Sturdy Finance",
-    "slug": "sturdy"
-  },
+  "protocol": "Sturdy Finance",
   "name": "Sturdy LendingPool setUserUseReserveAsCollateral skips the oracle reentrancy probe",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xeb87ebc0a18aca7d2a9ffcabf61aa69c9e8d3c6efade9e2303f8857717fb9eb7",
-      "blockNumber": 17460610,
-      "transactionIndex": 41,
-      "timestamp": 1686531995
-    },
-    "attackerAddresses": [
-      "0x1e8419e724d51e87f78e222d935fbbdeb631a08b",
-      "0x0b09c86260c12294e3b967f0d523b4b2bcdfbeab",
-      "0x555003433d6a51e9cc7798752dbdd4ed28d61de5",
-      "0xa6181b779dc2f93033e82584b692b3714b184163",
-      "0x89676bef260bbd56dbe97c81300d7a4f63d344d8",
-      "0x7750f94314a4fe3c78337dd8c9661864c4c77ad6",
-      "0xf2ea7eacf7b042fd85690d71b9d2957830bdcf02"
-    ]
-  },
   "summary": "Sturdy's LendingPool implementation carries an internal _validateOracle(user) that runs Balancer's reentrancy probe (BALWSTETHWETHOracle.check(), a WITHDRAW_INTERNAL manageUserBalance call that reverts inside a Vault context) over every reserve the user holds as collateral. deposit, _withdraw, repay, liquidationCall, finalizeTransfer and _executeBorrow all call it; setUserUseReserveAsCollateral does not, yet its ValidationLogic.validateSetUseReserveAsCollateral path reaches GenericLogic.balanceDecreaseAllowed and prices every collateral through SturdyOracle. The attacker re-entered that one entry point from inside a Balancer exitPool ETH callback, so the cB-stETH-STABLE collateral was valued from mid-exit pool balances: BALWSTETHWETHOracle.latestAnswer() returned 3.008 ETH instead of 1.034 ETH per unit. The invariant violated is that collateral valuation must never be computed while the Balancer Vault is mid-update; the deployed pool enforced it on every oracle-consuming entry point except this one.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 879314.3928134907,
-      "valuationTimestamp": 1686531995,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "502.669307441013616084",
-        "usdValue": 879314.3928134907,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1686531995,
-          "unitPriceUsd": 1749.29,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Measured from Sturdy's own reserve accounting across the single exploit transaction. The WETH aToken 0xb1ebf8f77ae002d487e7bde22c6180be0af6a3d4 holds 513.367301825658717226 WETH at block 17460609 and 10.697994384645101142 at block 17460610, a fall of exactly 502.669307441013616084 WETH, while variableDebtWETH 0xe1ee5b789ba4ea5287999034fdf293361b53e024 total supply rises by the same 502.669307441013616084 and aWETH total supply is unchanged at 2317.920159523297738032, so no depositor share was minted or burned and the whole amount left the reserve as new debt. getUserAccountData at block 17460610 returns totalCollateralETH 0 for all five borrowing attacker contracts, so the debt is entirely uncollateralised; their variableDebtWETH balances are still outstanding and accruing at blocks 17470000, 17600000 and 18000000, so nothing was recovered. The attacker's own realised take was smaller, 442.455138966650236044 ETH net to the EOA in the same transaction, the widely reported 442 ETH; the roughly 60 WETH difference is Balancer and Curve slippage and a 1 ETH transfer to 0x690b9a9e9aa1c9db991c7721a92d351db4fac990, which does not reduce gross victim depletion. The 285,000 WETH Balancer flash loan and the Aave v3 flash loan are attacker-supplied inputs and are excluded."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x9f72dc67cec672bb99e3d02cbea0a21536a2b657",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x46bea99d977f269399fb3a4637077bb35f075516",
-        "codeHash": "0xb0f3b8d7ff3853cdda0ef130e7b46a763ac009a913de9845b8f0e04387d8cdc2"
-      },
-      "deployment": {
-        "timestamp": 1669915487,
-        "blockNumber": 16091428,
-        "transactionHash": "0x4b3bd2b7ac273281366e8664ef6e200284aae72ee0cd9b5fa8265d9d48f6a946",
-        "transactionIndex": 1,
-        "creatorAddress": "0x40ea6e14800f6040d25a9a5a1e9cc0f5cb6d1066"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1676306579,
-        "blockNumber": 16621101,
-        "transactionHash": "0x170dbc58893080dbbc78b7cb84e5cbeab9e14ca03cd9964fc98ea1c9517929f1",
-        "transactionIndex": 10,
-        "logIndex": 32,
-        "mechanism": {
-          "type": "event",
-          "address": "0x9f72dc67cec672bb99e3d02cbea0a21536a2b657",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "LendingPoolAddressesProvider.setLendingPoolImpl moved the proxy from 0x6b75a3b072369bee8f873477266ac168beb73dab to the defect-bearing LendingPool 0x46bea99d977f269399fb3a4637077bb35f075516. It is the only Upgraded event on the proxy before the exploit and the EIP-1967 implementation slot confirms the transition at this block."
-      },
-      "codeAgeSeconds": 10225416,
-      "failureModeId": "failure:sturdy-setusereserveascollateral-skips-oracle-reentrancy-probe",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3",
-          "source-4",
-          "source-7"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [
-          "The age basis is the implementation change that installed this LendingPool runtime, not the proxy's own creation at block 16091428 (which would give 16,616,508 s) and not the creation of the artifact six blocks earlier at 16621095 (10,225,488 s). The BALWSTETHWETHOracle 0x232a8829570058a693d1d9c4f4f8d52c9691f5ea whose latestAnswer() is read mid-exit was deployed at block 16542524, older than this artifact; it is described in the review note rather than carried as a second target so the single loss is not attributed twice."
-        ],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+      "address": "0x9f72dc67cec672bb99e3d02cbea0a21536a2b657",
+      "code": "0x46bea99d977f269399fb3a4637077bb35f075516",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x170dbc58893080dbbc78b7cb84e5cbeab9e14ca03cd9964fc98ea1c9517929f1"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xeb87ebc0a18aca7d2a9ffcabf61aa69c9e8d3c6efade9e2303f8857717fb9eb7"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T00:00:00Z",
-      "note": "Anchor: 0xeb87ebc0a18aca7d2a9ffcabf61aa69c9e8d3c6efade9e2303f8857717fb9eb7, block 17460610 index 41, timestamp 1686531995, receipt status 0x1, 755 logs. It is the only defect-executing transaction of the campaign: the attacker EOA 0x1e8419e724d51e87f78e222d935fbbdeb631a08b has 21 lifetime transactions, one contract creation six blocks earlier (0x64af76be, the helper 0x0b09c86260c12294e3b967f0d523b4b2bcdfbeab), this exploit, and then only Tornado Cash deposits. Defect, read from the verified LendingPool source at 0x46bea99d977f269399fb3a4637077bb35f075516 and confirmed in the callTracer trace. The implementation defines 'function _validateOracle(address user) internal' which, for every reserve the user flags as collateral, calls IPriceOracleGetter(oracle).checkOracle(reserve); SturdyOracle 0xe5d78eb340627b8d5bcff63590ebec1ef9118c89 forwards that to IOracleValidate(source).check(), and BALWSTETHWETHOracle 0x232a8829570058a693d1d9c4f4f8d52c9691f5ea implements check() as a Balancer manageUserBalance WITHDRAW_INTERNAL op, which reverts if the Vault is in a reentrant context. Grepping the source, _validateOracle is invoked at exactly six call sites - deposit, _withdraw (used by withdraw and withdrawFrom), repay, liquidationCall, finalizeTransfer and _executeBorrow - and setUserUseReserveAsCollateral(address,bool) is the one oracle-consuming external entry point that omits it, going straight to ValidationLogic.validateSetUseReserveAsCollateral. The trace reproduces this exactly. The attacker's second helper 0x555003433d6a51e9cc7798752dbdd4ed28d61de5 calls Balancer Vault 0xba12222222228d8ba445958a75a0704d566bf2c8 exitPool (0x8bdb3913) ten times; inside each one the Vault unwraps WETH and sends native ETH to the helper, which re-enters the Sturdy LendingPool proxy 0x9f72dc67cec672bb99e3d02cbea0a21536a2b657 with selector 0x5a3b74b9 = setUserUseReserveAsCollateral(address,bool). That delegatecalls the implementation, then ValidationLogic 0x00d1c9e6d7a369f552ca1ed696108410e5ab3b96 (0x5fa297e5) and GenericLogic 0xeb6adaadbb20eb19e7b205deca837c13f51b3c6d (0xe6170424), which STATICCALLs SturdyOracle.getAssetPrice (0xb3596f07) four times. For the collateral cB-stETH-STABLE 0x10aa9eea35a3102cc47d4d93bc0ba9ae45557746 the reentrant read returns 0x29be9cd77ed0fb3f = 3.008295... ETH, against 0x0e5bd904bc53b4bc = 1.034... ETH for the identical read outside the Vault context in the same transaction. Inside the oracle frame, BALWSTETHWETHOracle.latestAnswer() (0x50d25bcd) calls MetaStablePool 0x32296969ef14eb0c6d29669c550d4a0449130230 getRate() (0x679aefce), which reads Vault.getPoolTokens() (0xf94d4668) while the exit is half applied. No checkOracle (0x0aa33f75) frame appears anywhere under a 0x5a3b74b9 call, while checkOracle frames do appear under the deposit (0xe8eda9df), borrow (0xa415bcad) and withdrawFrom (0x12ade5ad) calls in the same trace. Boundary test: no parameter of the deployed LendingPool makes setUserUseReserveAsCollateral safe. The probe is a call the function does not make, and the protocol's own configuration - reserve list, LTVs, oracle sources - is applied as designed on the other five entry points and produces the correct price there. This is missing validation in executed EVM code. The read itself is performed by BALWSTETHWETHOracle.latestAnswer(), whose _get() is a view function and therefore cannot run its own state-changing check(); that split is why the guard has to live in the caller, and the caller is the LendingPool. The oracle adapter is noted as a second defect-bearing role in the target limitations rather than carried as a separate target. Target and code history: execution context is the LendingPool proxy 0x9f72dc67cec672bb99e3d02cbea0a21536a2b657, an InitializableImmutableAdminUpgradeabilityProxy created by the LendingPoolAddressesProvider 0x40ea6e14800f6040d25a9a5a1e9cc0f5cb6d1066 in transaction 0x4b3bd2b7ac273281366e8664ef6e200284aae72ee0cd9b5fa8265d9d48f6a946 at block 16091428 index 1 (admin deployer 0x48cc0719e3bf9561d861cb98e863fda0ceb07dbc). Scanning the proxy for Upgraded (topic 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b) from genesis to block 17460609 returns exactly one log: block 16621101, transaction index 10, log index 32, transaction 0x170dbc58893080dbbc78b7cb84e5cbeab9e14ca03cd9964fc98ea1c9517929f1, topic1 = 0x46bea99d977f269399fb3a4637077bb35f075516. eth_getStorageAt on EIP-1967 slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc reads 0x6b75a3b072369bee8f873477266ac168beb73dab at blocks 16091428 and 16621100 and 0x46bea99d at 16621101 and 17460609. The artifact's 21,964-byte runtime hashes to 0xb0f3b8d7ff3853cdda0ef130e7b46a763ac009a913de9845b8f0e04387d8cdc2 at its own creation block 16621095 and at 17460609, matching prestateTracer on the anchor. Code age 1686531995 - 1676306579 = 10,225,416 s (118.35 days). Loss: the WETH aToken 0xb1ebf8f77ae002d487e7bde22c6180be0af6a3d4 holds 513.367301825658717226 WETH at block 17460609 and 10.697994384645101142 at 17460610; variableDebtWETH total supply goes from 1804.553633131384434751 to 2307.222940572398050835, a rise of exactly the same 502.669307441013616084; aWETH total supply is 2317.920159523297738032 at both blocks. getUserAccountData at 17460610 gives totalCollateralETH 0 and totalDebtETH equal to the minted debt for each of the five borrowers 0x55500343, 0xa6181b77, 0x89676bef, 0x7750f943 and 0xf2ea7eac, so the entire 502.669307441013616084 WETH is uncollateralised bad debt; their balances are still outstanding at blocks 17470000, 17600000 and 18000000. Summing the trace's native-value transfers, the attacker EOA nets 442.455138966650236044 ETH, the reported 442 ETH; the difference is Balancer and Curve slippage and 1 ETH sent to 0x690b9a9e9aa1c9db991c7721a92d351db4fac990, which does not reduce gross victim depletion. Priced at the DefiLlama WETH observation nearest the incident timestamp, 1749.29 USD, the depletion is 879,314.39 USD; the 800,000 USD often quoted is the attacker's 442 ETH take."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x4b3bd2b7ac273281366e8664ef6e200284aae72ee0cd9b5fa8265d9d48f6a946"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x170dbc58893080dbbc78b7cb84e5cbeab9e14ca03cd9964fc98ea1c9517929f1"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-06/Sturdy_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1686531995/ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      "observedAt": 1787684700
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x4afc66fab02cbade88010df3b427240f7a4cac0cfc43caa4c68e8b6eb7822527"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2023-06/Sturdy_exp.sol",
-    "seed:sturdy:2023-06-12:sturdy"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 879314.3928134907,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "502.669307441013616084",
+        "usd": 879314.3928134907
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/Sturdy_exp.sol",
+    "eip155:1:0x4afc66fab02cbade88010df3b427240f7a4cac0cfc43caa4c68e8b6eb7822527"
+  ],
   "notes": [
+    "LendingPoolAddressesProvider.setLendingPoolImpl moved the proxy from 0x6b75a3b072369bee8f873477266ac168beb73dab to the defect-bearing LendingPool 0x46bea99d977f269399fb3a4637077bb35f075516. It is the only Upgraded event on the proxy before the exploit and the EIP-1967 implementation slot confirms the transition at this block.",
+    "Measured from Sturdy's own reserve accounting across the single exploit transaction. The WETH aToken 0xb1ebf8f77ae002d487e7bde22c6180be0af6a3d4 holds 513.367301825658717226 WETH at block 17460609 and 10.697994384645101142 at block 17460610, a fall of exactly 502.669307441013616084 WETH, while variableDebtWETH 0xe1ee5b789ba4ea5287999034fdf293361b53e024 total supply rises by the same 502.669307441013616084 and aWETH total supply is unchanged at 2317.920159523297738032, so no depositor share was minted or burned and the whole amount left the reserve as new debt. getUserAccountData at block 17460610 returns totalCollateralETH 0 for all five borrowing attacker contracts, so the debt is entirely uncollateralised; their variableDebtWETH balances are still outstanding and accruing at blocks 17470000, 17600000 and 18000000, so nothing was recovered. The attacker's own realised take was smaller, 442.455138966650236044 ETH net to the EOA in the same transaction, the widely reported 442 ETH; the roughly 60 WETH difference is Balancer and Curve slippage and a 1 ETH transfer to 0x690b9a9e9aa1c9db991c7721a92d351db4fac990, which does not reduce gross victim depletion. The 285,000 WETH Balancer flash loan and the Aave v3 flash loan are attacker-supplied inputs and are excluded.",
+    "The age basis is the implementation change that installed this LendingPool runtime, not the proxy's own creation at block 16091428 (which would give 16,616,508 s) and not the creation of the artifact six blocks earlier at 16621095 (10,225,488 s). The BALWSTETHWETHOracle 0x232a8829570058a693d1d9c4f4f8d52c9691f5ea whose latestAnswer() is read mid-exit was deployed at block 16542524, older than this artifact; it is described in the review note rather than carried as a second target so the single loss is not attributed twice.",
     "This is the same class as the Conic and dForce records already in the dataset: a reentrancy guard that exists in the deployed system but is not applied on the path the attacker used. Here the guard is Sturdy's own _validateOracle, and the unguarded entry point is setUserUseReserveAsCollateral."
   ]
 }

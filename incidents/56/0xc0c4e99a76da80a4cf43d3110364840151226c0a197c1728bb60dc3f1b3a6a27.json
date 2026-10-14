@@ -1,146 +1,49 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xc0c4e99a76da80a4cf43d3110364840151226c0a197c1728bb60dc3f1b3a6a27",
-  "protocol": {
-    "name": "Z123",
-    "slug": "z123"
-  },
+  "protocol": "Z123",
   "name": "Z123 swap burns pool liquidity",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xc0c4e99a76da80a4cf43d3110364840151226c0a197c1728bb60dc3f1b3a6a27",
-      "blockNumber": 38077211,
-      "transactionIndex": 32,
-      "timestamp": 1713772920
-    },
-    "attackerAddresses": [
-      "0x3026c464d3bd6ef0ced0d49e80f171b58176ce32"
-    ]
-  },
-  "summary": "Z123's transfer accounting reduced the token-side balance of its own Z123/USDT pair during swaps, breaking reserve accounting and depleting the pair's USDT reserve.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 144821.09848955992,
-      "valuationTimestamp": 1713772920,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-3"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "144821.098489559914931458",
-        "usdValue": 144821.09848955992,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1713772920,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1",
-            "source-3"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-3"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the exact net USDT depletion of Z123/USDT pair 0x93515a5dbc2834d687721111d966de472d682a47 in the single successful incident receipt. The pair receives 18,000,000 USDT and sends 18,144,821.098489559914931458 USDT, for 144,821.098489559914931458 USDT net depletion. Archive balances fall from 169,648.381399323092651626 USDT immediately before the incident block to 24,827.282909763177720168 USDT after it, reproducing the same difference. The two bounded precursor transactions 0x8399ae01...750b and 0x4723af28...a1a0 have no USDT or Z123 transfer to or from the pair and are excluded. The incident sends 135,641.098489559914931458 USDT to the attacker and 9,180 USDT to the flash-liquidity provider; that financing fee does not reduce gross victim depletion. USDT is valued at par."
-  },
+  "summary": "Z123's custom sell router, a token minter, called Z123.update() on every sell to burn the sold amount from the Z123/USDT pair and sync it, raising the price for the next sell. With flash-loaned USDT the attacker bought Z123 and sold it back in 80 small router sells, each burning pair Z123, draining the pair's USDT; copycats repeated it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xb000f121a173d7dd638bb080fee669a2f3af9760",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x6125c643a2d4a927acd63c1185c6be902efd5dc8",
+      "reset": {
+        "kind": "config",
+        "tx": "0x259850f1e33fffdb3e2774a3feeeb132f8d06a67bdd1ba6cbe1868ca123e5d8b",
+        "address": "0x6125c643a2d4a927acd63c1185c6be902efd5dc8",
+        "slot": "0x4"
+      }
+    },
+    {
+      "address": "0xb000f121a173d7dd638bb080fee669a2f3af9760",
+      "reset": {
+        "kind": "config",
+        "tx": "0x27566d434a3650de697373397910d00fd0673c851f63199fa3aa1dacaa06b960",
         "address": "0xb000f121a173d7dd638bb080fee669a2f3af9760",
-        "codeHash": "0xacb835fd345d2907ce56731ff34da2dd1558a71bc72b7a6db10a235dbe2795c6"
-      },
-      "deployment": {
-        "timestamp": 1695017370,
-        "blockNumber": 31842192,
-        "transactionHash": "0xe9461b3d3ffdc1595b52fe4c6af9d10419c012e2f6480ff4a1d731cbc2180a1a",
-        "transactionIndex": 87,
-        "creatorAddress": "0x5f8982c9eee579d5263442500419684eb9fe48cb"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "Z123 is directly deployed. Its 8,163-byte runtime is absent one block before creation and has code hash 0xacb835fd345d2907ce56731ff34da2dd1558a71bc72b7a6db10a235dbe2795c6 at deployment and immediately before the incident; both EIP-1967 code-selection slots are zero. The pair-side balance reduction is in the deployed transfer path and does not depend on a later configuration change."
-      },
-      "codeAgeSeconds": 18755550,
-      "failureModeId": "failure:z123-transfer-burns-pair-liquidity",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "slot": "0x7c642672afc54b009ecad20750ef7a6ad5a4c0cabbc0cb1a6e3cd16852ef5a08"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xc0c4e99a76da80a4cf43d3110364840151226c0a197c1728bb60dc3f1b3a6a27"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-04/Z123_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T11:04:21Z",
-      "note": "Reviewed the successful incident receipt and call trace, verified deployed source, commit-pinned technical reproduction, direct creation receipt, archive runtime code, EIP-1967 slots, pair identity and balances, and the sender's two bounded precursor receipts. The anchor is successful at block 38077211 index 32, timestamp 1713772920, and its trace reaches direct Z123 contract 0xb000f121a173d7dd638bb080fee669a2f3af9760. Pair 0x93515a5dbc2834d687721111d966de472d682a47 reports token0 USDT and token1 Z123 before the incident. The verified source and transaction logs establish that the deployed transfer accounting reduced the pair-held Z123 balance during swaps and broke reserve accounting. In the incident receipt, the pair receives 18,000,000 USDT and sends 18,144,821.098489559914931458 USDT, exactly 144,821.098489559914931458 USDT of gross net depletion. Its archive USDT balance moves from 169,648.381399323092651626 before block 38077211 to 24,827.282909763177720168 after the block, the same difference. The sender's two preceding transactions in the bounded window, 0x8399ae01...750b and 0x4723af28...a1a0, each have zero USDT and zero Z123 flow to or from the pair. Of the depletion, 135,641.098489559914931458 USDT reaches the attacker and 9,180 USDT pays the flash-liquidity provider; the latter is a financing fee and does not reduce gross victim loss. Z123 was directly created by 0x5f8982c9eee579d5263442500419684eb9fe48cb in 0xe9461b3d...0a1a at block 31842192 index 87, timestamp 1695017370. Code is absent one block earlier, and the 8,163-byte runtime hashes to 0xacb835fd345d2907ce56731ff34da2dd1558a71bc72b7a6db10a235dbe2795c6 at creation and immediately before the incident. Both EIP-1967 slots are zero. Deployment is therefore the latest age reset, 1713772920 - 1695017370 = 18,755,550 seconds. This replaces the seed's WBNB premise and rounded $135,000 proceeds figure with exact USDT pair depletion."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe9461b3d3ffdc1595b52fe4c6af9d10419c012e2f6480ff4a1d731cbc2180a1a"
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2024-04/Z123_exp.sol",
-    "seed:z123:2024-04-22:z123-swap-burns-pool-liquidity"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 171069.64,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "171195.664755517928592412",
+        "usd": 171069.64
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/Z123_exp.sol"
+  ],
   "notes": [
-    "Corrects the seed's asset and scope: the victim pair lost USDT, not WBNB, and gross depletion includes the 9,180-USDT financing fee rather than measuring only attacker proceeds."
+    "The reset is the owner's setToken on the unverified router pointing its burn target (slot 0x4) from the Z123 token to the pair; replaying the anchor with the old value reverts, and the router had no other activity since 2023. The token's minter grant to the router is older.",
+    "Campaign: the three later txs that ran repeated router sells against the pair (two by bot 0x7edaf26b, one by 0x6dc72be9). Loss is the pair's gross USDT depletion across the four; the Z123 burned from the pair is the same liquidity. A same-block 473k USDT in/out at block 38126001 is a bot round trip."
+  ],
+  "campaign": [
+    "eip155:56:0xc1a3d3244bc39d517c601709352e2d7719439ddc061e07b06af10aa04f7637dc",
+    "eip155:56:0x2645eafaba834cbfed084aaf2e45c033e714b534ceb1b50973a00a80e3ceed2a",
+    "eip155:56:0x840165161a55e82aa83d8b56caace29978f6300d91e9e2ff4089301fb7e696fe"
   ]
 }

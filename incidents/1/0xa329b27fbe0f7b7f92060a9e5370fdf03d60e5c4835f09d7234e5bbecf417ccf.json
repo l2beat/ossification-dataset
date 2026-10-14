@@ -1,248 +1,54 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xa329b27fbe0f7b7f92060a9e5370fdf03d60e5c4835f09d7234e5bbecf417ccf",
-  "protocol": {
-    "name": "Floor Protocol (Flooring Lab)",
-    "slug": "floor-protocol"
-  },
+  "protocol": "Floor Protocol (Flooring Lab)",
   "name": "FlooringPeriphery extMulticall arbitrary call",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xa329b27fbe0f7b7f92060a9e5370fdf03d60e5c4835f09d7234e5bbecf417ccf",
-      "blockNumber": 18802261,
-      "transactionIndex": 49,
-      "timestamp": 1702773815
-    },
-    "attackerAddresses": [
-      "0x4d0d746e0f66bf825418e6b3def1a46ec3c0b847",
-      "0x7e5433f02f4bf07c4f2a2d341c450e07d7531428"
-    ]
-  },
-  "summary": "Multicall.extMulticall() in the FlooringPeriphery implementation is an unguarded external function that loops over caller-supplied (target, callData) pairs and executes calli.target.call(calli.callData) from the periphery proxy's own context, with no access control, no target allowlist and no calldata filtering. Because users grant the periphery setApprovalForAll on their NFT collections and ERC-20 allowances, any caller could make the proxy invoke safeTransferFrom or transferFrom on an approval-holding victim and move the asset to itself.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 1625029.1807156415,
-      "valuationTimestamp": 1702773815,
-      "method": "other",
-      "sourceIds": [
-        "source-6",
-        "source-7",
-        "source-8",
-        "source-9"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
-          "symbol": "BAYC"
-        },
-        "amount": "14",
-        "usdValue": 833278.60406,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1702773815,
-          "unitPriceUsd": 59519.90029,
-          "sourceIds": [
-            "source-8",
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-10"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xbd3531da5cf5857e7cfaa92426877b022e612cf8",
-          "symbol": "PPG"
-        },
-        "amount": "36",
-        "usdValue": 764883.027,
-        "valuation": {
-          "method": "other",
-          "timestamp": 1702773815,
-          "unitPriceUsd": 21246.75075,
-          "sourceIds": [
-            "source-8",
-            "source-10"
-          ]
-        },
-        "sourceIds": [
-          "source-6",
-          "source-10"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH"
-        },
-        "amount": "12.063212894780222877",
-        "usdValue": 26867.549655641356,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1702773815,
-          "unitPriceUsd": 2227.23,
-          "sourceIds": [
-            "source-9"
-          ]
-        },
-        "sourceIds": [
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "medium",
-    "notes": "The campaign is exactly three transactions from 0x4d0d746e0f66bf825418e6b3def1a46ec3c0b847 through its contract 0x7e5433f02f4bf07c4f2a2d341c450e07d7531428, all driving extMulticall on the periphery proxy: block 18802261 pulled 14 Bored Ape Yacht Club tokens (ids 638, 4112, 4523, 5271, 5864, 5914, 5986, 6019, 6074, 6255, 6517, 6936, 8272, 9488) from five approval holders, block 18802289 pulled 36 Pudgy Penguins (ids 1024, 1338, 1349, 1715, 2079, 2341, 2375, 2503, 2567, 3279, 3309, 4212, 4605, 4778, 4953, 5092, 5365, 5382, 5584, 5606, 5866, 5927, 6197, 6472, 6679, 6693, 6827, 7228, 7258, 7484, 7821, 7912, 7983, 8239, 8325, 8723) from 0xe5442ae87e0fef3f7cc43e507adf786c311a0529, and block 18802297 pulled 12.063212894780222877 WETH from five further approval holders. Token counts come from a trace_filter enumeration of every transferFrom/safeTransferFrom call made by the proxy 0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee between blocks 18341948 and 18830000 whose token owner is neither the transaction sender nor its entry contract. The NFT unit prices are the median arm's-length onchain sale price for each collection over blocks 18795000-18809000, taken from Seaport 1.1/1.4/1.5 OrderFulfilled and Blur v2 packed executions and excluding every transaction involving a campaign address: BAYC 26.683 ETH from 64 sales, Pudgy Penguins 9.525 ETH from 84 sales, converted at the DefiLlama ETH price for the incident timestamp. The medians are corroborated by the attacker's own disposal: he sold all 14 BAYC into Blur bids for 367.11 ETH (26.22 ETH average) and all 36 Pudgy Penguins for 391.04 ETH (10.86 ETH average) within 25 minutes. Excluded: 15 Azuki (ids 1657, 1892, 2230, 2480, 2583, 2953, 4313, 4371, 4406, 7230, 7371, 7689, 8305, 8561, 9627) pulled through the same defect between blocks 18802605 and 18802671 by 0x4526250a2e18dbd7fdd2dd0e49d58d88dc25da4c and 0x0171837c6461f551ab1eb5937374f52d6cefe7bb, because every one of them was returned to its original owner by block 18824263. Nothing taken by the exploiter was recovered: the 754.36 ETH of Blur proceeds plus the 12.06 ETH of unwrapped WETH left the exploiter address in two transfers at blocks 18802638 and 18802712."
-  },
+  "summary": "Multicall.extMulticall() in the FlooringPeriphery implementation executed caller-supplied (target, callData) pairs from the periphery proxy with no access control. Users had approved the proxy for their NFTs and WETH, so the attacker made it call safeTransferFrom and transferFrom on approval holders and took their BAYC, Pudgy Penguins and WETH.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xc538d17a6aacc5271be5f51b891e2e92c8187edd",
-        "codeHash": "0x66809080b25b91269a70fc189031e2e94d55dcc8561d4ff15e4fd99ace7e58e8"
-      },
-      "deployment": {
-        "timestamp": 1697205827,
-        "blockNumber": 18341948,
-        "transactionHash": "0x16ac4a47a3f0b3988f4cf4c633965a058fb24bb04caa77b7d0edc28ec1f66c1c",
-        "transactionIndex": 125,
-        "creatorAddress": "0x43800c438f5d639c8b865396cb83a4efa220091b"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1701768155,
-        "blockNumber": 18719225,
-        "transactionHash": "0x74f4226252e8b8ab9ab61de1a30d84a8456913ecb1d033634b11fa2f7e3c0903",
-        "transactionIndex": 168,
-        "logIndex": 217,
-        "mechanism": {
-          "type": "event",
-          "address": "0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "Sixth and last pre-exploit Upgraded event on the periphery proxy, the only log of the UUPS upgradeToAndCall transaction 0x74f4226252e8b8ab9ab61de1a30d84a8456913ecb1d033634b11fa2f7e3c0903 sent by the deployer 0x43800c438f5d639c8b865396cb83a4efa220091b; topic1 selects implementation 0xc538d17a6aacc5271be5f51b891e2e92c8187edd, and the EIP-1967 implementation slot still holds that address at block 18802260."
-      },
-      "codeAgeSeconds": 1005660,
-      "failureModeId": "failure:flooring-periphery-extmulticall-arbitrary-call",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-4",
-          "source-5",
-          "source-10"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-10"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-10"
-        ]
+      "address": "0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee",
+      "code": "0xc538d17a6aacc5271be5f51b891e2e92c8187edd",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x74f4226252e8b8ab9ab61de1a30d84a8456913ecb1d033634b11fa2f7e3c0903"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xa329b27fbe0f7b7f92060a9e5370fdf03d60e5c4835f09d7234e5bbecf417ccf"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2023-12/FloorProtocol_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "post-mortem",
-      "url": "https://protos.com/floor-protocol-exploited-bored-apes-and-pudgy-penguins-gone/"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x16ac4a47a3f0b3988f4cf4c633965a058fb24bb04caa77b7d0edc28ec1f66c1c"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x74f4226252e8b8ab9ab61de1a30d84a8456913ecb1d033634b11fa2f7e3c0903"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0xa329b27fbe0f7b7f92060a9e5370fdf03d60e5c4835f09d7234e5bbecf417ccf",
-        "0xec8f6d8e114caf8425736e0a3d5be2f93bbea6c01a50a7eeb3d61d2634927b40",
-        "0xfb9942a119c45adab3980639cd829e57b41449e3b82d610892da4bb921e81d9c"
-      ]
-    },
-    {
-      "id": "source-7",
-      "type": "onchain-transaction-set",
-      "chainId": 1,
-      "transactionHashes": [
-        "0x21bb82fd913e76dfdbf6ea93c7d154f6e22eacc8b3bcd948ccab712c4296eb0f",
-        "0xc806abb1562980e3abdc70af66c5401ffe5daee4e785f0b0d7a82577e73ffbef",
-        "0x0ec0f9aa9aee7f26d05adcb82819b2cbe0febd00894649d7a9ae84ab35270404"
-      ]
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1702773815/coingecko:ethereum",
-      "observedAt": 1787646268
-    },
-    {
-      "id": "source-9",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1702773815/coingecko:weth",
-      "observedAt": 1787646268
-    },
-    {
-      "id": "source-10",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T08:30:00Z",
-      "note": "Re-anchored and re-targeted. The v1 snapshot anchored to 0xec8f6d8e11 and named 0xc538d17a6aacc5271be5f51b891e2e92c8187edd as a directly deployed victim with no EIP-1967 events; both are wrong. The trace of every campaign transaction shows the attacker contract calling the periphery PROXY 0x49ad262c49c7aa708cc2df262ed53b64a17dd5ee with selector 0x97e4ee2a extMulticall((address,bytes)[]), the proxy DELEGATECALLing 0xc538d17a6aacc5271be5f51b891e2e92c8187edd, and the token pulls then issuing from the proxy's own context; 0xc538d17a is the implementation, not the execution context, and the EIP-1967 implementation slot of the proxy reads 0xc538d17a at block 18802260 while its beacon and admin slots are zero. The proxy emitted exactly six Upgraded events between its creation block 18341948 and block 18802288 - 0xfdd11b92 at 18341948 log 354, 0x36b05531 at 18349054 log 440, 0x8ad7892f at 18376076 log 107, 0x2823e35d at 18552894 log 180, 0x44533fbb at 18711582 log 116 and 0xc538d17a at 18719225 log 217 - so the last pre-exploit executable-code change is the UUPS upgradeToAndCall 0x74f4226252 at block 18719225 index 168, giving an age of 1,005,660 s (11 d 15 h 21 m). The artifact runtime hash is 0x66809080b25b91269a70fc189031e2e94d55dcc8561d4ff15e4fd99ace7e58e8 at both its creation block 18719162 and block 18802260. The extMulticall selector first appears in the third implementation 0x8ad7892f, so the defect predates this artifact, but the curve ages the artifact that actually executed. Anchor moved earlier: 0xa329b27f at block 18802261 index 49 is the first successful transaction that executes extMulticall and pulls victim assets; 0xec8f6d8e and 0xfb9942a1 follow in the same campaign, and the proxy was upgraded away to 0x2e43130b at block 18802671, closing it. Creator 0x43800c438f5d639c8b865396cb83a4efa220091b deployed both the proxy and the implementation and is unrelated to the attacker. Loss enumerated by trace_filter over every transferFrom/safeTransferFrom issued by the proxy from block 18341948 to 18830000, keeping the calls whose token owner is neither the transaction sender nor its entry contract: 14 BAYC, 36 Pudgy Penguins and 12.063212894780222877 WETH to the exploiter, plus 15 Azuki taken by two other senders and fully returned by block 18824263, which are excluded. Collection unit prices are medians of arm's-length Seaport and Blur v2 sales over blocks 18795000-18809000 with all campaign-address transactions removed."
-    }
+  "campaign": [
+    "eip155:1:0xec8f6d8e114caf8425736e0a3d5be2f93bbea6c01a50a7eeb3d61d2634927b40",
+    "eip155:1:0xfb9942a119c45adab3980639cd829e57b41449e3b82d610892da4bb921e81d9c"
   ],
-  "discovery": [
-    "seed:floor-protocol:2023-12-17:flooringperiphery-extmulticall-arbitrary-call"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-10"
+  "loss": {
+    "usd": 1708878.46,
+    "assets": [
+      {
+        "token": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+        "symbol": "BAYC",
+        "amount": "14",
+        "usd": 815022.27
+      },
+      {
+        "token": "0xbd3531da5cf5857e7cfaa92426877b022e612cf8",
+        "symbol": "PPG",
+        "amount": "36",
+        "usd": 866985.99
+      },
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "12.063212894780222877",
+        "usd": 26870.2
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/FloorProtocol_exp.sol",
+    "https://protos.com/floor-protocol-exploited-bored-apes-and-pudgy-penguins-gone/",
+    "eip155:1:0x21bb82fd913e76dfdbf6ea93c7d154f6e22eacc8b3bcd948ccab712c4296eb0f",
+    "eip155:1:0xc806abb1562980e3abdc70af66c5401ffe5daee4e785f0b0d7a82577e73ffbef",
+    "eip155:1:0x0ec0f9aa9aee7f26d05adcb82819b2cbe0febd00894649d7a9ae84ab35270404"
+  ],
   "notes": [
-    "The 15 Azuki pulled through the same defect at blocks 18802605-18802671 by 0x4526250a2e18dbd7fdd2dd0e49d58d88dc25da4c and 0x0171837c6461f551ab1eb5937374f52d6cefe7bb were all returned to their original owners within a day and are treated as rescue rather than theft."
+    "The NFTs have no DefiLlama price, so they are valued at what the attacker realised selling them into Blur bids within half an hour (the three referenced sales), priced at the ETH rate of each sale (rule 15).",
+    "Azuki pulled through the same defect by 0x4526250a2e18dbd7fdd2dd0e49d58d88dc25da4c and 0x0171837c6461f551ab1eb5937374f52d6cefe7bb are not in the campaign: all went back to their owners, directly or via Floor's recovery wallet 0xcf771bfd570a00364dedaba60ad293e06e414301 (rule 5 rescue)."
   ]
 }

@@ -1,214 +1,43 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xbb5b8573d7203e00f8fb9d4839dbeea46a8efd367eac8bed81e4ece2341c3588",
-  "protocol": {
-    "name": "LpdFi",
-    "slug": "lpd-fi"
-  },
+  "protocol": "LpdFi",
   "name": "LpdFi sizes an interest-bearing principal from the LPD spot pair price",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xbb5b8573d7203e00f8fb9d4839dbeea46a8efd367eac8bed81e4ece2341c3588",
-      "blockNumber": 113613923,
-      "transactionIndex": 1,
-      "timestamp": 1785686399
-    },
-    "attackerAddresses": [
-      "0x5d289266d85ef671561ba3f253fb79327c193f33",
-      "0x7f5ad0a998dcb3f5006f0d152bebc055979ef711"
-    ]
-  },
-  "summary": "LpdFi.buy(uint256 uAmount) lets the caller name the USDC principal that will accrue interest and charges for it in LPD at `tokenAmount = uAmount * 1e18 / token.price()`, where Lpd.price() returns the instantaneous reserve ratio of the immutable PancakeSwap LPD/USDC pair 0x85346d31743796f7d00d675629e32783a968f210 with no TWAP, liquidity floor or deviation bound. Interest then accrues from the discrete issue index in getOrder as `interestRate * uAmount * (issue - lastIssue) / BASE`, so crossing an issue boundary credits a whole 0.5 percent period regardless of elapsed time, and claimInterest funds the entitlement through removeLp, which burns protocol-owned Cake-LP with both PancakeRouter minimum outputs set to zero. The attacker swapped 43,714,602.618935976563910532 USDC into the pair to lift Lpd.price() from 0.126899043811789644 to 655.1979230244382 USDC per LPD, called buy(140324732e18) for only 214,171.515306781626633142 LPD, reversed the swap, and one second later, once getIssue() rolled from 18 to 19, claimed 701,623.66 USDC of interest, which removed the protocol's entire Cake-LP position.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 700535.1421325061,
-      "valuationTimestamp": 1785686400,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2",
-        "source-6"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
-          "symbol": "USDC"
-        },
-        "amount": "700535.142132506110424513",
-        "usdValue": 700535.1421325061,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1785686400,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-2",
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-2",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "The fraudulent interest claim burned the whole protocol-owned liquidity position: LpdFi's Cake-LP balance fell from 1678049359669752344366456 to 1 wei between blocks 113613923 and 113613924, and the pair returned 700535.142132506110424513 USDC and 4059427.508747598805052053 LPD to LpdFi. The LPD leg stayed with the contract, so the depletion measured here is the USDC leg, all of which left LpdFi in the same transaction: 693529.790711181049320267 USDC to the attacker's executor 0x7f5ad0a998dcb3f5006f0d152bebc055979ef711 and 7005.351421325061104246 USDC to the contract's configured feeAddress 0x4c0c86041013a3883d9b6331054df7ca9c977242, matching the ClaimInterest event's receivedAmount and feeAmount fields. Attacker-supplied inputs are excluded: the executor was staked with 116495 USDC by EOA 0x5d289266d85ef671561ba3f253fb79327c193f33 and consumed it in the price manipulation, and the flash liquidity used for the 43.7M USDC swap was repaid inside the setup transaction, so the attacker's own realised gain is the smaller 573034.793138448987344168 USDC that the seed row and public write-ups quote, being the EOA's 689529.793138448987344168 USDC terminal balance less its 116495 USDC stake. Not valued: the residual damage to the LPD/USDC pair and to the 4,059,427.5 LPD LpdFi retained, whose pair-implied value collapsed once the protocol's own liquidity was withdrawn.",
-    "realizedAt": 1785686400
-  },
+  "summary": "LpdFi.buy(uAmount) books an order's USD value from Lpd.price(), the LPD/USDC Pancake pair's spot reserve ratio, and pays 0.5% of it per day in USDC by removing protocol-owned LP. The attacker flash-pumped LPD, bought an order valued at a hugely inflated USD amount just before the daily rollover, dumped, and claimed a day's interest one block later.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0xce6a6e4413d85a136bbac8aae6fb46eaa77f295e",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0xce6a6e4413d85a136bbac8aae6fb46eaa77f295e",
-        "codeHash": "0x6b414ca735cc15b26706c3d4d5922316fa3b448d31dfd0429f68d7b5d16a190a"
-      },
-      "deployment": {
-        "timestamp": 1784028875,
-        "blockNumber": 109932323,
-        "transactionHash": "0x33b80fcabf1e907335d5769d339d54f5e1949676576d10d9588ec9b973d7c2d1",
-        "transactionIndex": 47,
-        "creatorAddress": "0xe6faf655211ddff58dd3bb9e643d6f5bcf33e80e"
-      },
-      "ageReset": {
+      "address": "0xce6a6e4413d85a136bbac8aae6fb46eaa77f295e",
+      "reset": {
         "kind": "deployment",
-        "description": "LpdFi is a ReentrancyGuard/Ownable contract with no proxy and no delegatecall; every collaborator address it uses is immutable or constant. Its runtime hashes to 0x6b414ca735cc15b26706c3d4d5922316fa3b448d31dfd0429f68d7b5d16a190a both at the deployment block 109932323 and at block 113613922 immediately before the exploit."
-      },
-      "codeAgeSeconds": 1657524,
-      "failureModeId": "failure:lpdfi-buy-principal-sized-by-spot-lpd-price",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6",
-          "source-7"
-        ]
+        "tx": "0x33b80fcabf1e907335d5769d339d54f5e1949676576d10d9588ec9b973d7c2d1"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x38763eebe58a69c9cc91876947d9fb83e1273604",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x38763eebe58a69c9cc91876947d9fb83e1273604",
-        "codeHash": "0x452a327874dfcf972b11d75a7ff6e19223a68d6f35bf45696c025b09f533ba65"
-      },
-      "deployment": {
-        "timestamp": 1783309349,
-        "blockNumber": 108334473,
-        "transactionHash": "0x99cb7d7802909a7eefe2781d9b3ccc59e59932ef4935704a8f718588782b2a7b",
-        "transactionIndex": 2,
-        "creatorAddress": "0xe6faf655211ddff58dd3bb9e643d6f5bcf33e80e"
-      },
-      "ageReset": {
+      "address": "0x38763eebe58a69c9cc91876947d9fb83e1273604",
+      "reset": {
         "kind": "deployment",
-        "description": "The LPD token is a plain Ownable ERC-20 with no proxy; the pair it prices against is an immutable set in its constructor and the factory and USDC addresses are constants. Its runtime hashes to 0x452a327874dfcf972b11d75a7ff6e19223a68d6f35bf45696c025b09f533ba65 both at the deployment block 108334473 and at block 113613922 immediately before the exploit."
-      },
-      "codeAgeSeconds": 2377050,
-      "failureModeId": "failure:lpd-price-from-spot-pair-reserves",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Not the knot: one link of the conjunctive failure; the sibling with the latest age reset supplies the incident's single observation."
-        ],
-        "reviewSourceIds": [
-          "source-6",
-          "source-7"
-        ]
+        "tx": "0x99cb7d7802909a7eefe2781d9b3ccc59e59932ef4935704a8f718588782b2a7b"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xbb5b8573d7203e00f8fb9d4839dbeea46a8efd367eac8bed81e4ece2341c3588"
-    },
-    {
-      "id": "source-2",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x33b80fcabf1e907335d5769d339d54f5e1949676576d10d9588ec9b973d7c2d1"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x99cb7d7802909a7eefe2781d9b3ccc59e59932ef4935704a8f718588782b2a7b"
-    },
-    {
-      "id": "source-5",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2026-08/LpdFi_exp.sol"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Anchor moved off the seed inventory row. The campaign is two consecutive transactions from EOA 0x5d289266d85ef671561ba3f253fb79327c193f33 into its own executor 0x7f5ad0a998dcb3f5006f0d152bebc055979ef711, which was created at block 113609558: the setup 0xbb5b8573d7203e00f8fb9d4839dbeea46a8efd367eac8bed81e4ece2341c3588 at 113613923:1, timestamp 1785686399, status 1, and the claim 0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6 at 113613924:1, timestamp 1785686400. The setup transaction is the earliest success that executes the defect - cast run --quick shows it swap 43714602618935976563910532 USDC into the LPD/USDC pair and then call LpdFi::buy(140324732000000000000000000), which calls Lpd::price() and pulls only 214171515306781626633142 LPD - so it is the anchor; the seed row had pointed at the claim transaction. Root cause read from the Etherscan-verified sources: Lpd.price() is `(uint256 r0, uint256 r1,) = IPancakePair(pair).getReserves(); ... return (r1 * 1e18) / r0;` over an immutable pair created in the constructor, and LpdFi.buy computes `tokenAmount = (uAmount * 1e18) / token.price()` for a caller-chosen uAmount, while getOrder credits `interestRate * uAmount * (issue - lastIssue) / BASE` off the discrete issue counter and removeLp burns protocol Cake-LP with amountAMin and amountBMin hardcoded to 0. Boundary test: neither contract has any oracle, window, bound or slippage parameter to set - pair, FACTORY_ADDRESS, USDC_ADDRESS, ROUTER_ADDRESS are immutable or constant, INTEREST_RATE, INTEREST_TOP, ISSUE_PERIOD and the zero minimum outputs are compile-time constants, and the only owner-settable state is fiStartTime via setStart. No parameter value makes the deployed code correct, so the seed row's oracle-manipulation label named the mechanism and this is an executable-code defect. Reproduced values: Lpd.price() is 126899043811789644 at block 113613922, the buy implies 140324732e36 / 214171515306781626633142 = 655.1979230244382 USDC per LPD inside the setup transaction, a 5163x lift, and price() settles at 171747550367960107 after the reversal; getIssue() is 18 at 113613922 and the ClaimInterest event in the claim transaction records lastIssue 18, issue 19, interestRate 500000, interestClaimed 701623660000000000000000, receivedAmount 693529790711181049320267, feeAmount 7005351421325061104246. Code history: Etherscan getcontractcreation puts LpdFi at 109932323:47 in 0x33b80fcabf1e907335d5769d339d54f5e1949676576d10d9588ec9b973d7c2d1 and Lpd at 108334473:2 in 0x99cb7d7802909a7eefe2781d9b3ccc59e59932ef4935704a8f718588782b2a7b, both created by 0xe6faf655211ddff58dd3bb9e643d6f5bcf33e80e, which is not the attacker; block timestamps 1784028875 and 1783309349 read from the chain; eth_getCode at the deployment blocks and at 113613922 gives 0x6b414ca735cc15b26706c3d4d5922316fa3b448d31dfd0429f68d7b5d16a190a and 0x452a327874dfcf972b11d75a7ff6e19223a68d6f35bf45696c025b09f533ba65 unchanged, neither is a proxy, so codeAgeSeconds are 1785686399 - 1784028875 = 1657524 (19.2 d) and 1785686399 - 1783309349 = 2377050 (27.5 d). Loss reconstructed from balances and receipts, not from the reported figure: LpdFi's Cake-LP holding of 1678049359669752344366456 wei at block 113613923 is 1 wei at block 113613924, the pair paid it 700535142132506110424513 wei of USDC and 4059427508747598805052053 wei of LPD, and the whole USDC leg left the contract in the same transaction to the executor and to feeAddress 0x4c0c86041013a3883d9b6331054df7ca9c977242. The attacker EOA held 116495000000000000000000 wei of USDC at block 113613922 and 689529793138448987344168 wei at block 113613924, a net 573034793138448987344168 wei, which is the published number and is smaller than the victim's gross depletion because the seed capital was consumed in the manipulation."
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "reviewer": "Claude Fable 5.1",
-      "reviewedAt": "2026-09-03T07:30:00Z",
-      "note": "Knot collapse. Lpd.price() reading spot pair reserves and LpdFi.buy sizing an interest-bearing principal from it produced one loss and neither alone does. The pair is one conjunctive failure. LpdFi was deployed after the Lpd token, so its deployment completed the exploitable combination: target-1 supplies the single knot and target-2 is supporting."
-    }
+  "campaign": [
+    "eip155:56:0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6"
   ],
-  "discovery": [
-    "dfhl:src/test/2026-08/LpdFi_exp.sol",
-    "seed:lpd-fi:2026-08-02:lpdfi-loopsdao",
-    "web:2026-08-02:loopsdao-lpdfi"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 696888.68,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "697094.149264455465425635",
+        "usd": 696888.68
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-08/LpdFi_exp.sol"
+  ],
   "notes": [
-    "The seed inventory anchored this row on the claim transaction 0x70bbe0aa3c7ef149ecb6128a06025885deaa8fef3f393a505d447d28ab3315d6 and used the rounded date timestamp 1785686400. Review re-anchors it one block earlier on the setup transaction, which is the first success that executes the defect, so the measured ages are one second longer than the snapshot's.",
-    "The 0.5 percent interest that the claim paid out was credited purely by the issue counter rolling from 18 to 19 one second after the order was opened. That accrual rule lives in LpdFi.getOrder and is covered by target-1's failure identity together with the spot-priced principal."
+    "Anchored on the setup tx that bought the inflated order (the first execution of the defect); the claim one block later, after the daily issue rolled over, is the campaign tx that took the USDC.",
+    "Loss is the pair's net USDC outflow in the claim: the USDC leg of LpdFi's burned Cake-LP minus the USDC the attacker donated to the pair just before, which it took back. The LPD leg stayed with LpdFi."
   ]
 }

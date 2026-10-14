@@ -1,156 +1,49 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xd58f3ef6414b59f95f55dae1acb3d5d6e626acf5333917c6d43fe422d98ac7d3",
-  "protocol": {
-    "name": "LAXO_Token",
-    "slug": "laxo-token"
-  },
+  "protocol": "LAXO_Token",
   "name": "LAXO_Token",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xd58f3ef6414b59f95f55dae1acb3d5d6e626acf5333917c6d43fe422d98ac7d3",
-      "blockNumber": 82730141,
-      "transactionIndex": 44,
-      "timestamp": 1771774364
-    },
-    "attackerAddresses": [
-      "0x17f9132e66a78b93195b4b186702ad18fdcd6e3d"
-    ]
-  },
-  "summary": "LAXO's transfer and liquidity accounting reduced the token-side balance of its own LAXO/USDT pair, breaking reserve accounting across a two-transaction campaign and depleting the pair's USDT reserve.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 334312.0914738223,
-      "valuationTimestamp": 1771774364,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-3",
-        "source-5"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
-          "symbol": "USDT"
-        },
-        "amount": "334312.091473822303793277",
-        "usdValue": 334312.0914738223,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1771774364,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-3",
-            "source-5"
-          ]
-        },
-        "sourceIds": [
-          "source-3",
-          "source-5"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross loss is the sum of exact net USDT depletion from LAXO/USDT pair 0xf05a6361e6f851bbff39c4f1d9ad4b661d3180b3 in two successful campaign receipts. In the anchor, the pair receives 350,000 USDT and sends 613,903.599313881523062936 USDT, losing 263,903.599313881523062936 USDT. In the second transaction, it receives 110,000 USDT and sends 180,408.492159940780730341 USDT, losing 70,408.492159940780730341 USDT. Their sum is 334,312.091473822303793277 USDT. Archive balances reproduce each component: 420,327.567509178068063660 to 156,423.968195296545000724 USDT across the anchor block, then 156,428.270808909321478144 to 86,019.778648968540747803 USDT across the second block. An unrelated 4.302613612776477420-USDT pair inflow between the two blocks is excluded. The two bounded precursors have no LAXO or USDT pair flow, and the sender has no later transaction through block 83,000,000. Campaign proceeds split into 182,381.343308214995028383 USDT sent to the payout address, 151,700.748165607308764894 USDT routed through LAXO to token fee recipients, and 230 USDT of financing fees. All are direct consequences of pair outflow, while all value returned to the pair is already netted; recipient and financing treatment therefore do not reduce gross LP depletion. USDT is valued at par.",
-    "realizedAt": 1771774555
-  },
+  "summary": "LAXO's sell hook burned the sold amount from its USDT pair and synced before the sale, and buys sent to the fee-excluded PancakeSwap router skipped the buyer quota. With flash-loaned USDT the attacker bought LAXO to the router, swept it out via a dust-pair removeLiquidity, then sold to burn the pair's LAXO and swapped out its USDT.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x62951cad7659393bf07fbe790cf898a3b6d317cb",
-      "relationship": "direct",
-      "codeArtifact": {
-        "address": "0x62951cad7659393bf07fbe790cf898a3b6d317cb",
-        "codeHash": "0x7d6525c7cea9a964c22767b8d1c2c56f3c55468a6ee998e35499503468e95119"
-      },
-      "deployment": {
-        "timestamp": 1770917001,
-        "blockNumber": 80825171,
-        "transactionHash": "0xe813112ddd9e64b3150c97ce15ea11f41bfd8679c2689adf77ab48ac7ae82697",
-        "transactionIndex": 79,
-        "creatorAddress": "0xbb3a8e2982c528e4e0298404864114bdc18598c6"
-      },
-      "ageReset": {
+      "address": "0x62951cad7659393bf07fbe790cf898a3b6d317cb",
+      "reset": {
         "kind": "deployment",
-        "description": "LAXO is directly deployed. Its 8,484-byte runtime is absent one block before creation and has code hash 0x7d6525c7cea9a964c22767b8d1c2c56f3c55468a6ee998e35499503468e95119 at deployment and immediately before the incident; both EIP-1967 code-selection slots are zero. The pair-balance defect is in the deployed transfer path and does not depend on a later configuration change."
-      },
-      "codeAgeSeconds": 857363,
-      "failureModeId": "failure:laxo-transfer-liquidity-pair-balance-accounting",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3",
-          "source-4"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+        "tx": "0xe813112ddd9e64b3150c97ce15ea11f41bfd8679c2689adf77ab48ac7ae82697"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xd58f3ef6414b59f95f55dae1acb3d5d6e626acf5333917c6d43fe422d98ac7d3"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "ad353ba25fbb897c56d64c28ce92ee10ac68cad2",
-      "path": "src/test/2026-02/LAXO_Token_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-29T11:15:39Z",
-      "note": "Reviewed both successful campaign receipts and call traces, verified deployed source, commit-pinned technical reproduction, direct creation receipt, archive runtime code, EIP-1967 slots, pair identity and balances, and the sender's bounded transaction history. The anchor is successful at block 82730141 index 44, timestamp 1771774364, and its trace reaches direct LAXO token 0x62951cad7659393bf07fbe790cf898a3b6d317cb. Pair 0xf05a6361e6f851bbff39c4f1d9ad4b661d3180b3 reports token0 USDT and token1 LAXO before the incident. The verified source and transaction logs establish that deployed transfer/liquidity accounting reduces the pair-held LAXO balance and breaks its reserve accounting. The same sender calls the same campaign helper again in 0x4251977f...aa34 at block 82730566 index 49, timestamp 1771774555. The anchor pair flow is 350,000 USDT in and 613,903.599313881523062936 USDT out, exact loss 263,903.599313881523062936 USDT. The second is 110,000 USDT in and 180,408.492159940780730341 USDT out, exact loss 70,408.492159940780730341 USDT. Archive pair balances reproduce each receipt component. A separate 4.302613612776477420-USDT pair inflow between the two blocks is excluded rather than netted against either receipt. The two preceding sender transactions have no LAXO or USDT pair flow, and the sender has no further transaction through block 83000000. Total gross pair depletion is 334,312.091473822303793277 USDT. Receipt destinations reconcile it to 182,381.343308214995028383 USDT at the payout address, 151,700.748165607308764894 USDT routed through the token to fee recipients, and 230 USDT of financing fees; recipient and fee treatment do not reduce LP depletion. LAXO was directly created by 0xbb3a8e2982c528e4e0298404864114bdc18598c6 in 0xe813112d...2697 at block 80825171 index 79, timestamp 1770917001. Code is absent one block earlier, and the 8,484-byte runtime hashes to 0x7d6525c7cea9a964c22767b8d1c2c56f3c55468a6ee998e35499503468e95119 at creation and immediately before the incident. Both EIP-1967 slots are zero. Deployment is therefore the latest age reset, 1771774364 - 1770917001 = 857,363 seconds. This exact gross boundary replaces the seed's rounded $137,000 attacker-proceeds estimate."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xe813112ddd9e64b3150c97ce15ea11f41bfd8679c2689adf77ab48ac7ae82697"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction-set",
-      "chainId": 56,
-      "transactionHashes": [
-        "0xd58f3ef6414b59f95f55dae1acb3d5d6e626acf5333917c6d43fe422d98ac7d3",
-        "0x4251977f909f4741ece8ba6682bda51cce82e0a6617d25e1d627f97f18b3aa34"
-      ]
-    }
-  ],
-  "discovery": [
-    "dfhl:src/test/2026-02/LAXO_Token_exp.sol",
-    "seed:laxo-token:2026-02-22:laxo-token"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 420141.24,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "420356.227952653547130755",
+        "usd": 420141.24
+      }
     ]
   },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-02/LAXO_Token_exp.sol"
+  ],
   "notes": [
-    "Replaces the seed's first-transaction attacker-proceeds estimate with exact gross USDT LP depletion across the complete two-transaction campaign."
+    "LAXO is immutable and later writes are balances, so its deployment is the reset; buy quota, enableBuy and the deflation start are gates.",
+    "Campaign: the attacker's second tx and eleven copycats within two hours, selected as every LAXO Transfer from the pair to the PancakeSwap router (the quota bypass), each confirmed as a net USDT drain of the pair.",
+    "Loss is the pair's net USDT depletion per tx, including USDT the token's fee swap routed to project wallets; burned LAXO is not valued separately."
+  ],
+  "campaign": [
+    "eip155:56:0x4251977f909f4741ece8ba6682bda51cce82e0a6617d25e1d627f97f18b3aa34",
+    "eip155:56:0x44c769787d58c87dc30b21e818d374f8328a7bbecd49c2fc0a3f629bfb0a3cb2",
+    "eip155:56:0x2d8871b4dfb847c98e4ab87210e927c0d5d52e95337104d65dc7cd9c2167b14f",
+    "eip155:56:0xc304f6322467de323416fb6395025353e988a8d82b24727209feb667a23d6555",
+    "eip155:56:0xddafcef1d88fb9e4740ca2fc96c30ef7d8135b8b0af3ce8613cf26e71c7d1f63",
+    "eip155:56:0xdd0c3256c5a05853356762ec9616ad6d7b2f047945c15caee96ac7d3720988bd",
+    "eip155:56:0x7b231a71a8833ad649e6db0d198d886bf404188cf943a240329317ff1aed5fd7",
+    "eip155:56:0x3ee8295f7cda6f9ecb5add3b5c388e01e7c2fc394f0770c3df07d07336141f51",
+    "eip155:56:0xfb1a8c805aeeb166edeb80fca4b764dcfdc3a90fb20bbe5ef706aad50b01f593",
+    "eip155:56:0xa00aa10cf87269d5f4b1937ccbe4976d1a77e8986161e7184f6af9a8a8b91545",
+    "eip155:56:0x216d0eebec36f64471cc5179fdba6e40597fe6c0af56cb972b4ac1ee0f616740",
+    "eip155:56:0x7e207d492f2faa5e49011c4e14bc2d6454e0a21d9d703712dc5be8dc842fc3a1",
+    "eip155:56:0x7c6503dc7e1e590ea42ab83a5cccf3394161589bff369703d5971bab5ab6da71"
   ]
 }

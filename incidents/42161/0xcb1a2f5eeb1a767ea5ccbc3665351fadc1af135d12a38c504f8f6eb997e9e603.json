@@ -1,271 +1,60 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:42161:0xcb1a2f5eeb1a767ea5ccbc3665351fadc1af135d12a38c504f8f6eb997e9e603",
-  "protocol": {
-    "name": "LavaLending",
-    "slug": "lavalending"
-  },
+  "protocol": "LavaLending",
   "name": "LavaLending UniV3Wrapper one-sided unclaimed-fee inflation",
-  "incident": {
-    "chainId": 42161,
-    "exploit": {
-      "transactionHash": "0xcb1a2f5eeb1a767ea5ccbc3665351fadc1af135d12a38c504f8f6eb997e9e603",
-      "blockNumber": 195240643,
-      "transactionIndex": 1,
-      "timestamp": 1711666653
-    },
-    "attackerAddresses": [
-      "0x851aa754c39bf23cdaac2025367514dfd7530418",
-      "0x3e52c217a902002ca296fe6769c22fedaee9fda1",
-      "0x42fae47296b26385c4a5b62c46e4305a27c88988"
-    ]
-  },
   "summary": "LiquidityProviderBase._limitFees() caps a Uniswap V3 position's pending fees only when BOTH token fee amounts exceed their max-APR budget (`if (totalFees0 > max0 && totalFees1 > max1)`), so fees accrued in a single token are returned uncapped. UniV3Wrapper.getAssetsBasedOnPrice() adds those uncapped fees to the oracle-priced fair reserves, and Lava's WrapperOracle divides that sum by totalSupply to price the USDC/USDC.e wrapper LP token. The attacker minted a dust LP position, drove one-directional swaps through the 0x8e295789 USDC/USDC.e pool to accrue ~100k of token0-only fees against a 0.000999-share supply, and borrowed the Lava market out against the inflated collateral. The Chainlink-derived sqrtPriceX96 in WrapperOracle defends only the getAmountsForLiquidity() leg; the unclaimed-fee addend bypasses it entirely.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 343961.829341,
-      "valuationTimestamp": 1711666653,
-      "method": "incident-price",
-      "sourceIds": [
-        "source-1",
-        "source-6",
-        "source-7",
-        "source-8"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-          "symbol": "USDC"
-        },
-        "amount": "78401.109923",
-        "usdValue": 78401.109923,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1711666653,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
-          "symbol": "USDC.e"
-        },
-        "amount": "97565.718958",
-        "usdValue": 97565.718958,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1711666653,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "symbol": "USDT"
-        },
-        "amount": "60349.016947",
-        "usdValue": 60349.016947,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1711666653,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-6"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          "symbol": "WETH"
-        },
-        "amount": "20.332935232888003060",
-        "usdValue": 72470.03776893564,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1711666653,
-          "unitPriceUsd": 3564.17,
-          "sourceIds": [
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 42161,
-          "tokenAddress": "0x5979d7b546e38e414f7e9822514be443a4800529",
-          "symbol": "wstETH"
-        },
-        "amount": "8.525476552027716376",
-        "usdValue": 35175.94574378,
-        "valuation": {
-          "method": "incident-price",
-          "timestamp": 1711666653,
-          "unitPriceUsd": 4125.98,
-          "sourceIds": [
-            "source-8"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-6"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Components are exact ERC-20 Transfer nettings from the single anchor receipt, summed over the depleted victim addresses: the Lava aToken reserves aUSDC 0x16cb622cae7ad9fd2b0780b2026ed301414781fe, aUSDC.e 0x16cba9a6a9bb38e339d4250da0afd919c6bdbdfe, aUSDT 0x8da6bc74b2534030cd38c996c395b914990fa684, aWETH 0xec9b99c8262b72d846f0f80fce76af7d3c7c6af6 and awstETH 0xcb1332663a39f238bcd1cc7621e3e24a50251b94, plus the wrapper's own Uniswap V3 position in pool 0x8e295789c9465487074a65b1ae9ce0351172393f (25,644.648649 USDC and 49,038.308971 USDC.e) and the wrapper contract balance (1.278268 USDC), which the attacker redeemed with the LP shares he borrowed uncollateralised. Every one of the five reserves was drained to exactly zero. The 923.684256 USDC and 1,350.185377 USDC.e retained by the Uniswap V3 flash pools are financing fees paid out of the stolen funds and are therefore included in gross depletion rather than netted off; the attacker's own end balances were 77,477.425666 USDC, 96,215.533581 USDC.e, 60,349.016947 USDT, 8.525476552027716376 wstETH and 20.332763573538003060 ETH after gas. Flash-loan principals from Balancer, Aave V3 and the Uniswap V3 pools were repaid inside the transaction and are not counted. Stables are valued at par; WETH uses the DefiLlama ETH price and wstETH the DefiLlama mainnet wstETH price at the incident timestamp, both transferred in kind rather than sold, so no price impact applies."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x10bda01ac4e644fd84a04dab01e15a5edcee46dd",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0xf6b3c18023c1e387a673b3101c73fc985290fbd9",
-        "codeHash": "0x2883fd173f2ed2037da0bd18739964089354b7012895fc09fc8666d56cd252d4"
-      },
-      "deployment": {
-        "timestamp": 1708330012,
-        "blockNumber": 182270155,
-        "transactionHash": "0xeddb97760876069fcdb2c74671ce28197193122d912f9976c8ccb85ecef93de1",
-        "transactionIndex": 4,
-        "creatorAddress": "0xe56a6ca72979a511782cf6d4d0e3be80b6f1e681"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1709821709,
-        "blockNumber": 188026419,
-        "transactionHash": "0xe7a3231de33ef552d90cd757c1329aee9dc593f66b9bc0af00f7a00c6d12f97d",
-        "transactionIndex": 4,
-        "logIndex": 20,
-        "mechanism": {
-          "type": "event",
-          "address": "0x10bda01ac4e644fd84a04dab01e15a5edcee46dd",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The ERC-1967 wrapper proxy emitted exactly two Upgraded events before the exploit: one at creation to 0xedc9c9bbc6308f02f0500b50a8c318e2e46d0824 and this one, the last pre-exploit change, to the defect-bearing UniV3Wrapper implementation 0xf6b3c18023c1e387a673b3101c73fc985290fbd9."
-      },
-      "codeAgeSeconds": 1844944,
-      "failureModeId": "failure:lava-univ3wrapper-one-sided-unclaimed-fee-cap-bypass",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-4",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
+      "address": "0x10bda01ac4e644fd84a04dab01e15a5edcee46dd",
+      "code": "0xf6b3c18023c1e387a673b3101c73fc985290fbd9",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xe7a3231de33ef552d90cd757c1329aee9dc593f66b9bc0af00f7a00c6d12f97d"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xcb1a2f5eeb1a767ea5ccbc3665351fadc1af135d12a38c504f8f6eb997e9e603"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://quadrigainitiative.com/casestudy/lavalendingflashloanattack.php"
-    },
-    {
-      "id": "source-3",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "b3719ce7fb93ee6f743853ede9471e1a8bed1de0",
-      "path": "src/test/2024-03/LavaLending_exp.sol"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xeddb97760876069fcdb2c74671ce28197193122d912f9976c8ccb85ecef93de1"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 42161,
-      "transactionHash": "0xe7a3231de33ef552d90cd757c1329aee9dc593f66b9bc0af00f7a00c6d12f97d"
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-26T00:00:00Z",
-      "note": "Anchor: eth_getTransactionReceipt for 0xcb1a2f5e... returns status 1 at block 195240643 index 1, timestamp 1711666653, sender 0x851aa754c39bf23cdaac2025367514dfd7530418 nonce 517. I pulled the sender's full Arbiscan tx list for blocks 194000000-196500000 (45 transactions, mostly repeated 0x848f244a calls into its bot 0x3e52c217a902002ca296fe6769c22fedaee9fda1) and cross-checked it against every log ever emitted by the wrapper 0x10bda01ac4e644fd84a04dab01e15a5edcee46dd up to the exploit block: 83 logs in 34 transactions, of which exactly one, this anchor, comes from the attacker. The campaign is therefore this single transaction; the sender's later nonces 519-523 are only cash-out ERC-20 transfers. Root cause read from the verified sources: LiquidityProviderBase._limitFees() caps pending fees only under the conjunction totalFees0 > max0 && totalFees1 > max1, so a one-sided fee accrual is passed through uncapped; UniV3Wrapper.getAssetsBasedOnPrice() adds getUnclaimedFees() and balance0/balance1 on top of LiquidityAmounts.getAmountsForLiquidity(totalLiquidity, price); WrapperOracle 0x7746872c6892bcfb4254390283719f2bd2d4da76 (which DeFiHackLabs labels the vulnerable contract) derives its sqrtPriceX96 from Chainlink and is itself correct - it only protects the fair-reserve leg, so the defect is in the wrapper artifact, not the oracle. Target: the anchor's callTracer shows the executing context is the ERC-1967 proxy 0x10bda01ac4e644fd84a04dab01e15a5edcee46dd, whose every frame DELEGATECALLs 0xf6b3c18023c1e387a673b3101c73fc985290fbd9. eth_getStorageAt on slot 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc at block 195240642 returns 0x...f6b3c18023c1e387a673b3101c73fc985290fbd9. The implementation's 20,734-byte runtime hashes to 0x2883fd173f2ed2037da0bd18739964089354b7012895fc09fc8666d56cd252d4 at its own creation block 188026392, at the upgrade block 188026419 and at block 195240642, so the artifact is unchanged. Code history: eth_getLogs for topic0 0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b on the proxy from genesis to the exploit block returns exactly two Upgraded events, the creation one (block 182270155, tx index 4, log index 16, implementation 0xedc9c9bbc6308f02f0500b50a8c318e2e46d0824) and block 188026419, tx index 4, log index 20, implementation 0xf6b3c18023c1e387a673b3101c73fc985290fbd9; there is no third. Proxy and implementation were both created by the Lava deployer 0xe56a6ca72979a511782cf6d4d0e3be80b6f1e681, unrelated to the attacker. codeAgeSeconds = 1711666653 - 1709821709 = 1844944 s (21.35 days). Loss: netting every ERC-20 Transfer in the anchor receipt gives victim depletion of 78,401.109923 USDC, 97,565.718958 USDC.e, 60,349.016947 USDT, 20.332935232888003060 WETH and 8.525476552027716376 wstETH; all five Lava reserves went to a zero balance, and the wrapper's getAssets() fell from 100,959.807705 / 4.684079 to 192.729695 / 0 with totalSupply falling from 0.000999764 to 0.000001097. The USDC and USDC.e columns balance exactly against the attacker's proceeds plus the Uniswap flash fees (78,401.109923 = 77,477.425666 + 923.684256 + 0.000001; 97,565.718958 = 96,215.533581 + 1,350.185377), which confirms nothing is missing or double-counted."
-    },
-    {
-      "id": "source-7",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1711666653/coingecko:ethereum",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1711666653/ethereum:0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
-      "observedAt": 1787663821
-    },
-    {
-      "id": "source-9",
-      "type": "post-mortem",
-      "url": "https://hackmd.io/@LavaSecurity/03282024"
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6"
+  "loss": {
+    "usd": 343961.829341,
+    "assets": [
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "78401.109923",
+        "usd": 78401.109923
+      },
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "97565.718958",
+        "usd": 97565.718958
+      },
+      {
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT",
+        "amount": "60349.016947",
+        "usd": 60349.016947
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "20.332935232888003060",
+        "usd": 72470.03776893564
+      },
+      {
+        "token": "0x5979d7b546e38e414f7e9822514be443a4800529",
+        "symbol": "wstETH",
+        "amount": "8.525476552027716376",
+        "usd": 35175.94574378
+      }
     ]
   },
-  "discovery": [
-    "web:2024-03-29:lava"
+  "refs": [
+    "https://quadrigainitiative.com/casestudy/lavalendingflashloanattack.php",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-03/LavaLending_exp.sol",
+    "https://hackmd.io/@LavaSecurity/03282024"
+  ],
+  "notes": [
+    "The ERC-1967 wrapper proxy emitted exactly two Upgraded events before the exploit: one at creation to 0xedc9c9bbc6308f02f0500b50a8c318e2e46d0824 and this one, the last pre-exploit change, to the defect-bearing UniV3Wrapper implementation 0xf6b3c18023c1e387a673b3101c73fc985290fbd9.",
+    "Components are exact ERC-20 Transfer nettings from the single anchor receipt, summed over the depleted victim addresses: the Lava aToken reserves aUSDC 0x16cb622cae7ad9fd2b0780b2026ed301414781fe, aUSDC.e 0x16cba9a6a9bb38e339d4250da0afd919c6bdbdfe, aUSDT 0x8da6bc74b2534030cd38c996c395b914990fa684, aWETH 0xec9b99c8262b72d846f0f80fce76af7d3c7c6af6 and awstETH 0xcb1332663a39f238bcd1cc7621e3e24a50251b94, plus the wrapper's own Uniswap V3 position in pool 0x8e295789c9465487074a65b1ae9ce0351172393f (25,644.648649 USDC and 49,038.308971 USDC.e) and the wrapper contract balance (1.278268 USDC), which the attacker redeemed with the LP shares he borrowed uncollateralised. Every one of the five reserves was drained to exactly zero. The 923.684256 USDC and 1,350.185377 USDC.e retained by the Uniswap V3 flash pools are financing fees paid out of the stolen funds and are therefore included in gross depletion rather than netted off; the attacker's own end balances were 77,477.425666 USDC, 96,215.533581 USDC.e, 60,349.016947 USDT, 8.525476552027716376 wstETH and 20.332763573538003060 ETH after gas. Flash-loan principals from Balancer, Aave V3 and the Uniswap V3 pools were repaid inside the transaction and are not counted. Stables are valued at par; WETH uses the DefiLlama ETH price and wstETH the DefiLlama mainnet wstETH price at the incident timestamp, both transferred in kind rather than sold, so no price impact applies."
   ]
 }

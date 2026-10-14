@@ -1,215 +1,41 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:56:0xcc71a3bb131c73462b0f25533070113a63c85e942a22e18bc945eec184eb5799",
-  "protocol": {
-    "name": "BeatSwap",
-    "slug": "beatswap"
-  },
+  "protocol": "BeatSwap",
   "name": "BeatSwap LiquidityVestingConvert slot0 spot-price BTX quote",
-  "incident": {
-    "chainId": 56,
-    "exploit": {
-      "transactionHash": "0xcc71a3bb131c73462b0f25533070113a63c85e942a22e18bc945eec184eb5799",
-      "blockNumber": 120873720,
-      "transactionIndex": 5,
-      "timestamp": 1788954863
-    },
-    "attackerAddresses": [
-      "0x67b2f08683a735cfe6f6e57fa86909b62218c2a1",
-      "0xaff5a574941981cf7f994f2820f7fa26fe031ded",
-      "0x371700b96b484b501812e92cab5a388d105a922d"
-    ]
-  },
-  "summary": "BeatSwap's LiquidityVestingConvert and LiquidityVestingConvertOnce let anyone deposit USDT and then pair it with BTX from the contract's own reserve. The BTX amount comes from a single slot0 spot price read from the PancakeSwap V3 USDT/BTX pool, and the only slippage check compares the mint against that same quote. Using flash loans, the attacker crashed the pool's BTX price and deposited 10,000 and 2,000 USDT. The two contracts put essentially their whole reserves, 3.07M BTX, into bad-tick LP positions. The attacker then bought the BTX back out of the pool and sold it.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 79796.00089853126,
-      "valuationTimestamp": 1788954863,
-      "method": "realised-proceeds",
-      "sourceIds": [
-        "source-1",
-        "source-7"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 56,
-          "tokenAddress": "0xaa242a47f4cc074e59cbc7d65309b1f21202aaa3",
-          "symbol": "BTX"
-        },
-        "amount": "3072493.276542911113913396",
-        "usdValue": 79796.00089853126,
-        "valuation": {
-          "method": "realised-proceeds",
-          "timestamp": 1788954863,
-          "unitPriceUsd": 0.025971090484635862,
-          "sourceIds": [
-            "source-1",
-            "source-7"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-7"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Gross BTX depletion of the two vesting contracts in the single exploit transaction: 1240403.080995608300764898 BTX from LiquidityVestingConvert plus 1832090.195547302813148498 from LiquidityVestingConvertOnce. Each amount left its contract's reserve for the V3 pool as the BTX leg of the manipulated LP mint. The LP NFTs remain in the vesting contracts but are recorded to the attacker's vesting entries, which only the attacker can withdraw, and the attacker bought the BTX back out of the pool in the same transaction. The attacker sold 3067057.865885379791008385 BTX in the same transaction for 79654.837356523361110351 USDT at par, 0.02597109 USD per BTX. DefiLlama spot at 1788954700 was 0.031656 (source-8), so the dump moved the price and realised proceeds value the whole depletion. The 5435.410657531322905011 BTX difference stayed in the pool. The attacker's 12,000 USDT deposits (9,000 to treasury 0xaa2ea785744b123b1e8a1679c8e7ab9b255aad94), its flash loans and its swap round-trip are attacker inputs and are not netted. Net attacker profit was 63704.837356523361110351 USDT.",
-    "realizedAt": 1788954863
-  },
+  "summary": "LiquidityVestingConvert and its Once variant paired a deposit's USDT with BTX from their own reserves, sized from the V3 pool's slot0 spot price and checked only against that same quote. With flash loans the attacker crashed the BTX price, deposited 10,000 and 2,000 USDT so both contracts put nearly all their BTX into LP at that price, then bought it back and sold it.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x1e647faadb05f2124bfccfc003edc06d1a90bf5d",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1766126061,
-        "blockNumber": 72165446,
-        "transactionHash": "0x420d2f32bfa8f843a5c607a44bb2498a629bbcbeb5ea942ade4c10c4bf2b5919",
-        "transactionIndex": 78,
-        "creatorAddress": "0xc5a974c004f1c381ca0246d1a34f6ceddd84884a"
-      },
-      "ageReset": {
+      "address": "0x1e647faadb05f2124bfccfc003edc06d1a90bf5d",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable non-proxy LiquidityVestingConvert: TARGET_POOL, the position manager and the spot-quote logic are compile-time constants. The only later configuration writes are setMinDeposit(10000e18) and a transferOwnership; neither is necessary to the manipulable quote."
-      },
-      "codeAgeSeconds": 22828802,
-      "failureModeId": "failure:beatswap-liquidity-vesting-slot0-spot-quote",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-6"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x1e647faadb05f2124bfccfc003edc06d1a90bf5d",
-        "codeHash": "0xcca39eb783a8440b5858da5379c01edc9532f28c5cf9f358306ab79be3ba84a7"
+        "tx": "0x420d2f32bfa8f843a5c607a44bb2498a629bbcbeb5ea942ade4c10c4bf2b5919"
       }
     },
     {
-      "id": "target-2",
-      "executionAddress": "0x9a7a92240fbac4030b65a6e61239928d6bcc716f",
-      "relationship": "direct",
-      "deployment": {
-        "timestamp": 1766125968,
-        "blockNumber": 72165322,
-        "transactionHash": "0x9efe95db394387a0bea221eaba43c92b4dd4c6dd74d0e4e0443e07b353354d65",
-        "transactionIndex": 65,
-        "creatorAddress": "0xc5a974c004f1c381ca0246d1a34f6ceddd84884a"
-      },
-      "ageReset": {
+      "address": "0x9a7a92240fbac4030b65a6e61239928d6bcc716f",
+      "reset": {
         "kind": "deployment",
-        "description": "Immutable non-proxy LiquidityVestingConvertOnce: the same _calculateQuote and _executeMint logic, with a one-deposit-per-address fixed amount. setFixedDeposit(2000e18) at block 72168002 only sets the deposit size, which scales the loss, and is not necessary to the manipulable quote."
-      },
-      "codeAgeSeconds": 22828895,
-      "failureModeId": "failure:beatswap-liquidity-vesting-slot0-spot-quote",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-4",
-          "source-5",
-          "source-6"
-        ],
-        "ageSourceIds": [
-          "source-4",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": false,
-        "limitations": [
-          "Sibling runtime with the same defect, deployed at block 72165322, 124 blocks (93 s) before LiquidityVestingConvert (target-1), which carries the knot."
-        ],
-        "reviewSourceIds": [
-          "source-6"
-        ]
-      },
-      "codeArtifact": {
-        "address": "0x9a7a92240fbac4030b65a6e61239928d6bcc716f",
-        "codeHash": "0x04df061b67b324eeead6edb028eb665c01f122e55fe31d607b3f7c87e3080226"
+        "tx": "0x9efe95db394387a0bea221eaba43c92b4dd4c6dd74d0e4e0443e07b353354d65"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0xcc71a3bb131c73462b0f25533070113a63c85e942a22e18bc945eec184eb5799"
-    },
-    {
-      "id": "source-2",
-      "type": "source-code",
-      "repository": "https://github.com/SunWeb3Sec/DeFiHackLabs",
-      "commit": "8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1",
-      "path": "src/test/2026-09/BeatXswap_exp.sol"
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x420d2f32bfa8f843a5c607a44bb2498a629bbcbeb5ea942ade4c10c4bf2b5919"
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 56,
-      "transactionHash": "0x9efe95db394387a0bea221eaba43c92b4dd4c6dd74d0e4e0443e07b353354d65"
-    },
-    {
-      "id": "source-5",
-      "type": "review-note",
-      "note": "Verified sources: Etherscan V2 contract.getsourcecode chainid=56. 0x1e647faadb05f2124bfccfc003edc06d1a90bf5d is LiquidityVestingConvert, SHA-256 of the SourceCode field 4c73689d35ade832f5357598ffc6552a6500f391df365a65b94527d5ca811adb. 0x9a7a92240fbac4030b65a6e61239928d6bcc716f is LiquidityVestingConvertOnce, SHA-256 4f94432a00cb1b42383bac13a40c213ad1f769ce11090615834b3f77eeaa6c0a. Both use v0.8.27+commit.40a35a09, 200 runs, cancun and Proxy=0. deposit(uint256) is nonReentrant/whenNotPaused only. It sends 75% of the USDT to treasury and calls _executeMint(25%). _calculateQuote gives requiredBTX = usdtIn*sqrtPriceX96^2/2^192 from TARGET_POOL.slot0() (constant 0xa5db84d7bccb799fb31bd3c417d04d5bc29da96d). The range is currentTick±6000 from the same slot0. Mint uses amount1Min = requiredBTX*97/100 and recipient = the contract. The VestingInfo.user is msg.sender, and only that user can withdraw() the LP to themselves after vestingDuration."
-    },
-    {
-      "id": "source-6",
-      "type": "review-note",
-      "note": "Reviewed anchor, root cause, earliest use and age history. eth_getTransactionReceipt(source-1) shows status 1 at block 120873720, tx index 5. It is a contract creation by 0x67b2...c2a1 (nonce 0) that creates 0xaff5...1ded, which creates 0x3717...922d. Transfer logs: 15950 USDT Moolah flash (log 100) and 6M BTX Pancake Infinity Vault take (101). BTX goes into pool 0xa5db...96d (103), which crashes sqrtPrice. deposit(10000e18) into target-1 (logs 106/108/111/113): 7500 USDT to treasury, 2499.919 USDT plus 1240403.080995608300764898 BTX from target-1 into the pool. A second dump (121), then deposit(2000e18) into target-2 (124/126/129/131): 1832090.195547302813148498 BTX into the pool. The reverse swap returns 8779925.426 BTX to the attacker (138/139). The flash is repaid (141). Sales: 82500 BTX on 0x996a...4079 for 2142.196762309417745687 USDT (142/143), and 2984557.865885379791008385 BTX to the Vault for 77512.640594213943364664 USDT (146/147). Payout 63704.837356523361110351 USDT to the EOA (153). BTX.balanceOf at blocks 120873719/120873720: target-1 1240403.093400821911026095 -> 0.012405, target-2 1832090.213706985734068726 -> 0.018160. Earliest use: Etherscan getLogs LiquidityProvisioned topic 0x624c819b89b05175de57a88c01a9a561c8fa774a2e00e1be1a1be6d2a9789ee7 from block 0 to latest finds 27 events on target-1 and 90 on target-2. That includes internal calls. Implied BTX per LP-USDT (totalVestingAmount/2.196/usdtForLP) is 84.3-112.6 for every event before source-1, which is 496.18 on target-1 and 3664.92 on target-2. So there was no earlier manipulated deposit, and source-1 is the last deposit on both. Age: eth_getCode is empty at blocks 72165445 (target-1) and 72165321 (target-2). keccak256 equals the recorded hashes at 72165446/72165322, at 120873719 and at latest. Source-3/source-4 receipts give top-level creations by 0xc5a974c004f1c381ca0246d1a34f6ceddd84884a at tx indices 78/65. There is no proxy, delegatecall or selfdestruct path. Etherscan txlist (295/880 txs) non-user calls: target-1 setMinDeposit(10000e18) 0xfb27128280dd4585cb480cd4455c2376831dfa8e54621ac2226e64b2a5199888 (block 72167964) and transferOwnership to 0x62382d13b909b611c17b54eb19f8e5bc3d9c1e24 (block 72171012). Target-2 setFixedDeposit(2000e18) 0x91a37adeaeae39675e09356bf47d67781e5deddc37cb9fc10c514fd9b81f032b (block 72168002) and two transferOwnership calls. Deposit bounds do not create the spot-quote flaw, so deployment supplies the age. paused() was false at 120873719.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:13:42Z"
-    },
-    {
-      "id": "source-7",
-      "type": "review-note",
-      "note": "Loss recipe: sum the source-1 receipt Transfer logs of BTX 0xaa242a47f4cc074e59cbc7d65309b1f21202aaa3 (decimals 18) whose from is target-1 (log 113) or target-2 (log 131). Result: 3072493.276542911113913396 BTX. There are no other BTX outflows from either contract in the transaction. Realised unit price = (77512.640594213943364664 + 2142.196762309417745687) USDT / (2984557.865885379791008385 + 82500) BTX = 0.025971090484635862, with BSC-USD 0x55d398326f99059ff775485246999027b3197955 at par.",
-      "reviewer": "Claude Opus 5.5",
-      "reviewedAt": "2026-09-28T19:13:42Z"
-    },
-    {
-      "id": "source-8",
-      "type": "price-data",
-      "provider": "DefiLlama",
-      "url": "https://coins.llama.fi/prices/historical/1788954863/bsc:0xAa242a47F4cC074E59cbC7D65309B1F21202AaA3",
-      "observedAt": 1790622769
-    }
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-6",
-      "source-7"
+  "loss": {
+    "usd": 79796.00089853126,
+    "assets": [
+      {
+        "token": "0xaa242a47f4cc074e59cbc7d65309b1f21202aaa3",
+        "symbol": "BTX",
+        "amount": "3072493.276542911113913396",
+        "usd": 79796.00089853126
+      }
     ]
   },
-  "discovery": [
-    "web:2026-09-09:beatxswap"
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/8d8c5db24bf7a74af3d9a4c1f8e1452cd839e8b1/src/test/2026-09/BeatXswap_exp.sol"
+  ],
+  "notes": [
+    "Both contracts are immutable non-proxies with TARGET_POOL and the quote logic fixed; the later setMinDeposit(10000e18) and setFixedDeposit(2000e18) only set deposit sizes, which scale the loss, so deployment is the reset. LiquidityVestingConvert, deployed 124 blocks after its sibling, sets the age.",
+    "Loss is the two contracts' BTX reserve that left for the manipulated LP mints. The attacker's dump moved the price, so all of it is valued at its in-transaction sale rate (79,654.84 USDT for 3,067,057.87 BTX), not DefiLlama's /bin/bash.0317. The attacker's deposits, flash loans and round trip are its own inputs.",
+    "Campaign: no other deposit into either contract swapped the pool in the same transaction, and the attacker has not withdrawn its vesting entries."
   ]
 }

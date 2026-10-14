@@ -1,146 +1,58 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0xe1c76241dda7c5fcf1988454c621142495640e708e3f8377982f55f8cf2a8401",
-  "protocol": {
-    "name": "Origin Dollar",
-    "slug": "origin-dollar"
-  },
+  "protocol": "Origin Dollar",
   "name": "Origin Dollar Vault mintMultiple reentrancy",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0xe1c76241dda7c5fcf1988454c621142495640e708e3f8377982f55f8cf2a8401",
-      "blockNumber": 11272255,
-      "transactionIndex": 2,
-      "timestamp": 1605574039
-    },
-    "attackerAddresses": [
-      "0xb77f7bbac3264ae7abc8aedf2ec5f4e7ca079f83",
-      "0x47c3d84394043a4f42f6422accd27bb7240fdfe2"
-    ]
-  },
   "summary": "VaultCore.mintMultiple() skipped the supported-asset check that mint() performed, so the attacker passed a self-controlled fake stablecoin whose transferFrom re-entered the vault and triggered a rebase between the first mint's asset transfer and its OUSD supply increase, minting more OUSD than the vault held in assets.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 7000000,
-      "valuationTimestamp": 1605574039,
-      "method": "reported",
-      "sourceIds": [
-        "source-2",
-        "source-7"
-      ]
-    },
-    "assets": [],
-    "confidence": "medium",
-    "notes": "Origin's project post-mortem reports a $7 million loss. PeckShield independently estimated approximately $7.7 million, including 11,809 ETH and 2,249,821 DAI, so the record retains Origin's rounded first-party gross-loss figure without presenting the reported token quantities as exact structured components."
-  },
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x277e80f3e14e7fb3fc40a9d6184088e0241034bd",
-      "relationship": "proxy",
-      "codeArtifact": {
-        "address": "0x328d15f6b5eba1c30cde1a5f1f5a9e35b07f5424",
-        "codeHash": "0xbe4bcad9eaca1eff00cd54018ab0ba94901a5f078b0b24dfe560d9a7f012371d"
-      },
-      "deployment": {
-        "timestamp": 1600410802,
-        "blockNumber": 10884566,
-        "transactionHash": "0xe7b165249cc960cdf87aec7387df4d95d2b9bc690755c713ab31121f7006a75f",
-        "transactionIndex": 67,
-        "creatorAddress": "0xaed9fdc9681d61edb5f8b8e421f5cee8d7f4b04f"
-      },
-      "ageReset": {
-        "kind": "implementation-change",
-        "timestamp": 1605252232,
-        "blockNumber": 11247976,
-        "transactionHash": "0x39585251b3dbb697a220b30dc2fdbe4b3f6d29dea33e7399ca2d3cbcfda5d7bf",
-        "transactionIndex": 82,
-        "logIndex": 206,
-        "mechanism": {
-          "type": "event",
-          "address": "0x277e80f3e14e7fb3fc40a9d6184088e0241034bd",
-          "eventTopic": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
-          "codeAddressLocation": "topic1-address"
-        },
-        "description": "The last of 11 pre-incident Upgraded events selected the defect-bearing Vault implementation from topic 1."
-      },
-      "codeAgeSeconds": 321807,
-      "failureModeId": "failure:origin-dollar-mint-multiple-reentrancy",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-3",
-          "source-5"
-        ],
-        "ageSourceIds": [
-          "source-3",
-          "source-4",
-          "source-5",
-          "source-6"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-3"
-        ]
+      "address": "0x277e80f3e14e7fb3fc40a9d6184088e0241034bd",
+      "code": "0x328d15f6b5eba1c30cde1a5f1f5a9e35b07f5424",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x39585251b3dbb697a220b30dc2fdbe4b3f6d29dea33e7399ca2d3cbcfda5d7bf"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe1c76241dda7c5fcf1988454c621142495640e708e3f8377982f55f8cf2a8401"
-    },
-    {
-      "id": "source-2",
-      "type": "post-mortem",
-      "url": "https://www.originprotocol.com/blog/what-weve-changed-since-the-ousd-attack?lang=en"
-    },
-    {
-      "id": "source-3",
-      "type": "review-note",
-      "reviewer": "OpenAI Codex",
-      "reviewedAt": "2026-08-24T19:23:18Z",
-      "note": "Reviewed the successful Ethereum receipt and full call trace, the VaultProxy and implementation creation transactions, every pre-incident Upgraded event, historical runtimes, Origin's project post-mortem, and PeckShield's technical analysis. Attack contract 0x47c3d84394043a4f42f6422accd27bb7240fdfe2 calls mint(address,uint256), mintMultiple(address[],uint256[]), and redeem(uint256) on VaultProxy 0x277e80f3e14e7fb3fc40a9d6184088e0241034bd; each call delegates to 0x328d15f6b5eba1c30cde1a5f1f5a9e35b07f5424. This execution reproduces the missing supported-asset validation and reentrant fake-token path described by the post-mortems. The proxy was directly deployed by 0xaed9fdc9681d61edb5f8b8e421f5cee8d7f4b04f at block 10884566:67. Its 3,422-byte runtime is unchanged through the exploit. A complete scan finds 11 Upgraded events from deployment through the pre-exploit block; the final event is log 206 at block 11247976:82 and selects implementation 0x328d15f6b5eba1c30cde1a5f1f5a9e35b07f5424 from topic 1. That implementation was directly deployed at block 11246268:118, and its 13,075-byte runtime hashes to 0xbe4bcad9eaca1eff00cd54018ab0ba94901a5f078b0b24dfe560d9a7f012371d at deployment, activation, and immediately before the exploit. Origin reports a $7 million loss; PeckShield estimates approximately $7.7 million."
-    },
-    {
-      "id": "source-4",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0xe7b165249cc960cdf87aec7387df4d95d2b9bc690755c713ab31121f7006a75f"
-    },
-    {
-      "id": "source-5",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x39585251b3dbb697a220b30dc2fdbe4b3f6d29dea33e7399ca2d3cbcfda5d7bf"
-    },
-    {
-      "id": "source-6",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x127a15cbd6fe2f08fec950f0aa6e250c41b7102b5044d634de7008fcc67bd7be"
-    },
-    {
-      "id": "source-7",
-      "type": "post-mortem",
-      "url": "https://peckshield.medium.com/origin-dollar-incident-root-cause-analysis-f27e11988c90"
-    }
+  "campaign": [
+    "eip155:1:0xae6bee2824afe1b0552f2127fb3f124b31adac554e04dba8231fffe4ea83f6bb",
+    "eip155:1:0xa990fe2c4ea7afd6497032a57f005a4d2ba2db1acb044ffa955615d6a126538f",
+    "eip155:1:0xe95b4d3df0a73728cd0d0c32dfb2b41625e6946ac466e055d2fd18fa62c14e55",
+    "eip155:1:0xcff80ddd8576e19e23116aaacdf37147b9eaa69103bc8dc8b0602aee2fc089b4",
+    "eip155:1:0x47e515d55b4c52302c184cb9323a9e110f37d54ba79d6190756fd7c850847343",
+    "eip155:1:0x8a1907dbf0f687524e6e7869000e1ef5b34d937741a3160611d42e15c8d76b15",
+    "eip155:1:0xf14f4158fcbb5ff1e32638bed7ea0d80848a34d4c228a5477113ab58913633d9",
+    "eip155:1:0x8eba96d3f5851f4d4f703c40fb58effaca1211660b2a96aafd50e3587f3a29e7",
+    "eip155:1:0x9a133457d88a79d539cda2353e24c45ed55817da244abe77fefbb0e0d6af0383"
   ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [
-      "The $7 million gross loss is Origin's rounded project-reported USD figure; PeckShield's independent estimate is approximately $7.7 million."
-    ],
-    "reviewSourceIds": [
-      "source-3"
+  "loss": {
+    "usd": 7997712.09,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "4183229.05106",
+        "usd": 4184876.9
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "3572666.260517",
+        "usd": 3576886.34
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "234971.76",
+        "usd": 235948.85
+      }
     ]
-  }
+  },
+  "refs": [
+    "https://www.originprotocol.com/blog/what-weve-changed-since-the-ousd-attack?lang=en",
+    "https://peckshield.medium.com/origin-dollar-incident-root-cause-analysis-f27e11988c90"
+  ],
+  "notes": [
+    "Campaign: the attacker contract's follow-up redeem() calls and OUSD sales into the Uniswap and Sushi OUSD/USDT pools within the next hour, which turned the unbacked OUSD minted in the anchor into vault and pool assets; its collect() transfers to the EOA are not listed.",
+    "Victims are the Vault, its four strategies (with the Compound, Aave and Curve pools they withdrew from netted in) and the two OUSD/USDT pools. aDAI and 3Crv burns are dropped as receipts. DAI is net of the 942,688.56 DAI the attacker deposited in the anchor and redeemed later (its own round trip, not victim loss)."
+  ]
 }

@@ -1,168 +1,42 @@
 {
   "$schema": "../../schema/incident.schema.json",
-  "id": "eip155:1:0x8bb8dc5c7c830bac85fa48acad2505e9300a91c3ff239c9517d0cae33b595090",
-  "protocol": {
-    "name": "Warp Finance",
-    "slug": "warp-finance"
-  },
+  "protocol": "Warp Finance",
   "name": "Warp Finance LP collateral priced from spot reserves",
-  "incident": {
-    "chainId": 1,
-    "exploit": {
-      "transactionHash": "0x8bb8dc5c7c830bac85fa48acad2505e9300a91c3ff239c9517d0cae33b595090",
-      "blockNumber": 11473330,
-      "transactionIndex": 65,
-      "timestamp": 1608243881
-    },
-    "attackerAddresses": [
-      "0xebc6bd6ac2c9ad4adf4ba57e9f709b8b9cf03c40",
-      "0xdf8bee861227ffc5eea819c332a1c170ae3dbacb"
-    ]
-  },
-  "summary": "UniswapLPOracleFactory.getUnderlyingPrice valued a Uniswap V2 LP token as (twapPrice0 * reserve0 + twapPrice1 * reserve1) * 10**decimals / totalSupply, taking the reserves from the pair's instantaneous state through UniswapV2Library.getReserves while taking only the unit prices from a TWAP. Flash-loaned swaps that skewed the DAI/WETH pair raised that sum without changing totalSupply, so WarpControl.getBorrowLimit valued the attacker's LP collateral at 135.470392 USDC per token against a true 58.815427 and authorised 3.86 million DAI and 3.92 million USDC of borrowing. The reserve term is unbounded and none of the contract's parameters bounds or averages it, so no parameter value makes the function correct.",
-  "loss": {
-    "kind": "gross-assets-lost",
-    "usd": {
-      "amount": 7780630.4252966605,
-      "valuationTimestamp": 1608243881,
-      "method": "stablecoin-par",
-      "sourceIds": [
-        "source-1",
-        "source-2"
-      ]
-    },
-    "assets": [
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC"
-        },
-        "amount": "3917983.816717",
-        "usdValue": 3917983.816717,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1608243881,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      },
-      {
-        "asset": {
-          "chainId": 1,
-          "tokenAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "symbol": "DAI"
-        },
-        "amount": "3862646.608579660094744528",
-        "usdValue": 3862646.6085796603,
-        "valuation": {
-          "method": "stablecoin-par",
-          "timestamp": 1608243881,
-          "unitPriceUsd": 1,
-          "sourceIds": [
-            "source-1"
-          ]
-        },
-        "sourceIds": [
-          "source-1",
-          "source-2"
-        ]
-      }
-    ],
-    "confidence": "high",
-    "notes": "Exact depletion of Warp's two stablecoin lending vaults in the anchor transaction, read from receipt log indices 27 and 32: 3,917,983.816717 USDC left WarpVaultSC 0xae465fd39b519602ee28f062037f7b9c41fdc8cf and 3,862,646.608579660094744528 DAI left WarpVaultSC 0x6046c3ab74e6ce761d218b9117d5c63200f4b406, both to the attacker contract, and neither was repaid. Both assets are valued at par. The 94,349.340516285530671934 UNI-V2 DAI/WETH tokens the attacker posted as collateral stayed in WarpVaultLP 0x13db1cb418573f4c3a2ea36486f0e421bc0d2427 and were recovered by Warp and white-hat helpers on 2020-12-20 at roughly 5.85 million USD; that later recovery does not reduce gross victim depletion. The attacker's flash-loan principal from dYdX and three Uniswap pairs is repaid inside the same transaction and is not counted."
-  },
+  "summary": "UniswapLPOracleFactory.getUnderlyingPrice valued a Uniswap V2 LP token from TWAP unit prices times the pair's instantaneous reserves over totalSupply. With flash-loaned swaps the attacker skewed the DAI/WETH pair, inflating the value of its DAI/WETH LP collateral in WarpControl's borrow limit, and borrowed the DAI and USDC lending vaults dry.",
   "targets": [
     {
-      "id": "target-1",
-      "executionAddress": "0x4a224cd0517f08b26608a2f73bf390b01a6618c8",
-      "relationship": "direct",
-      "codeArtifact": {
+      "address": "0x4a224cd0517f08b26608a2f73bf390b01a6618c8",
+      "reset": {
+        "kind": "config",
+        "tx": "0xbd03ffc80eff983579f3a8ecdf7afdb8ccfc69e1e59fba85e53d34e6a87ce80f",
         "address": "0x4a224cd0517f08b26608a2f73bf390b01a6618c8",
-        "codeHash": "0xcec2342d0bda17ff30969753d2a350b76c88cad9a4387ee0c7fdb3a8f1312834"
-      },
-      "deployment": {
-        "timestamp": 1608095269,
-        "blockNumber": 11462140,
-        "transactionHash": "0x311c90a9411131a7473e916f6893559658f6fe334e1a315c19680c1147f00bb5",
-        "transactionIndex": 89,
-        "creatorAddress": "0x8f3e8a974d6eb27316054147fdf0e960dab2e1b3"
-      },
-      "ageReset": {
-        "kind": "deployment",
-        "description": "UniswapLPOracleFactory is a plain non-delegating deployment with no upgrade path. Its runtime is byte-identical at the deployment block, at block 11473329 and in the anchor transaction prestate, so the deployment is the last executable-code change. The owner-only createNewOracles registration of the DAI/WETH pair is configuration and is context only."
-      },
-      "codeAgeSeconds": 148612,
-      "failureModeId": "failure:uniswap-v2-lp-priced-from-spot-reserves",
-      "evidence": {
-        "identitySourceIds": [
-          "source-1",
-          "source-2",
-          "source-3"
-        ],
-        "ageSourceIds": [
-          "source-2",
-          "source-3"
-        ]
-      },
-      "verification": {
-        "tier": "reviewed",
-        "curveEligible": true,
-        "limitations": [],
-        "reviewSourceIds": [
-          "source-2"
-        ]
+        "call": "0xf9160f3d000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
       }
     }
   ],
-  "sources": [
-    {
-      "id": "source-1",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x8bb8dc5c7c830bac85fa48acad2505e9300a91c3ff239c9517d0cae33b595090"
-    },
-    {
-      "id": "source-2",
-      "type": "review-note",
-      "reviewer": "Claude Opus 5",
-      "reviewedAt": "2026-08-25T15:00:29Z",
-      "note": "Reproduced the anchor receipt and its 319-frame callTracer trace: transaction 0x8bb8dc5c7c830bac85fa48acad2505e9300a91c3ff239c9517d0cae33b595090 succeeds at block 11473330 index 65, timestamp 1608243881, sent by 0xebc6bd6ac2c9ad4adf4ba57e9f709b8b9cf03c40 to attacker contract 0xdf8bee861227ffc5eea819c332a1c170ae3dbacb. It is the earliest successful transaction of the campaign against Warp: the attacker's only earlier activity is the bare CREATE of that contract at block 11473311 (whose trace is a single CREATE frame touching nothing), a top-level reverted attempt at block 11473321 index 112, and an unrelated Keep3r interaction through a different helper four days earlier. Boundary test: the deployed contract that converts pool state into a collateral price is UniswapLPOracleFactory 0x4a224cd0517f08b26608a2f73bf390b01a6618c8, which appears in the anchor trace both as a direct call from the attacker and as the price source used by WarpControl 0xba539b9a5c2d412cb10e5770435f362094f9541c inside getBorrowLimit. Its verified Solidity 0.6.6 source computes getUnderlyingPrice(lpToken) as (consult(token0, reserve0) + consult(token1, reserve1)) * 10**lpDecimals / totalSupply, where consult() supplies a sliding-window TWAP unit price but reserve0 and reserve1 come from UniswapV2Library.getReserves, i.e. the pair's instantaneous reserves. Skewing the pair raises p0_twap*r0 + p1_twap*r1 without bound while totalSupply is unchanged, so the reported LP price is unbounded upward for every registered pair. The contract's only parameters are usdc_add, factory, uniswapRouter and the per-LP oracle-instance mappings; none of them bounds or time-averages the reserve term, so there is no parameter value at which the function is correct, and the fact that the same function already uses TWAPs for the unit prices evidences the invariant it violates on the quantities. This is a defect in executed EVM code, not a configured value. Measured the manipulation from the trace outputs: the factory returns 58.815427 USDC per DAI/WETH LP early in the transaction and 135.470392 USDC per LP when WarpControl computes the borrow limit, a 2.303x inflation, and viewUnderlyingPrice at block 11473329 independently returns 58.815427. Code history: 0x4a224cd0517f08b26608a2f73bf390b01a6618c8 is a plain non-delegating deployment created by top-level CREATE from 0x8f3e8a974d6eb27316054147fdf0e960dab2e1b3 in 0x311c90a9411131a7473e916f6893559658f6fe334e1a315c19680c1147f00bb5 at block 11462140 index 89, timestamp 1608095269; the address is empty at block 11462139 and its runtime hashes to 0xcec2342d0bda17ff30969753d2a350b76c88cad9a4387ee0c7fdb3a8f1312834 at the deployment block, at block 11473329 and in the anchor transaction's prestateTracer entry, so the deployment is the last code change and codeAgeSeconds is 1608243881 - 1608095269 = 148612 (1.72 days). Loss taken from the receipt, not from reporting: log index 27 moves 3,917,983.816717 USDC out of WarpVaultSC 0xae465fd39b519602ee28f062037f7b9c41fdc8cf and log index 32 moves 3,862,646.608579660094744528 DAI out of WarpVaultSC 0x6046c3ab74e6ce761d218b9117d5c63200f4b406, both to the attacker contract, for USD 7,780,630.43 at par, matching the 7.76 million Warp reported. The attacker's 94,349.340516285530671934 UNI-V2 DAI/WETH collateral remained in WarpVaultLP 0x13db1cb418573f4c3a2ea36486f0e421bc0d2427 and was recovered three days later at about 5.85 million USD; under the methodology that recovery does not reduce gross victim depletion."
-    },
-    {
-      "id": "source-3",
-      "type": "onchain-transaction",
-      "chainId": 1,
-      "transactionHash": "0x311c90a9411131a7473e916f6893559658f6fe334e1a315c19680c1147f00bb5"
-    },
-    {
-      "id": "source-4",
-      "type": "post-mortem",
-      "url": "https://warpfinance.medium.com/warp-finance-exploit-summary-recovery-of-funds-5b8fe4a11898"
-    },
-    {
-      "id": "source-5",
-      "type": "post-mortem",
-      "url": "https://slowmist.medium.com/analysis-of-warp-finance-hacked-incident-cb12a1af74cc"
-    }
-  ],
-  "discovery": [
-    "seed:warp-finance:2020-12-17:warp-finance-lp-collateral-valuation-manipulation"
-  ],
-  "verification": {
-    "tier": "reviewed",
-    "limitations": [],
-    "reviewSourceIds": [
-      "source-2"
+  "loss": {
+    "usd": 7780630.43,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "3917983.816717",
+        "usd": 3917983.82
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "3862646.608579660094744528",
+        "usd": 3862646.61
+      }
     ]
   },
+  "refs": [
+    "https://warpfinance.medium.com/warp-finance-exploit-summary-recovery-of-funds-5b8fe4a11898",
+    "https://slowmist.medium.com/analysis-of-warp-finance-hacked-incident-cb12a1af74cc"
+  ],
   "notes": [
-    "The seed inventory aged this row from WarpControl 0xba539b9a5c2d412cb10e5770435f362094f9541c. WarpControl applied the price it was given as designed; the defect-bearing artifact is UniswapLPOracleFactory 0x4a224cd0517f08b26608a2f73bf390b01a6618c8, which computed it, so the target and the code age were moved there. The two contracts were deployed 261 seconds apart, so the change in basis moves the age by less than five minutes."
+    "The age runs from the owner's createNewOracles call that registered the USDC price instance (tokenToUSDC[USDC]); before it, borrowSC(USDC) reverted, and it is the latest of the oracle and market registrations the anchor needed (DAI/WETH LP listing and DAI pricing came a few minutes earlier).",
+    "WarpControl applied the price it was given; the defect is the factory's reserve-based LP pricing. The DAI/WETH LP the attacker left as collateral, later recovered by Warp, is not subtracted (rule 14). Stablecoins valued at par."
   ]
 }
