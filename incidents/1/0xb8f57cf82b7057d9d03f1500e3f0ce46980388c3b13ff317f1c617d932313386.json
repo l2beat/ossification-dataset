@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "SushiSwap",
   "name": "SushiSwap RouteProcessor2 unvalidated route pool",
-  "summary": "RouteProcessor2.processRoute() never checked that the pool address encoded in the caller-supplied `route` was a genuine UniswapV3 pool. The router called swap() on that address and then trusted whoever called back into uniswapV3SwapCallback(), whose implementation transfers `tokenIn` from the address recorded in the router's transient `lastCalledPool`/msg.sender state instead of from the caller. An attacker-controlled contract posing as a pool could therefore make the router execute transferFrom against any wallet that had granted RouteProcessor2 an ERC20 allowance.",
+  "summary": "RouteProcessor2 never checked that the pool encoded in a caller-supplied route was a real UniswapV3 pool. It called swap() on any address and, in uniswapV3SwapCallback, pulled tokenIn with transferFrom from the `from` that the calling 'pool' passed back, so an attacker contract posing as a pool could spend any wallet's RP2 allowance. Exploited on every RP2 deployment.",
   "targets": [
     {
       "address": "0x044b75f554b886a065b9567891e45c79542d7357",
@@ -13,33 +13,775 @@
     }
   ],
   "loss": {
-    "usd": 3347028,
+    "usd": 3220534.24,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
-        "amount": "1800",
-        "usd": 3347028
+        "amount": "1600.639415752327749942",
+        "usd": 2976113.9
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "45236.079709000005095731",
+        "usd": 45237.84
+      },
+      {
+        "chainId": 42161,
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC",
+        "amount": "40896.152296000051137526",
+        "usd": 40891.15
+      },
+      {
+        "token": "0xcb84d72e61e383767c4dfeb2d8ff7f4fb89abc6e",
+        "symbol": "VEGA",
+        "amount": "16521.968195650464622304",
+        "usd": 20152.12
+      },
+      {
+        "chainId": 42170,
+        "token": "0x750ba8b76187092b0d1e87e28daaf484d1b5273b",
+        "symbol": "USDC",
+        "amount": "19255.088916000004246598",
+        "usd": 19255.01
+      },
+      {
+        "chainId": 56,
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "14445.06603242366509221",
+        "usd": 14445.04
+      },
+      {
+        "chainId": 42170,
+        "token": "0x0057ac2d777797d31cd3f8f13bf5e927571d6ad0",
+        "symbol": "MOON",
+        "amount": "57167.731767122364544775",
+        "usd": 13983.64
+      },
+      {
+        "chainId": 137,
+        "token": "0x16eccfdbb4ee1a85a33f3a9b21175cd7ae753db4",
+        "symbol": "ROUTE",
+        "amount": "5000.36385617555151839",
+        "usd": 13550.99
+      },
+      {
+        "token": "0x767fe9edc9e0df98e07454847909b5e959d7ca0e",
+        "symbol": "ILV",
+        "amount": "204.681465738859031944",
+        "usd": 12082.35
+      },
+      {
+        "chainId": 137,
+        "token": "0x34667ed7c36cbbbf2d5d5c5c8d6eb76a094edb9f",
+        "symbol": "GENE",
+        "amount": "1066085.791089267004281282",
+        "usd": 10741.72
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "9009.147149000000354135",
+        "usd": 9018.9
+      },
+      {
+        "chainId": 137,
+        "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "symbol": "USDC",
+        "amount": "7623.307088000001385808",
+        "usd": 7623.31
+      },
+      {
+        "token": "0x0f2d719407fdbeff09d87557abb7232601fd9f29",
+        "symbol": "SYN",
+        "amount": "10197.788494507856739801",
+        "usd": 7275.07
+      },
+      {
+        "chainId": 10,
+        "token": "0x7f5c764cbc14f9669b88837ca1490cca17c31607",
+        "symbol": "USDC",
+        "amount": "5723.163003000000571774",
+        "usd": 5724.56
+      },
+      {
+        "chainId": 43114,
+        "token": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+        "symbol": "AvalancheUSDC",
+        "amount": "5704.048250000001644366",
+        "usd": 5705.66
+      },
+      {
+        "chainId": 42161,
+        "token": "0x3082cc23568ea640225c2467653db90e9250aaa0",
+        "symbol": "RDNT",
+        "amount": "10976.44305697591335047",
+        "usd": 3983.5
+      },
+      {
+        "token": "0x86ed939b500e121c0c5f493f399084db596dad20",
+        "symbol": "SPC",
+        "amount": "151105.562355626665521413",
+        "usd": 2537.76
+      },
+      {
+        "chainId": 42161,
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "2766.167815013816834835",
+        "usd": 2462.22
+      },
+      {
+        "chainId": 42161,
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "1.271119554919790229",
+        "usd": 2457.26
+      },
+      {
+        "token": "0x21413c119b0c11c5d96ae1bd328917bc5c8ed67e",
+        "symbol": "GENE",
+        "amount": "71773.672759126755408943",
+        "usd": 961.11
+      },
+      {
+        "chainId": 42161,
+        "token": "0xd4d42f0b6def4ce0383636770ef773390d85c61a",
+        "symbol": "SUSHI",
+        "amount": "862.271981752132660404",
+        "usd": 917.82
+      },
+      {
+        "chainId": 137,
+        "token": "0x172370d5cd63279efa6d502dab29171933a610af",
+        "symbol": "CRV",
+        "amount": "1559.693785622452196549",
+        "usd": 873.25
+      },
+      {
+        "chainId": 56,
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "609.764128235441717152",
+        "usd": 609.76
+      },
+      {
+        "chainId": 56,
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "378.796696378387025561",
+        "usd": 378.8
+      },
+      {
+        "chainId": 137,
+        "token": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+        "symbol": "WETH",
+        "amount": "0.186183855696302053",
+        "usd": 355.41
+      },
+      {
+        "token": "0x3c8d2fce49906e11e71cb16fa0ffeb2b16c29638",
+        "symbol": "NFTL",
+        "amount": "198667.031633609352866188",
+        "usd": 340.86
+      },
+      {
+        "chainId": 42161,
+        "token": "0x51318b7d00db7acc4026c88c3952b66278b6a67f",
+        "symbol": "PLS",
+        "amount": "397.752406236965043718",
+        "usd": 201.65
+      },
+      {
+        "chainId": 42161,
+        "token": "0x088cd8f5ef3652623c22d48b1605dcfe860cd704",
+        "symbol": "VELA",
+        "amount": "50",
+        "usd": 200.5
+      },
+      {
+        "chainId": 137,
+        "token": "0xc3c7d422809852031b44ab29eec9f1eff2a58756",
+        "symbol": "LDO",
+        "amount": "74.654890012578050573",
+        "usd": 179.17
+      },
+      {
+        "token": "0x9ab7bb7fdc60f4357ecfef43986818a2a3569c62",
+        "symbol": "GOG",
+        "amount": "1005.899999999999977263",
+        "usd": 178.42
+      },
+      {
+        "chainId": 42170,
+        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+        "symbol": "DAI",
+        "amount": "176.808859136245359878",
+        "usd": 176.81
+      },
+      {
+        "chainId": 56,
+        "token": "0x14016e85a25aeb13065688cafb43044c2ef86784",
+        "symbol": "TUSD",
+        "amount": "167.235883409940470301",
+        "usd": 167.24
+      },
+      {
+        "chainId": 100,
+        "token": "0xddafbb505ad214d7b80b1f830fccc89b60fb7a83",
+        "symbol": "USDC",
+        "amount": "158.723093999999974812",
+        "usd": 158.72
+      },
+      {
+        "chainId": 42161,
+        "token": "0x9f6abbf0ba6b5bfa27f4deb6597cc6ec20573fda",
+        "symbol": "FRM",
+        "amount": "2815.949611451445434795",
+        "usd": 157.56
+      },
+      {
+        "chainId": 10,
+        "token": "0x4200000000000000000000000000000000000042",
+        "symbol": "OP",
+        "amount": "70.710882870786861076",
+        "usd": 157.17
+      },
+      {
+        "chainId": 42161,
+        "token": "0xdd8e557c8804d326c72074e987de02a23ae6ef84",
+        "symbol": "ARBINU",
+        "amount": "50000.000000000007275958",
+        "usd": 145.04
+      },
+      {
+        "token": "0x3aada3e213abf8529606924d8d1c55cbdc70bf74",
+        "symbol": "XMON",
+        "amount": "0.040644563759680216",
+        "usd": 109.89
+      },
+      {
+        "token": "0x9aab071b4129b083b01cb5a0cb513ce7eca26fa5",
+        "symbol": "hunt",
+        "amount": "268.272683540183834339",
+        "usd": 105.87
+      },
+      {
+        "chainId": 42170,
+        "token": "0xf823c3cd3cebe0a1fa952ba88dc9eef8e0bf46ad",
+        "symbol": "ARB",
+        "amount": "69.530482496288044558",
+        "usd": 79.83
+      },
+      {
+        "token": "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "symbol": "CRV",
+        "amount": "271.459590521501979765",
+        "usd": 72.35
+      },
+      {
+        "chainId": 56,
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "0.041288000000000005",
+        "usd": 72.15
+      },
+      {
+        "chainId": 56,
+        "token": "0xb0d502e938ed5f4df2e681fe6e419ff29631d62b",
+        "symbol": "STG",
+        "amount": "102.829999999999998295",
+        "usd": 71.52
+      },
+      {
+        "chainId": 56,
+        "token": "0xa260e12d2b924cb899ae80bb58123ac3fee1e2f0",
+        "symbol": "hook",
+        "amount": "34.67739999999999867",
+        "usd": 59.3
+      },
+      {
+        "token": "0x111111111117dc0aa78b770fa6a738034120c302",
+        "symbol": "1INCH",
+        "amount": "107.376001297081955954",
+        "usd": 57.2
+      },
+      {
+        "chainId": 42161,
+        "token": "0x31c91d8fb96bff40955dd2dbc909b36e8b104dde",
+        "symbol": "POI$ON",
+        "amount": "54.145571713315518991",
+        "usd": 56.55
+      },
+      {
+        "chainId": 43114,
+        "token": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+        "symbol": "USDT",
+        "amount": "50.736902000000000612",
+        "usd": 50.73
+      },
+      {
+        "token": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+        "symbol": "sushi",
+        "amount": "38.220686066892518795",
+        "usd": 41.89
+      },
+      {
+        "chainId": 42170,
+        "token": "0x722e8bdd2ce80a4422e880164f2079488e115365",
+        "symbol": "WETH",
+        "amount": "0.017335447250262089",
+        "usd": 33.77
+      },
+      {
+        "chainId": 42161,
+        "token": "0x32eb7902d4134bf98a28b963d26de779af92a212",
+        "symbol": "rDPX",
+        "amount": "1",
+        "usd": 24.64
+      },
+      {
+        "chainId": 42161,
+        "token": "0x6694340fc020c5e6b96567843da2df01b2ce1eb6",
+        "symbol": "STG",
+        "amount": "37.580787819508309155",
+        "usd": 22.22
+      },
+      {
+        "token": "0xf4d2888d29d722226fafa5d9b24f9164c092421e",
+        "symbol": "LOOKS",
+        "amount": "146.696832661471745496",
+        "usd": 20.78
+      },
+      {
+        "chainId": 137,
+        "token": "0x4e78011ce80ee02d2c3e649fb657e45898257815",
+        "symbol": "KLIMA",
+        "amount": "7.357269274000000081",
+        "usd": 16.12
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "15",
+        "usd": 15
+      },
+      {
+        "token": "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+        "symbol": "ENS",
+        "amount": "1.15999999999999992",
+        "usd": 14.67
+      },
+      {
+        "chainId": 137,
+        "token": "0xbbba073c31bf03b8acf7c28ef0738decf3695683",
+        "symbol": "SAND",
+        "amount": "24.199999999999999289",
+        "usd": 12.91
+      },
+      {
+        "chainId": 137,
+        "token": "0xd13cfd3133239a3c73a9e535a5c4dadee36b395c",
+        "symbol": "VAI",
+        "amount": "133.426174706780216184",
+        "usd": 12.61
+      },
+      {
+        "token": "0xe61fdaf474fac07063f2234fb9e60c1163cfa850",
+        "symbol": "COIN",
+        "amount": "1023.108017838188288806",
+        "usd": 12.3
+      },
+      {
+        "token": "0x419d0d8bdd9af5e606ae2232ed285aff190e711b",
+        "symbol": "fun",
+        "amount": "1846.203683660000024247",
+        "usd": 12.14
+      },
+      {
+        "chainId": 137,
+        "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+        "symbol": "DAI",
+        "amount": "11.668952507954228892",
+        "usd": 11.67
+      },
+      {
+        "chainId": 137,
+        "token": "0x5ec03c1f7fa7ff05ec476d19e34a22eddb48acdc",
+        "symbol": "ZED",
+        "amount": "522.014276097726678927",
+        "usd": 11.1
+      },
+      {
+        "chainId": 42161,
+        "token": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+        "symbol": "USDT0",
+        "amount": "11.113713999999999871",
+        "usd": 11.09
+      },
+      {
+        "token": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "symbol": "AAVE",
+        "amount": "0.146565656467868149",
+        "usd": 11
+      },
+      {
+        "chainId": 56,
+        "token": "0x2189455051a1c1e6190276f84f73ec6fb2fe62df",
+        "symbol": "BITCONEY",
+        "amount": "8",
+        "usd": 10.8
+      },
+      {
+        "chainId": 56,
+        "token": "0xad6caeb32cd2c308980a548bd0bc5aa4306c6c18",
+        "symbol": "BAND",
+        "amount": "5.880093533275831952",
+        "usd": 10.58
+      },
+      {
+        "chainId": 137,
+        "token": "0xb0b195aefa3650a6908f15cdac7d92f8a5791b0b",
+        "symbol": "BOB",
+        "amount": "10.420288478979434998",
+        "usd": 10.42
+      },
+      {
+        "chainId": 137,
+        "token": "0x68ee0d0aad9e1984af85ca224117e4d20eaf68be",
+        "symbol": "ROY",
+        "amount": "1892.10285832380714055",
+        "usd": 8.68
+      },
+      {
+        "chainId": 42161,
+        "token": "0x7a5d193fe4ed9098f7eadc99797087c96b002907",
+        "symbol": "plsARB",
+        "amount": "21.712002280000000098",
+        "usd": 7.99
+      },
+      {
+        "token": "0x35073ca7bac0c2edf58fb34a2cbc39ea2fbb7056",
+        "symbol": "TOR",
+        "amount": "173.513987062925167493",
+        "usd": 7.9
+      },
+      {
+        "chainId": 10,
+        "token": "0x8700daec35af8ff88c16bdf0418774cb3d7599b4",
+        "symbol": "SNX",
+        "amount": "3.280857721102926838",
+        "usd": 6.76
+      },
+      {
+        "chainId": 137,
+        "token": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+        "symbol": "SUSHI",
+        "amount": "5.824486632906030081",
+        "usd": 6.15
+      },
+      {
+        "chainId": 42170,
+        "token": "0x6dcb98f460457fe4952e12779ba852f82ecc62c1",
+        "symbol": "BRICK",
+        "amount": "240.34527508333067658",
+        "usd": 5.44
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "symbol": "LINK",
+        "amount": "0.736507895299699955",
+        "usd": 5.25
+      },
+      {
+        "token": "0x505a84a03e382331a1be487b632cf357748b65d6",
+        "symbol": "SHIBGF",
+        "amount": "4743013933.845309257507324219",
+        "usd": 4.56
+      },
+      {
+        "token": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "symbol": "UNI",
+        "amount": "0.599999999999999978",
+        "usd": 3.52
+      },
+      {
+        "chainId": 42170,
+        "token": "0xfe60a48a0bcf4636afecc9642a145d2f241a7011",
+        "symbol": "SUSHI",
+        "amount": "3.370848756082939435",
+        "usd": 3.48
+      },
+      {
+        "chainId": 10,
+        "token": "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
+        "symbol": "USDC",
+        "amount": "3.429676000000000169",
+        "usd": 3.43
+      },
+      {
+        "chainId": 42170,
+        "token": "0x1d05e4e72cd994cdf976181cfb0707345763564d",
+        "symbol": "WBTC",
+        "amount": "0.00011611",
+        "usd": 3.24
+      },
+      {
+        "chainId": 100,
+        "token": "0xb7d311e2eb55f2f68a9440da38e7989210b9a05e",
+        "symbol": "STAKE",
+        "amount": "4.458537443164869885",
+        "usd": 2.6
+      },
+      {
+        "chainId": 10,
+        "token": "0x3eaeb77b03dbc0f6321ae1b72b2e9adb0f60112b",
+        "symbol": "SUSHI",
+        "amount": "2.25101724865815811",
+        "usd": 2.44
+      },
+      {
+        "chainId": 42161,
+        "token": "0x6c2c06790b3e3e3c38e12ee22f8183b37a13ee55",
+        "symbol": "DPX",
+        "amount": "0.009682735967170644",
+        "usd": 2.26
+      },
+      {
+        "chainId": 42161,
+        "token": "0x539bde0d7dbd336b79148aa742883198bbf60342",
+        "symbol": "MAGIC",
+        "amount": "1.49276192735651847",
+        "usd": 1.9
+      },
+      {
+        "chainId": 43114,
+        "token": "0x6e84a6216ea6dacc71ee8e6b0a5b7322eebc0fdd",
+        "symbol": "joe",
+        "amount": "3.255901662269180985",
+        "usd": 1.85
+      },
+      {
+        "chainId": 137,
+        "token": "0x2f6f07cdcf3588944bf4c42ac74ff24bf56e7590",
+        "symbol": "STG",
+        "amount": "2",
+        "usd": 1.53
+      },
+      {
+        "chainId": 10,
+        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+        "symbol": "DAI",
+        "amount": "1.002907277028123323",
+        "usd": 1
+      },
+      {
+        "chainId": 42161,
+        "token": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+        "symbol": "DAI",
+        "amount": "1",
+        "usd": 1
+      },
+      {
+        "chainId": 56,
+        "token": "0xc748673057861a797275cd8a068abb95a902e8de",
+        "symbol": "babydoge",
+        "amount": "109554805.948345363140106201",
+        "usd": 0.26
+      },
+      {
+        "chainId": 137,
+        "token": "0x2b88ad57897a8b496595925f43048301c37615da",
+        "symbol": "PICKLE",
+        "amount": "0.157620567671947043",
+        "usd": 0.21
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.00000744",
+        "usd": 0.21
+      },
+      {
+        "chainId": 137,
+        "token": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+        "symbol": "WMATIC",
+        "amount": "0.061333755796267986",
+        "usd": 0.07
+      },
+      {
+        "chainId": 10,
+        "token": "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
+        "symbol": "USDT",
+        "amount": "0.067191000000000001",
+        "usd": 0.07
+      },
+      {
+        "chainId": 56,
+        "token": "0x986cdf0fd180b40c4d6aeaa01ab740b996d8b782",
+        "symbol": "SUSHI",
+        "amount": "0.022288079131434428",
+        "usd": 0.02
+      },
+      {
+        "token": "0xc00e94cb662c3520282e6f5717214004a7f26888",
+        "symbol": "COMP",
+        "amount": "0.00036656",
+        "usd": 0.02
+      },
+      {
+        "chainId": 10,
+        "token": "0x76fb31fb4af56892a25e32cfc43de717950c9278",
+        "symbol": "AAVE",
+        "amount": "0.000076666859711253",
+        "usd": 0.01
       }
     ]
   },
-  "refs": [
-    "https://www.sushi.com/blog/routeprocessor2-post-mortem",
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Sushi_Router_exp.sol",
+  "campaign": [
     "eip155:1:0xea3480f1f1d1f0b32283f8f282ce16403fe22ede35c0b71a732193e56c5c45e8",
     "eip155:1:0x8e28bc58897f35e71b727f3066ae57b4d597014db6778bbf70838347c112e0e1",
     "eip155:1:0x542838429f32b49d71264cc1036bb7cfd66824613ba0c437f7ce4269edb58f74",
-    "eip155:1:0x3610d3e3f2381c73f4bd128df9be90de87482802f30712dd555619b8bf3462a4",
-    "eip155:1:0x43ff7e01423044cfb501b4fe9ef1386725c0ddc117dadd6e6620cb68bdeaf4f9",
     "eip155:1:0xbb9aac794415b2fbe2c947fe37ebb29c75526c150d33dd408ccddbcb52534828",
     "eip155:1:0x6ac2d60c8f48144f2adb10ab161efdd491a791c6a666c450d4b33c6889fc0925",
     "eip155:1:0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32",
     "eip155:1:0x40be81f859227aa952e70fe1f5e8c84feed6aa3c2a4d6bf38125cd6bc222560a",
-    "eip155:1:0x11d069cbe4490cc483b1ae2e77c9c79493213347b42a8dec2ded25724e2f1835"
+    "eip155:1:0x11d069cbe4490cc483b1ae2e77c9c79493213347b42a8dec2ded25724e2f1835",
+    "eip155:1:0xd4fe53bf1e253ae6c5f0eb5b98ad68082dd98f65d98f88e60a686aad9d75559e",
+    "eip155:1:0x67ce1894501969ff9be4c40c5c7fcc5db90929c9d07823eebe008daed9030745",
+    "eip155:1:0x3f8278560103d087020021b9f08cd4d60784f41f9d2bf15562256191b3b18e57",
+    "eip155:1:0xdfe9b4ec6a6f175ef1bfa9491aac65e9ad2380fbdd171b8345be1fbf7e2e920f",
+    "eip155:1:0x6c0aa9c8ea7d3356407d064870443d245991e4146065d066656654f65c4d31a2",
+    "eip155:1:0xd3af33eef7557e5a7b82ac75570a9beda93c44031c61a125e83e2d333b3cfc4c",
+    "eip155:1:0x1aab6c283a941157ca97819c0addca109c91f231c01e8522f5652729b75e2333",
+    "eip155:1:0x63df7bc45f2fe7b41056be83cb376166dd0ceb5f8dd0538cc4ae6b07f873fb76",
+    "eip155:1:0x91ca9174cd744f09542be92b82a5f8f0746447be2fb0b57c238f9d545f7a4b5b",
+    "eip155:1:0xf0d59184b0071d8704b4c58bb29ca0b85d8ef9c5309a6b14ef3ca05578dd3d5f",
+    "eip155:1:0x0eb0b623fcbf850abf33a6df7e8a5eb0b25a21885a71f05845894f2991e31605",
+    "eip155:1:0x24ddd7511a6f49c551c714d7a6abedf734a6faa08e9ca89bf52c624ea89df6e4",
+    "eip155:1:0x246f26a29c1a0e90708d9545ed86742ad0a669c1b0767f009b8bc397fa297270",
+    "eip155:1:0x58437260506534f806cba4ad4d1c502b8d846e9b266b62a333008cfabfd6b2fe",
+    "eip155:1:0x802359a6ed9f7fade39b0d047dfa9843165de64554b4b5e04526f59987a2ede8",
+    "eip155:1:0xea40fcbce8a183c8e548052d43d6140f22ee368abfef25faeb1c119ff84cdeaa",
+    "eip155:1:0xbe227a65350aff24ad49db156cf24290eb9a05a7008311105597941ba8db35fe",
+    "eip155:1:0x3173a9358c9195bc9455c74db281f90cb023708ee9954d401a306db94715deef",
+    "eip155:1:0x690d156609dde520b79ac5a8b4e9751f8780fc561851bd84b1de05a651c2aec3",
+    "eip155:1:0x68b72a989f59b33ec68d71410483b0a1e5bbb234c294c5af36c1e2d7ca7ad237",
+    "eip155:1:0xe0022935fbc13e15ff834d10c3b56a56d2704305e0c55537352b1dd25484b95d",
+    "eip155:1:0x38a416711104a65524e72bb960f26e905d0ed8d9ef2ae659592891b4d59bfce5",
+    "eip155:1:0x09915c18a2ecad2552cf9aa64d095c0239d2e3a389828020a971199e8390f1f9",
+    "eip155:1:0x78f798c650ed114ad907b389fd81121eb9c77c85dd929ba9e2e1e79f7bf9ba57",
+    "eip155:1:0x2cafe5ede745001ec3476ee9e2ba3013845bebd2d40010b37a21cbd3d239aa41",
+    "eip155:1:0x73372e8c39d940dfa6b164305e6cf5306df55a56021c1e1310c7fa00fbd5a54c",
+    "eip155:1:0x90880440bb440ea263393104d8fa17b0d4dddbab40a7d25ac1922f2d85d2cba7",
+    "eip155:1:0xbbd6cf8ef12cd2a053c177791d7b3e5b2c14e609d67e1c11087b900e132e66df",
+    "eip155:1:0x58d2fb26414319cc0c5b32a463103b3b7c3b89e811a7980fb1ed5c8992f2c11c",
+    "eip155:1:0x7338ce55687af9963f6b2582f793792c2346b6ea56d5b8bec4945365c7485a1b",
+    "eip155:1:0x4b39f88ddbc5651636e1c93160e5be79b4ae69ada3d565d81b442d47f85f4184",
+    "eip155:1:0x9ca02769293c3bf5bcc17785b37159b62e65da7636319cac19c540122e1aa7d3",
+    "eip155:1:0x439a00e01de58ccccc4d1111d3d00329ff7f0c47334462c119c4f9dea8de7a19",
+    "eip155:1:0xe91a9e9a8dac77d9581d1893bb63c3f4df2cd6e4c51f23c535af62ee4d1a29bb",
+    "eip155:1:0xa6881b14adbb30da7601c1f6c133682173b517741f21db902b5dabfbd00249fe",
+    "eip155:1:0xf12576b02ffcf42ea03f5a1a2861e64a170610eec4a9e07cb6a0e63a9fcbdaf9",
+    "eip155:1:0x9f126db5bf763e1df2cb5dfea56da5bba2852bd5d33b090ef47ad2d784a31dd7",
+    "eip155:1:0x2f55044d26dadd4ed8c09d9a5e5b3951d375a5b374525c8f5f20ee85a6a0f755",
+    "eip155:1:0x7d7cd042709cdb4cddfe8af35316f26d194d932ff0c90e30da79f6418663d1b9",
+    "eip155:1:0x08b3885c76e6363951919b1f82f74a49a2c1144bbcece46e1936ce328520f27a",
+    "eip155:1:0x9f735f1a2886bf0e15ee60a64e64c08e2fc82ea6fdec71a640277359e45a185e",
+    "eip155:1:0xd7c09d14bbf546738bb0b083a5ea08264d9cf6b6bbf0e86359d3c1e83b58f2d3",
+    "eip155:1:0xc3d9738ef5a6eb9480ce6514dd53b33663cc71f8cec7e41b3c2fdeb79d5f8033",
+    "eip155:1:0x2795d988add01aaf8213dfddfb8359721ece8bf9ba8c143b7e944b413fa70396",
+    "eip155:1:0x4db481da239e6c00606466795d805859af09d3e7f7316ddb49f0c910afa490f9",
+    "eip155:1:0x2a7e6c25e0a138b6403c5e42b6444afc3a4f41a1563576b7d6b79355b2a1e00f",
+    "eip155:1:0x231b3cb4cc65e346051ef1c22a1c5981b9ec8399704b9a2e82de83c016be5a0f",
+    "eip155:1:0x3b12267e64747a2de222220e13d2c8ed48f2f956ef85ceab96cc09f0f50a8a77",
+    "eip155:1:0x3ed550d9dee002feb010bc5f0e896123051a45a22bcbc28a530e9dd20e2f2c2b",
+    "eip155:1:0xd74005b594f15796b21f9f5c287acfa5199caa656a896ff015595e864b70ecf4",
+    "eip155:1:0x0ea3b80cb14fc69058daccdd68de79a70475aec9208b7fd573ae5e85c075a2cf",
+    "eip155:1:0xd864168116ecc7e252093fea4f144654787756cf60bcb282a42ced037eb6a06b",
+    "eip155:1:0xd6bf7b53d9151f847c1be7cb7c1ff0217889127b36d30b62c360acaa797c7010",
+    "eip155:1:0xd1d160efab56da105f5fde0b021f296b8714b731b287abc6286567b873cd780e",
+    "eip155:1:0x6c045f46828e4a629fa819f584239d6b6e70ffd91955a4c2ccc01cad40c3fd6b",
+    "eip155:1:0xc50468269c65bff27462d405325f02ea73f6f084642cb118079d5a11eefda7a8",
+    "eip155:1:0x3a92d3db1e4f32832af0e438702905979d8fa0eaba442596ef0b024aaab3f85c",
+    "eip155:1:0xc20d51b6b9445225010acd4989de033583b20c6374c82fb23116cbfc87939f78",
+    "eip155:1:0xcff73f3c5f1ce9d6fb7d3b6013625b00e72526ca2e455af850de43fc4bdfac9c",
+    "eip155:1:0x72e7b531ceb382d98eeb6ed8ac18abb7f0dc17941a39f1fce56dfcf6c57998cb",
+    "eip155:1:0x76020ab5e90eecb16fd171d3077042225644de15e150449e9ffb34bbe639f5e4",
+    "eip155:1:0xc8d8ff2e89774374079ba14a941f30bd8b1908cd18b283895f239c353a522bfe",
+    "eip155:1:0x8e8e09c7e8e927d6b2e3ad77040ec2b390a10af5560044e2745a4b0fd21ac32c",
+    "eip155:1:0xd7796bc0f57c8d656da3c77a5cc7b6d34c66903fa8b6ac7570427a545c736c9c",
+    "eip155:1:0xbef58010ba99c11c67ba6fd55894b8c845024fcb24ccbcfa15c0809368742f17",
+    "eip155:1:0xbc8ea0cec422fd903cb54e0400350b904f0e752499618817383e47432f9a6320",
+    "eip155:1:0x96a4104f6dd29d003bbfa1c114f9aaed711ca2eee19073aecb7422ee60bfedfd",
+    "eip155:1:0xb34107fd8b8d623734d0c25f034d89349f8a542c69958db49f7301dfeeafc6be",
+    "eip155:1:0x2fbe45450832155af3de34fcc0313c8eb60b9d69a3d945eb29a9a4a06b3b8a12",
+    "eip155:1:0x633fba054a2aae9ed9c68703a75e088313b058f4886d0bc165ad330de6429ae3",
+    "eip155:1:0xb837606fa308767d00f185369d7c303908cf348ab534c08a0b435a3d1cb66de6",
+    "eip155:1:0x2fe5207a960488d16aa5e59e1c02dad15ba0ffa1230c62100f289a263bbcf777",
+    "eip155:1:0x04983b98385fbae0e947f54570d955909095864fa2ad5ce2bf04bcac680b3eba",
+    "eip155:1:0x90afc451f26c63b09775ff72fdfde61734b14bda835399e6355295bc5edff739",
+    "eip155:288:0x0f6dd9ad4b60c46f19cdfea599821a1000351760b8ba2b512a023e9d53915219",
+    {
+      "chainId": 10,
+      "count": 80,
+      "from": 87937578,
+      "to": 147224874,
+      "selection": "successful txs in which RouteProcessor2 0xf0cbce1942a68beb3d1b73f0dd86c8dcc363ef49 calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    },
+    {
+      "chainId": 56,
+      "count": 95,
+      "from": 27188792,
+      "to": 67295511,
+      "selection": "successful txs in which RouteProcessor2 0xd75f5369724b513b497101fb15211160c1d96550 calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    },
+    {
+      "chainId": 100,
+      "count": 4,
+      "from": 27391598,
+      "to": 32303272,
+      "selection": "successful txs in which RouteProcessor2 0x145d82bca93cca2ae057d1c6f26245d1b9522e6f calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    },
+    {
+      "chainId": 137,
+      "count": 174,
+      "from": 41316674,
+      "to": 94436308,
+      "selection": "successful txs in which RouteProcessor2 0x5097cbb61d3c75907656dc4e3bba892ff136649a calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    },
+    {
+      "chainId": 42161,
+      "count": 892,
+      "from": 78563029,
+      "to": 380392534,
+      "selection": "successful txs in which RouteProcessor2 0xa7cac4207579a179c1069435d032ee0f9f150e5c calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    },
+    {
+      "chainId": 42170,
+      "count": 962,
+      "from": 5089343,
+      "to": 84531583,
+      "selection": "successful txs in which RouteProcessor2 0x1c5771e96c9d5524fb6e606f5b356d08c40eb194 calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    },
+    {
+      "chainId": 43114,
+      "count": 40,
+      "from": 28506987,
+      "to": 34197540,
+      "selection": "successful txs in which RouteProcessor2 0xbaceb8ec6b9355dfc0269c18bac9d6e2bdc29c4f calls transferFrom(owner, ...) for an owner that did not call processRoute in that tx (approval drain via uniswapV3SwapCallback), owners taken from Approval logs with RP2 as spender; excluding SushiFundsReturner sender 0xe0b4ef3aa4632cad6d1da118c11629846d480a88"
+    }
+  ],
+  "refs": [
+    "https://www.sushi.com/blog/routeprocessor2-post-mortem",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Sushi_Router_exp.sol"
   ],
   "notes": [
-    "The non-upgradeable RouteProcessor2 runtime was installed by this direct CREATE and remained the exploit-executed code.",
-    "The depleted assets were not protocol-held funds. RouteProcessor2 custodies nothing; every wei taken came out of an external wallet that had previously granted the router an ERC20 allowance. Reconstructed from WETH Transfer receipts rather than from the post-mortem estimate: across eleven successful transactions between blocks 17007838 and 17007856, exactly eighteen 100 WETH transferFrom calls left the single approving wallet 0x31d3243cfb54b34fc9c73e1cb1137124bd6b13e1 for eight different searcher contracts, totalling exactly 1800.000000000000000000 WETH. Ten transactions moved 100 WETH each; 0x04b166e7b4ab5105a8e9c85f08f6346de1c66368687215b0e0b58d6e5002bc32 batched eight callbacks for 800 WETH. Sweeping every WETH inflow of all eight receiving contracts over blocks 16990000-17020000 turns up no other victim wallet, so the campaign's gross depletion is exactly the 1800 WETH the post-mortem approximates. Financing, gas, builder payments and any later whitehat returns are not netted.",
-    "The same defect was exploited against RouteProcessor2 deployments on other chains on the same day; those are separate deployments and separate campaigns."
+    "Campaign covers all RP2 deployments found (Ethereum, Arbitrum, Nova, Optimism, BSC, Polygon, Avalanche, Gnosis, Boba). Every drained owner came from Approval logs naming RP2 as spender; each candidate was confirmed by trace. Ethereum's anchor is the earliest drain on any chain.",
+    "Excluded as rescues whose proceeds went back to users: Sushi's own SushiFundsReturner bot 0xe0b4ef3a (392 txs, all chains), and 0x869238b1 and 0xcff8bdf5, which each returned their 100 WETH to sifu. c0ffeebabe's 1,000 WETH stays in the loss: it paid 689 ETH to builders and returned only 305 ETH.",
+    "Valued at DefiLlama per transaction; bridged stablecoins at par where DefiLlama has no history. 606 pulls of memecoins without a price are valued at zero (rule 15, no realisable market). Later returns, such as the 760 ETH the anchor attacker sent Sushi, are not netted (rule 14)."
   ]
 }

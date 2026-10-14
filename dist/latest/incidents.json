@@ -3775,8 +3775,8 @@
     "tx": "0xb8f57cf82b7057d9d03f1500e3f0ce46980388c3b13ff317f1c617d932313386",
     "protocol": "SushiSwap",
     "name": "SushiSwap RouteProcessor2 unvalidated route pool",
-    "summary": "RouteProcessor2.processRoute() never checked that the pool address encoded in the caller-supplied `route` was a genuine UniswapV3 pool. The router called swap() on that address and then trusted whoever called back into uniswapV3SwapCallback(), whose implementation transfers `tokenIn` from the address recorded in the router's transient `lastCalledPool`/msg.sender state instead of from the caller. An attacker-controlled contract posing as a pool could therefore make the router execute transferFrom against any wallet that had granted RouteProcessor2 an ERC20 allowance.",
-    "lossUsd": 3347028,
+    "summary": "RouteProcessor2 never checked that the pool encoded in a caller-supplied route was a real UniswapV3 pool. It called swap() on any address and, in uniswapV3SwapCallback, pulled tokenIn with transferFrom from the `from` that the calling 'pool' passed back, so an attacker contract posing as a pool could spend any wallet's RP2 allowance. Exploited on every RP2 deployment.",
+    "lossUsd": 3220534.24,
     "codeAgeSeconds": 330492,
     "exploit": {
       "block": 17007838,
@@ -3794,7 +3794,7 @@
       "index": 131,
       "timestamp": 1680677219
     },
-    "claimsSha256": "d9e61dae1ac76372a261457dc7ce19a3b2ec9842752de2a49ed0d206e6f65736"
+    "claimsSha256": "0403f1abfbcf4f215ffde5f300e55ec96a08dc090177358f55fa4d32ae3e758c"
   },
   {
     "id": "eip155:56:0x4a304ff08851106691f626045b0f55d403e3a0958363bdf82b96e8ce7209c3a6",
@@ -9784,9 +9784,9 @@
     "tx": "0xc54c00046364b6e889db18c73beee9b81df6b5ca822b6d262b3d30cdf376c4b1",
     "protocol": "SynapLogic",
     "name": "SynapLogic sale proxy unbounded referral rebates",
-    "summary": "The SYP sale implementation paid a per-entry referral rebate without bounding aggregate rebates by the payment received. A bounded pre-remediation campaign depleted the proxy's native ETH and USDC inventory through the affected native and USDC purchase paths.",
-    "lossUsd": 91618.69418800333,
-    "codeAgeSeconds": 8611990,
+    "summary": "SynapLogic's sale implementation paid a fixed rebate share of the payment to every entry of a caller-supplied referrer list, with no deduplication or cap on the total. Listing its own contract thirty times, the attacker got three times its flash-loaned ETH back; copycats repeated it on the ETH and USDC purchase paths.",
+    "lossUsd": 94185.52,
+    "codeAgeSeconds": 8611528,
     "exploit": {
       "block": 41038634,
       "index": 82,
@@ -9798,13 +9798,13 @@
       "codeHash": "0x7a71e2948a1a64f69d9a1518f8f94a40ccd8ac4726d05f07b4a8001a793d8ec0"
     },
     "reset": {
-      "kind": "deployment",
-      "tx": "0xa835609537f79972f00c493caf1c7702905c4f4a1147c6573f69824df507de6a",
-      "block": 36732639,
-      "index": 68,
-      "timestamp": 1760254625
+      "kind": "config",
+      "tx": "0x677733a0b486f509fc7d2beee625d5f63dbbc66be6c1d40e687c1201fc46e1da",
+      "block": 36732870,
+      "index": 41,
+      "timestamp": 1760255087
     },
-    "claimsSha256": "2947c7b7456b908419eba10d458f09c14c6a0bf99440be044df09b123c15d7ea"
+    "claimsSha256": "b34254ba8b2214118a4fd77a0d3120b4309ff138292d848eecc5d0d4e22d38f2"
   },
   {
     "id": "eip155:56:0x956e38b8ddb40ba080c8042c685ae52ee5c1b096f1d7f0c4a6c59be3eb4265bd",
@@ -10388,8 +10388,8 @@
     "tx": "0xe6be4914af8db48555289642c92bdf60fa797b7f1d016ab5977f5fbaef764e62",
     "protocol": "Startale",
     "name": "Startale smart-account initializer accepts any caller while the transaction-scoped deployment flag is set",
-    "summary": "StartaleAccountFactory deploys each ERC-7579 account as an AccountProxy whose constructor sets an EIP-1153 transient flag, and StartaleSmartAccount.initializeAccount lets any external caller in once that flag is set. Transient storage lasts for the whole transaction, not the constructor frame. So a contract that calls createAccount for a counterfactual account that users had already funded can call initializeAccount again in the same transaction. It passes a malicious bootstrap that runs by DELEGATECALL in the account and sweeps its tokens and ETH. From 2026-09-15 at least 16 senders drained 1,052 pre-funded accounts this way in 255 transactions.",
-    "lossUsd": 12649.5,
+    "summary": "StartaleAccountFactory deploys accounts as AccountProxy, whose constructor sets an EIP-1153 transient flag that StartaleSmartAccount.initializeAccount treats as permission to initialize. The flag lasts the whole transaction, so a contract that creates a pre-funded counterfactual account can re-initialize it in the same tx with its own bootstrap and sweep its tokens and ETH.",
+    "lossUsd": 14900.62,
     "codeAgeSeconds": 10917936,
     "exploit": {
       "block": 25986180,
@@ -10407,7 +10407,7 @@
       "index": 182,
       "timestamp": 1778597351
     },
-    "claimsSha256": "2978255e1f90770ef6b08ed389a3cf419c32a4261bd99bb263c98829ea043ab2"
+    "claimsSha256": "0ca926cb20e6bcd1ade13b896f2d256fcd3b38cd8922426278fdb25c947e4349"
   },
   {
     "id": "eip155:42161:0xb5cfa4ae4d6e459ba285fec7f31caf8885e2285a0b4ff62f66b43e280c947216",
@@ -13373,6 +13373,33 @@
     "claimsSha256": "a8e5e334f14d48564810d3b5e1a0c6dd98aac3de814375778a77e478824cefc7"
   },
   {
+    "id": "eip155:8453:0x8bc65598dacd5b5ad360379d4d15b04ae36b7bf0192679e9d0b5cac022d0c487",
+    "chainId": 8453,
+    "tx": "0x8bc65598dacd5b5ad360379d4d15b04ae36b7bf0192679e9d0b5cac022d0c487",
+    "protocol": "SubQuery Network",
+    "name": "SubQuery Settings missing setter authorization",
+    "summary": "SubQuery's Settings registry let anyone call setContractAddress() and setBatchAddress(). Attackers temporarily pointed roles such as StateChannel or the staking and rewards managers at their own contracts, called the privileged functions that trust those entries to pull SQT from the Treasury, Staking, RewardsDistributor and approving wallets, then restored the registry.",
+    "lossUsd": 84355.05,
+    "codeAgeSeconds": 66610874,
+    "exploit": {
+      "block": 44455081,
+      "index": 70,
+      "timestamp": 1775699509
+    },
+    "target": {
+      "address": "0x858c50c3af1913b0e849afdb74617388a1a5340d",
+      "codeHash": "0x32f2b0182b4876d83f2b94f383afac31fabbc409ff7a485b9fa6330b922560af"
+    },
+    "reset": {
+      "kind": "config",
+      "tx": "0xaf9af732255b61dabe02ffe9f68a04502291b093178dbf3979975a9e185a9543",
+      "block": 11149644,
+      "index": 5,
+      "timestamp": 1709088635
+    },
+    "claimsSha256": "d1143917e3a84977daef5338e4395d33bcc94e515efccc62de80f7edd5406306"
+  },
+  {
     "id": "eip155:1:0x6990f01720f57fc515d0e976a0c4f8157e0a9529194c4c15d190e98d087eb321",
     "chainId": 1,
     "tx": "0x6990f01720f57fc515d0e976a0c4f8157e0a9529194c4c15d190e98d087eb321",
@@ -13399,34 +13426,6 @@
       "timestamp": 1711058759
     },
     "claimsSha256": "51e82d9adb5f39c214513fd02857c922cbe24009d12752199df1554db5c79d3e"
-  },
-  {
-    "id": "eip155:8453:0x7b6d7850466a985cec6618c95046b9c08c77891d901a28e549a2741b05945a72",
-    "chainId": 8453,
-    "tx": "0x7b6d7850466a985cec6618c95046b9c08c77891d901a28e549a2741b05945a72",
-    "protocol": "SubQuery Network",
-    "name": "SubQuery Settings missing setter authorization",
-    "summary": "Settings.setContractAddress() and setBatchAddress() lacked owner checks, so five transactions installed attacker-controlled critical-role addresses and used the resulting StateChannel, staking, rewards, token, and booster authority to drain Treasury funds, pooled stake, deployment boosters, and 272 approved wallets.",
-    "lossUsd": 220502.84483866254,
-    "codeAgeSeconds": 68154760,
-    "exploit": {
-      "block": 44589596,
-      "index": 15,
-      "timestamp": 1775968539
-    },
-    "target": {
-      "address": "0x1d1e8c85a2c99575fcb95903c9ad9ae2adea54fc",
-      "code": "0xf282737992da4217bf5f8b6ae621181e84d7d3b9",
-      "codeHash": "0x3a798979d07a6c3d7d58480893a8564f021f616f5713295a03d8ce8cd126c391"
-    },
-    "reset": {
-      "kind": "upgrade",
-      "tx": "0x3a92b06ede91f5855d85d310c89e639c72d7c92f7dcad8f8ee8fe7742cb22488",
-      "block": 10512216,
-      "index": 5,
-      "timestamp": 1707813779
-    },
-    "claimsSha256": "a0ad4629b58f5fe7ade4c4c3390b381c040895de606ecfffebe5c984da899483"
   },
   {
     "id": "eip155:1:0x074ec9317d8336db37e8c348fbdd7515573ff4088239c77ab429f522509aeeb1",
@@ -14228,7 +14227,7 @@
     "protocol": "StepHero NFTs",
     "name": "StepHeroNFTs referral-claim reentrancy",
     "summary": "claimReferral(address) sent the caller's accrued BNB referral commission before reducing its recorded balance, so the attack contract's receive hook could reenter and claim the same self-referral commission repeatedly.",
-    "lossUsd": 89963.58,
+    "lossUsd": 90368.04,
     "codeAgeSeconds": 109714760,
     "exploit": {
       "block": 46843424,
@@ -14246,7 +14245,7 @@
       "index": 232,
       "timestamp": 1630397030
     },
-    "claimsSha256": "bced825ad4e2918a72790ff6df2be20e7594f01b149323bc6303bf9cd22cefbe"
+    "claimsSha256": "a3164edff85a09f21f42493ce492b70767f5648279a1df92d8cbefd18ca5fe1d"
   },
   {
     "id": "eip155:56:0xd4c7c11c46f81b6bf98284e4921a5b9f0ff97b4c71ebade206cb10507e4503b0",
