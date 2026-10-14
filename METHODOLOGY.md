@@ -25,8 +25,9 @@ transaction exploited.
    separately, is another incident.
 5. The file name is the earliest successful exploit transaction by a party
    not affiliated with the protocol. A rescue counts as affiliated only when
-   its proceeds went back to the protocol or its users. Establishing the
-   anchor includes scanning the code's history for earlier exploits.
+   its proceeds went back to the protocol or its users. Funds locked without
+   an attacker are anchored on the transaction that locked them. Establishing
+   the anchor includes scanning the code's history for earlier exploits.
 6. `campaign` lists every further exploit transaction of the incident. A
    large tail of copycats may be a bundle: a count, a block range and the
    rule that selects them.
@@ -59,8 +60,8 @@ transaction exploited.
     registry or mint grants, custody or accounting rules. Pause state, a new
     holder of an unchanged role, live values (balances, prices, accumulators,
     values updated in normal operation, such as parameters an automated agent
-    pushes) and values that only change the loss size do not; granting that
-    agent its powers does.
+    pushes) and values that only change the loss size, the exploit
+    succeeding without them, do not; granting that agent its powers does.
 11. Shared code ages from when the exploited context started running it: a
     clone from its creation, a proxy, beacon or diamond user from the route
     change, never from the template's own deployment. An account created
