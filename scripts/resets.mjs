@@ -12,7 +12,8 @@
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { blockTag, callTrace, hexInt, keccak256, rpc, traceFrames } from './rpc.mjs'
+import { parseArgs } from 'node:util'
+import { account, blockTag, callTrace, delegated, hexInt, keccak256, lower, pool, rpc, traceFrames, word } from './rpc.mjs'
 
 // Events named in the output; others print as their topic.
 const SIGNATURES = `
@@ -36,10 +37,9 @@ const PROBES = 200
 const TRACED_BLOCKS = 40
 const EVENTS = 20000
 
-const args = process.argv.slice(2)
-const file = args.find((arg) => arg.endsWith('.json'))
-const watch = args.includes('--watch') ? args[args.indexOf('--watch') + 1].toLowerCase().split(',') : []
+const { values, positionals: [file] } = parseArgs({ options: { watch: { type: 'string', default: '' } }, allowPositionals: true })
 if (!file) throw new Error('usage: node scripts/resets.mjs incidents/<chainId>/<tx>.json [--watch 0xa,0xb]')
+const watch = values.watch.toLowerCase().split(',').filter(Boolean)
 const chain = Number(path.basename(path.dirname(path.resolve(file))))
 const hash = path.basename(file, '.json')
 const record = JSON.parse(readFileSync(file, 'utf8'))
@@ -50,10 +50,7 @@ const memo = (fn, cache = new Map()) => (...keys) => {
   if (!cache.has(key)) cache.set(key, fn(...keys))
   return cache.get(key)
 }
-const word = (value) => `0x${value.replace(/^0x/, '').padStart(64, '0')}`
 const short = (value) => (value === undefined ? '?' : `0x${BigInt(value).toString(16)}`)
-const lower = (value) => value?.toLowerCase()
-const account = (state, address) => Object.entries(state ?? {}).find(([key]) => lower(key) === address)?.[1]
 const storageKey = (storage, slot) => Object.keys(storage ?? {}).some((key) => word(key) === word(slot))
 const unique = (values) => [...new Set(values)]
 
@@ -77,14 +74,6 @@ async function settled(lo, hi, get, value) {
     if (!off.length) return block
     lo = Math.max(...off) + 1
   }
-}
-
-async function pool(items, size, fn) {
-  const out = []
-  let next = 0
-  const worker = async () => { while (next < items.length) out[next] = await fn(items[next++]) }
-  await Promise.all(Array.from({ length: size }, worker))
-  return out
 }
 
 // Newest first, up to limit. Providers cap getLogs by range or response size: halve the span until it passes.
@@ -162,15 +151,14 @@ const X = await txBlock(hash)
 const [trace, prestate] = await Promise.all([
   callTrace(chain, hash), call('debug_traceTransaction', hash, { tracer: 'prestateTracer' }).catch(() => null)])
 const frames = traceFrames(trace)
-const isDelegate = (frame) => /^(DELEGATECALL|CALLCODE)$/.test(frame.type)
 console.log(`exploit ${hash} block ${X} chain ${chain}`)
 if (!prestate) console.log('prestateTracer unavailable: storage section skipped')
 
 // The exploit's call into the target and the delegation hops from it to the code.
 function exploitRoute({ address, code }) {
   for (const { frame, ancestors } of frames) {
-    if (!isDelegate(frame) || lower(frame.to) !== code) continue
-    const entry = ancestors.findLastIndex((ancestor) => lower(ancestor.to) === address && !isDelegate(ancestor))
+    if (!delegated(frame) || lower(frame.to) !== code) continue
+    const entry = ancestors.findLastIndex((ancestor) => lower(ancestor.to) === address && !delegated(ancestor))
     if (entry < 0) continue
     const hops = [...ancestors.slice(entry + 1), frame].map((hop) => ({ type: hop.type, to: lower(hop.to), selector: hop.input?.slice(0, 10) }))
     return { entry: ancestors[entry], hops }

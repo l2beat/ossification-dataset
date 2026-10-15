@@ -5,7 +5,6 @@ const RPC_ENV = {
   1: ['ETHEREUM_RPC_URL'],
   10: ['OPTIMISM_RPC_URL'],
   56: ['BSC_RPC_URL'],
-  57: ['SYSCOIN_RPC_URL'],
   100: ['GNOSIS_RPC_URL'],
   130: ['UNICHAIN_RPC_URL'],
   137: ['POLYGONPOS_RPC_URL', 'POLYGON_RPC_URL'],
@@ -69,30 +68,7 @@ export async function rpc(chainId, method, params) {
     }
   }
   if (body.error) throw new Error(`${method}: ${body.error.message ?? JSON.stringify(body.error)}`)
-  if (method === 'eth_getLogs' && SHIFTED_LOG_HASHES.has(chainId)) return resolveLogHashes(chainId, body.result)
   return body.result
-}
-
-// Some BSC providers return the wrong transactionHash on logs of recent blocks; block number and
-// transaction index are right, so the hash is taken from the block.
-const SHIFTED_LOG_HASHES = new Set([56])
-const blockHashes = new Map()
-async function resolveLogHashes(chainId, logs) {
-  const hashesOf = (log) => {
-    const key = `${chainId}:${log.blockNumber}`
-    if (!blockHashes.has(key))
-      blockHashes.set(key, rpc(chainId, 'eth_getBlockByNumber', [log.blockNumber, false]).then((block) => block?.transactions).catch(() => undefined))
-    return blockHashes.get(key)
-  }
-  // Older blocks are unaffected: when the newest log in the response is right, all of it is.
-  const last = logs.at(-1)
-  const sample = last && (await hashesOf(last))
-  if (!sample || sample[Number.parseInt(last.transactionIndex, 16)] === last.transactionHash) return logs
-  for (const log of logs) {
-    const hashes = await hashesOf(log)
-    if (hashes) log.transactionHash = hashes[Number.parseInt(log.transactionIndex, 16)]
-  }
-  return logs
 }
 
 export const hexInt = (value) => (value === null || value === undefined ? null : Number.parseInt(value, 16))
@@ -135,4 +111,61 @@ export function traceFrames(frame, ancestors = [], output = []) {
   output.push({ frame, ancestors })
   for (const child of frame.calls ?? []) traceFrames(child, [...ancestors, frame], output)
   return output
+}
+
+export const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+export const lower = (value) => value?.toLowerCase()
+export const word = (value) => `0x${value.replace(/^0x/, '').padStart(64, '0')}`
+export const topicAddress = (topic) => `0x${topic.slice(-40)}`
+export const before = (a, b) => a.block < b.block || (a.block === b.block && a.index < b.index)
+export const frameType = (frame) => String(frame.type).toUpperCase()
+export const delegated = (frame) => /^(DELEGATECALL|CALLCODE)$/.test(frameType(frame))
+export const succeeded = ({ frame, ancestors }) => !frame.error && !ancestors.some((ancestor) => ancestor.error)
+
+/** The entry of a prestateTracer state keyed by address, whatever its case. */
+export function account(state, address) {
+  const key = Object.keys(state ?? {}).find((candidate) => candidate.toLowerCase() === address)
+  return key === undefined ? undefined : state[key]
+}
+
+/** fn over items with `size` concurrent workers; results in order. */
+export async function pool(items, size, fn) {
+  const out = []
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++
+      out[index] = await fn(items[index])
+    }
+  }
+  await Promise.all(Array.from({ length: size }, worker))
+  return out
+}
+
+/** A token amount as a decimal string; `precision` keeps a readable number of fraction digits. */
+export const decimal = (value, decimals, precision = Infinity) => {
+  const digits = (value < 0n ? -value : value).toString().padStart(decimals + 1, '0')
+  const whole = digits.slice(0, digits.length - decimals)
+  let fraction = digits.slice(digits.length - decimals)
+  if (precision !== Infinity) fraction = fraction.slice(0, whole === '0' ? fraction.search(/[1-9]/) + 4 : precision)
+  fraction = fraction.replace(/0+$/, '')
+  return `${value < 0n ? '-' : ''}${whole}${fraction ? `.${fraction}` : ''}`
+}
+
+// ERC-20 symbol and decimals at the block, else at the latest block (the contract may not have existed yet).
+const metadata = new Map()
+export async function token(chainId, address, block = 'latest') {
+  const key = `${chainId}:${address}`
+  if (metadata.has(key)) return metadata.get(key)
+  const call = async (data) => {
+    const at = block === 'latest' ? '0x' : await rpc(chainId, 'eth_call', [{ to: address, data }, blockTag(block)]).catch(() => '0x')
+    return at !== '0x' ? at : rpc(chainId, 'eth_call', [{ to: address, data }, 'latest']).catch(() => '0x')
+  }
+  const [decimalsHex, symbolHex] = await Promise.all([call('0x313ce567'), call('0x95d89b41')])
+  let symbol
+  if (symbolHex.length >= 194) symbol = Buffer.from(symbolHex.slice(130, 130 + 2 * hexInt(symbolHex.slice(66, 130))), 'hex').toString('utf8')
+  else if (symbolHex.length === 66) symbol = Buffer.from(symbolHex.slice(2), 'hex').toString('utf8')
+  symbol = symbol?.replace(/[^\x20-\x7e]/g, '').trim() || `${address.slice(0, 8)}…`
+  const decimals = decimalsHex.length >= 66 ? hexInt(decimalsHex.slice(0, 66)) : undefined
+  return metadata.set(key, { decimals, symbol }).get(key)
 }

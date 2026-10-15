@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { derive } from './derive.mjs'
+import { pool } from './rpc.mjs'
 
 export const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = path.join(ROOT, 'dist')
@@ -90,25 +91,21 @@ export async function build({ root = ROOT, all = false, only = null, offline = f
   }
 
   let done = 0
-  const worker = async () => {
-    for (let item = pending.shift(); item; item = pending.shift()) {
-      try {
-        const { report, facts } = await derive(item.incident.chainId, item.incident.tx, item.incident.record)
-        for (const failure of report.failures) errors.push(`${item.incident.path}: ${failure}`)
-        rows.push(row(item.incident, facts, item.key))
-      } catch (error) {
-        // A chain no RPC serves keeps its previous facts while the age-setting target and reset are unchanged.
-        const carried = item.old && /^no RPC/.test(error.message) && factsOf(item.old, item.incident.record)
-        if (carried && carried.target >= 0) {
-          const unverified = (carried.unverified ?? []).filter((note) => !/^no RPC/.test(note))
-          rows.push(row(item.incident, { ...carried, unverified: [...unverified, error.message] }, item.key))
-        }
-        else errors.push(`${item.incident.path}: ${error.message}`)
-      }
-      log(`derived ${++done}: ${item.incident.path}`)
+  await pool(pending, 8, async (item) => {
+    try {
+      const { report, facts } = await derive(item.incident.chainId, item.incident.tx, item.incident.record)
+      for (const failure of report.failures) errors.push(`${item.incident.path}: ${failure}`)
+      rows.push(row(item.incident, facts, item.key))
+    } catch (error) {
+      // A chain no RPC serves keeps its previous facts while the age-setting target and reset are unchanged.
+      const carried = item.old && /^no RPC/.test(error.message) && factsOf(item.old, item.incident.record)
+      if (carried && carried.target >= 0) {
+        const unverified = (carried.unverified ?? []).filter((note) => !/^no RPC/.test(note))
+        rows.push(row(item.incident, { ...carried, unverified: [...unverified, error.message] }, item.key))
+      } else errors.push(`${item.incident.path}: ${error.message}`)
     }
-  }
-  await Promise.all(Array.from({ length: 8 }, worker))
+    log(`derived ${++done}: ${item.incident.path}`)
+  })
 
   rows.sort((a, b) => a.codeAgeSeconds - b.codeAgeSeconds || (a.id < b.id ? -1 : 1))
   return {

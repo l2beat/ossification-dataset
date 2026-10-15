@@ -17,9 +17,9 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { callTrace, hexInt, rpc, traceFrames } from './rpc.mjs'
+import { parseArgs } from 'node:util'
+import { TRANSFER_TOPIC, callTrace, decimal, frameType, hexInt, rpc, succeeded, token, topicAddress, traceFrames } from './rpc.mjs'
 
-const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 // ERC404 tokens report fungible moves as ERC20Transfer and NFT moves as 4-topic Transfer.
 const ERC20_TRANSFER = '0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487'
 const DEPOSIT = '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'
@@ -66,33 +66,24 @@ const MAJORS = {
   WBTC: 'wrapped-bitcoin', 'WBTC.E': 'wrapped-bitcoin', BTCB: 'bitcoin', 'BTC.B': 'bitcoin',
 }
 
-const args = process.argv.slice(2)
+const { values: opt, positionals: [file] } = parseArgs({
+  options: { victims: { type: 'string' }, tx: { type: 'string', default: '' }, json: { type: 'boolean', default: false } },
+  allowPositionals: true,
+})
 // A value of @file reads a comma- or newline-separated list from the file.
-const option = (name) => {
-  if (!args.includes(name)) return []
-  const value = args[args.indexOf(name) + 1]
-  return (value.startsWith('@') ? readFileSync(value.slice(1), 'utf8') : value).toLowerCase().split(/[\s,]+/).filter(Boolean)
-}
-const file = args.find((arg, i) => arg.endsWith('.json') && !['--tx', '--victims'].includes(args[i - 1]))
+const list = (value) => (value.startsWith('@') ? readFileSync(value.slice(1), 'utf8') : value).toLowerCase().split(/[\s,]+/).filter(Boolean)
 const [, chainId, anchor] = file?.match(/(\d+)\/(0x[0-9a-f]{64})\.json$/) ?? []
 if (!chainId) throw new Error('usage: node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb] [--tx eip155:<chain>:<hash>,...] [--json]')
 const record = JSON.parse(readFileSync(file, 'utf8'))
-const victims = args.includes('--victims') ? new Set(option('--victims')) : null
-const ids = [...new Set([`eip155:${chainId}:${anchor}`, ...(record.campaign ?? []).filter((leg) => typeof leg === 'string'), ...option('--tx')])]
-
-const word = (hex) => `0x${hex.slice(-40)}`
-const decimal = (value, decimals) => {
-  const digits = (value < 0n ? -value : value).toString().padStart(decimals + 1, '0')
-  const fraction = digits.slice(digits.length - decimals).replace(/0+$/, '')
-  return `${value < 0n ? '-' : ''}${digits.slice(0, digits.length - decimals)}${fraction ? `.${fraction}` : ''}`
-}
+const victims = opt.victims === undefined ? null : new Set(list(opt.victims))
+const ids = [...new Set([`eip155:${chainId}:${anchor}`, ...(record.campaign ?? []).filter((leg) => typeof leg === 'string'), ...list(opt.tx)])]
 const usd = (value) => (value === undefined ? '$?' : `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`)
 
 // Native moves from the call tree, without reverted frames.
 async function nativeMoves(chain, hash) {
   return traceFrames(await callTrace(chain, hash))
-    .filter(({ frame, ancestors }) => ![frame, ...ancestors].some((f) => f.error))
-    .map(({ frame }) => ({ type: String(frame.type).toUpperCase(), from: frame.from, to: frame.to, value: frame.value }))
+    .filter(succeeded)
+    .map(({ frame }) => ({ type: frameType(frame), from: frame.from, to: frame.to, value: frame.value }))
 }
 
 async function flows(id) {
@@ -123,10 +114,10 @@ async function flows(id) {
     // zkSync Era's base-token contract logs every native move, which the call tree already counts.
     if (chain === 324 && token === '0x000000000000000000000000000000000000800a') continue
     const amount = data.length > 2 ? BigInt(data.slice(0, 66)) : 0n
-    if ((topics[0] === TRANSFER || topics[0] === ERC20_TRANSFER) && topics.length === 3) move(word(topics[1]), word(topics[2]), token, amount)
+    if ((topics[0] === TRANSFER_TOPIC || topics[0] === ERC20_TRANSFER) && topics.length === 3) move(topicAddress(topics[1]), topicAddress(topics[2]), token, amount)
     if (wrapEvents && token === wrapped && topics.length === 2) {
-      if (topics[0] === DEPOSIT) move(ZERO, word(topics[1]), token, amount)
-      if (topics[0] === WITHDRAWAL) move(word(topics[1]), ZERO, token, amount)
+      if (topics[0] === DEPOSIT) move(ZERO, topicAddress(topics[1]), token, amount)
+      if (topics[0] === WITHDRAWAL) move(topicAddress(topics[1]), ZERO, token, amount)
     }
   }
   const attackers = new Set([tx.from.toLowerCase(), receipt.contractAddress?.toLowerCase()].filter(Boolean))
@@ -138,27 +129,11 @@ async function flows(id) {
   return { id, chain, block: hexInt(tx.blockNumber), timestamp: hexInt(block.timestamp), from: tx.from.toLowerCase(), attackers, net }
 }
 
-const metadata = new Map()
-async function token(chain, asset, blockNumber) {
-  const key = `${chain}:${asset}`
-  if (metadata.has(key)) return metadata.get(key)
+// Native is named after the wrapped token, minus its w.
+async function metaOf(chain, asset, block) {
+  if (asset !== NATIVE) return token(chain, asset, block)
   const wrapped = CHAINS[chain]?.[1]
-  if (asset === NATIVE) {
-    const symbol = wrapped ? (await token(chain, wrapped, blockNumber)).symbol.replace(/^w/i, '') : 'native'
-    return metadata.set(key, { decimals: 18, symbol }).get(key)
-  }
-  // At the block, else at the latest block (the contract may not have existed yet).
-  const call = async (data) => {
-    const at = await rpc(chain, 'eth_call', [{ to: asset, data }, `0x${blockNumber.toString(16)}`]).catch(() => '0x')
-    return at !== '0x' ? at : rpc(chain, 'eth_call', [{ to: asset, data }, 'latest']).catch(() => '0x')
-  }
-  const [decimalsHex, symbolHex] = await Promise.all([call('0x313ce567'), call('0x95d89b41')])
-  let symbol
-  if (symbolHex.length >= 194) symbol = Buffer.from(symbolHex.slice(130, 130 + 2 * hexInt(symbolHex.slice(66, 130))), 'hex').toString('utf8')
-  else if (symbolHex.length === 66) symbol = Buffer.from(symbolHex.slice(2), 'hex').toString('utf8')
-  symbol = symbol?.replace(/[^\x20-\x7e]/g, '').trim() || `${asset.slice(0, 8)}…`
-  const decimals = decimalsHex.length >= 66 ? hexInt(decimalsHex.slice(0, 66)) : undefined
-  return metadata.set(key, { decimals, symbol }).get(key)
+  return { decimals: 18, symbol: wrapped ? (await token(chain, wrapped, block)).symbol.replace(/^w/i, '') : 'native' }
 }
 
 // Historical responses are cached on disk; DefiLlama rate-limits bursts.
@@ -201,7 +176,7 @@ async function valued(t, assets) {
   const [slug, wrapped, native] = CHAINS[t.chain] ?? []
   const id = (asset) => (slug && (asset !== NATIVE || wrapped) ? `${slug}:${asset === NATIVE ? wrapped : asset}` : undefined)
   const quotes = await historical(t.timestamp, assets.map(id))
-  const metas = await Promise.all(assets.map((asset) => token(t.chain, asset, t.block)))
+  const metas = await Promise.all(assets.map((asset) => metaOf(t.chain, asset, t.block)))
   // A zero price (e.g. WETH before it existed) counts as no price.
   const usable = (quote) => quote && quote.price !== 0
   const result = new Map(assets.map((asset, i) => [asset, { ...metas[i], quote: usable(quotes[id(asset)]) && { ...quotes[id(asset)], source: id(asset) } }]))
@@ -280,7 +255,7 @@ if (!victims) {
   const where = (total) => `${total.asset === NATIVE ? '' : ` ${total.asset}`}${total.chain !== Number(chainId) ? ` on ${total.chain}` : ''}`
   for (const total of depleted) if (total.usd === undefined) console.error(`warning: ${total.symbol}${where(total)} is unpriced; value it at what the attacker realised (rule 12)`)
   for (const total of liabilities) console.error(`warning: ${total.symbol}${where(total)} is a liability; its ${usd(total.usd)} is netted into the total, so restate loss.assets net of it (rule 11)`)
-  if (args.includes('--json')) {
+  if (opt.json) {
     const assets = depleted.map(({ chain, asset, symbol, amount, decimals, usd }) => ({
       ...(chain !== Number(chainId) ? { chainId: chain } : {}),
       ...(asset === NATIVE ? {} : { token: asset }),

@@ -14,36 +14,32 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { blockTag, callTrace, hexInt, rpc, rpcUrl, traceFrames } from './rpc.mjs'
+import { parseArgs } from 'node:util'
+import { TRANSFER_TOPIC, before, blockTag, callTrace, decimal, delegated, frameType, hexInt, lower, pool, rpc, rpcUrl, succeeded, token, traceFrames, word } from './rpc.mjs'
 
-const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 const CACHE = process.env.CAMPAIGN_CACHE ?? path.join(os.tmpdir(), 'ossification-campaign')
-const lower = (value) => value?.toLowerCase()
-const word = (address) => `0x${address.slice(2).padStart(64, '0')}`
-const type = (frame) => String(frame.type).toUpperCase()
-const delegated = (frame) => /^(DELEGATECALL|CALLCODE)$/.test(type(frame))
-const succeeded = ({ frame, ancestors }) => !frame.error && !ancestors.some((ancestor) => ancestor.error)
-const before = (a, b) => a.block < b.block || (a.block === b.block && a.index < b.index)
 
-const args = process.argv.slice(2)
-const option = (name) => {
-  const i = args.indexOf(`--${name}`)
-  return i < 0 ? undefined : args[i + 1]
-}
-const file = args.find((arg) => arg.endsWith('.json'))
+const { values: opt, positionals: [file] } = parseArgs({
+  options: {
+    from: { type: 'string' }, to: { type: 'string' }, chains: { type: 'string', default: '' }, max: { type: 'string', default: '2000' },
+    selectors: { type: 'string' }, also: { type: 'string', default: '' }, ranges: { type: 'string', default: '' },
+    traces: { type: 'boolean', default: false }, force: { type: 'boolean', default: false },
+  },
+  allowPositionals: true,
+})
 if (!file) throw new Error('usage: node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from n] [--to n] [--chains 1,56] [--max n] [--selectors 0x..] [--also 0x..]')
 const chainId = Number(path.basename(path.dirname(file)))
 const anchorHash = path.basename(file, '.json')
 const record = JSON.parse(readFileSync(file, 'utf8'))
-const max = Number(option('max') ?? 2000)
-const only = option('selectors')?.toLowerCase().split(',')
+const max = Number(opt.max)
+const only = opt.selectors?.toLowerCase().split(',')
 
 // Frames that ran a target's code: the delegate frame to `code`, else a state-changing call to `address`.
 function entries(trace, target) {
   return traceFrames(trace).filter(({ frame }) =>
     target.code
       ? delegated(frame) && lower(frame.to) === target.code && lower(frame.from) === target.address
-      : !delegated(frame) && type(frame) !== 'STATICCALL' && lower(frame.to) === target.address && frame.input?.length >= 10,
+      : !delegated(frame) && frameType(frame) !== 'STATICCALL' && lower(frame.to) === target.address && frame.input?.length >= 10,
   )
 }
 const caller = ({ frame, ancestors }, target) => lower(target.code ? ancestors.at(-1)?.from : frame.from)
@@ -98,26 +94,6 @@ const timestamp = async (chain, block) => hexInt((await rpc(chain, 'eth_getBlock
 const latest = (chain) => rpc(chain, 'eth_blockNumber', []).then(hexInt)
 const getCode = (chain, address, tag = 'latest') => rpc(chain, 'eth_getCode', [address, tag]).catch(() => '0x')
 
-const tokens = new Map()
-async function token(chain, address) {
-  const key = `${chain}:${address}`
-  if (!tokens.has(key)) {
-    const call = (data) => rpc(chain, 'eth_call', [{ to: address, data }, 'latest']).catch(() => '0x')
-    const [decimals, symbol] = await Promise.all([call('0x313ce567'), call('0x95d89b41')])
-    const text = symbol.length >= 194 ? symbol.slice(130, 130 + hexInt(symbol.slice(66, 130)) * 2) : symbol.slice(2, 66)
-    const name = Buffer.from(text, 'hex').toString().replace(/[^\x20-\x7e]/g, '')
-    tokens.set(key, { decimals: decimals.length > 2 ? hexInt(decimals.slice(-4)) : 0, symbol: name || address.slice(0, 10) })
-  }
-  return tokens.get(key)
-}
-const format = (amount, decimals) => {
-  const text = amount.toString().padStart(decimals + 1, '0')
-  const whole = text.slice(0, text.length - decimals)
-  const digits = text.slice(text.length - decimals)
-  const fraction = digits.slice(0, whole === '0' ? digits.search(/[1-9]/) + 4 : 6).replace(/0+$/, '')
-  return `${whole}${fraction ? `.${fraction}` : ''}`
-}
-
 // What the target lost in a transaction, per asset (Transfer logs, native value): its net outflow,
 // the net amount that reached the sender or a caller of the target, and the transferFrom pulls it made on
 // others' approvals; a pull is from a third party when its source is neither.
@@ -125,7 +101,6 @@ async function outflow(chain, { hash, root }, target) {
   const receipt = await rpc(chain, 'eth_getTransactionReceipt', [hash])
   const callers = traceFrames(root).filter(({ frame }) => !delegated(frame) && lower(frame.to) === target.address)
   const parties = [lower(root.from), ...callers.map(({ frame }) => lower(frame.from))]
-  const self = word(target.address)
   const sums = new Map()
   const add = (key, amount) => sums.set(key, (sums.get(key) ?? 0n) + amount)
   const move = (asset, from, to, amount) => {
@@ -136,15 +111,15 @@ async function outflow(chain, { hash, root }, target) {
       }
   }
   for (const log of receipt.logs)
-    if (log.topics[0] === TRANSFER && log.topics.length === 3)
+    if (log.topics[0] === TRANSFER_TOPIC && log.topics.length === 3)
       move(lower(log.address), `0x${log.topics[1].slice(26)}`, `0x${log.topics[2].slice(26)}`, BigInt(log.data === '0x' ? 0 : log.data.slice(0, 66)))
   for (const entry of traceFrames(root)) {
     const { frame } = entry
-    if (!succeeded(entry) || delegated(frame) || type(frame) === 'STATICCALL') continue
+    if (!succeeded(entry) || delegated(frame) || frameType(frame) === 'STATICCALL') continue
     move('native', lower(frame.from), lower(frame.to), BigInt(frame.value ?? 0))
     if (lower(frame.from) !== target.address || frame.input?.slice(0, 10) !== '0x23b872dd') continue
     const source = `0x${frame.input.slice(34, 74)}`
-    const pulled = receipt.logs.find((log) => lower(log.address) === lower(frame.to) && log.topics[0] === TRANSFER && lower(log.topics[1]) === word(source))
+    const pulled = receipt.logs.find((log) => lower(log.address) === lower(frame.to) && log.topics[0] === TRANSFER_TOPIC && lower(log.topics[1]) === word(source))
     if (source !== target.address && pulled) add(`pull ${lower(frame.to)} ${source}`, BigInt(`0x${frame.input.slice(138, 202)}`))
   }
   const parts = []
@@ -152,16 +127,9 @@ async function outflow(chain, { hash, root }, target) {
     if (amount <= 0n) continue
     const [kind, asset, source] = key.split(' ')
     const { decimals, symbol } = asset === 'native' ? { decimals: 18, symbol: 'native' } : await token(chain, asset)
-    parts.push(`${kind} ${format(amount, decimals)} ${symbol}${source ? ` from ${source}${parties.includes(source) ? '' : ' (third party)'}` : ''}`)
+    parts.push(`${kind} ${decimal(amount, decimals ?? 0, 6)} ${symbol}${source ? ` from ${source}${parties.includes(source) ? '' : ' (third party)'}` : ''}`)
   }
   return parts.join('; ') || '-'
-}
-
-async function pool(items, size, task) {
-  let next = 0
-  await Promise.all(Array.from({ length: size }, async () => {
-    while (next < items.length) await task(items[next++])
-  }))
 }
 
 // Steps 2-4 on one chain: candidates from logs, confirmation by trace, outflow of each exercise.
@@ -178,7 +146,7 @@ async function scan(chain, targets, selectors, from, to, anchor) {
     }
   // --traces: calls into a target that leave no log on it (arbitrary calls, approval drains), where the
   // provider serves trace_filter over 10k-block ranges (Ethereum).
-  if (args.includes('--traces'))
+  if (opt.traces)
     for (let start = from; start <= end && candidates.size <= max; start += 10000) {
       const calls = await rpc(chain, 'trace_filter', [{ fromBlock: blockTag(start), toBlock: blockTag(Math.min(end, start + 9999)), toAddress: targets.map((t) => t.address) }])
       for (const call of calls ?? []) if (!call.error) candidates.set(call.transactionHash, { hash: call.transactionHash, block: call.blockNumber, index: call.transactionPosition })
@@ -238,20 +206,20 @@ const resets = await Promise.all(record.targets.map((target) =>
 ))
 // --also: sibling deployments (clones, other pools of one template) the anchor did not execute,
 // searched with the selectors the anchor used on the record's targets.
-const siblings = (option('also') ?? '').toLowerCase().split(',').filter(Boolean).flatMap((address) =>
+const siblings = opt.also.toLowerCase().split(',').filter(Boolean).flatMap((address) =>
   record.targets.map((target) => {
     const sibling = { address, ...(target.code ? { code: target.code } : {}) }
     selectors.set(sibling, selectors.get(target))
     return sibling
   }),
 )
-const from = Number(option('from') ?? Math.min(...resets))
-const to = Number(option('to') ?? (await latest(chainId)))
+const from = Number(opt.from ?? Math.min(...resets))
+const to = Number(opt.to ?? (await latest(chainId)))
 const found = await scan(chainId, [...record.targets, ...siblings], selectors, from, to, anchor)
 
 // Step 5: the same code at the same address on other chains. Code differing in under 5% of its bytes,
 // at equal length, is taken as the same source with other immutables (token addresses, chain constants).
-for (const chain of (option('chains') ?? '').split(',').filter(Boolean).map(Number)) {
+for (const chain of opt.chains.split(',').filter(Boolean).map(Number)) {
   if (chain === chainId) continue
   const targets = []
   for (const target of rpcUrl(chain) ? record.targets : []) {
@@ -259,7 +227,7 @@ for (const chain of (option('chains') ?? '').split(',').filter(Boolean).map(Numb
     const there = await getCode(chain, target.code ?? target.address)
     let differing = 0
     for (let i = 2; i < here.length; i += 2) if (here.slice(i, i + 2) !== there.slice(i, i + 2)) differing++
-    if (!args.includes('--force') && (here === '0x' || here.length !== there.length || differing > here.length / 40 || (await getCode(chain, target.address)) === '0x')) continue
+    if (!opt.force && (here === '0x' || here.length !== there.length || differing > here.length / 40 || (await getCode(chain, target.address)) === '0x')) continue
     targets.push(target)
     console.log(`\neip155:${chain} ${target.address}: ${differing ? `same length, ${differing} bytes differ` : 'identical code'}`)
   }
@@ -267,7 +235,7 @@ for (const chain of (option('chains') ?? '').split(',').filter(Boolean).map(Numb
   if (!targets.length) continue
   const head = await latest(chain)
   // --ranges 56:from-to,...: block windows on other chains, whose block numbers differ.
-  const range = (option('ranges') ?? '').split(',').map((r) => r.split(':')).find(([c]) => Number(c) === chain)
+  const range = opt.ranges.split(',').map((r) => r.split(':')).find(([c]) => Number(c) === chain)
   if (range) {
     const [lo, hi] = range[1].split('-').map(Number)
     found.push(...(await scan(chain, targets, selectors, lo, hi, anchor)))

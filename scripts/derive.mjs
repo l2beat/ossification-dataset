@@ -10,9 +10,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { EMPTY_CODE_HASH, blockTag, callTrace, hexInt, keccak256, rpc, rpcUrl, traceFrames } from './rpc.mjs'
-
-const word = (value) => `0x${value.replace(/^0x/, '').padStart(64, '0')}`
+import { EMPTY_CODE_HASH, account, before, blockTag, callTrace, delegated, frameType, hexInt, keccak256, pool, rpc, rpcUrl, traceFrames, word } from './rpc.mjs'
 
 // Some providers briefly answer null for data they hold, so a null is retried before it counts.
 async function present(chainId, method, params) {
@@ -42,16 +40,10 @@ async function anchor(chainId, hash) {
   }
 }
 
-const before = (a, b) => a.block < b.block || (a.block === b.block && a.index < b.index)
 const position = ({ block, index, timestamp }) => ({ block, index, timestamp })
 
 async function stateDiff(chainId, hash) {
   return rpc(chainId, 'debug_traceTransaction', [hash, { tracer: 'prestateTracer', tracerConfig: { diffMode: true } }])
-}
-
-function account(state, address) {
-  const key = Object.keys(state ?? {}).find((candidate) => candidate.toLowerCase() === address)
-  return key === undefined ? undefined : state[key]
 }
 
 async function deriveReset(chainId, target, route, exploit, report) {
@@ -74,7 +66,7 @@ async function deriveReset(chainId, target, route, exploit, report) {
       const trace = await callTrace(chainId, reset.tx).catch(() => null)
       if (trace)
         created = traceFrames(trace).some(
-          ({ frame }) => /^CREATE2?$/.test(String(frame.type).toUpperCase()) && frame.to?.toLowerCase() === address,
+          ({ frame }) => /^CREATE2?$/.test(frameType(frame)) && frame.to?.toLowerCase() === address,
         )
       else {
         const codes = await Promise.all(
@@ -147,7 +139,7 @@ function checkExecution(trace, target, report) {
     report.failures.push(`${target.address}: not executed by the exploit`)
   if (!target.code) return [target.address]
   for (const { frame, ancestors } of frames) {
-    if (!/^(DELEGATECALL|CALLCODE)$/.test(String(frame.type).toUpperCase()) || to(frame) !== target.code) continue
+    if (!delegated(frame) || to(frame) !== target.code) continue
     const entry = ancestors.findLastIndex((ancestor) => to(ancestor) === target.address)
     if (entry >= 0) return [...ancestors.slice(entry).map(to), target.code]
     if (frame.from?.toLowerCase() === target.address) return [target.address, target.code]
@@ -163,19 +155,17 @@ export async function derive(chainId, hash, record) {
 
   // Bundles describe a selection rule and are reproduced by hand, not checked here.
   const legs = (record.campaign ?? []).filter((leg) => typeof leg === 'string')
-  await Promise.all(Array.from({ length: 8 }, async () => {
-    for (let id = legs.shift(); id; id = legs.shift()) {
-      const [, campaignChain, campaignHash] = id.split(':')
-      if (!rpcUrl(Number(campaignChain))) {
-        const note = `campaign on eip155:${campaignChain}: no RPC`
-        if (!report.unverified.includes(note)) report.unverified.push(note)
-        continue
-      }
-      const receipt = await rpc(Number(campaignChain), 'eth_getTransactionReceipt', [campaignHash])
-      if (!receipt) report.failures.push(`campaign ${id} not found`)
-      else if (receipt.status === '0x0') report.failures.push(`campaign ${id} reverted`)
+  await pool(legs, 8, async (id) => {
+    const [, campaignChain, campaignHash] = id.split(':')
+    if (!rpcUrl(Number(campaignChain))) {
+      const note = `campaign on eip155:${campaignChain}: no RPC`
+      if (!report.unverified.includes(note)) report.unverified.push(note)
+      return
     }
-  }))
+    const receipt = await rpc(Number(campaignChain), 'eth_getTransactionReceipt', [campaignHash])
+    if (!receipt) report.failures.push(`campaign ${id} not found`)
+    else if (receipt.status === '0x0') report.failures.push(`campaign ${id} reverted`)
+  })
 
   const trace = await callTrace(chainId, hash).catch(() => null)
   if (!trace) report.unverified.push('exploit trace')
