@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { checkRecord, validate } from '../scripts/check.mjs'
+import { checkRecord, checkResearch, validate } from '../scripts/check.mjs'
 
 const schema = JSON.parse(readFileSync(new URL('../schema/incident.schema.json', import.meta.url)))
 const tx = `0x${'ab'.repeat(32)}`
@@ -40,10 +40,13 @@ test('a config reset names exactly one of slot and call', () => {
   assert.notDeepEqual(validate(incident, schema), [])
 })
 
-test('losses below the floor and unknown fields are rejected', () => {
+test('losses below the floor, unpriced assets and unknown fields are rejected', () => {
   const incident = record()
   incident.loss.usd = 999
   assert.notDeepEqual(validate(incident, schema), [])
+  const unpriced = record()
+  delete unpriced.loss.assets[0].usd
+  assert.notDeepEqual(validate(unpriced, schema), [])
   const extra = record()
   extra.verification = {}
   assert.notDeepEqual(validate(extra, schema), [])
@@ -62,4 +65,13 @@ test('loss.usd is the sum of its assets and refs do not repeat campaign transact
   incident.record.loss.usd = 5000
   incident.record.refs = [`eip155:1:${tx}`]
   assert.equal(errors().length, 1)
+  delete incident.record.refs
+  incident.record.loss.assets[0].chainId = 1
+  assert.equal(errors().length, 1)
+})
+
+test('research entries carry only known fields and a known rule', () => {
+  const errors = []
+  checkResearch(new URL('..', import.meta.url).pathname, new Set(), errors)
+  assert.deepEqual(errors, [])
 })

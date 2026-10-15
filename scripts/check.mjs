@@ -1,5 +1,5 @@
 /**
- * Validate records, research files and dist/latest without an RPC.
+ * Validate records, research files and dist/ without an RPC.
  *
  *   node scripts/check.mjs
  */
@@ -64,27 +64,39 @@ export function checkRecord({ path: file, chainId, tx, record }, errors) {
     if (bundle.from > bundle.to) errors.push(`${file}: campaign bundle ends before it starts`)
   const legs = new Set([`eip155:${chainId}:${tx}`, ...(record.campaign ?? [])])
   for (const ref of record.refs ?? []) if (legs.has(ref)) errors.push(`${file}: ref ${ref} repeats the exploit or a campaign transaction`)
+  for (const asset of record.loss?.assets ?? [])
+    if (asset.chainId === chainId) errors.push(`${file}: asset ${asset.symbol ?? asset.token} names the incident chain`)
   const sum = (record.loss?.assets ?? []).reduce((total, asset) => total + (asset.usd ?? 0), 0)
   if (record.loss && Math.abs(sum - record.loss.usd) > Math.max(1, record.loss.usd * 1e-6))
     errors.push(`${file}: loss.usd ${record.loss.usd} is not the sum of its assets (${sum})`)
 }
 
-function checkResearch(incidentIds, errors) {
-  const read = (name) => JSON.parse(readFileSync(path.join(ROOT, 'research', name), 'utf8'))
-  const excluded = read('excluded.json')
-  const queue = read('queue.json')
-  for (const [id, entry] of Object.entries(excluded)) {
-    if (!entry.name || !entry.reason) errors.push(`research/excluded.json: ${id} needs a name and reason`)
-    if (incidentIds.has(id)) errors.push(`research/excluded.json: ${id} is an incident`)
+// Why a lead is outside the cohort: which methodology rule it fails.
+export const EXCLUSION_RULES = ['keys', 'privileged', 'market', 'offchain', 'no-defect', 'no-exploit', 'no-loss', 'attacker-code', 'non-evm']
+const REF = /^(https?:\/\/\S+|eip155:[1-9][0-9]*:0x[0-9a-f]{64})$/
+const RESEARCH = {
+  'excluded.json': { fields: ['name', 'date', 'rule', 'reason', 'refs'], required: ['name', 'rule', 'reason'] },
+  'queue.json': { fields: ['name', 'date', 'refs', 'note', 'draft', 'missing'], required: ['name', 'missing'] },
+}
+
+export function checkResearch(root, incidentIds, errors) {
+  const files = Object.fromEntries(
+    Object.keys(RESEARCH).map((name) => [name, JSON.parse(readFileSync(path.join(root, 'research', name), 'utf8'))]),
+  )
+  for (const [name, { fields, required }] of Object.entries(RESEARCH))
+    for (const [id, entry] of Object.entries(files[name])) {
+      const at = `research/${name}: ${id}`
+      for (const key of Object.keys(entry)) if (!fields.includes(key)) errors.push(`${at} has unknown field ${key}`)
+      for (const key of required) if (!entry[key]) errors.push(`${at} needs ${key}`)
+      for (const ref of entry.refs ?? []) if (!REF.test(ref)) errors.push(`${at} ref ${ref} is not a URL or transaction id`)
+      if (incidentIds.has(id)) errors.push(`${at} is an incident`)
+    }
+  for (const [id, entry] of Object.entries(files['excluded.json']))
+    if (!EXCLUSION_RULES.includes(entry.rule)) errors.push(`research/excluded.json: ${id} has unknown rule ${entry.rule}`)
+  for (const [id, entry] of Object.entries(files['queue.json'])) {
+    if (!Array.isArray(entry.missing) || entry.missing.length === 0) errors.push(`research/queue.json: ${id} needs what is missing`)
+    if (id in files['excluded.json']) errors.push(`research/queue.json: ${id} is also excluded`)
   }
-  for (const [id, entry] of Object.entries(queue)) {
-    if (!entry.name || !entry.missing?.length) errors.push(`research/queue.json: ${id} needs a name and what is missing`)
-    if (incidentIds.has(id) || id in excluded) errors.push(`research/queue.json: ${id} is also an incident or excluded`)
-  }
-  for (const [lead, ids] of Object.entries(read('leads.json')))
-    for (const id of [ids].flat())
-      if (!incidentIds.has(id) && !(id in excluded) && !(id in queue))
-        errors.push(`research/leads.json: ${lead} points to unknown ${id}`)
 }
 
 export async function check(root = ROOT) {
@@ -100,15 +112,15 @@ export async function check(root = ROOT) {
       campaigns.set(id, incident.path)
     }
   }
-  checkResearch(new Set(incidents.map((incident) => incident.id)), errors)
+  checkResearch(root, new Set(incidents.map((incident) => incident.id)), errors)
 
   if (errors.length === 0) {
     const built = await build({ root, offline: true })
     errors.push(...built.errors)
     for (const [name, contents] of Object.entries(built.files)) {
-      const file = path.join(root, 'dist', 'latest', name)
+      const file = path.join(root, 'dist', name)
       if (!built.errors.length && (!existsSync(file) || readFileSync(file, 'utf8') !== contents))
-        errors.push(`dist/latest/${name} is stale; run npm run build`)
+        errors.push(`dist/${name} is stale; run npm run build`)
     }
   }
   return errors

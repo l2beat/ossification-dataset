@@ -1,11 +1,11 @@
 /**
- * Build dist/latest from incidents/.
+ * Build dist/ from incidents/.
  *
  * Onchain facts are derived once per set of onchain claims (targets and
  * campaign) and reused from dist while those claims are unchanged, so only
  * new or re-targeted records need an RPC.
  *
- *   node scripts/build.mjs          # derive what changed, write dist/latest
+ *   node scripts/build.mjs          # derive what changed, write dist/
  *   node scripts/build.mjs --all    # re-derive every record
  *   node scripts/build.mjs --only incidents/1/<tx>.json ...   # re-derive these records
  */
@@ -16,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { derive } from './derive.mjs'
 
 export const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const DIST = path.join(ROOT, 'dist', 'latest')
+const DIST = path.join(ROOT, 'dist')
 
 export const serialize = (value) => `${JSON.stringify(value, null, 2)}\n`
 
@@ -75,7 +75,7 @@ const factsOf = (previous, record) => ({
 
 export async function build({ root = ROOT, all = false, only = null, offline = false, log = () => {} } = {}) {
   const previous = new Map()
-  const distFile = path.join(root, 'dist', 'latest', 'incidents.json')
+  const distFile = path.join(root, 'dist', 'incidents.json')
   if (!all && existsSync(distFile)) for (const old of JSON.parse(readFileSync(distFile, 'utf8'))) previous.set(old.id, old)
 
   const errors = []
@@ -99,8 +99,10 @@ export async function build({ root = ROOT, all = false, only = null, offline = f
       } catch (error) {
         // A chain no RPC serves keeps its previous facts while the age-setting target and reset are unchanged.
         const carried = item.old && /^no RPC/.test(error.message) && factsOf(item.old, item.incident.record)
-        if (carried && carried.target >= 0)
-          rows.push(row(item.incident, { ...carried, unverified: [...new Set([...(carried.unverified ?? []), error.message])] }, item.key))
+        if (carried && carried.target >= 0) {
+          const unverified = (carried.unverified ?? []).filter((note) => !/^no RPC/.test(note))
+          rows.push(row(item.incident, { ...carried, unverified: [...unverified, error.message] }, item.key))
+        }
         else errors.push(`${item.incident.path}: ${error.message}`)
       }
       log(`derived ${++done}: ${item.incident.path}`)
@@ -127,5 +129,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   }
   mkdirSync(DIST, { recursive: true })
   for (const [name, contents] of Object.entries(files)) writeFileSync(path.join(DIST, name), contents)
-  console.log(`Built dist/latest: ${JSON.parse(files['incidents.json']).length} incidents.`)
+  console.log(`Built dist/: ${JSON.parse(files['incidents.json']).length} incidents.`)
 }

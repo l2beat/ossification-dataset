@@ -6,7 +6,7 @@ const read = (file) => JSON.parse(readFileSync(file, 'utf8'))
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
 
 // rows: [ageSeconds, lossUsd, kindIdx, chainId, timestamp, protocol, txHash], ascending age
-const rows = read('dist/latest/incidents.json').map((row) => [
+const rows = read('dist/incidents.json').map((row) => [
   row.codeAgeSeconds,
   Math.round(row.lossUsd * 100) / 100,
   KINDS.indexOf(row.reset.kind === 'genesis' ? 'deployment' : row.reset.kind),
@@ -42,4 +42,6 @@ for (const [placeholder, value] of [
 }
 mkdirSync('_site', { recursive: true })
 writeFileSync('_site/index.html', html)
-console.log(`_site/index.html: ${rows.length} incidents, data ${meta.generatedAt}`)
+// The release curve with the commit it came from, for consumers to copy.
+writeFileSync('_site/curve.json', `${JSON.stringify({ hash, ...read('dist/curve.json') }, null, 2)}\n`)
+console.log(`_site/index.html, _site/curve.json: ${rows.length} incidents, data ${meta.generatedAt}`)
