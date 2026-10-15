@@ -1,12 +1,12 @@
 /**
- * Measure gross victim depletion (METHODOLOGY rules 14-16) for one incident.
+ * Measure gross victim depletion (METHODOLOGY rules 11-12) for one incident.
  *
  * Flows: receipt Transfer logs, Deposit/Withdrawal of the canonical wrapped native token, and
  * native value in the call tree without reverted frames. Victims net together per asset within a
  * transaction, so flash loans repaid in it cancel; depletion sums each transaction's positive net
  * outflow, never offset by gains in other assets or transactions, while a liability (negative
  * price, e.g. debt tokens) nets both ways. Assets the attacker deposited in one transaction and
- * took back in another are not offset here; subtract such round trips by hand (rule 14).
+ * took back in another are not offset here; subtract such round trips by hand (rule 11).
  * DefiLlama prices at block time.
  *
  *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb|@file] [--tx eip155:<chain>:<hash>,...|@file] [--json]
@@ -258,7 +258,7 @@ if (!victims) {
     const assets = await valued(t, [...out.keys()].filter((asset) => out.get(asset)))
     for (const [asset, meta] of assets) {
       const amount = out.get(asset)
-      // A victim's gain in one transaction never offsets its loss in another (rule 14).
+      // A victim's gain in one transaction never offsets its loss in another (rule 11).
       if (amount < 0n && !(meta.quote?.price < 0)) {
         const gain = gains.get(`${t.chain}:${asset}`) ?? { chain: t.chain, asset, ...meta, amount: 0n }
         gains.set(`${t.chain}:${asset}`, { ...gain, amount: gain.amount - amount })
@@ -278,8 +278,8 @@ if (!victims) {
   const liabilities = all.filter((total) => total.liability)
   const sum = depleted.reduce((s, total) => s + Math.max(total.usd ?? 0, 0), 0) + liabilities.reduce((s, total) => s + (total.usd ?? 0), 0)
   const where = (total) => `${total.asset === NATIVE ? '' : ` ${total.asset}`}${total.chain !== Number(chainId) ? ` on ${total.chain}` : ''}`
-  for (const total of depleted) if (total.usd === undefined) console.error(`warning: ${total.symbol}${where(total)} is unpriced; value it at what the attacker realised (rule 15)`)
-  for (const total of liabilities) console.error(`warning: ${total.symbol}${where(total)} is a liability; its ${usd(total.usd)} is netted into the total, so restate loss.assets net of it (rule 16)`)
+  for (const total of depleted) if (total.usd === undefined) console.error(`warning: ${total.symbol}${where(total)} is unpriced; value it at what the attacker realised (rule 12)`)
+  for (const total of liabilities) console.error(`warning: ${total.symbol}${where(total)} is a liability; its ${usd(total.usd)} is netted into the total, so restate loss.assets net of it (rule 11)`)
   if (args.includes('--json')) {
     const assets = depleted.map(({ chain, asset, symbol, amount, decimals, usd }) => ({
       ...(chain !== Number(chainId) ? { chainId: chain } : {}),

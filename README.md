@@ -34,7 +34,9 @@ scripts/build-site.mjs                render site/template.html with dist/ for G
    the loss. Run `npm run derive -- <file>` until it reports no failures,
    then `npm run build` and `npm test`.
 4. Remove the lead from `research/queue.json` and open a pull request. A
-   lead outside the cohort moves to `research/excluded.json` instead.
+   lead outside the cohort moves to `research/excluded.json` instead. The
+   record is admitted when the reviewer's independent derivation agrees on
+   anchor, targets, reset and loss within 10%.
 
 ## Research files
 
@@ -47,13 +49,16 @@ source appears in the `refs` of an incident or of one of these entries.
 - `excluded.json`: `name`, `rule`, `reason`, and optionally `date`, `refs`.
   The rule names what the lead fails: `keys`, `privileged`, `market`,
   `offchain` or `no-defect` (rule 1), `no-exploit` (rule 2), `no-loss`
-  (rule 3), `attacker-code` (rule 12), `non-evm`.
+  (rule 3), `attacker-code` (rule 10), `non-evm`.
 
 ## Commands
 
-Node 22. Deriving needs an RPC per chain: `RPC_URL_FOR_CHAIN_<id>`, or the
-variables listed in `scripts/rpc.mjs`. Traces and historical state need an
-archive node; without them a check is listed as unverified, not failed.
+Node 22. Records hold claims; blocks, timestamps, code hashes, the
+age-setting target and the age are derived from the chain into `dist/`, and
+a claim the chain contradicts fails. Deriving needs an RPC per chain:
+`RPC_URL_FOR_CHAIN_<id>`, or the variables listed in `scripts/rpc.mjs`.
+Traces and historical state need an archive node; without them a check is
+listed as unverified, not failed.
 
 ```bash
 npm test                      # offline: schema, research files, dist freshness
