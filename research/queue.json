@@ -2506,27 +2506,6 @@
       "full review of a seed import"
     ]
   },
-  "eip155:324:0x99efebacb3edaa3ac34f7ef462fd8eed85b46be281bd1329abfb215a494ab0ef": {
-    "name": "EraLend SyncSwap LP oracle read-only reentrancy",
-    "refs": [
-      "eip155:324:0x7ac4da1ea1b0903dfabda56f713ea5e4a960a3fc34467a844d037f86ee8bfe98",
-      "eip155:324:0x9f293dc15f360fb53d1599c90ed9f8b07390e1148fb37e0599bc5d937d78c9bd",
-      "https://rekt.news/eralend-rekt/"
-    ],
-    "draft": {
-      "protocol": "EraLend",
-      "summary": "EraLend's price oracle 0xa6380073c0a1472943c866eacc763864fea8d1cc values the eUSDC/WETH cSLP market's SyncSwap USDC/WETH LP token as (reserve0 * price0 + reserve1 * price1) / totalSupply, read live from pool 0x80115c708e12edd42e504c1cd52aea96c547c05c with no reentrancy check. Inside SyncSwap's burn callback the LP supply is already reduced while the stored reserves are not yet updated, so the attacker's contracts re-entered EraLend from syncSwapBaseBurnCallback, had the LP collateral valued about 46% above its true price, and borrowed 3,435,724.597462 USDC from eUSDC over two transactions.",
-      "targets": [
-        "0xa6380073c0a1472943c866eacc763864fea8d1cc"
-      ],
-      "lossUsd": 3435724.597462
-    },
-    "missing": [
-      "full review of a seed import",
-      "Curve admission is blocked only by the mechanical code-hash anchor: zkSync Era RPCs implement debug_traceTransaction with callTracer/flatCallTracer only (prestateTracer rejected), and the exploit is transaction index 10, so scripts/verify.mjs reports target-1:code-hash INCONCLUSIVE. Manual evidence: eth_getCode hashes to the declared codeHash at blocks 6524035 and 9501651, and callTracer traces of block 9501652 transactions 0-9 (0x4050ee88 through 0x53d21957) contain no call to the oracle and no ContractDeployer 0x8006 create/create2/createAccount/create2Account/forceDeployOnAddresses call. Promote to reviewed and curveEligible once the verifier accepts that proof or a prestate-capable zkSync provider is available.",
-      "The oracle's source is unverified on the zkSync explorer; its pricing formula is established from the exploit call trace and by reproducing its pre-attack getUnderlyingPrice(eLP) output from pool reserves, LP supply and the oracle's own USDC and WETH prices."
-    ]
-  },
   "eip155:42161:0x20db78913a51c3b3aece860ea142c240f3f8fa3b5bbf533a3d1d48eed857e10f": {
     "name": "FractalProtocol",
     "refs": [
@@ -5831,97 +5810,6 @@
       "chain 57 has no debug_traceTransaction on any reachable endpoint, so the verifier reports the execution-trace check INCONCLUSIVE; eth_getCode, eth_getProof and an eth_call replay of the defective parser at the pre-exploit block stand in, and are recorded in the target limitations.",
       "The incident carries an evidenced lower bound rather than an exact USD loss, because the released 5,000,000,000 SYS is 5.49 times the SYS circulating supply and could not have been sold at spot, so METHODOLOGY's curve requirement of loss.usd.amount >= 1000 is not met and the target is excluded from the executable-code curve. The code-age measurement itself is complete and reviewed.",
       "https://rpc.syscoin.org is a full archive node but serves no debug_traceTransaction, so the verifier reports execution-trace INCONCLUSIVE. The execution relationship was established instead with eth_getTransactionByHash (the anchor's to address is the relay itself, so it is the top-level callee), eth_getCode at blocks 679801, 934685 and head, eth_getProof at block 934685, and an eth_call replay of parseBurnTx at block 934685. The code-hash check does reproduce, because the anchor is transaction index 0 and the verifier falls back to eth_getProof at block 934685."
-    ]
-  },
-  "eip155:60808:0xa6e181ea893bfbe2427fd9bca31e1f106d9913882b9f6b0776299e0f456b3c92": {
-    "name": "Shoebill sbSolvBTC oracle unit-parameter misconfiguration",
-    "refs": [
-      "https://quadrigainitiative.com/casestudy/shoebillfinancebtcmarketcollateraloracleexploit.php",
-      "eip155:60808:0x1f18269612e18bacce6992e472015305c35804354bf30a63209285e9323dad8a"
-    ],
-    "draft": {
-      "protocol": "Shoebill Finance",
-      "summary": "ShoebillOracle.getUnderlyingPrice(cToken) computes priceOf(tokenOf[symbol]) * 10**(36-18) / unitOf[symbol], where unitOf is a per-market divisor the owner writes as 10**underlyingDecimals. When the sbSolvBTC and sbSolvBTC.BBN markets were registered the owner wrote 18 instead of 10**18, so the divisor was 5.56e16 times too small and getUnderlyingPrice(sbSolvBTC) returned 4.0116e39 instead of 7.221e22, roughly USD 4.01e21 per SolvBTC. 0.0001 SolvBTC of collateral therefore supported borrowing 19.51269875 WBTC and 1.597302881501740092 tBTC out of the Shoebill pools. The oracle implementation installed two hours earlier added the SolvBTC price mapping but its scaling arithmetic is correct and produced correct prices for every other market through the same expression, so the wrong value came from the parameter, not from the code.",
-      "targets": [
-        "0xe103f874b2d144c5b327fa3d57069bb19c0779e2"
-      ],
-      "lossUsd": 1520456.8001876208
-    },
-    "missing": [
-      "The loss was caused by a wrong owner-written oracle unit parameter rather than by defective executable code, so the record is retained as configuration context and is excluded from the executable-code curve.",
-      "The wrong price came from the unit parameter written by owner transaction 0x1f18269612e18bacce6992e472015305c35804354bf30a63209285e9323dad8a at block 8747349, not from the oracle implementation's arithmetic, so the age basis for this loss would be a configuration change and METHODOLOGY excludes it from the executable-code curve.",
-      "No BOB endpoint reachable from this environment serves debug_traceTransaction, so the verifier cannot reproduce the exploit execution trace or the pre-exploit runtime hash of the artifact; both were established with eth_getCode and eth_getStorageAt at block 8751266 instead."
-    ]
-  },
-  "eip155:787:0x73ea5ad193f381e5868b1f5edfcaf5195f9f3988ad4b925247fcd53081411ed6": {
-    "name": "Starlay Finance (Acala) empty USDC reserve liquidity-index inflation",
-    "refs": [
-      "eip155:787:0xf9c06b0e430545cce942897328a62ad364ec5a55da3970393433124091c6c434",
-      "eip155:787:0xcc85ab2b3e6340d7d783ad9cbaf153ba69826d6310de86289f5e4192c1461e36",
-      "eip155:787:0x7f08c94fa7407595dfb84b10d6d2c4b64d0d4d37b55e3360bb5404a3eb4dd556",
-      "eip155:787:0xa22b4e7e5754a86d87f335d7010d70b02827a5a8c5c0495c3c76722afa96f6e6",
-      "eip155:787:0xa76f1ed6ff1d2d0d369e39cc101dc1f4404906e148e75a2fbd53b46d1f7d1e48",
-      "eip155:787:0x0e929afa97b1473658f6ff9ebcd0ffc51adc12782af498dbf5e26c22487edf04",
-      "eip155:787:0x1e7abd8699c55e305afd0ea0444bae67c5913fbcaae6a0377e3819b472a081a0",
-      "eip155:787:0x24b6c149ddb833aaf5b11390f115c272bdf669061051ddf35269b80ece64c869",
-      "eip155:787:0x90f5afc23bbd0f27a32891b4e40567c962dbace84568ab032246e0b41c64a523",
-      "eip155:787:0x49804f6fd05c56c278df7d52d62d572be15635579d45b4f63b8209dc0a367f37",
-      "eip155:787:0xd0b9794dc7f536c3f2f006fd5a7d23bb43318b4c8e79a8b40570a98b0b2d9cc2",
-      "eip155:787:0x1b7d48d2ea0bd5a38f31f702b27a96056ba6e83b31083fe6c0e0c2d2b5ec8124",
-      "eip155:787:0x9d20686427a0e6b4148de3baf7226305a0973078c106c9616b379eb2f70b20ad",
-      "eip155:787:0xd63a7cae00729a5224d824df43c1f58076d0d4ad91d156fed1913db7bca1c67e",
-      "eip155:787:0xef78eeae93c716ea9e0456acf516224fbd325e2773dd3be4389ecab9218bbbeb",
-      "eip155:787:0xa1270fd04f0fda8ded6c41a97e472a8e1a9fd1a5bfa051644eb5cbe7642f7255",
-      "eip155:787:0x7216ea343a488dd76a1e0e8c3391468e98bfbb7eadcc714c6a0a157ecea9636b",
-      "eip155:787:0x100e16d5fd11f912136815dd685d73b9fe20325b56eac1c286e4d0f0dba16a16",
-      "eip155:787:0xcc7d55b633e5bd2d8826ef9a4b07d2101766643730c760ce068546be1da441a9",
-      "eip155:787:0xafcc3dfb1f9c6ea81581ebe238b1d9302c8d4f74fc9631f79210ecdbc9092a0a",
-      "eip155:787:0xb7e5c85d6072ac5d2c6342cff6637a217b15681c9df0b18770103d439974248c",
-      "eip155:787:0x35df3f3abdaa43852638ddbcb632ca2c106d205e3297adde0e67f710aa9ccd06",
-      "eip155:787:0x803a15d31838c2ee24a71b82baf712a541bd2cd3e62021e41db7a57c16463c46",
-      "eip155:787:0xf594d5a445cb2cde0e1616bc23d88647bb0fedfe20a8fd649393e7d6070f0259",
-      "eip155:787:0x564441e50dd9af3513e1f75467c7506bad2d1b0d2f65b7d5054a0bf7ced09cd9",
-      "eip155:787:0x32731028b1a4c662ad74d8b9336bc146d9eabc2c05d29964534ea7bccf10aeeb",
-      "eip155:787:0xd22e98e6e8875f667dc42827cbd1cd7e6005d8e9efaebc726606969ad9aa16de",
-      "eip155:787:0x9afcfbf9c0f5019b359a4bf68a9ce309f51cc337c2f7217761ac0e149c12537a",
-      "eip155:787:0x616023596db156714d93cad6a9fa22f6d6868c2546c97618cb09d30b232cf652",
-      "eip155:787:0xd284e26c52db36e3765db269a6f269538f17becfa9324a9b001c552849de45c1",
-      "eip155:787:0x7faf4308cb894164413220563b6708f0566ae3266adc500ba810f580e808fd15",
-      "eip155:787:0xc34aa46cef2d809ead2ed0644a35a6c666c58254dcd035890a92cfd6e51e0b81",
-      "eip155:787:0xe4a6c16925d9b96772a8ef8d9a228fa5b1773a8d1b91fad80c9ad47e14e77e08",
-      "eip155:787:0x3ae73aaacf241bd4a112137394536f09fd046f6717b4f51239abc8c27b4a3567",
-      "eip155:787:0xd0055006b351e3322a85b762c81a27db869d44cbba86a656845466108d409c8f",
-      "eip155:787:0x419b2e187cbb9f12bde12dcd0b176d7e6abfa2ffbf777a457b4d10d7400a8852",
-      "eip155:787:0xc8a320620d6d6bab168b5b425f4bb427412acc7b52725c1bb6e0c1d1f339365e",
-      "eip155:787:0xc4e406d9be18ca5793d5d4f6a45db04c53b42488d92bcc59867433b7576e7af4",
-      "eip155:787:0xbb2a61a2e12a1d020d5b8576500df5ba88887cad28a4b3def15acb10ff94ba08",
-      "eip155:787:0x7513406140b45293254034a8b7d9b23ed20dabb9ba33cfe6b88fa4d196664ac2",
-      "eip155:787:0xb94ec4baac202ab574d753c14672f64311076a9626f9abc439d10caae8583d9c",
-      "eip155:787:0xe01da5c22b93abaac83aacb8f8f36ac394c0d896817576b990f6506f1cecc3b9",
-      "eip155:787:0xeef9391e9ad484dd0da82caa643f61f7b1d3ab6bbc8a5e95b46e6af8734a83e8",
-      "eip155:787:0x2eae56a2b8e862d7cb99aa56905b36f333772733b2ef313fb36eee8badd78a5a",
-      "eip155:787:0xfcf85011bdff35d73de5542b5cf5ecca2a73605c34e85d28b63a1a1318bd6dce",
-      "eip155:787:0x60e49bc13db77fd710e92c39068171af1903741a43944b948b8ec3ac50864f4d",
-      "eip155:787:0x11dc2553f867fcae28f6cae1841f74b6d33cf68aab92c7056459835ad9c67e1c",
-      "eip155:787:0x97d6573e2e6d0caa72ffc8224e060f78a6e42b6d32290e762994269d865117de",
-      "eip155:787:0xad14e0dffc73491ea82241ae187eaa3106b8beb4a597b5b630155df9d619e7c5",
-      "https://blockchainreporter.net/starlay-finance-usdc-pool-compromised-invites-hacker-to-negotiate/"
-    ],
-    "draft": {
-      "protocol": "Starlay Finance",
-      "summary": "Starlay's Aave-v2-derived LendingPool on Acala EVM+ adds each flash-loan premium to the reserve liquidityIndex divided by the lToken totalSupply, with no minimum supply, and LTokenRev2.burn converts withdrawals to scaled units with half-up rayDiv. On the nearly empty lUSDC reserve (scaled supply 1) the attacker looped 200 USDC flash loans to raise the index from 1.0000016e27 to 1.35e36, recovered its USDC through deposit/withdraw rounding, and borrowed the pool's DOT and LDOT against the overvalued one-unit lUSDC collateral.",
-      "targets": [
-        "0x28a5afacf605955e4c3aaf23b704c42acd44ebb4",
-        "0x2669ff3a081dda63e7c353b6df64fa33050a9d6d"
-      ],
-      "lossUsd": 2145272.744433363
-    },
-    "missing": [
-      "full review of a seed import",
-      "Acala's eth-rpc-adapter (https://eth-rpc-acala.aca-api.network, rpc_methods lists no debug_* method) cannot trace the exploit, so the verifier's execution-trace check for the lUSDC proxy -> LTokenRev2 DELEGATECALL is INCONCLUSIVE; execution is evidenced only by the 59 Transfer, 30 Mint and 29 Burn logs emitted by the proxy in source-1 and by the EIP-1967 slot value at block 5500950.",
-      "Not the knot even if promoted: its 5310412 reset precedes target-2's USDC collateral configuration at 5310416.",
-      "Intended knot (latest reset, 2315269 s = 26.8 days) but held provisional: the Acala RPC has no debug_traceTransaction, so the verifier's execution-trace (LendingPool proxy -> implementation DELEGATECALL) and creator checks are INCONCLUSIVE. The proxy creation receipt has no log emitted by the proxy, so a create-nonce proof witness is unavailable; creation is evidenced by provider nonce 1 -> 2 across blocks 5310095/5310096, CREATE(0x5aa0f1456da50828f6efb5b751f51a402bb25bbd, nonce 1) = 0x2669ff3a081dda63e7c353b6df64fa33050a9d6d, empty code at 5310095, and ProxyCreated log 0 topic1 = the proxy.",
-      "Promote to reviewed/curveEligible only if a trace-capable Acala provider reproduces the anchors or the verifier accepts log-based execution evidence."
     ]
   },
   "eip155:8453:0x1a6002d8aee205dff67cb2cdaf60569721655857d49ffe2ce81e10fde8c45946": {

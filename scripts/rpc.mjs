@@ -35,6 +35,7 @@ const PUBLIC_RPC = {
   369: 'https://rpc.pulsechain.com',
   999: 'https://rpc.hyperliquid.xyz/evm',
   1030: 'https://evm.confluxrpc.com',
+  787: 'https://eth-rpc-acala.aca-api.network',
   4114: 'https://rpc.mainnet.citrea.xyz',
   33139: 'https://rpc.apechain.com/http',
   80094: 'https://rpc.berachain.com',
