@@ -1,0 +1,54 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "WDZD Swap",
+  "name": "WDZD Swap factory unprotected pair-token sweep",
+  "summary": "The unverified Swap factory exposed 0x4d7a4d9e(pair, token) without access control. It called the pair's factory-only 0x33604058(token), which sent the pair's whole WDZD balance to the factory. With the WDZD reserve emptied, the attacker sold 1 WDZD through the project's router for most of the pair's ETH, and repeated this in nine transactions.",
+  "targets": [
+    {
+      "address": "0xc13bdf0f5cd35f2c152ab70d9949c58352eefb0c",
+      "reset": {
+        "kind": "config",
+        "tx": "0x84a7da2e1216f99ddca22c7b1a163040ad3d53c2a1933bb49befe971f88226f6",
+        "address": "0xc13bdf0f5cd35f2c152ab70d9949c58352eefb0c",
+        "slot": "0xd33875f1a51fb3ee257f3b0470f074a74724fcffc4f676c4004b411dd2c66f9b"
+      }
+    },
+    {
+      "address": "0xe0c352c56af65772ac7c9ab45b858cb43d22f28f",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x95f385eb9fea3a3f30ce9cf7ae815fe4fb525c623d31f7c5e49ebbd2a7c1755c"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1219576.44,
+    "assets": [
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "670.293331754627719667",
+        "usd": 1219576.44
+      }
+    ]
+  },
+  "refs": [
+    "https://www.halborn.com/blog/post/explained-the-swap-lp-hack-may-2023",
+    "https://cointelegraph.com/news/finance-redefined-week-filled-with-exploits-and-uncertainty-for-defi"
+  ],
+  "campaign": [
+    "eip155:56:0x0141c259d56286dff39b32b4b259e396504bf526af926b4b10088770cea44648",
+    "eip155:56:0xc470c03d7db7e3df86f1eaa6cebffee1eabbbff7822eb7e3bf0ae464503865ab",
+    "eip155:56:0xe9df336db027d01679eb5a6bd8108ccc45bdfeb9acb233a42a587d8e3d9e6225",
+    "eip155:56:0x0a59f743c5e088a098171d1d31491ec74106a1e38e9ba037cfebb5b5b895eeb0",
+    "eip155:56:0xd7a74a761a1893f1bb123386b56849f3e2fb09236cd55905f9ac443d2ac8d05a",
+    "eip155:56:0x862d981288ea88f7a6869496a6b93a78d62431a3c872bafb57ca5776bd31cd96",
+    "eip155:56:0xda946693c505eaaca0abc7ade8ffe0ade777c36f48d067befce88f04b0b72ed1",
+    "eip155:56:0xa9312429ba5fa90a39a62d9067c36cac8f581309925f8a8784a544b3c98ca649"
+  ],
+  "notes": [
+    "The factory, pair 0xe0c352c56af65772ac7c9ab45b858cb43d22f28f (swap-LP, WDZD-ETH) and router 0x3c4e06d17e243e2cb2e4568249b6f7213c43c743 are unverified. A call to 0x4d7a4d9e from an arbitrary address succeeds at block 28353521, while calling the pair's 0x33604058 directly reverts with 'Swap: FORBIDDEN'. campaign.mjs found no call to 0x4d7a4d9e other than the attacker's nine.",
+    "The factory's reset is the owner's 0xb95999cd(router, 8) in 0x84a7da2e. It granted the router the role the pair checks (0x46003a3d) before it pays out a swap, and the exploit's sale went through the router. That grant came 94 blocks after the pair was created. The router's signed-sale function 0x543f56bd is the ordinary user path: other users called it successfully shortly before the attack (0xf519cf52, 0x1a880780).",
+    "Loss is the ETH the pair paid out, including the router's 10% fee leg to 0xed9a7384d141799fa283d01647f8d23c56b0e4d9. The swept 13,962,126 WDZD stayed in the project's factory and is not counted."
+  ]
+}
