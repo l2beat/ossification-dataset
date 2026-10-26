@@ -53,6 +53,7 @@ const CHAINS = {
   42161: ['arbitrum', '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', 'ethereum'],
   43114: ['avax', '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7', 'avalanche-2', true],
   59144: ['linea', '0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f', 'ethereum', true],
+  60808: ['bob', '0x4200000000000000000000000000000000000006', 'ethereum', true],
   81457: ['blast', '0x4300000000000000000000000000000000000004', 'ethereum', true],
   80094: ['berachain', '0x6969696969696969696969696969696969696969', 'berachain-bera'],
   167000: ['taiko', '0xa51894664a773981c6c112c43ce576f315d5b1b6', 'ethereum'],
@@ -80,8 +81,14 @@ const ids = [...new Set([`eip155:${chainId}:${anchor}`, ...(record.campaign ?? [
 const usd = (value) => (value === undefined ? '$?' : `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`)
 
 // Native moves from the call tree, without reverted frames.
-async function nativeMoves(chain, hash) {
-  return traceFrames(await callTrace(chain, hash))
+// Without a trace only the transaction's own value is seen.
+async function nativeMoves(chain, tx, receipt) {
+  const trace = await callTrace(chain, tx.hash).catch(() => null)
+  if (!trace) {
+    console.error(`warning: no trace for ${tx.hash}; internal native transfers are missed`)
+    return receipt.status === '0x0' ? [] : [{ type: 'CALL', from: tx.from, to: tx.to, value: tx.value }]
+  }
+  return traceFrames(trace)
     .filter(succeeded)
     .map(({ frame }) => ({ type: frameType(frame), from: frame.from, to: frame.to, value: frame.value }))
 }
@@ -121,7 +128,7 @@ async function flows(id) {
     }
   }
   const attackers = new Set([tx.from.toLowerCase(), receipt.contractAddress?.toLowerCase()].filter(Boolean))
-  for (const { type, from, to, value } of await nativeMoves(chain, hash)) {
+  for (const { type, from, to, value } of await nativeMoves(chain, tx, receipt)) {
     if (/^CREATE2?$/.test(type) && to) attackers.add(to.toLowerCase())
     if (/^(CALL|CREATE2?|SELFDESTRUCT)$/.test(type) && value && to) move(from, to, NATIVE, BigInt(value))
   }

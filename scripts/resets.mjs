@@ -149,9 +149,10 @@ const UPGRADES = ['Upgraded(', 'BeaconUpgraded(', 'NewImplementation(', 'Diamond
 
 const X = await txBlock(hash)
 const [trace, prestate] = await Promise.all([
-  callTrace(chain, hash), call('debug_traceTransaction', hash, { tracer: 'prestateTracer' }).catch(() => null)])
+  callTrace(chain, hash).catch(() => null), call('debug_traceTransaction', hash, { tracer: 'prestateTracer' }).catch(() => null)])
 const frames = traceFrames(trace)
 console.log(`exploit ${hash} block ${X} chain ${chain}`)
+if (!trace) console.log('callTracer unavailable: delegation routes skipped')
 if (!prestate) console.log('prestateTracer unavailable: storage section skipped')
 
 // The exploit's call into the target and the delegation hops from it to the code.
@@ -224,7 +225,7 @@ for (const target of record.targets) {
   } else console.log('created in the exploit block')
 
   // 2. Delegation route: replay the exploit's call into the target and bisect for every change.
-  if (code && !route) console.log(`no delegation from ${address} to ${code} in the exploit trace`)
+  if (code && !route && trace) console.log(`no delegation from ${address} to ${code} in the exploit trace`)
   if (route) {
     const { entry, hops } = route
     console.log(`exploit route ${[address, ...hops.map((hop) => `${hop.type} ${hop.to}`)].join(' > ')}`)
