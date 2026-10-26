@@ -1,0 +1,35 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "AST",
+  "name": "AST token infers liquidity adds and removals from balances and burns the pair's tokens",
+  "summary": "AST's _transfer infers liquidity operations from balances: a transfer to the pair while the pair holds more USDT than the cached pool_usdt credits the sender phantom LP, and a transfer out of the pair to an account whose LP balance is below that credit is treated as a liquidity removal and burned from the pair instead of delivered. With a flash loan the attacker bought most of the pair's AST and drove transfers and a skim that AST misclassified, desynchronising the pair, then sold back for its USDT.",
+  "targets": [
+    {
+      "address": "0xc10e0319337c7f83342424df72e73a70a29579b2",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x22f1e2bce669def6885b4621b69aeb1eab72742e29b6b8e05d7f08b7fea5764a"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 77083.63,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "77145.197852789656133646",
+        "usd": 77083.63
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-01/Ast_exp.sol",
+    "https://blog.solidityscan.com/ast-token-hack-analysis-7a2f0400436a",
+    "eip155:56:0x78867f7126ccbb81dfc7351221b6ab571a7899332cb1c72adfa4767822b10f62"
+  ],
+  "notes": [
+    "Owner calls after deployment changed fee receivers and cut the sell fee from 100% to 4% (0xb715f382), which opened selling like an unpause and is not a reset.",
+    "Loss is the AST/USDT pair's 80,145.20 USDT outflow in the anchor less the 3,000 USDT the attacker put into the pair in its setup transaction (refs, rule 11); the pair's AST is valued at nothing (rule 12)."
+  ]
+}
