@@ -28,6 +28,7 @@ const RPC_ENV = {
 // Public fallbacks: enough for transactions and blocks, rarely for traces.
 const PUBLIC_RPC = {
   30: 'https://public-node.rsk.co',
+  122: 'https://explorer-node.fuse.io',
   250: 'https://rpcapi.fantom.network',
   288: 'https://mainnet.boba.network',
   1868: 'https://rpc.soneium.org',
@@ -83,10 +84,18 @@ export async function keccak256(chainId, data) {
   }
 }
 
+const prefixed = (value) => (typeof value === 'string' && /^[0-9a-f]+$/i.test(value) ? `0x${value}` : value)
+// Some nodes (Fuse) omit the 0x of addresses and calldata in callTracer frames.
+const normalized = (frame) => {
+  for (const key of ['from', 'to', 'input', 'output']) if (key in frame) frame[key] = prefixed(frame[key])
+  frame.calls?.forEach(normalized)
+  return frame
+}
+
 // callTracer tree; parity trace_transaction output is rebuilt into the same shape.
 export async function callTrace(chainId, hash) {
   try {
-    return await rpc(chainId, 'debug_traceTransaction', [hash, { tracer: 'callTracer' }])
+    return normalized(await rpc(chainId, 'debug_traceTransaction', [hash, { tracer: 'callTracer' }]))
   } catch (debugError) {
     const flat = await rpc(chainId, 'trace_transaction', [hash]).catch(() => null)
     if (!Array.isArray(flat) || flat.length === 0) throw debugError
@@ -125,7 +134,7 @@ export const succeeded = ({ frame, ancestors }) => !frame.error && !ancestors.so
 
 /** The entry of a prestateTracer state keyed by address, whatever its case. */
 export function account(state, address) {
-  const key = Object.keys(state ?? {}).find((candidate) => candidate.toLowerCase() === address)
+  const key = Object.keys(state ?? {}).find((candidate) => prefixed(candidate).toLowerCase() === address)
   return key === undefined ? undefined : state[key]
 }
 
