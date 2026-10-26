@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MTDAO",
+  "name": "MTDAO deposit claim priced at spot pair balances",
+  "summary": "The closed-source MTDAO deposit contract paid USDT-denominated claims in MT and ULM, converting them at prices its oracle read from the PancakeSwap pairs' spot token balances, and paid them from the token contracts through its minter grant. Helpers that had deposited one block earlier claimed while the attacker held flash-swapped USDT from both pairs, received about 6,880 MT and 534M ULM at the collapsed prices, and sold the MT back into the MT/USDT pair.",
+  "targets": [
+    {
+      "address": "0xfac064847ab0bb7ac9f30a1397bebcedd4879841",
+      "reset": {
+        "kind": "config",
+        "tx": "0xefb97e02f317666f2a328c2a9116c98c7f7967c413ab29d5f82dc5987ee81c90",
+        "address": "0x2f3f25046ea518d1e524b8fb6147c656d6722ced",
+        "call": "0xaa271e1a000000000000000000000000fac064847ab0bb7ac9f30a1397bebcedd4879841"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 513322.44,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "513322.171991095287947558",
+        "usd": 513322.44
+      }
+    ]
+  },
+  "refs": [
+    "https://fairyproof.substack.com/p/weekly-blockchain-security-watch-830",
+    "eip155:56:0xe58ceb6b3d785a26c0636721b44e5f16167a1beb816c0c969bda32627f9400d0",
+    "eip155:56:0x052aa3fbbd64dce27a7504239d67be68e5b0eebefff93d40023dd3f5fc78448a",
+    "eip155:56:0xcfe29e5cad3fdcc9c901dc31067b438b0803cc5c813aee0f26ccdcfa5f2c8e98"
+  ],
+  "notes": [
+    "The reset is MT.addMinter(deposit contract) (block 22194935), which let the claim pay MT out of the token contract; it follows the deposit contract's creation (22186534), its wiring with the oracle 0x2a22a1fe (22192846) and ULM.addMinter (22194893). Later owner calls before the exploit set fee recipients and transfer fees. The oracle is only staticcalled, so it is not listed as a target; its deployment is older.",
+    "0xe58ceb6b, one block earlier, only bought MT and made the helpers' deposits. The 31 other claims between creation and block 22391188 paid at most 26 MT each from EOAs; none is an exploit.",
+    "Loss is the MT/USDT pair's USDT depletion in the anchor and in the attacker's two later sales of the claimed MT (0x052aa3fb, 0xcfe29e5c; pass them to loss.mjs with --tx). The 534M ULM is still held by the attacker's helper and realised nothing (rule 12)."
+  ]
+}
