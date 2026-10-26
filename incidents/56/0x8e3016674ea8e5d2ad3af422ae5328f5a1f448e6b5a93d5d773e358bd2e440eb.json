@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SKYDAO",
+  "name": "SKYDAO sell path burns the pair's tokens and syncs before crediting the sale",
+  "summary": "On a transfer to the SKYDAO/USDT pair, SKYDAO._transfer sends 35% tax to its pool controller and has the controller sell it, burn the pair's entire SKYDAO balance and sync the pair before the seller's remaining 65% is credited, so the pair's stored SKYDAO reserve is left near zero against a large real balance. With flash-loaned USDT the attacker bought SKYDAO, sold it to the pair, and swapped the pair's whole USDT reserve out against the stale reserve.",
+  "targets": [
+    {
+      "address": "0x7eba33c7a0e555d115277ba4af04dfbb4f4fa70c",
+      "reset": {
+        "kind": "config",
+        "tx": "0x6aff8a4f3f45047d01eb6a27832392262e424bb4433d7487e054822310f6ec83",
+        "address": "0x85870c50677c142f5e37930915d8984cce7623e1",
+        "slot": "0xc2575a0e9e593c00f959f8c92f12db2869c3395a3b0502d05e2516446f71f863"
+      }
+    },
+    {
+      "address": "0xee5fdff6364dde0a3c66dd38a4303cdd3d10730c",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x86b58b9fd4b76fe544d6897e1698eed74dd99aeeff1f826d64f73371b9504a3c"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 183420.51,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "183482.883981401873856912",
+        "usd": 183420.51
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-09/SKYDAO_exp.sol"
+  ],
+  "notes": [
+    "SKYDAO reads its pool controller from config registry 0x85870c50 (results[8]); the reset is the registry naming the unverified controller 0xee5fdff6, about an hour after its deployment. Later registry writes changed fee recipients only.",
+    "Loss is the pair's entire USDT side: 59,914 USDT went to the attacker and the rest, from the controller's tax sale, to the registry's fee recipients. The pair's burned SKYDAO is valued at nothing (rule 12)."
+  ]
+}
