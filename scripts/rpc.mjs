@@ -38,6 +38,7 @@ const PUBLIC_RPC = {
   1030: 'https://evm.confluxrpc.com',
   787: 'https://eth-rpc-acala.aca-api.network',
   4114: 'https://rpc.mainnet.citrea.xyz',
+  4663: 'https://rpc.mainnet.chain.robinhood.com',
   33139: 'https://rpc.apechain.com/http',
   80094: 'https://rpc.berachain.com',
 }
