@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "GAIN",
+  "name": "GAIN side-scaled balanceOf lets the pair be skimmed for amplified surplus",
+  "summary": "GAIN's balanceOf scales accounts assigned to a 'side' by TOTAL_GONS/_sideA, while _transferFrom moves gons at _gonsPerFragment (TOTAL_GONS/_totalSupply); the WETH pair had been auto-assigned SideA and _sideA had grown about 8.6e11 times past the capped _totalSupply, so any GAIN sent to the pair raised its reported balance 8.6e11-fold. The attacker sent dust GAIN to the pair and skimmed the inflated surplus twice, collapsing the pair's GAIN reserve, then sold 1.3 billion GAIN for the pair's WETH.",
+  "targets": [
+    {
+      "address": "0xde59b88abefa5e6c8aa6d742eee0f887dab136ac",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x31d248930e591dc779e9c5ddc95c96b148a4bfed83d6a6d9cafd46d816c2aa6f"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 18843.68,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "6.498219556238282905",
+        "usd": 18843.68
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x9cb980bc2acf11d50f289f55decf11474a838ed2890b63803fcec9f8b03f6f81"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/GAIN_exp.sol",
+    "https://etherscan.io/tx/0x7acc896b8d82874c67127ff3359d7437a15fdb4229ed83da00da1f4d8370764e",
+    "eip155:1:0x43c42c128b8f019c4068639e55cb06e46a527ad5abdc643d6b4329cb14f5db8a",
+    "eip155:1:0xc2480983891d4005afce02fd7dc9c9d15d8a59e979b5b248dc3a31be7a356811",
+    "eip155:1:0x5283f729c031f8b4ad659d4cbe1d63b13a8eee5b70cc136aee4488fe075d6032",
+    "eip155:1:0x5dcf1b52eba4c7424aa94cef9a7d05ff0f8101c9cf0bcb17f85ab9b600ede375"
+  ],
+  "notes": [
+    "Reset: deployment. No owner change after it is needed and HIGH: the pair got SideA automatically when liquidity was first added; the snaps and setRewardYield (0x43c42c12, 2022-07-28) only set how far _sideA diverged, i.e. the amplification and loss size; setPairAddress(WETH) and setAutoAddLiquidity(false) do not touch the exploited path, and max-transaction limits were above the exploit's transfers since 2022-10-30.",
+    "setPairAddress(WETH) (0xc2480983, 2022-10-30) put every transfer into the real pair under the max-wallet check, which the pair's inflated balance (1.8e26 units) exceeded, so sells were impossible until setMaxWalletSize raised the cap on 2023-10-25 (first sufficient raise 0x5283f729; latest 0x5dcf1b52). That works as an unpause of sells, not a change to the vulnerable logic, so it is not counted as a reset (rule 8); counting it would cut the age to about four months.",
+    "Campaign: every Sync of the WETH/GAIN pair in which the GAIN reserve fell more than 1% without a WETH inflow, from deployment to block 26.1M; only the anchor and a 2026 copycat match (a 2022 hit is a proportional LP burn). GAIN is unpriced and was sold back into the same pair, so only WETH counts (rule 12)."
+  ]
+}
