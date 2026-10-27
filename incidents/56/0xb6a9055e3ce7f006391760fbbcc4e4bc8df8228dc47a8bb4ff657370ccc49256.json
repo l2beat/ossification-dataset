@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "JHY",
+  "name": "JHY credits its LP dividend tracker 100 times the fee it pays in, on instantaneous LP balances",
+  "summary": "On every sell JHYToken sends 1% of the amount to its LP dividend tracker but calls distributeCAKEDividends with the full amount, and it sets each trader's dividend share to their current Cake-LP balance. With 25,000 flash-loaned USDT the attacker bought JHY, added liquidity for 12,293 LP, made small LP removals and sells that registered the LP as its share and credited dividends 100 times the JHY paid in, so the tracker paid it 98,905 of its 103,908 JHY, which it sold for 11,205 USDT.",
+  "targets": [
+    {
+      "address": "0x30bea8ce5cd1ba592eb13fccd8973945dc8555c5",
+      "reset": {
+        "kind": "config",
+        "tx": "0xf32d5d336abb10ed777a77f0006dbbee1b646801dbf24abae9ebe68df7b38a57",
+        "address": "0x30bea8ce5cd1ba592eb13fccd8973945dc8555c5",
+        "slot": "0x10"
+      }
+    },
+    {
+      "address": "0x40cd735d49e43212b5cb0b19773ec2a648aaa96c",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x3a9cf0eea7f92ff98583492e6d4cb793808a76546e1ab223db0cb3666dbc750e"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 11217.34,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "11217.341801912892665969",
+        "usd": 11217.34
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-12/JHY_exp.sol",
+    "https://x.com/TenArmorAlert/status/1867950089156575317"
+  ],
+  "notes": [
+    "The anchor's three distributeCAKEDividends calls credited 33,228, 101,964 and 130,201 JHY while the token moved 1% of each to the tracker. The token reaches the unverified tracker only through dividendLPTracker, set by setAddress(1, tracker) (slot 0x10) after the tracker's deployment, so that config is the latest reset (rule 8, a module pointer). The owner's later excludeFromDividends calls only removed two holders' shares.",
+    "Campaign: the tracker's JHY transfers since deployment show no other net outflow above 3,000 JHY; the anchor took 96,251 JHY net. Loss is the pair's net USDT outflow, the realised value of the tracker's JHY, which has no price (rule 12)."
+  ]
+}
