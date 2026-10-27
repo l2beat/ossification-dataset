@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { account, blockTag, callTrace, delegated, hexInt, keccak256, lower, pool, rpc, traceFrames, word } from './rpc.mjs'
+import { account, blockTag, callTrace, delegated, hexInt, keccak256, logTx, lower, pool, rpc, traceFrames, word } from './rpc.mjs'
 
 // Events named in the output; others print as their topic.
 const SIGNATURES = `
@@ -102,34 +102,34 @@ const txBlock = async (tx) => {
   if (!found) throw new Error(`transaction ${tx} not found on eip155:${chain}`)
   return hexInt(found.blockNumber)
 }
-let traced = 0
-const traceBlock = memo(async (block, kind) => {
-  if (traced++ >= TRACED_BLOCKS) return null
+const blockTraces = memo(async (block, kind) => {
   const tracer = kind === 'diff' ? { tracer: 'prestateTracer', tracerConfig: { diffMode: true } } : { tracer: 'callTracer' }
   const [traces, { transactions }] = await Promise.all([
     call('debug_traceBlockByNumber', blockTag(block), tracer), call('eth_getBlockByNumber', blockTag(block), false)])
   return traces.map(({ txHash, result }, index) => ({ tx: txHash ?? transactions[index], result }))
 })
+// At most TRACED_BLOCKS block traces per target; `budget` counts them.
+const traceBlock = async (block, kind, budget) => (budget.used++ >= TRACED_BLOCKS ? null : blockTraces(block, kind))
 
-async function creator(address, block) {
+async function creator(address, block, budget) {
   const receipts = await call('eth_getBlockReceipts', blockTag(block)).catch(() => [])
   const receipt = receipts.find((candidate) => lower(candidate.contractAddress) === address)
   if (receipt) return receipt.transactionHash
-  const traces = (await traceBlock(block, 'call').catch(() => null)) ?? []
+  const traces = (await traceBlock(block, 'call', budget).catch(() => null)) ?? []
   const creates = ({ frame }) => /^CREATE2?$/.test(frame.type) && lower(frame.to) === address
   return traces.find(({ result }) => traceFrames(result).some(creates))?.tx
 }
 
 // Transactions in block that wrote storage of the addresses (a slot, if given); logs when tracing is out of reach.
-async function writers(block, addresses, slot) {
-  const diffs = await traceBlock(block, 'diff').catch(() => null)
+async function writers(block, addresses, slot, budget) {
+  const diffs = await traceBlock(block, 'diff', budget).catch(() => null)
   if (diffs)
     return diffs.filter(({ result }) => addresses.some((address) => {
       const [pre, post] = [account(result.pre, address), account(result.post, address)]
       return slot ? storageKey(pre?.storage, slot) || storageKey(post?.storage, slot) : pre?.storage || post?.storage || post?.code
     })).map(({ tx }) => tx)
   const found = await call('eth_getLogs', { address: addresses, fromBlock: blockTag(block), toBlock: blockTag(block) }).catch(() => [])
-  return unique(found.map((log) => log.transactionHash)).map((tx) => `${tx} (logs)`)
+  return unique(await Promise.all(found.map((log) => logTx(chain, log)))).map((tx) => `${tx} (logs)`)
 }
 // The single writer's selector and the events it made the owners emit.
 async function about(list, owners) {
@@ -189,16 +189,20 @@ function describeUpgrade(log, code) {
   return `${signature}${target ? ` -> ${target}` : ''}${mentions}`
 }
 
-for (const target of record.targets) {
+// Targets run concurrently; each one's lines print together, in record order.
+async function analyse(target) {
+  const lines = []
+  const say = (line) => lines.push(line)
+  const budget = { used: 0 }
   const { address, code, reset } = target
   const R = reset.kind === 'genesis' ? 0 : await txBlock(reset.tx)
   const detail = reset.address ? ` ${reset.slot ? `slot ${reset.slot}` : `call ${reset.call.slice(0, 10)}`} of ${reset.address}` : ''
   const entries = [{ block: R, tx: reset.tx, what: `recorded reset: ${reset.kind}${detail}` }]
-  console.log(`\ntarget ${address}${code ? ` code ${code}` : ''}; recorded ${reset.kind} at block ${R}`)
+  say(`\ntarget ${address}${code ? ` code ${code}` : ''}; recorded ${reset.kind} at block ${R}`)
 
   // 1. Creation, and re-creation when the code before the exploit appeared later.
   const C = await first(0, X, async (block) => (await codeAt(address, block)) !== '0x')
-  entries.push({ block: C, tx: C ? await creator(address, C) : undefined, what: C ? 'created' : 'present at genesis' })
+  entries.push({ block: C, tx: C ? await creator(address, C, budget) : undefined, what: C ? 'created' : 'present at genesis' })
   // Upgrade events; diamond cuts only when they name the exploited selector or code, or follow the reset.
   const route = code && C < X && exploitRoute(target)
   const selector = route?.entry.input.length >= 10 && route.entry.input.slice(2, 10).padEnd(64, '0')
@@ -210,10 +214,10 @@ for (const target of record.targets) {
   const shown = upgrades.filter(relevant)
   for (const log of shown) {
     const at = lower(log.address) === address ? '' : ` on beacon ${lower(log.address)}`
-    entries.push({ block: hexInt(log.blockNumber), tx: log.transactionHash, what: describeUpgrade(log, code) + at })
+    entries.push({ block: hexInt(log.blockNumber), tx: await logTx(chain, log), what: describeUpgrade(log, code) + at })
   }
   if (shown.length < upgrades.length)
-    console.log(`${upgrades.length - shown.length} earlier DiamondCuts name neither the selector nor the code (not shown)`)
+    say(`${upgrades.length - shown.length} earlier DiamondCuts name neither the selector nor the code (not shown)`)
   // Evenly spaced seeds catch route changes that were later rolled back without an event.
   const seeds = unique([C, ...shown.map((log) => hexInt(log.blockNumber)), ...spread(C, X - 1), R - 1, R, X - 1])
     .filter((block) => block >= C && block < X).sort((a, b) => a - b)
@@ -221,15 +225,15 @@ for (const target of record.targets) {
     const final = await codeAt(address, X - 1)
     const absent = (await pool(seeds, 8, async (block) => (await codeAt(address, block)) === '0x' && block)).filter(Boolean)
     const born = await first(Math.max(C, ...absent), X - 1, async (block) => (await codeAt(address, block)) === final)
-    if (born > C) entries.push({ block: born, tx: await creator(address, born), what: 'RE-CREATED: runtime before the exploit appears here (metamorphic)' })
-  } else console.log('created in the exploit block')
+    if (born > C) entries.push({ block: born, tx: await creator(address, born, budget), what: 'RE-CREATED: runtime before the exploit appears here (metamorphic)' })
+  } else say('created in the exploit block')
 
   // 2. Delegation route: replay the exploit's call into the target and bisect for every change.
-  if (code && !route && trace) console.log(`no delegation from ${address} to ${code} in the exploit trace`)
+  if (code && !route && trace) say(`no delegation from ${address} to ${code} in the exploit trace`)
   if (route) {
     const { entry, hops } = route
-    console.log(`exploit route ${[address, ...hops.map((hop) => `${hop.type} ${hop.to}`)].join(' > ')}`)
-    console.log(`probe from ${entry.from} to ${address} input ${entry.input.slice(0, 10)} value ${short(entry.value ?? '0x0')}`)
+    say(`exploit route ${[address, ...hops.map((hop) => `${hop.type} ${hop.to}`)].join(' > ')}`)
+    say(`probe from ${entry.from} to ${address} input ${entry.input.slice(0, 10)} value ${short(entry.value ?? '0x0')}`)
     const value = entry.value && BigInt(entry.value) ? entry.value : undefined
     const overrides = value ? { stateOverrides: { [entry.from]: { balance: `0x${(2n ** 200n).toString(16)}` } } } : {}
     let [probes, reverted] = [0, 0]
@@ -253,31 +257,31 @@ for (const target of record.targets) {
     try {
       await pool(seeds.slice(1).map((block, index) => [seeds[index], block]), 4, ([lo, hi]) => bisect(lo, hi))
       points.sort((a, b) => a.block - b.block)
-      console.log(`route at creation ${await routeAt(C)}`)
-      console.log(`route before the exploit ${await routeAt(X - 1)}, since block ${points.at(-1)?.block ?? C}`)
+      say(`route at creation ${await routeAt(C)}`)
+      say(`route before the exploit ${await routeAt(X - 1)}, since block ${points.at(-1)?.block ?? C}`)
     } catch (error) {
-      console.log(`route bisection stopped: ${error.message}`)
+      say(`route bisection stopped: ${error.message}`)
     }
     // The change's transaction: an upgrade event on any contract the probes touched, else a storage write on the route.
     for (const { block, from, to, near } of points) {
       const onRoute = unique(`${from} ${to}`.match(/0x[0-9a-f]{40}/g))
       const events = await call('eth_getLogs', { address: near, topics: [UPGRADES], fromBlock: blockTag(block), toBlock: blockTag(block) })
-      let list = unique(events.map((log) => log.transactionHash))
-      if (!list.length) list = await writers(block, onRoute)
-      if (!list.length) list = await writers(block, near)
+      let list = unique(await Promise.all(events.map((log) => logTx(chain, log))))
+      if (!list.length) list = await writers(block, onRoute, undefined, budget)
+      if (!list.length) list = await writers(block, near, undefined, budget)
       entries.push({ block, tx: txs(list), what: `ROUTE ${from} => ${to}${await about(list, near)}` })
     }
-    console.log(`probes ${Math.min(probes, PROBES)} (${reverted} reverted; the route counts up to the delegation), route changes ${points.length}`)
+    say(`probes ${Math.min(probes, PROBES)} (${reverted} reverted; the route counts up to the delegation), route changes ${points.length}`)
   }
   for (const [label, slot] of [['eip1967 implementation', IMPLEMENTATION_SLOT], ['eip1967 beacon', BEACON_SLOT]]) {
     const values = await Promise.all([R, X - 1].map((block) => slotAt(address, slot, block)))
-    if (values.some((value) => BigInt(value))) console.log(`${label}: at reset ${short(values[0])}, before exploit ${short(values[1])}`)
+    if (values.some((value) => BigInt(value))) say(`${label}: at reset ${short(values[0])}, before exploit ${short(values[1])}`)
   }
 
   // 3. Storage the exploit read on the route and watched contracts, changed between the reset and the exploit.
   const accounts = unique([address, ...(route?.hops.map((hop) => hop.to) ?? []), ...watch])
   const slots = accounts.flatMap((owner) => Object.keys(account(prestate, owner)?.storage ?? {}).map((slot) => [owner, word(slot)]))
-  if (prestate) console.log(`storage read by the exploit: ${slots.length} slots in ${accounts.length} contracts`)
+  if (prestate) say(`storage read by the exploit: ${slots.length} slots in ${accounts.length} contracts`)
   const changed = (await pool(slots, 8, async ([owner, slot]) => {
     const [old, now] = await Promise.all([slotAt(owner, slot, R), slotAt(owner, slot, X - 1)])
     if (R >= X - 1) return
@@ -292,35 +296,38 @@ for (const target of record.targets) {
     return { block, owner, slot, before: await slotAt(owner, slot, block - 1), now }
   })).filter(Boolean)
   for (const { block, owner, slot, before, now } of changed) {
-    const list = await writers(block, [owner], slot)
+    const list = await writers(block, [owner], slot, budget)
     entries.push({ block, tx: txs(list), what: `slot ${owner} ${short(slot)}: ${short(before)} -> ${short(now)}${await about(list, [owner])}` })
   }
 
   entries.push({ block: X, tx: hash, what: 'exploit' })
-  console.log('\ntimeline (block, tx, change; ! after the recorded reset)')
+  say('\ntimeline (block, tx, change; ! after the recorded reset)')
   entries.sort((a, b) => a.block - b.block)
   for (const { block, tx, what } of entries) {
     const mark = tx === reset.tx ? 'R' : block === X ? ' ' : block > R ? '!' : block === R ? '=' : ' '
-    console.log(`${mark} ${String(block).padStart(10)}  ${tx ?? 'tx ?'}  ${what}`)
+    say(`${mark} ${String(block).padStart(10)}  ${tx ?? 'tx ?'}  ${what}`)
   }
   const later = entries.filter(({ block, tx }) => block > R && block < X && tx !== reset.tx)
-  console.log(later.length ? `${later.length} changes after the recorded reset; latest at block ${later.at(-1).block}` : 'nothing after the recorded reset')
+  say(later.length ? `${later.length} changes after the recorded reset; latest at block ${later.at(-1).block}` : 'nothing after the recorded reset')
 
   // 4. Events from the target and watched contracts since the reset, by topic.
   if (R < X) {
-    const events = await logs({ address: unique([address, ...watch]) }, R, X - 1, EVENTS).catch((error) => (console.log(`events: ${error.message}`), []))
+    const events = await logs({ address: unique([address, ...watch]) }, R, X - 1, EVENTS).catch((error) => (say(`events: ${error.message}`), []))
     const groups = new Map()
     for (const log of events) {
       const key = `${lower(log.address)} ${log.topics[0] ?? 'anonymous'}`
       const last = groups.get(key) ?? { count: 0, block: -1 }
       const block = hexInt(log.blockNumber)
-      groups.set(key, { ...(block > last.block ? { block, tx: log.transactionHash } : last), count: last.count + 1 })
+      groups.set(key, { ...(block > last.block ? { block, log } : last), count: last.count + 1 })
     }
     const since = events.length >= EVENTS ? Math.min(...events.map((log) => hexInt(log.blockNumber))) : R
-    console.log(`\nevents since block ${since}${since > R ? ` (newest ${events.length} only)` : ''} (address, event, count, last block, last tx)`)
-    for (const [key, { count, block, tx }] of [...groups].sort((a, b) => b[1].block - a[1].block)) {
+    say(`\nevents since block ${since}${since > R ? ` (newest ${events.length} only)` : ''} (address, event, count, last block, last tx)`)
+    for (const [key, { count, block, log }] of [...groups].sort((a, b) => b[1].block - a[1].block)) {
       const [owner, topic] = key.split(' ')
-      console.log(`  ${owner} ${(names.get(topic) ?? topic).padEnd(50)} ${String(count).padStart(6)} ${block} ${tx}`)
+      say(`  ${owner} ${(names.get(topic) ?? topic).padEnd(50)} ${String(count).padStart(6)} ${block} ${await logTx(chain, log)}`)
     }
   }
+  return lines
 }
+
+for (const lines of await pool(record.targets, 4, analyse)) for (const line of lines) console.log(line)

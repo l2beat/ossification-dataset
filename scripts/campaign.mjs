@@ -4,18 +4,27 @@
  * come from logs, each is confirmed by its trace. Normal use calls the same
  * selectors, so the target's outflow is printed for the researcher to judge.
  *
- *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..] [--also 0x..,0x..] [--traces]
+ *   node scripts/campaign.mjs incidents/<chainId>/<tx>.json [--from <block>] [--to <block>|latest] [--chains 1,56] [--max <n>] [--selectors 0x..,0x..] [--also 0x..,0x..] [--traces]
  *     [--ranges 56:from-to,10:from-to] [--force: scan other chains even when the code differs]
+ *     [--outflows 0xvictim,..] [--assets 0xtoken,..] [--top <n>]
  *
  * The range runs from the earliest target reset (or creation, on other chains)
- * to the latest block; log scanning stops early past --max candidates (2000).
+ * to 90 days after the anchor. Logs before the anchor are scanned backwards from
+ * it and logs after it forwards, each stopping past --max candidates (2000), so a
+ * capped scan still covers the anchor's neighbourhood and says how far it reached.
  * Traces are cached in $CAMPAIGN_CACHE (default: the OS temp directory).
+ *
+ * --outflows skips selectors and traces: it lists the transactions in the range
+ * where the victims together lost the most of each token (Transfer and wrapped-
+ * native Withdrawal logs; native coin moves need traces and are not seen). It
+ * finds event-less exploits (skims, burns, helper calls) and earlier drains of a
+ * pool through any contract.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { TRANSFER_TOPIC, before, blockTag, callTrace, decimal, delegated, frameType, hexInt, lower, pool, rpc, rpcUrl, succeeded, token, traceFrames, word } from './rpc.mjs'
+import { TRANSFER_TOPIC, before, blockTag, callTrace, decimal, delegated, frameType, hexInt, logTx, lower, pool, rpc, rpcUrl, succeeded, token, topicAddress, traceFrames, word } from './rpc.mjs'
 
 const CACHE = process.env.CAMPAIGN_CACHE ?? path.join(os.tmpdir(), 'ossification-campaign')
 
@@ -24,6 +33,7 @@ const { values: opt, positionals: [file] } = parseArgs({
     from: { type: 'string' }, to: { type: 'string' }, chains: { type: 'string', default: '' }, max: { type: 'string', default: '2000' },
     selectors: { type: 'string' }, also: { type: 'string', default: '' }, ranges: { type: 'string', default: '' },
     traces: { type: 'boolean', default: false }, force: { type: 'boolean', default: false },
+    outflows: { type: 'string' }, assets: { type: 'string', default: '' }, top: { type: 'string', default: '15' },
   },
   allowPositionals: true,
 })
@@ -53,23 +63,25 @@ async function trace(chain, hash) {
   return result
 }
 
-// eth_getLogs over a range: the chunk halves on errors or 30 s timeouts and doubles after successes, never
-// back to a failed size. Stops past `budget` transactions; `end` is the last block covered.
-async function logs(chain, filter, from, to, budget) {
+// eth_getLogs over a range, forwards or backwards: the chunk halves on errors or 30 s timeouts and
+// doubles after successes, never back to a failed size. Stops past `budget` transactions; `reach` is the
+// furthest block covered.
+async function logs(chain, filter, from, to, budget, backward = false) {
   const output = []
   const txs = new Set()
   let ceiling = Infinity
-  for (let start = from, size = 100000; start <= to; ) {
-    const end = Math.min(to, start + size - 1)
+  for (let lo = from, hi = to, size = 100000; lo <= hi; ) {
+    const [start, end] = backward ? [Math.max(lo, hi - size + 1), hi] : [lo, Math.min(hi, lo + size - 1)]
     try {
       const batch = await Promise.race([
         rpc(chain, 'eth_getLogs', [{ ...filter, fromBlock: blockTag(start), toBlock: blockTag(end) }]),
         new Promise((resolve, reject) => setTimeout(() => reject(new Error('eth_getLogs: timeout')), 30000).unref()),
       ])
       output.push(...batch)
-      for (const log of batch) txs.add(log.transactionHash)
-      if (txs.size > budget && end < to) return { output, end }
-      start = end + 1
+      for (const log of batch) txs.add(`${log.blockNumber}:${log.transactionIndex}`)
+      if (txs.size > budget && (backward ? start > lo : end < hi)) return { output, reach: backward ? start : end }
+      if (backward) hi = start - 1
+      else lo = end + 1
       size = Math.min(size * 2, ceiling)
     } catch (error) {
       if (end === start) throw error
@@ -77,8 +89,9 @@ async function logs(chain, filter, from, to, budget) {
       size = Math.ceil((end - start + 1) / 2)
     }
   }
-  return { output, end: to }
+  return { output, reach: backward ? from : to }
 }
+const position = (log) => ({ hash: lower(log.transactionHash), block: hexInt(log.blockNumber), index: hexInt(log.transactionIndex) })
 
 // First block with code at the address; an unanswered query counts as code, erring towards a wider scan.
 async function creation(chain, address, hi) {
@@ -90,6 +103,54 @@ async function creation(chain, address, hi) {
   }
   return lo
 }
+const WITHDRAWAL = '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65'
+
+// The victims' net token flow per transaction in [from, to]: largest outflows per token first.
+async function outflows(chain, victims, assets, from, to, anchor) {
+  console.log(`\neip155:${chain} blocks ${from}..${to}: net outflows of ${victims.join(', ')}${assets.length ? ` in ${assets.join(', ')}` : ''}`)
+  const txs = new Map()
+  const filters = victims.flatMap((victim) => [
+    { topics: [TRANSFER_TOPIC, word(victim)] }, { topics: [TRANSFER_TOPIC, null, word(victim)] }, { topics: [WITHDRAWAL, word(victim)] },
+  ]).map((filter) => (assets.length ? { ...filter, address: assets } : filter))
+  // Backwards from the end, so a capped scan keeps the anchor's neighbourhood.
+  let reach = from
+  for (const filter of filters) {
+    const result = await logs(chain, filter, reach, to, max * 50, true)
+    reach = result.reach
+    for (const log of result.output) {
+      if (hexInt(log.blockNumber) < reach) continue
+      if (log.topics.length < 2 || (log.topics[0] === TRANSFER_TOPIC && log.topics.length !== 3)) continue
+      const key = `${log.blockNumber}:${log.transactionIndex}`
+      const tx = txs.get(key) ?? txs.set(key, { ...position(log), net: new Map(), seen: new Set() }).get(key)
+      // The same log can match two filters (a transfer between victims).
+      const id = `${log.logIndex}`
+      if (tx.seen.has(id)) continue
+      tx.seen.add(id)
+      const amount = BigInt(log.data === '0x' ? 0 : log.data.slice(0, 66))
+      const [source, recipient] = log.topics[0] === WITHDRAWAL ? [topicAddress(log.topics[1]), null] : [topicAddress(log.topics[1]), topicAddress(log.topics[2])]
+      const asset = lower(log.address)
+      const change = (victims.includes(lower(recipient)) ? amount : 0n) - (victims.includes(lower(source)) ? amount : 0n)
+      tx.net.set(asset, (tx.net.get(asset) ?? 0n) + change)
+    }
+  }
+  if (reach > from) console.log(`CAPPED: over ${max * 50} transactions; logs scanned back to block ${reach} only`)
+  const byAsset = new Map()
+  for (const tx of txs.values()) if (tx.block >= reach) for (const [asset, net] of tx.net) if (net < 0n) (byAsset.get(asset) ?? byAsset.set(asset, []).get(asset)).push({ tx, out: -net })
+  const top = Number(opt.top)
+  for (const [asset, rows] of [...byAsset].sort((a, b) => b[1].length - a[1].length)) {
+    const { decimals, symbol } = await token(chain, asset)
+    rows.sort((a, b) => (a.out < b.out ? 1 : -1))
+    const earlier = rows.filter(({ tx }) => before(tx, anchor)).length
+    console.log(`\n${symbol} ${asset}: ${rows.length} txs with outflow (${earlier} before the anchor); largest ${Math.min(top, rows.length)}:`)
+    for (const { tx, out } of rows.slice(0, top)) {
+      const hash = await logTx(chain, tx)
+      const mark = hash === anchor.hash ? 'ANCHOR' : before(tx, anchor) ? 'EARLIER' : ''
+      console.log(`  ${String(tx.block).padStart(10)}  ${hash}  ${decimal(out, decimals ?? 0, 6).padStart(24)}  ${mark}`)
+    }
+  }
+  console.log('\nnative coin moves are not in logs; trace the candidates or use --traces where trace_filter is served')
+}
+
 const timestamp = async (chain, block) => hexInt((await rpc(chain, 'eth_getBlockByNumber', [blockTag(block), false])).timestamp)
 const latest = (chain) => rpc(chain, 'eth_blockNumber', []).then(hexInt)
 const getCode = (chain, address, tag = 'latest') => rpc(chain, 'eth_getCode', [address, tag]).catch(() => '0x')
@@ -132,35 +193,51 @@ async function outflow(chain, { hash, root }, target) {
   return parts.join('; ') || '-'
 }
 
+// Candidate transactions from logs on or naming the targets in [from, to], scanned away from the anchor.
+async function collect(chain, targets, from, to, backward) {
+  const found = new Map()
+  let reach = backward ? from : to
+  for (const target of targets)
+    for (const filter of [{ address: target.address }, { topics: [null, word(target.address)] }]) {
+      const result = await logs(chain, filter, backward ? reach : from, backward ? to : reach, max, backward)
+      reach = result.reach
+      for (const log of result.output) found.set(`${log.blockNumber}:${log.transactionIndex}`, position(log))
+    }
+  return [...found.values()].filter((c) => (backward ? c.block >= reach : c.block <= reach)).map((c) => ({ ...c, reach }))
+}
+
 // Steps 2-4 on one chain: candidates from logs, confirmation by trace, outflow of each exercise.
 async function scan(chain, targets, selectors, from, to, anchor) {
   console.log(`\neip155:${chain} blocks ${from}..${to}`)
-  const candidates = new Map(chain === chainId ? [[anchor.hash, anchor]] : [])
-  let end = to
-  for (const target of targets)
-    for (const filter of [{ address: target.address }, { topics: [null, word(target.address)] }]) {
-      const result = await logs(chain, filter, from, end, max)
-      end = result.end
-      for (const log of result.output)
-        candidates.set(log.transactionHash, { hash: log.transactionHash, block: hexInt(log.blockNumber), index: hexInt(log.transactionIndex) })
-    }
+  const local = chain === chainId
+  const sides = local ? [[from, Math.min(anchor.block, to), true], [anchor.block + 1, to, false]] : [[from, to, false]]
+  let candidates = local ? [anchor] : []
+  for (const [lo, hi, backward] of sides) {
+    if (lo > hi) continue
+    const found = await collect(chain, targets, lo, hi, backward)
+    const reach = found[0]?.reach ?? (backward ? lo : hi)
+    if (reach !== (backward ? lo : hi))
+      console.log(`CAPPED: over --max ${max} candidates ${local ? (backward ? 'before' : 'after') : 'in range'}; logs scanned ${backward ? `back to block ${reach}` : `through block ${reach}`} only`)
+    candidates.push(...found.filter((c) => !local || c.block !== anchor.block || c.index !== anchor.index))
+  }
   // --traces: calls into a target that leave no log on it (arbitrary calls, approval drains), where the
   // provider serves trace_filter over 10k-block ranges (Ethereum).
   if (opt.traces)
-    for (let start = from; start <= end && candidates.size <= max; start += 10000) {
-      const calls = await rpc(chain, 'trace_filter', [{ fromBlock: blockTag(start), toBlock: blockTag(Math.min(end, start + 9999)), toAddress: targets.map((t) => t.address) }])
-      for (const call of calls ?? []) if (!call.error) candidates.set(call.transactionHash, { hash: call.transactionHash, block: call.blockNumber, index: call.transactionPosition })
+    for (let start = from; start <= to && candidates.length <= 2 * max; start += 10000) {
+      const calls = await rpc(chain, 'trace_filter', [{ fromBlock: blockTag(start), toBlock: blockTag(Math.min(to, start + 9999)), toAddress: targets.map((t) => t.address) }])
+      for (const call of calls ?? []) if (!call.error) candidates.push({ hash: call.transactionHash, block: call.blockNumber, index: call.transactionPosition, traced: true })
     }
-  if (end < to) console.log(`CAPPED: over --max ${max} candidates; logs scanned through block ${end} only`)
-  const ordered = [...candidates.values()].filter((c) => c.block <= end || c === anchor).sort((a, b) => (before(a, b) ? -1 : 1))
-  const queue = [...ordered.filter((c) => chain !== chainId || before(c, anchor)), ...ordered.filter((c) => chain === chainId && !before(c, anchor))]
-  const traced = queue.slice(0, max)
+  const ordered = [...new Map(candidates.map((c) => [`${c.block}:${c.index}`, c])).values()].sort((a, b) => (before(a, b) ? -1 : 1))
+  // The candidates nearest the anchor on each side, at most --max per side.
+  const earlier = local ? ordered.filter((c) => before(c, anchor)).slice(-max) : []
+  const traced = [...earlier, ...(local ? ordered.filter((c) => !before(c, anchor)) : ordered).slice(0, max)]
   console.log(`${ordered.length} candidate txs; tracing ${traced.length}`)
-  if (queue.length > max) console.log(`CAPPED at --max ${max}: ${queue.length - max} untraced, from block ${queue[max].block}`)
+  if (traced.length < ordered.length) console.log(`CAPPED at --max ${max} per side: ${ordered.length - traced.length} untraced`)
   const found = []
   const failed = []
   let done = 0
   await pool(traced, 8, async (candidate) => {
+    if (candidate !== anchor && !candidate.traced) candidate.hash = await logTx(chain, candidate)
     const root = await trace(chain, candidate.hash).catch(() => null)
     if (++done % 200 === 0) process.stderr.write(`  traced ${done}/${traced.length}\n`)
     if (!root) return failed.push(candidate.hash)
@@ -187,9 +264,9 @@ const anchor = { hash: anchorHash, block: hexInt(tx.blockNumber), index: hexInt(
 anchor.time = await timestamp(chainId, anchor.block)
 
 // Step 1: the exploit path, as the selectors the anchor used on each target.
-const root = await trace(chainId, anchorHash)
+const root = opt.outflows ? null : await trace(chainId, anchorHash)
 const selectors = new Map()
-for (const target of record.targets) {
+for (const target of opt.outflows ? [] : record.targets) {
   const hits = entries(root, target).filter(succeeded)
   const used = new Set(hits.map(({ frame }) => frame.input.slice(0, 10)))
   selectors.set(target, new Set([...used].filter((selector) => !only || only.includes(selector))))
@@ -214,7 +291,22 @@ const siblings = opt.also.toLowerCase().split(',').filter(Boolean).flatMap((addr
   }),
 )
 const from = Number(opt.from ?? Math.min(...resets))
-const to = Number(opt.to ?? (await latest(chainId)))
+const head = await latest(chainId)
+let to = opt.to === 'latest' ? head : Number(opt.to ?? head)
+if (opt.to === undefined) {
+  // 90 days after the anchor, at the block time over the 10,000 blocks before it.
+  const span = (anchor.time - (await timestamp(chainId, Math.max(0, anchor.block - 10000)))) / Math.min(10000, anchor.block)
+  to = Math.min(head, anchor.block + Math.ceil((90 * 86400) / Math.max(span, 0.05)))
+  if (to < head) console.log(`scanning to block ${to}, about 90 days after the anchor; pass --to latest for the chain head`)
+}
+if (opt.outflows) {
+  await outflows(chainId, opt.outflows.toLowerCase().split(','), opt.assets.toLowerCase().split(',').filter(Boolean), from, to, anchor)
+  process.exit()
+}
+const STANDARD = { '0xa9059cbb': 'transfer', '0x23b872dd': 'transferFrom', '0x095ea7b3': 'approve' }
+const standard = [...new Set([...selectors.values()].flatMap((set) => [...set]))].filter((selector) => STANDARD[selector])
+if (standard.length)
+  console.log(`searching ERC-20 ${standard.map((s) => STANDARD[s]).join(', ')}: on a busy token every transfer is a candidate; consider --selectors or --outflows`)
 const found = await scan(chainId, [...record.targets, ...siblings], selectors, from, to, anchor)
 
 // Step 5: the same code at the same address on other chains. Code differing in under 5% of its bytes,

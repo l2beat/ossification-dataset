@@ -59,12 +59,14 @@ a claim the chain contradicts fails. Deriving needs an RPC per chain:
 `RPC_URL_FOR_CHAIN_<id>`, or the variables listed in `scripts/rpc.mjs`.
 Traces and historical state need an archive node; without them a check is
 listed as unverified, not failed.
+Ad-hoc scripts against these RPCs should send a user-agent header; some
+providers reject Python's default.
 
 ```bash
 npm test                      # offline: schema, research files, dist freshness
 npm run derive -- <file>      # onchain facts and contradictions for one record
 node scripts/resets.mjs <file> [--watch 0x..]
-node scripts/campaign.mjs <file> [--chains 1,56]
+node scripts/campaign.mjs <file> [--chains 1,56] [--outflows 0x..]
 node scripts/loss.mjs <file> [--victims 0x..] [--json]
 npm run build                 # update dist/
 npm run build -- --all        # re-derive every record

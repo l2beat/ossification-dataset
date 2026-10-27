@@ -12,13 +12,14 @@
  *   node scripts/loss.mjs incidents/<chainId>/<tx>.json [--victims 0xa,0xb|@file] [--tx eip155:<chain>:<hash>,...|@file] [--json]
  *
  * Transactions: the anchor, the campaign's listed txs (not bundles) and --tx. Without --victims, lists net flows to pick victims.
+ * Victims' native depletion that moved only as the wrapped token is reported as that token.
  */
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { TRANSFER_TOPIC, callTrace, decimal, frameType, hexInt, rpc, succeeded, token, topicAddress, traceFrames } from './rpc.mjs'
+import { TRANSFER_TOPIC, callTrace, decimal, frameType, hexInt, pool, rpc, succeeded, token, topicAddress, traceFrames } from './rpc.mjs'
 
 // ERC404 tokens report fungible moves as ERC20Transfer and NFT moves as 4-topic Transfer.
 const ERC20_TRANSFER = '0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487'
@@ -105,6 +106,8 @@ async function flows(id) {
   if (receipt.status === '0x0') console.error(`warning: ${id} reverted`)
   const block = await rpc(chain, 'eth_getBlockByNumber', [tx.blockNumber, false])
   const net = new Map()
+  // Native moved as native, not as the wrapped token, per address.
+  const raw = new Map()
   // The canonical wrapped token counts as native, minted from and burnt to the wrapper itself,
   // so wrapping and unwrapping net out for everyone.
   const move = (source, target, token, amount) => {
@@ -130,10 +133,12 @@ async function flows(id) {
   const attackers = new Set([tx.from.toLowerCase(), receipt.contractAddress?.toLowerCase()].filter(Boolean))
   for (const { type, from, to, value } of await nativeMoves(chain, tx, receipt)) {
     if (/^CREATE2?$/.test(type) && to) attackers.add(to.toLowerCase())
-    if (/^(CALL|CREATE2?|SELFDESTRUCT)$/.test(type) && value && to) move(from, to, NATIVE, BigInt(value))
+    if (!/^(CALL|CREATE2?|SELFDESTRUCT)$/.test(type) || !value || !to || !BigInt(value)) continue
+    move(from, to, NATIVE, BigInt(value))
+    for (const [address, sign] of [[from.toLowerCase(), -1n], [to.toLowerCase(), 1n]]) raw.set(address, (raw.get(address) ?? 0n) + sign * BigInt(value))
   }
   net.delete(ZERO)
-  return { id, chain, block: hexInt(tx.blockNumber), timestamp: hexInt(block.timestamp), from: tx.from.toLowerCase(), attackers, net }
+  return { id, chain, block: hexInt(tx.blockNumber), timestamp: hexInt(block.timestamp), from: tx.from.toLowerCase(), attackers, net, raw }
 }
 
 // Native is named after the wrapped token, minus its w.
@@ -211,12 +216,12 @@ const value = (amount, { decimals, quote }) => (quote ? Number(decimal(amount, d
 const priced = ({ quote: q }, at) =>
   q ? `@ $${q.price} ${q.source} ${new Date(q.timestamp * 1000).toISOString()} (${q.timestamp - at}s${q.confidence ? `, confidence ${q.confidence}` : ''})` : 'unpriced'
 
-const transactions = []
-for (const id of ids) transactions.push(await flows(id))
+const transactions = await pool(ids, 8, flows)
 
 if (!victims) {
-  for (const t of transactions) {
-    const assets = await valued(t, [...new Set([...t.net.values()].flatMap((m) => [...m.keys()]))])
+  const valuations = await pool(transactions, 4, (t) => valued(t, [...new Set([...t.net.values()].flatMap((m) => [...m.keys()]))]))
+  for (const [i, t] of transactions.entries()) {
+    const assets = valuations[i]
     const rows = [...t.net].map(([address, m]) => {
       const lines = [...m].filter(([, amount]) => amount).map(([asset, amount]) => ({ asset, ...assets.get(asset), amount, usd: value(amount, assets.get(asset)) }))
       const sum = (f) => lines.reduce((s, l) => s + f(l.usd ?? 0), 0)
@@ -234,11 +239,21 @@ if (!victims) {
 } else {
   const totals = new Map()
   const gains = new Map()
-  for (const t of transactions) {
+  const outs = transactions.map((t) => {
     const out = new Map()
     for (const victim of victims) for (const [asset, amount] of t.net.get(victim) ?? []) out.set(asset, (out.get(asset) ?? 0n) - amount)
-    const assets = await valued(t, [...out.keys()].filter((asset) => out.get(asset)))
-    for (const [asset, meta] of assets) {
+    const wrapped = CHAINS[t.chain]?.[1]
+    const rawOut = [...victims].reduce((sum, victim) => sum - (t.raw.get(victim) ?? 0n), 0n)
+    if (wrapped && out.get(NATIVE) > 0n && rawOut <= 0n) {
+      out.set(wrapped, out.get(NATIVE))
+      out.delete(NATIVE)
+    }
+    return out
+  })
+  const valuations = await pool(transactions, 4, (t, i) => valued(t, [...outs[i].keys()].filter((asset) => outs[i].get(asset))))
+  for (const [i, t] of transactions.entries()) {
+    const out = outs[i]
+    for (const [asset, meta] of valuations[i]) {
       const amount = out.get(asset)
       // A victim's gain in one transaction never offsets its loss in another (rule 11).
       if (amount < 0n && !(meta.quote?.price < 0)) {
@@ -274,7 +289,7 @@ if (!victims) {
   } else {
     for (const total of [...depleted, ...liabilities]) {
       console.log(`${total.liability ? 'liability ' : ''}${decimal(total.amount, total.decimals)} ${total.symbol}${where(total)}  ${usd(total.usd)}`)
-      for (const { amount, id, meta, at } of total.legs) console.log(`    ${decimal(amount, total.decimals).padStart(30)}  ${id.slice(0, 22)}…  ${priced(meta, at)}`)
+      for (const { amount, id, meta, at } of total.legs) console.log(`    ${decimal(amount, total.decimals).padStart(30)}  ${id}  ${priced(meta, at)}`)
     }
     for (const gain of gains.values()) console.log(`gained, not subtracted: ${decimal(gain.amount, gain.decimals)} ${gain.symbol}${where(gain)}`)
     console.log(`total ${usd(sum)}${depleted.some((t) => t.usd === undefined) ? ' + unpriced assets' : ''}`)
