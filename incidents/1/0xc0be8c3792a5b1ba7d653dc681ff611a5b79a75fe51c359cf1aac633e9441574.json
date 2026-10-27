@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Swarm Markets",
+  "name": "Swarm Markets test xTokens left registered in XTokenWrapper with unguarded mint",
+  "summary": "Two XToken contracts Swarm deployed in January 2024 had mint() and burnFrom() without the wrapper-role check, and XTokenWrapper still mapped them to USDC and DAI in xTokenToToken after the team re-pointed tokenToXToken to other xTokens. Anyone could mint them and unwrap() for the wrapper's real collateral: one attacker minted xUSDC and unwrapped 3,311 USDC, and a frontrunning bot minted xDAI and unwrapped 7,725 DAI three blocks later.",
+  "targets": [
+    {
+      "address": "0x0a3fbf5b4cf80db51fcae21efe63f6a36d45d2b2",
+      "reset": {
+        "kind": "config",
+        "tx": "0xfabd661423ecffa2bbcf24eac07b93a36ab129d08326c76ec968200892eb4eb1",
+        "address": "0x2b9dc65253c035eb21778cb3898eab5a0ada0cce",
+        "call": "0xe1d576950000000000000000000000000a3fbf5b4cf80db51fcae21efe63f6a36d45d2b2"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 11032.92,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "3311",
+        "usd": 3309.13
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "7725",
+        "usd": 7723.79
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0xa4d7ee2ddb9db06961a17e2a5ae71743a266bcb720be138670f4a10e8dfc13e9"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/SwarmMarkets_exp.sol",
+    "eip155:1:0xacd17bb4b82417c173a4c8ef72638670a750887d5faac3b736053b8b82f050b1",
+    "eip155:1:0x8a0e2be4015ff721daefe971526ac2a11f1a84c758f2c6264fde97058e65b6f1",
+    "eip155:1:0xebafb86847f3faa561a70eccc45534ec6ed1d33dd6acbd2af69672a05312d9eb"
+  ],
+  "notes": [
+    "The anchor's attacker 0x38f68f11 minted its xUSDC in setup transaction 0xacd17bb4; an earlier xDAI mint to 0xc5a2af4d (0x8a0e2be4) was never unwrapped. The 7,725 DAI unwrap by 0xc0ffeebabe paid 2.56 ETH of its proceeds to the block builder, so it is a campaign exploit, not a rescue.",
+    "Reset: XTokenWrapper first mapped xUSDC to USDC in 0xfabd6614; two later registrations rewrote the same value, and re-pointing tokenToXToken[USDC] to 0x80e32d09 left that mapping in place. Swarm unregistered both test xTokens in 0xebafb868 and refilled the wrapper from 0x9fffe8e9; the refill is not subtracted (rule 11)."
+  ]
+}

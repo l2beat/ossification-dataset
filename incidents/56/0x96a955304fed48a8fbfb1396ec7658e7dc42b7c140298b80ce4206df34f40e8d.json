@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "LW (Linking The World)",
+  "name": "LW transferFrom ignores allowances and the token contract's own balance had underflowed",
+  "summary": "LW is compiled with Solidity 0.7.6 and transferFrom() only decrements the allowance after transferring, without checking it, so the subtraction silently wraps and anyone can move anyone's tokens; _internalSwap also debits the sell fees from the token contract's own balance without crediting it first, which had wrapped that balance to about 2^256. The attacker pulled 1e15 LW from the token contract with transferFrom and sold it into the LW/USDT pair; eight copycat transactions followed within 70 blocks.",
+  "targets": [
+    {
+      "address": "0xabc6e5a63689b8542dbdc4b4f39a7e00d4ac30c8",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x207183e0c9d4802184b232cfef3175413f47f944f098eb002ae57a42916caa50"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 13307.64,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "13281.074942385229120484",
+        "usd": 13307.64
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x194724c866f0a4a1ead1254aa06a1b95c4ee4bc184b2e08a97bde1f47ab50b32",
+    "eip155:56:0x6ddaef9013b4726745eb166970ba37e1bd4c453ca267b0c9bb7de5fd24d47acb",
+    "eip155:56:0x7e84b8980f290aa5d204fd179fe0937ad5fd817689e0633f44e44767ca059ea9",
+    "eip155:56:0x3f52ecb1d28b232eb512ce1dd6ec4119b85bbf062ad3a7c7f36d80f4a26aa730",
+    "eip155:56:0xed7b89110a50c3d479b7de4293e0d7050413158d337d78cd38002970c7e0e780",
+    "eip155:56:0xe1d39dc60497993a75a25d0edb9329133a108f82b7b0f1c33196c9c834feda1e",
+    "eip155:56:0x5b9be79461e9f9581860923ee4d75f50fa13971bff7bfb2f72ccb54b93136269",
+    "eip155:56:0xfa2f0d3340871e51ec09b5d41e26dceba41228baf660fdf2640ad597f587b463"
+  ],
+  "refs": [
+    "https://app.blocksec.com/explorer/tx/bsc/0x96a955304fed48a8fbfb1396ec7658e7dc42b7c140298b80ce4206df34f40e8d",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/LW_exp.sol"
+  ],
+  "notes": [
+    "Campaign: every transaction in which USDT left the LW/USDT pair and LW left the token contract's own balance; the anchor is the first, and the pair's earlier outflows are ordinary sells.",
+    "Loss is the pair's net USDT outflow over the campaign, including the sell-fee swaps the token routed to its two fee wallets 0x42d9c8e2 and 0x5adcefed during the dumps, as LPs lost it whoever received it."
+  ]
+}

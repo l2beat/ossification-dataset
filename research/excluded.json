@@ -1091,6 +1091,16 @@
     "rule": "privileged",
     "reason": "The Mantle mint did not use the lzReceive weakness at all, it used a hardcoded address literal planted in Holographs own operator bytecode. getJobDetails at block 65068617 shows the job was planted at block 63225816 on 2024-05-01, 43 days earlier, by 0x92d1f6fe..3d79: attacker EOA 0xc0ffee78121f208475abdd2cf0853a7afed64749 called adminCall(address,bytes) on 0x777c19834a1a2ff6353a1e9cfb7c799ed7943a11 which called operator.crossChainMessage. Four such plants exist. The operator implementation active then, 0x34b2521f33f224bf21b7f5a8e17354e90c59d453 (byte-identical on Mantle and Ethereum, runtime hash 0xa7a3b24b..1d5c), contains verbatim: require(msg.sender == address(_messagingModule()) || msg.sender == 0x777c19834a1a2ff6353a1e9cfb7c799ed7943a11), and _messagingModuleSlot held the canonical 0x7969414a..0271 throughout, so only the literal branch let the call through. 0x777c1983.. was created by 0xc0ffee78 through the attackers own CREATE2 factory 0x0c8af56f76.. on 2023-08-04, five months before the backdoored implementation existed; its getAdmin() is 0xc0ffee78 and its implementation slot points to unverified custom bytecode differing per chain, unlike Holographs canonical verified LayerZeroModule 0x7d4807de... Triggering it requires being that address, whose only entry is admin-gated adminCall, so the settled backdoor convention makes this author-or-attacker-installed authority rather than a defect any caller could trigger. The Ethereum leg 0x0cc143cc..46396 is downstream and yields nothing: its job hash 0x3f9c5cc1..6571 matches the last Mantle bridge-out 0x845dafda..6449 exactly, so Ethereum minted the legitimate counterpart of a real Mantle burn. All 10e9 HLG minted on Mantle was burned out in seven transactions and no other Mantle HLG mint exists in the tokens history. The lzReceive weakness described in reporting is real as code, only caller() == _lZEndpointSlot and _srcAddress[0:20] == address() are enforced, but no leg of this campaign on chains 1 or 5000 used it."
   },
+  "eip155:56:0x05eabbb665a5b99490510d0b3f93565f394914294ab4d609895e525b43ff16f2": {
+    "name": "Axioma presale price business-logic flaw",
+    "date": "2023-04-24",
+    "rule": "no-defect",
+    "reason": "AxiomaPresale 0x2c25aee9 buyToken() sells AXT at the owner-set rate (rate() = 3e11, i.e. 300 AXT per BNB) and forwards the BNB to the presale owner, exactly as written. The owner left it open about 2.7 months after creating the AXT/WBNB pair 0x6a3fa7d2, whose reserves before the anchor (14,157.67 AXT / 135.48 WBNB, about 104.5 AXT per BNB) priced AXT roughly 2.9x higher. The attacker bought 9,750 AXT for 32.5 flash-loaned BNB and sold them into the pair for 53.3 WBNB: arbitrage between two venues at a configured price, with no code fault. The owner called endPreSale() at block 27635715.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-04/Axioma_exp.sol",
+      "https://twitter.com/HypernativeLabs/status/1650382589847302145"
+    ]
+  },
   "eip155:56:0x1bae633eda9b3d98999ea116bc403712eaa07093ec32bd6d559085cc4607f5b8": {
     "name": "SQTokenStaking hardcoded backdoor beneficiary",
     "date": "2026-05-12",
