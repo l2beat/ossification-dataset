@@ -1,0 +1,54 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "AIS (AI SPACE)",
+  "name": "AIS market vault unprotected setAdmin",
+  "summary": "The AIS market vault's setAdmin had no access control, and AIS left setSwapPairs unprotected while crediting the vault a mint share of every transfer out of a listed pair. The attacker skimmed AIS through the USDT pair in a loop to grow the pending mint, called harvestMarket to mint it to the vault, made itself vault admin, withdrew 90% of the vault's AIS, listed itself as a pair to skip the sell burn and sold the AIS into the pair for USDT.",
+  "targets": [
+    {
+      "address": "0xffac2ed69d61cf4a92347dcd394d36e32443d9d7",
+      "reset": {
+        "kind": "config",
+        "tx": "0xddb344f40b74eddf2a9f89c9e1431146d8847a05de718bc4e5397e57901f89ea",
+        "address": "0xffac2ed69d61cf4a92347dcd394d36e32443d9d7",
+        "slot": "0x4"
+      }
+    },
+    {
+      "address": "0x6844ef18012a383c14e9a76a93602616ee9d6132",
+      "reset": {
+        "kind": "config",
+        "tx": "0x7f77fa90ee35e72123d4fdbc2c4f1ab2a1dd437da75f5f2122a688959667e06a",
+        "address": "0x6844ef18012a383c14e9a76a93602616ee9d6132",
+        "slot": "0x2ec5f2649cc0b79c4d7704563bcbf1258e8e6059b29a9e7e38b80f238d1aef9a"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:56:0x32f2b6f2f02f139166de44727bbe48ca1321f125869f813fc57b07adb12e2b84",
+    "eip155:56:0x0a805cb283f6b1942c3cf82bdb7e4f247fdc8d73bacb6119d043d7c94115c171",
+    "eip155:56:0x5662e85d648ef3c0368648fe0cafe13ee69cd012e466642f464fdb3eca2bde08",
+    "eip155:56:0x0cee8a3edce0180e5aa782b604f17ada0e79e147deb320cb85e7b4a95d7ab937",
+    "eip155:56:0x3aef2be9c2b1edd744be592b9b7d15cf33a4b916bd3f677148b3f5edcf12862b",
+    "eip155:56:0x76feb4a8eda7cc2b638c6cdb85e72b9f4a50a8e329e777f9c65be9c360e3de54"
+  ],
+  "loss": {
+    "usd": 68738.49,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "68738.128195300481556427",
+        "usd": 68738.49
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-11/AIS_exp.sol",
+    "https://twitter.com/Phalcon_xyz/status/1729861048004391306"
+  ],
+  "notes": [
+    "The anchor is a frontrunning bot's copy of the attacker's transaction (first in block 33916688); the attacker's own run 0x5662e85d and three other parties' runs followed. Earlier harvestMarket calls by 0x285bd8c7 and 0xf6e070d0 were made by admins the deployer appointed.",
+    "The vault 0xffac2ed6 is unverified. Its reset is the deployer pointing it at this AIS token (setAIS, slot 0x4): addMarketValue reverts OnlyAIS for any other caller, so every pair transfer in the exploit needed it. It is later than AIS's own listing of the USDT pair and its setMarketAddress. Later admin changes are new holders of the same role (rule 8).",
+    "Loss is the USDT the AIS/USDT pair lost across the campaign; the vault's AIS was freshly minted and is realised through those sales. The 19.3M AIS 0x07372917 took from the vault in 0x3aef2be9 was not sold into the pair."
+  ]
+}

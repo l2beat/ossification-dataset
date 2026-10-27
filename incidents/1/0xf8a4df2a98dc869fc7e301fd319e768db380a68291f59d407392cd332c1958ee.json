@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Game (NFT bid auction)",
+  "name": "Game makeBid minimum-bid error and refund reentrancy",
+  "summary": "Game's newBidEtherMin() returned 5% of the current bid instead of 105%, and makeBid() refunded the previous bidder before recording the new bid. The attacker bid, then from its refund callback re-entered makeBid() with a bid just over 5% of its own, collecting its full previous bid again on each re-entry and draining the ETH the contract held for chunk owners.",
+  "targets": [
+    {
+      "address": "0x52d69c67536f55efefe02941868e5e762538dbd6",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x204a42d69bc5f983c34d247f201863b34fa99fa06bb9a2df91fcb96ecd193fab"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0xbba4b669d4fa4fb8aa7c292849a24a12c1702c259ebc7ed40b53ea0f702da8d5",
+    "eip155:1:0x0c70a961f5cb589fe035f96f48dcae9f6bc7ac368b124a864578a1eb63e209a4",
+    "eip155:1:0xaae44586bdbde1179c990aa64a1b0f2d20044cabf108591f35ea15cc1cdff45c",
+    "eip155:1:0x0eb8f8d148508e752d9643ccf49ac4cb0c21cbad346b5bbcf2d06974d31bd5c4",
+    "eip155:1:0x9a9244b1b2c41b6b61ca10dbe099ec66485e55499f300f43864f6741f04876fb",
+    "eip155:1:0x1624cd342758019872713c31965f983a9154cc22c04430164be506bc1a68f6c7",
+    "eip155:1:0xe07fa7cf5f590ea82cf195923549722f924857537111aeb3824359d3e1c2e32f",
+    "eip155:1:0x40c4a4c3d58521dd7995b70845b268626d73cf4777dc4f12ecd42b1183505fe2",
+    "eip155:1:0x9e22fa33e7a76fcfebfe679fc1fa41b97fffc760d83dcf0cd8168b96838293c7",
+    "eip155:1:0x68d2821516dfca5b1dc21f7bbc24e06816ab9cbe7c055bd3958dbaeca93b0bba"
+  ],
+  "loss": {
+    "usd": 102602.56,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "39.257094999999999683",
+        "usd": 102602.56
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-02/Game_exp.sol",
+    "https://twitter.com/AnciliaInc/status/1757533144033739116",
+    "eip155:1:0x58caa5c325c17a276b237a0915b43b59a5301da98c336a7e786089c4aaf8e39e",
+    "eip155:1:0x7e43eb65ce83a07e75f22861709e17a2dcf903d0a42afbf02de614ba8c4c163f"
+  ],
+  "notes": [
+    "Anchored on the attacker's first successful run 0xf8a4df2a, which drained 0.024 ETH; its larger runs, a second party's copies (0xa8bbb374) and later bids below the standing bid by 0xe0ad8045 (0x40c4a4c3, 0x9e22fa33, 0x68d28215) form the campaign. 0xe0ad8045's contract later collected 3.47 ETH through claim() after the auction ended (0x58caa5c3), which is the game's payout path and not counted. The first bid below the start price, 0x7e43eb65 by 0x52b9f50f, refunded nobody and moved no funds.",
+    "Loss is the Game contract's net ETH outflow per campaign transaction. The standing bids left between transactions that the next one refunded (under 0.05 ETH in all) are not subtracted."
+  ]
+}
