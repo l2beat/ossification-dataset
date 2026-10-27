@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "WXC",
+  "name": "WXC sell hook burns the sold amount from the pair before pricing the sale",
+  "summary": "On a sell, WXC's transfer hook burns the net amount being sold from the WXC/WBNB pair's balance and calls sync() before the sold tokens arrive, so the sale is priced against a reserve already reduced by its own size. Inside a Moolah WBNB flash loan the attacker bought 74.96M WXC (about half the reserve) for 49.15 WBNB and sold it straight back: the hook burned 70.47M WXC from the pair, leaving 0.2M, and the sale returned 86.70 WBNB.",
+  "targets": [
+    {
+      "address": "0x8087720eeea59f9f04787065447d52150c09643e",
+      "code": "0x4c100d30d9c511b8bb9d1c951bbc1be489a0172f",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x2ac8984aad08ebe38c26f3db162f7d97f4fc5453f50fcee3df5d81ee691535ce"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 34866.14,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "42.145438575290866803",
+        "usd": 34866.14
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/TenArmorAlert/status/1954774967481962832",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-08/WXC_Token_exp.sol"
+  ],
+  "campaign": [
+    "eip155:56:0xe7b6da7d7110a981bdb0af5a4aedfaa39f3be906c27c542a3cf7fbf6dfcf5656",
+    "eip155:56:0x9b188f57895e3098a5dd09b97790b0f85e03e7281ec8f98ebcc4f4122c878e63",
+    "eip155:56:0x2351f0f70fe3f6be0403028d398ca40f54544d743119d60819ba87de76f574ee"
+  ],
+  "notes": [
+    "The reset is the upgrade to implementation 0x4c100d30 about an hour before the exploit. Earlier implementations already burned on sells, but every one of the 19 pre-exploit pair burns since the proxy's deployment was an ordinary sell of at most 6,601 WXC, so none was an earlier exploit.",
+    "Campaign: three buy-and-sell round trips by 0x888a8dfe through contract 0xdc2a7aad two hours later against the drained pair. Later sells through 0x00000047 are ordinary sells.",
+    "Loss is the pair's net WBNB depletion, which includes 4.35 WBNB the hook's own fee swap paid to the fee recipient within the anchor; burned WXC is not valued: the attacker realised nothing from it."
+  ]
+}
