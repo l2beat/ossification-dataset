@@ -1,0 +1,33 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SATURN",
+  "name": "SATURN sell burns a multiple of the sell amount from the pair",
+  "summary": "On every sell into the SATURN/WBNB pair, Saturn._transfer burns burnRate (230%) of the sell amount from the pair and syncs whenever the pair holds more than that, guarded only by the pair's highest balance seen on a transfer into it in the same block. With flash-loaned WBNB the attacker bought nearly all of the pair's SATURN to the fee-exempt owner address (bypassing the buy limit and not touching the guard), then sold 228,833 SATURN, whose burn wiped the pair's remaining SATURN before the sync, and swapped that SATURN for 3,220 WBNB, 15.8 more than it had put in.",
+  "targets": [
+    {
+      "address": "0x9bdf251435cbc6774c7796632e9c80b233055b93",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xbd5ef2066fa334254891ac94293a41d14ce383dc4ab3864d0bc6f0a5a9f9b12b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 9212.29,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "15.819439777820443969",
+        "usd": 9212.29
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/SATURN_exp.sol"
+  ],
+  "notes": [
+    "The seed's setEnableSwitch is onlyOwner; the PoC toggles it as the owner only to move the attack contract's tokens. The owner's later parameter changes (burnRate 200 to 230, the sell limit to 500k, blockCalcAmount to 1M) only sized the loss; the default burnRate of 200 already burns more than the sell, and setAvaliableTransfer(true) only opened trading (rule 8).",
+    "The pair had no WBNB outflow above 0.19 WBNB before the anchor. The attacker's earlier purchase of 891k SATURN for 0.153 WBNB (eip155:56:0xa14378822d85cd6d03e6dff1c6a25e609792d7e9588c6481d7492e82848224d7) is not subtracted. Loss is the pair's net WBNB outflow; its burned SATURN is valued at nothing (rule 12)."
+  ]
+}

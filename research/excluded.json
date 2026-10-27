@@ -841,6 +841,15 @@
     "rule": "privileged",
     "reason": "The DefiLlama entry (2026-01-13, $3.6m, 'Missing Slippage Check') matches yoUSD vault transaction 0x6aff59e8 (block 24218806, index 1, 5,837,595 gas), a manage() call (0x224d8703) sent by the vault operator 0x5c28b54e7e1f9aafbdc5c563c1a460106f41bd58. Receipt log 1 moves 3,840,651.3975 stkGHO from the vault to executor 0x365084b05fa7d5028346bd21d842ed0601bab5b8, which routes it through Uniswap v4 and other pools; log 170 returns only 112,036.12644 USDC to the vault. Replaying the same calldata with eth_call at block 24218805 succeeds from the operator and reverts 'UNAUTHORIZED' from 0x…dEaD. The loss came from the operator's own route having no effective minimum output; no unauthorized party exercised any code path."
   },
+  "eip155:1:0x706158ece260383c6928b29940f93ce92454e9c9e839ce65122f9069699c4d6a": {
+    "name": "Chi Protocol stUSC self-transfer balance doubling",
+    "date": "2026-07-12",
+    "rule": "no-loss",
+    "reason": "Staked USC 0x6dd9738f credited a self-transfer twice, turning the attacker's 138 USC into 16,949 USC, which it dumped into the USC/WETH pool for only 0.073 WETH. A separate defect from the ArbitrageV5 burn exploit about 20 hours later (incidents/1/0x4a665f8e…), and its realised depletion is below rule 3's $1,000.",
+    "refs": [
+      "eip155:1:0x4a665f8eeada74552bd2dc466e5549731951f2f6180bbe865fa1d7b4be8ae96f"
+    ]
+  },
   "eip155:1:0x7f2540af4a1f7b0172a46f5539ebf943dd5418422e4faa8150d3ae5337e92172": {
     "name": "Erc20transfer wallet-drainer pull front-run",
     "date": "2024-10-22",
@@ -1262,6 +1271,16 @@
     "date": "2021-03-04",
     "rule": "privileged",
     "reason": "The code that failed was installed by the protocol's own proxy admin four minutes before it was used, so it never aged and was never trusted by anyone but its author. The two victim proxies are the BUSD vault 0x7e0c621ea9f7afd5b86a50b0942eaee68b04a61c and the WBNB vault 0x639f18c72b6a017bdd209c161d1617c9481a1e4d; reading the EIP-1967 slots at block 5381245 gives admin 0xc1f78cc844ac8e2dd9335e70b9c645e4d79130c5, the Meerkat deployer, and implementation 0x49509a31898452529a69a64156ab66167e755dfb, the honest logic that deployer created on 2021-03-03T16:28:07Z. The replacement implementations 0x9d3a4c3acee56dce2392fb75dd274a249aee7d57 and 0xb2603fc47331e3500eaf053bd7a971b57e613d36 were created by 0xfc76e716c35633a93ad621099a52ffda912fbedd at 2021-03-04T08:49:46Z and 08:49:58Z; the deployer key then called upgradeTo (selector 0x3659cfe6) on the WBNB vault at block 5381239, 08:53:10Z (0x063970f8625f250101a7da8abf914748cf8eaaaa9458041f1928501accfe5d6c) and on the BUSD vault at block 5381246, 08:53:31Z (0xf19fa4bcff4adaebeddd28c851458ba0f01ffedd52b62df56ace94e7c8842553). The new logic exposes an unprotected init(address) (0x19ab453c), called 24 seconds later at block 5381254 by 0x9542966f1114eaa5859201aa8d34358bfedbfa79 (0xfcf48681e382e9f9cc1d6a64ff30487306f6b869924c6594075fcc86b3b21f5d) to take ownership and drain. Balances confirm the outcome: the BUSD vault held 13,968,039.801181389726119981 BUSD at block 5381245 and 0 at block 5381300; the WBNB vault held 73,635.237472535387195192 WBNB at block 5381238 and 0 at 5381300. Meerkat first claimed a hack, and DefiLlama classifies it as a rugpull / admin drain. Attacker-authored code installed by the operator's own key yields no code-age observation."
+  },
+  "eip155:56:0xfa1ece5381b9e2b2b83cb10faefde7632ca411bb38dd6bafe1f1140b1360f6ae": {
+    "name": "SUT token sale bought out at a stale admin price",
+    "date": "2023-07-21",
+    "rule": "no-defect",
+    "reason": "SUTTokenSale 0xf075c5c7 (verified) sells SUT at an admin-set fixed tokenPrice. The owner set 0.2142 BNB (settokenPrice, tx 0xac1aa04d, block 29495351) when the SUT/WBNB V3 pool 0xebc4b13f quoted 0.230 BNB/SUT. By block 30165901 the pool quoted 1.391 BNB/SUT, and the attacker (EOA 0x547fb3db) bought the sale's 32.66 SUT for 6.855 BNB and sold it into the pool for 39.85 BNB. buyTokens worked as specified at the configured price; the only code flaw, integer division that leaves 0.66 SUT unpaid (about 0.9 BNB), is below rule 3.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/SUT_exp.sol",
+      "eip155:56:0xac1aa04d03d4abbdc500111442fcc4dc5c9cc92e2f1eeaf9a6f99423846cd1a8"
+    ]
   },
   "eip155:56:0xfb14292a531411f852993e5a3ba4e7eb63ed548220267b9b3f4aacc5572d3a58": {
     "name": "BOB token pair skim loop",
