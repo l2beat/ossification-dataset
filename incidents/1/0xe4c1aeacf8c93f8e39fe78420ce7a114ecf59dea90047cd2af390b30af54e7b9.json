@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SBR",
+  "name": "SBR failed balance hook zeroes the sender",
+  "summary": "The unverified SBR token takes each sender's balance from an external hook (0xaca4263f) and, when the hook call reverts, writes the caught failure as a zero sender balance. The attacker called skim on the SBR/WETH pair, whose zero-amount self-transfer made the hook revert and erased the pair's SBR balance, then sent it 1 wei of SBR, synced, and sold 54.8e9 wei of SBR for the pair's 8.495 WETH.",
+  "targets": [
+    {
+      "address": "0x460b1ae257118ed6f63ed8489657588a326a206d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4f24ab769f43549839925e31d48c6e1691765a7371ae8ad235994a5f7a8684da"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 18434.13,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "8.49503186792084093",
+        "usd": 18434.13
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/TenArmorAlert/status/1897826817429442652",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-03/SBRToken_exp.sol"
+  ],
+  "notes": [
+    "Mechanism from the exploit's storage trace, as token and hook are unverified: in the skim the hook's 0x569937dd reverted and the token then stored 0 at the pair's balance slot 0x1395f58d...; the next 1-wei transfer stored 1 there.",
+    "Victim is the SBR/WETH pair 0x3431c535, whose LP the deployer sent to 0xdead before the exploit; its WETH came from about 30 buyers in the 350 blocks since launch. No skim or other drain of the pair preceded the anchor (campaign.mjs)."
+  ]
+}

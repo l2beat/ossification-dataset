@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "TCH",
+  "name": "TCH burnToken signature replay through v-byte malleability",
+  "summary": "TCH.burnToken() burns a share of the TCH/USDT pair's TCH and syncs when given an authorizedSigner signature, and blocks replays by the keccak256 of the raw signature bytes, while splitSignature adds 27 to any v below 27. The attacker resubmitted the operator's already-used signatures with v rewritten from 27/28 to 0/1, so each passed as new; with flash-loaned USDT it bought TCH, burned the pair's TCH repeatedly, and sold back into the shrunken reserve.",
+  "targets": [
+    {
+      "address": "0x5d78cfc8732fd328015c9b73699de9556ef06e8e",
+      "reset": {
+        "kind": "config",
+        "tx": "0x5bd9c9d81e0134ea5c691d4489e88729bb545896150e1afe86d2f3e5e849afa0",
+        "address": "0x5d78cfc8732fd328015c9b73699de9556ef06e8e",
+        "slot": "0xf"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 32349.54,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "32347.723257789454779708",
+        "usd": 32349.54
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x964dff37c1ccd11e7d0a695333b9385a7d7ecd6d5dddebe3d9d0cd51f10c2a79",
+    "eip155:56:0xb7d5437cf7fa57610fa024cad3ac7007980445058f60ae9c91079bb06a549ac3",
+    "eip155:56:0xec3fe87ba36150ed586a2e6bcc216553d65ca6a3d5cc5a0beb0f1bd679931a5c",
+    "eip155:56:0xb8820959e5ddbccf70bce9e3a867732862d794c430048e97d2105d745f4673bd",
+    "eip155:56:0x2745e8f23b7aed4875fffb6eef9b6b52331022ccce409b6f0c44194978bfa24c",
+    "eip155:56:0xd738edbb5ef30c938d4ad38e5cfc8bb45a9d000e008c1e3e5c68f5fa45775842",
+    "eip155:56:0x1d52660b5cdc13401ee944b285f51ebdfa68d7b632337a60bced54ed75c44d12",
+    "eip155:56:0x32adfe1906d75559fa92d8e1b6e249b7d7792dc1f1a51affcc4a527877c4ab7c",
+    "eip155:56:0xa9fd87aada9b33cb25c418f2535be204ce201d5be06c5b494d98f8f4da5537bb",
+    "eip155:56:0x3c2e4a15797d8d02c7756a11545075f5707d08223280370616ebe1e919359eb3"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-05/TCH_exp.sol"
+  ],
+  "notes": [
+    "Reset is the owner's setUniswapV2Pair (slot 0xf), 212 blocks after deployment and after setAuthorizedSigner (slot 0x13): burnToken burns from and syncs that pair, so the exploit needed it (rule 8).",
+    "Campaign: every burnToken call by a party other than the operator 0x6117ef8c, whose 35 calls before the anchor all carry v 27 or 28. Copycat 0xb50d320f's seven replay burns moved no USDT themselves; the same-block buys and sells by other accounts around them are not counted. Loss is the pair's net USDT outflow per transaction (loss.mjs); its TCH is valued at nothing (rule 12)."
+  ]
+}

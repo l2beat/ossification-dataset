@@ -85,7 +85,12 @@ async function deriveReset(chainId, target, route, exploit, report) {
   if (reset.kind === 'upgrade') {
     const code = target.code ?? address
     const names = (value) => route.some((hop) => value.includes(hop.slice(2)))
-    if (!tx.receipt.logs.some((log) => [...log.topics, log.data].some(names))) {
+    if (target.code && (await designates(chainId, target, tx.block))) {
+      // EIP-7702: the reset tx's block is where the account's designator first names the code.
+      if (await designates(chainId, target, tx.block - 1)) report.failures.push(`${address}: already delegated to ${code} before ${reset.tx}`)
+      else if (!(tx.tx.authorizationList ?? []).some((auth) => auth.address?.toLowerCase() === code))
+        report.unverified.push(`${address}: delegation to ${code} attributed to block ${tx.block}, not to ${reset.tx}`)
+    } else if (!tx.receipt.logs.some((log) => [...log.topics, log.data].some(names))) {
       const diff = await stateDiff(chainId, reset.tx).catch(() => null)
       if (!diff?.post) report.unverified.push(`${address}: ${reset.tx} activating ${code}`)
       else if (!Object.values(diff.post).some((state) => Object.values(state.storage ?? {}).some(names)))
@@ -115,6 +120,12 @@ async function deriveReset(chainId, target, route, exploit, report) {
     }
   }
   return position(tx)
+}
+
+// True when address carries the EIP-7702 designator 0xef0100 || code at the end of block.
+async function designates(chainId, { address, code }, block) {
+  const value = await rpc(chainId, 'eth_getCode', [address, blockTag(block)]).catch(() => null)
+  return value?.toLowerCase() === `0xef0100${code.slice(2)}`
 }
 
 async function deriveCodeHash(chainId, codeAddress, exploit, resets, report) {
@@ -172,7 +183,11 @@ export async function derive(chainId, hash, record) {
 
   const resets = []
   for (const target of record.targets) {
-    const route = trace ? checkExecution(trace, target, report) : [target.address, target.code].filter(Boolean)
+    // An EIP-7702 account runs its delegate's code in its own frame, with no DELEGATECALL to see.
+    const designated = target.code && (await designates(chainId, target, exploit.block - 1))
+    const route = trace && !designated ? checkExecution(trace, target, report) : [target.address, target.code].filter(Boolean)
+    if (trace && designated && !traceFrames(trace).some(({ frame }) => frame.to?.toLowerCase() === target.address))
+      report.failures.push(`${target.address}: not executed by the exploit`)
     resets.push(await deriveReset(chainId, target, route, exploit, report))
   }
 

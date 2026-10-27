@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Mosca",
+  "name": "Mosca exitProgram pays fiat balances it never zeroes",
+  "summary": "Mosca's exitProgram() pays out balance + balanceUSDT + balanceUSDC through withdrawAll but resets only balance, so a fiat balance bought once with buy() is paid again on every exit. With a USDC flash loan the attacker bought a 985 USDC fiat balance, then looped join (30 USDC) and exitProgram, collecting the 985 USDC each time in USDC and, once that ran out, USDT.",
+  "targets": [
+    {
+      "address": "0x1962b3356122d6a56f978e112d14f5e23a25037d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8c78478a9620df5b835dfecf3f0a5c341f5a6eef3ea1f63c6f39b7a665fce1c9"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 22478.03,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "13597.034482758620689637",
+        "usd": 13597.03
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "8881.004926108374384231",
+        "usd": 8881
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x0068fb16763b91c9208e60654644b95a88e90b4d62487210ab8c2a74d822b399",
+    "eip155:56:0x96fa99d6a3738cd768d3a9fcbab5549487a47d2b5f93607c20625eb5682c01b5",
+    "eip155:56:0x120159f327262e221da981a23430d623ea56f8c29f632bed87239c3979cc100d",
+    "eip155:56:0xf7829dada407c00f5396fe7056eb65ff3c19646484d0e04ed7324da0c27482c2",
+    "eip155:56:0x687ae339c02f88cb87f0fa7a32d577eafdc0a388c104abc3eaadae0d619b2c67"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-01/Mosca_exp.sol"
+  ],
+  "notes": [
+    "Separate from Mosca2 (0xf13d281d on 0xd8791f0c): the redeployed contract dropped the withdrawAll payout from exitProgram, and Mosca2 abused join re-crediting balance, a different defect (rule 4).",
+    "Campaign: every exitProgram call on 0x1962b335 (campaign.mjs over the whole history) is the attacker EOA 0xb7d7240c's, except two by 0x09ea8b5e's contract 0x3be77a35 that paid in more than they withdrew.",
+    "Victim is the Mosca contract, netted per transaction against the attacker's joins and buys; join fees paid to the owner are not offsets."
+  ]
+}

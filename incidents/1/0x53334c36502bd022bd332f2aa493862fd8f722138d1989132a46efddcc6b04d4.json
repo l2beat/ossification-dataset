@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MEV bot 0xdd7c2987",
+  "name": "MEV bot 0xdd7c2987 callback trusts caller-supplied CREATE2 parameters",
+  "summary": "The unverified bot's uniswapV3SwapCallback authenticated its caller as the CREATE2 address derived from a deployer, init-code hash and token path that the callback data itself supplied, and then pulled the owed amount from a payer also named in that data. The attacker CREATE2-deployed contracts matching its own deployer and init-code hash and called the callback with the bot operator as payer, transferring the operator's approved WETH, USDT and USDC to itself.",
+  "targets": [
+    {
+      "address": "0xdd7c2987686b21f656f036458c874d154a923685",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8d06bb6c94ff8dde8b0cc5c7aa4caed6be5df70fbf5de12e9d4cf253d25ce6af"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 19048.08,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "3.481082391664690024",
+        "usd": 12003.4
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "4021.323617",
+        "usd": 4021.32
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "3023.950886",
+        "usd": 3023.36
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/SlowMist_Team/status/1815656653100077532",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/MEVbot_0xdd7c_exp.sol"
+  ],
+  "notes": [
+    "Mechanism from the exploit trace, as the bot is unverified: each forged callback's data carried payer 0x0000000000e71526, deployer 0xe10b2cfa (the attacker's contract) and init-code hash 0x593b8329..., and the bot then called transferFrom(payer, caller, amount).",
+    "Victim is the bot operator 0x0000000000e71526, whose token approvals to the bot were spent. All 139 earlier callbacks into the bot came from the operator's own transactions (campaign.mjs)."
+  ]
+}

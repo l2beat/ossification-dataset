@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Unknown EIP-7702 trading account",
+  "name": "EIP-7702 trading account pays any pancakeV3SwapCallback caller",
+  "summary": "Trading account 0x0000000005f122fd ran, through its EIP-7702 delegation, the unverified contract 0x02c8095e, whose pancakeV3SwapCallback paid the positive delta in the caller's token0/token1 without checking that the caller is a PancakeSwap V3 pool. The attacker's fake pool reported WBNB for both tokens and called the callback with amount0Delta equal to the account's whole WBNB balance, receiving 28.18 WBNB.",
+  "targets": [
+    {
+      "address": "0x0000000005f122fdde066942195c10106d490486",
+      "code": "0x02c8095ec0f464d8ceda95e4981c2668a8aedbae",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1a16021cec0f4604ed607da4745e75ba97d4821b819476c485ca8ad543b9bee3"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 17212.53,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "28.184601357869051167",
+        "usd": 17212.53
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x143adc40e777f56d7c81e1d52c09a965d2cb46cfdfa87d8ae995e1c7aa4315e2",
+    "eip155:56:0x8b62d96502935d4972fd37d58714dbda0c0b8b6952f910a7f06faa59742690d4",
+    "eip155:56:0xb4cb0e7d022228b93a59cb822c25daa7b45fde74a977bb5071b13e36c31a622d",
+    "eip155:56:0x77989d2412327729f85abf543656e2c54c3d73d2ea5c41261b03cab7865d1f5b",
+    "eip155:56:0xfe028cddcf5959aa27f53d22428d7241a70616f3c9066daa9dd5270198177138"
+  ],
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-30-apr-5-2026",
+    "eip155:56:0xbefaab79914a4e7f640f1104c90d95feb7eecf0f624625c93a093dcabddde11c"
+  ],
+  "notes": [
+    "Reset is the account's own type-4 transaction 0x1a16021c, whose authorization moved its designator from 0x4ba640fb (which has no pancakeV3SwapCallback or uniswapV3SwapCallback selector) to 0x02c8095e; the account deployed 0x02c8095e itself in 0xbefaab79. Code runs in the account's frame without a DELEGATECALL, so derive needs the EIP-7702 designator check.",
+    "Campaign: every transaction since the delegation that moved tokens out of the account and was not sent by it (transfer-log scan to the current block); none preceded the anchor. The five copycats each called the callback and swept dust worth $0.93 in priced tokens plus unpriced memecoins, left out of the loss."
+  ]
+}
