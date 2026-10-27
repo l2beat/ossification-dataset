@@ -1,0 +1,55 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "JB",
+  "name": "JB gateway burns pair JB after every sell",
+  "summary": "The unverified JB gateway's sell function (0x53a9fcbc) swaps the caller's JB for USDT through the JB/USDT pair and then has the JB token (0xb1faeac6, callable by the gateway) burn about 80% of the sold amount from the pair's balance and sync it, so each sell pushes the JB price back up. The attacker bought 120M JB with 70M Venus-borrowed USDT and sold it back in 16 cycles, taking the pair's 50,000 USDT.",
+  "targets": [
+    {
+      "address": "0x1b5732eb98911c25acf7bdfaffb9409782cae6d7",
+      "reset": {
+        "kind": "config",
+        "tx": "0xb5e2323727f811e51435c8127f54274e98210f784db0944de574f2c5889d5beb",
+        "address": "0x1b5732eb98911c25acf7bdfaffb9409782cae6d7",
+        "slot": "0x4"
+      }
+    },
+    {
+      "address": "0xcf92e7ef4a63d52dc15f45a24f4f815f00f299a7",
+      "reset": {
+        "kind": "config",
+        "tx": "0x638d883bcd592ddcfd99768d8faf1cecfe95057d9d6111792daebe0b99a77607",
+        "address": "0xcf92e7ef4a63d52dc15f45a24f4f815f00f299a7",
+        "slot": "0x6"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 49941.24,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "49999.976105086911688772",
+        "usd": 49941.24
+      },
+      {
+        "token": "0xcf92e7ef4a63d52dc15f45a24f4f815f00f299a7",
+        "symbol": "JB",
+        "amount": "116944907.751644063092493801",
+        "usd": 0
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0xfb86175c9b05c87973086b03c48214ba3164333ca7ba212fa03c62fc132add73"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-06/JB_exp.sol",
+    "https://x.com/audit_911/status/2067943961327763788"
+  ],
+  "notes": [
+    "Gateway and token are unverified; the mechanism is read from the trace. Resets: the gateway's slot 4 set to its price contract 0x06f6935d (updatePrice() is called on every cycle) and the token's slot 6 set to the gateway (its burn-from-pair caller), both by the deployer within a minute of deployment.",
+    "The PoC makes its contract the referral helper's owner only as a harness shortcut; the real attack contract bound itself to the root referrer with an ordinary bindReferrer call (0x998449ca).",
+    "JB is unpriced and crashed; it is valued at the USDT realised (rule 12). The copycat 0xfb86175c one block later took the remaining 41.9 USDT."
+  ]
+}
