@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "VDS",
+  "name": "VDS deposit mints 5 VDS per AVD while transfers to the contract redeem AVD 1:1",
+  "summary": "The unverified VDS token's deposit(referrer, amount) takes AVD and mints 5 VDS per AVD, while a VDS transfer to the VDS contract itself burns the VDS and pays the configured airToken, AVD since setAirToken, 1:1 from the contract's reserve. With 20,000 flash-loaned USDT the attacker bought 69,282 AVD, deposited it for 346,411 VDS, and sent 168,205 VDS back to the contract for 168,205 AVD, then repeated with a smaller deposit, draining 118,018 AVD.",
+  "targets": [
+    {
+      "address": "0x6ce69d7146dbaae18c11c36d8d94428623b29d5a",
+      "reset": {
+        "kind": "config",
+        "tx": "0x01dadc016575a3ff1ef4eba25fde85e00b9d5800c7c35ba1821e590d7b5d5d16",
+        "address": "0x6ce69d7146dbaae18c11c36d8d94428623b29d5a",
+        "slot": "0xf"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 13639.59,
+    "assets": [
+      {
+        "token": "0x4ec93ee81f25da3c8e49f01533cfb734545190a8",
+        "symbol": "AVD",
+        "amount": "118017.891454",
+        "usd": 13639.59
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-07/VDS_exp.sol"
+  ],
+  "campaign": [
+    "eip155:56:0xbc83b82850172b0d87a2dd303ac82093e4be81cca05e84cd6ad47a6fbf1252c9"
+  ],
+  "notes": [
+    "Reset is the owner's setAirToken(AVD) (slot 0xf, read by the redeeming transfer), after setToken(AVD, AVD) made AVD the deposit token (slot 0xc); before it the redemption paid nothing, so the exploit needed it (rule 8). A later tier change (slot 0x3d, 0xfded75fc) only moved a deposit threshold.",
+    "Campaign: campaign.mjs over deposit, min3Amount and transfer calls from the reset to the current block; 497 earlier deposits and transfers were ordinary (no transfer to the contract itself before the anchor), and the only other drain is the attacker's second transaction.",
+    "AVD has no price; the 118,018 AVD the VDS contract lost net of the attacker's deposits is valued at what the attacker realised, the AVD/USDT pair's 13,658.98 USDT outflow over both transactions (rule 12)."
+  ]
+}

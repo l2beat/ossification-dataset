@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "X319",
+  "name": "X319 claimEther() sends the contract's BNB to anyone",
+  "summary": "The unverified Stake 319 contract (X319) exposes claimEther(address receiver, uint256 amount), which sends any amount of its BNB to any receiver without the operator check its mint() has. Five hours after deployment the attacker called it from a throwaway contract's constructor and took the 20.85 BNB its operator 0x72dca87c had forwarded; MEV bots then claimed every later deposit as it arrived.",
+  "targets": [
+    {
+      "address": "0xedd632eaf3b57e100ae9142e8ed1641e5fd6b2c0",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x87100df44f27de159163024a927b124637a6be27efb90f7b5b070137b3e96348"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 17216.3,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "27.767352640868513971",
+        "usd": 17216.3
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/TenArmorAlert/status/1855263208124416377",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-11/X319_exp.sol"
+  ],
+  "campaign": [
+    {
+      "chainId": 56,
+      "count": 264,
+      "from": 43861172,
+      "to": 44702820,
+      "selection": "every other transaction in which 0xedd632ea sent BNB (Etherscan internal transactions of the contract); all go through claimEther to non-operator receivers"
+    }
+  ],
+  "notes": [
+    "The bytecode's claimEther (0xbfcf63b0) jumps straight to a CALL of amount to receiver; mint (0x40c10f19) checks CALLER against the operator in slot 5. The contract never sent BNB before the anchor.",
+    "Loss is every BNB the contract ever received from 0x72dca87c (27.77 BNB over 337 deposits), all of which left through claimEther in the anchor and 264 later transactions by bots, priced per transaction with loss.mjs --tx."
+  ]
+}
