@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Hegic",
   "name": "Hegic WBTC puts pool withdraw never reduces the tranche's share",
-  "summary": "The Hegic WBTC ATM puts pool let the holder of a tranche withdraw it without marking the tranche closed, so a depositor with a dust tranche repeated the same 0.0025 WBTC withdrawal a hundred times in one transaction and drained 0.25 WBTC.",
+  "summary": "The legacy Hegic WBTC ATM puts pool's withdrawWithoutHedge() left the tranche's share unchanged and had its closed-tranche check commented out. After withdrawing its own 0.0025 WBTC stake, the attacker repeated the same withdrawal 441 times over four transactions, draining the pool's 1.1 WBTC of deployer funds and recovering its second 0.0025 WBTC stake.",
   "targets": [
     {
       "address": "0x7094e706e75e13d1e0ea237f71a7c4511e9d270b",
@@ -13,20 +13,36 @@
     }
   ],
   "loss": {
-    "usd": 24022.5,
+    "usd": 105743.15,
     "assets": [
       {
         "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "symbol": "WBTC",
-        "amount": "0.25",
-        "usd": 24022.5
+        "amount": "1.1",
+        "usd": 105743.15
       }
     ]
   },
+  "campaign": [
+    "eip155:1:0x444854ee7e7570f146b64aa8a557ede82f326232e793873f0bbd04275fa7e54c",
+    "eip155:1:0x892077441048acec1f0e2f212c71ea44c89ed5e0064b4bc9ba129719ac9e05eb",
+    "eip155:1:0x8fbd3614f4369e7548d46822e53d2acf76f1c93b79190d0d145b788b1efeea14"
+  ],
   "refs": [
-    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-02/HegicOptions_exp.sol"
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-02/HegicOptions_exp.sol",
+    "https://blog.verichains.io/p/hegic-options-protocol-how-a-deprecated",
+    "https://blockthreat.com/blockthreat-week-8-2025/",
+    "eip155:1:0x8817cd18836b14b92debd304d413095096b759d0cca1729eeea5689bd95fbe9c",
+    "eip155:1:0xee184c90d231b96a2afa3a3c30c24a9128bd6b3c87d4523728a64ec91e9d794a",
+    "eip155:1:0x9c27d45c1daa943ce0b92a70ba5efa6ab34409b14b568146d2853c1ddaf14f82",
+    "eip155:1:0x49af686dec543879cdbc0f288a558c712fa9c7964ceb697779480c99ca954862",
+    "eip155:1:0x7908ee3ad1dee3f178d1c16cddbcf735cf9aaf8787fe186f30ba5c8760c80abf",
+    "eip155:1:0x848e74fc562f6618a74a3c4f7bf199141601fab948915a6637c29138005be21c"
   ],
   "notes": [
-    "The pool is unchanged since its deployment 3.1 years earlier; its later storage writes are tranches and accounting. The attacker's deposit tx 0x49af686d set up the dust tranche."
+    "The deprecated pool is unchanged since its January 2022 deployment, 3.1 years before the exploit; its later storage writes are tranches and accounting. The deployer supplied the victim's 1.1 WBTC in 0x8817cd18.",
+    "The attacker deposited 0.0025 WBTC through each of helpers 0x0376b8e0 (0xee184c90) and 0xf51e8886 (0x9c27d45c). Its 0x49af686d was a legitimate first withdrawal of the latter's tranche, not a deposit or an exploit. The anchor is the first reuse of that closed tranche; the four exploit transactions call withdrawWithoutHedge(2) 100, 331, 1 and 9 times.",
+    "Loss is the four transactions' 1.1025 WBTC outflow (loss.mjs, $105983.375 at each block's DefiLlama quote), less the attacker's unwithdrawn 0.0025 WBTC stake through its other helper, valued at the anchor's $96090 WBTC price (rule 11). The later 0.0003 WBTC deposit 0x7908ee3a and withdrawal 0x848e74fc are another user's principal round trip and are excluded.",
+    "Verichains and BlockThreat report approximately $80k; the amount and valuation here are independently derived from the complete onchain campaign at the time the assets moved."
   ]
 }

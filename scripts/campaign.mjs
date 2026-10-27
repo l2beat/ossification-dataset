@@ -211,23 +211,34 @@ async function scan(chain, targets, selectors, from, to, anchor) {
   console.log(`\neip155:${chain} blocks ${from}..${to}`)
   const local = chain === chainId
   const sides = local ? [[from, Math.min(anchor.block, to), true], [anchor.block + 1, to, false]] : [[from, to, false]]
-  let candidates = local ? [anchor] : []
+  // trace_filter returns calls; count each transaction once across both logs and traces.
+  const candidates = new Map(local ? [[`${anchor.block}:${anchor.index}`, anchor]] : [])
   for (const [lo, hi, backward] of sides) {
     if (lo > hi) continue
     const found = await collect(chain, targets, lo, hi, backward)
     const reach = found[0]?.reach ?? (backward ? lo : hi)
     if (reach !== (backward ? lo : hi))
       console.log(`CAPPED: over --max ${max} candidates ${local ? (backward ? 'before' : 'after') : 'in range'}; logs scanned ${backward ? `back to block ${reach}` : `through block ${reach}`} only`)
-    candidates.push(...found.filter((c) => !local || c.block !== anchor.block || c.index !== anchor.index))
+    for (const candidate of found)
+      if (!local || candidate.block !== anchor.block || candidate.index !== anchor.index)
+        candidates.set(`${candidate.block}:${candidate.index}`, candidate)
   }
   // --traces: calls into a target that leave no log on it (arbitrary calls, approval drains), where the
   // provider serves trace_filter over 10k-block ranges (Ethereum).
-  if (opt.traces)
-    for (let start = from; start <= to && candidates.length <= 2 * max; start += 10000) {
+  if (opt.traces) {
+    let start = from
+    for (; start <= to && candidates.size <= 2 * max; start += 10000) {
       const calls = await rpc(chain, 'trace_filter', [{ fromBlock: blockTag(start), toBlock: blockTag(Math.min(to, start + 9999)), toAddress: targets.map((t) => t.address) }])
-      for (const call of calls ?? []) if (!call.error) candidates.push({ hash: call.transactionHash, block: call.blockNumber, index: call.transactionPosition, traced: true })
+      for (const call of calls ?? []) if (!call.error) {
+        const key = `${call.blockNumber}:${call.transactionPosition}`
+        if (candidates.get(key) !== anchor)
+          candidates.set(key, { hash: call.transactionHash, block: call.blockNumber, index: call.transactionPosition, traced: true })
+      }
     }
-  const ordered = [...new Map(candidates.map((c) => [`${c.block}:${c.index}`, c])).values()].sort((a, b) => (before(a, b) ? -1 : 1))
+    if (start <= to)
+      console.log(`CAPPED: over ${2 * max} candidate txs; trace_filter did not scan blocks ${start}..${to}`)
+  }
+  const ordered = [...candidates.values()].sort((a, b) => (before(a, b) ? -1 : 1))
   // The candidates nearest the anchor on each side, at most --max per side.
   const earlier = local ? ordered.filter((c) => before(c, anchor)).slice(-max) : []
   const traced = [...earlier, ...(local ? ordered.filter((c) => !before(c, anchor)) : ordered).slice(0, max)]
