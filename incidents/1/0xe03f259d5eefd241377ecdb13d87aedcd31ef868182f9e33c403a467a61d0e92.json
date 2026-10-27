@@ -1,0 +1,50 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BiFi",
+  "name": "BiFi idle-gap interest at live utilization",
+  "summary": "BiFi's TokenHandler stores the whole idle block gap on the first action in a block, and the interest model then charges that full gap on every later action in the block at a rate recomputed from the market's live totals, so a flash-loaned deposit plus self-borrow inflates ~36 days of deposit interest that a repay/withdraw loop takes out of the USDT, DAI and LINK markets. After MEV bot c0ffeebabe drained and returned the bulk, copycat bots repeated the loop on the residual gaps until BiFi raised blocksPerYear on every interest model.",
+  "targets": [
+    {
+      "address": "0x808c3ba97268dbf9695b1ec10729e09c7e67a9e3",
+      "code": "0x47be3d1def039bd85e7570864bb5148e7491a65f",
+      "reset": { "kind": "upgrade", "tx": "0x8df3cbeaaab177baac22cfbf7c546c9fe476dd263e1f4d9e13259e816a52166d" }
+    },
+    {
+      "address": "0x29ecabde2c57b6d4183f915ebca1a25804a60db1",
+      "reset": { "kind": "config", "tx": "0x168f16f9dbbc0694dcfee504fe1a375cf23a7a1422f1a0c9db8fa34f6f30111f", "address": "0x808c3ba97268dbf9695b1ec10729e09c7e67a9e3", "slot": "0x6" }
+    }
+  ],
+  "loss": {
+    "usd": 3590.8,
+    "assets": [
+      { "token": "0x6b175474e89094c44da98b954eedeac495271d0f", "symbol": "DAI", "amount": "1392.927283511385717986", "usd": 1393 },
+      { "token": "0x514910771af9ca656af840dff83e8264ecf986ca", "symbol": "LINK", "amount": "98.095796525932821957", "usd": 1202.82 },
+      { "token": "0xdac17f958d2ee523a2206206994597c13d831ec7", "symbol": "USDT", "amount": "996.083758", "usd": 994.98 }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x9bfac02ae9056b62698481a8f62521e785a337a397af2ac53cc8887d9ecff010",
+    "eip155:1:0x0ff6a1fc2abbc88af4c3e1550c76b9ef062a4e371d61d2bbcc96b40967a64e05",
+    "eip155:1:0xca41f0a4f4cefb6bac18cc419a9a97d49a5501a29c36097a210e9b98963cc687",
+    {
+      "chainId": 1,
+      "count": 680,
+      "from": 26210268,
+      "to": 26211375,
+      "selection": "successful txs not sent by 0xc0ffeebabe5d496b2dde509f9fa189c25cf29671 with at least 6 Transfer logs of the market token to or from a BiFi market proxy (USDT 0x808c3ba97268dbf9695b1ec10729e09c7e67a9e3, DAI 0xd76b7060f1b646fa14740ff6ac670a4f0a6fc5e3, LINK 0x25567603eb61a4a49f27e433652b5b8940d10682) and a net outflow from it; the anchor and the three listed txs excluded"
+    }
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-10/BiFi_exp.sol",
+    "eip155:1:0x756c68055af7a0630aa0b56891ba4de14c56c39cbebe99e47eeb4728f4d6ad14",
+    "eip155:1:0x036ce186cfd5e7622ed9f2341d0b68a5a6bc763ca33775cdd2c1fb41805c4c0b",
+    "eip155:1:0x9702900bc441039c7e6937a3f3e94251072bda380bdcba38ecf6c7c3e6efeaeb",
+    "eip155:1:0x15b47e2c0daf723dec64c75b435079d3a1f8a6058b21b9a64dda4844e877a034",
+    "eip155:1:0xec94717eee1424fdee5ea3b80ad4d80e07eb68c7365db12cf22fe1fc89df061d"
+  ],
+  "notes": [
+    "Anchor is the first exploit by a party other than c0ffeebabe: its 165,575 USDT drain 0x756c6805 (and its smaller USDT, DAI, LINK and 0.58 ETH txs) is a rescue under rule 5, since after BiFi's onchain request (0x036ce186) it sent 159,103.65 USDC back to the USDT market (0x9702900b); the ~4% it kept is not counted. The original attacker 0x7c78a049's three contracts (first deployed in 0x15b47e2c) were never called and took nothing.",
+    "Every token market's Transfer history since 2021 shows no multi-transfer outflow before 26210256, and the ETH market's event history none besides c0ffeebabe's; the copycats stop before BiFi set blocksPerYear to 2^256-1 on its six interest models (0xa4c14da3..0xf7d4ef79, blocks 26211987-26211992).",
+    "The interest model's later setBasicSensitivity, setBlocksPerYear and setSpreadRate changes are rate parameters that scale the loss, not the defect; its own route (proxy slot 6) dates from 2021-03, before the handler upgrade that sets the age."
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Shoebill Finance",
+  "name": "Shoebill sbSolvBTC oracle unit misconfiguration",
+  "summary": "Shoebill's oracle divides each market's price by an owner-set baseUnits(symbol); when the sbSolvBTC and sbSolvBTC.BBN markets were added the owner set it to 18 instead of 1e18, pricing SolvBTC about 5.6e16 times too high. The attacker supplied 0.0001 SolvBTC to the newly listed sbSolvBTC market and borrowed the WBTC and tBTC markets' cash against it.",
+  "targets": [
+    {
+      "address": "0xe103f874b2d144c5b327fa3d57069bb19c0779e2",
+      "reset": {
+        "kind": "config",
+        "tx": "0xcc5c0b3a6a83327894c903e6cd069e1a043c8cbf09fa9f7769b67097b121749c",
+        "address": "0xb7ed6c062caaacb1a13f317e0a751289280fc306",
+        "slot": "0x3b990610e9af75f5f805aa17f00e43941ed4b8b1db3cdba270603bba3cfc445c"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1513432.23,
+    "assets": [
+      {
+        "token": "0x03c7054bcb39f7b2e5b2c7acb37583e32d70cfa3",
+        "symbol": "WBTC",
+        "amount": "19.51269875",
+        "usd": 1398611.71
+      },
+      {
+        "token": "0xbba2ef945d523c4e2608c9e1214c2cc64d4fc2e2",
+        "symbol": "tBTC",
+        "amount": "1.597302881501740092",
+        "usd": 114820.52
+      }
+    ]
+  },
+  "refs": [
+    "https://quadrigainitiative.com/casestudy/shoebillfinancebtcmarketcollateraloracleexploit.php",
+    "eip155:60808:0x1f18269612e18bacce6992e472015305c35804354bf30a63209285e9323dad8a",
+    "eip155:60808:0x9214836b25fc17186857fed681a4797ac2ad7fa4c585fb9de9e6fbe66f5d3c18"
+  ],
+  "notes": [
+    "The defect is persistent oracle state (rule 1): setCTokenInfos (0x1f182696) wrote baseUnits 18 for both SolvBTC markets, while the other markets hold 1e8 and 1e18. The oracle code and the stock Compound markets are not defective. The reset is the comptroller's 0.7 collateral factor for sbSolvBTC, the last change the borrow needed, after the unit write and the market listing (0x1866c196); no oracle or comptroller change for sbSolvBTC follows it.",
+    "Single exploit transaction: the four markets show no Borrow between the misconfiguration and the anchor or after it before the markets were paused; sbSolvBTC.BBN, mispriced the same way, was not used. The anchor's setup was the attacker contract's 0.0001 SolvBTC mint in 0x9214836b.",
+    "Loss priced by hand with DefiLlama's BOB WBTC and tBTC quotes at block time: loss.mjs has no BOB entry and the BOB RPC serves no traces. Collateral the attacker left behind is not subtracted."
+  ]
+}

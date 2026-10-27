@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "TokenHolder (0x2eed)",
+  "name": "BorrowerOperationsV6 sell() makes caller-chosen calls with its TokenHolder loan role",
+  "summary": "BorrowerOperationsV6.sell() takes the tokenHolder, router and sellingCode from the caller and executes router.call(sellingCode) unchecked, while holding the TokenHolder's borrower-router role. The attacker passed its own contract as tokenHolder and the real TokenHolder as router with privilegedLoan(WBNB, 20e18) as sellingCode, so the TokenHolder lent 20 WBNB to BorrowerOperations, which then paid it out to the attacker-named borrower and the fee address.",
+  "targets": [
+    {
+      "address": "0x616b36265759517af14300ba1dd20762241a3828",
+      "code": "0x8c7f34436c0037742aecf047e06fd4b27ad01117",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x459774b4d689f66b84b6d4ab74defd0e4e844113492ed91f90c4ba7b6fdba417"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 25766.88,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "20",
+        "usd": 25766.88
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-10/TokenHolder_exp.sol"
+  ],
+  "notes": [
+    "The last upgrade before the exploit (block 63786395, to 0x8c7f) only commented out a maxApprovalAmount check in buy(); it still resets the age (rule 7). The TokenHolder granted BorrowerOperations its role at block 49636991, earlier.",
+    "Before the anchor the TokenHolder's WBNB never left unrepaid (it held about 0.1 WBNB until the 19.9 WBNB deposit at block 63419670); other sell() calls through the 0x8c7f implementation until the next upgrade at block 64097466 are borrowers closing their own loans. The 5.58 WBNB drained via buy() at block 116952374 runs a later implementation (0x54eecd33) and is not part of this incident."
+  ]
+}

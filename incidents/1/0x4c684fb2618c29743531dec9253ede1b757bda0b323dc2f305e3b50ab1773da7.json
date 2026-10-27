@@ -1,0 +1,35 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MetaLend",
+  "name": "MetaLend empty cETH market donation and redeemUnderlying rounding",
+  "summary": "MetaLend's Compound-v2 fork listed a CEther market (0x5578f2e2) with an 85% collateral factor; its exchange rate counts the raw ETH balance and redeemUnderlying rounds the burned shares down. With the market emptied since 2022, the attacker minted and redeemed down to 2 wei of shares, force-sent 100 flash-loaned ETH via selfdestruct to inflate them, borrowed the cWBTC market's entire 0.11 WBTC cash, and recovered the ETH with redeemUnderlying burning 1 wei of shares.",
+  "targets": [
+    {
+      "address": "0x5578f2e245e932a599c46215a0ca88707230f17b",
+      "reset": {
+        "kind": "config",
+        "tx": "0x0cb5b27459ac7706a307ff25cf0365e88491765db2c894155de10e3d91b9add4",
+        "address": "0x0ee4b2c533ed3ffbd9f04cd7e812a4041bbe89f6",
+        "slot": "0xcb28c282f4404de526f139c546000c598b26a649c049004883466c039893f2fd"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 4144.14,
+    "assets": [
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.10999999",
+        "usd": 4144.14
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/MetaLend_exp.sol",
+    "https://x.com/MetaSec_xyz/status/1728424965257691173"
+  ],
+  "notes": [
+    "Contracts are unverified; the mechanism is read from the anchor's trace. Reset is the comptroller's _setCollateralFactor(cETH, 0.85) (markets[cETH].collateralFactorMantissa); the comptroller implementation 0xcebc23a1 and oracle were set before it. The market's emptying by its only depositor's redeem (0x46e6f44e, block 14764175) is a balance change, not a reset (rule 8); its only earlier exercises are that depositor's mint and redeem."
+  ]
+}

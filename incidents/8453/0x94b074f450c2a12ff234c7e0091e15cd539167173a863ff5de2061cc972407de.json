@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Dexodus Finance",
+  "name": "Dexodus AutomationPositionsV2 accepts stale signed Chainlink reports",
+  "summary": "AutomationPositionsV2.performUpkeep() was callable by anyone and settled the caller-supplied position request at the price of any Chainlink Data Streams report the verifier still accepted, without checking the report's timestamp against the request. The attacker first settled a dust position with a five-day-old report, then in one transaction opened a leveraged ETH long with an April report at about $1,816 and closed it with a May report at about $2,530, taking the profit from the liquidity pool.",
+  "targets": [
+    {
+      "address": "0xf6aad394ed38d860bd2f3cc142d7eb5bbbbba169",
+      "code": "0x42d5295299d0d9b4785a8537317785386752e141",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x5b5f12b1220d30a1117f5aa15abf6db51b09c1772e5a247ac579e1784081cdba"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 301167.27,
+    "assets": [
+      {
+        "symbol": "WETH",
+        "token": "0x4200000000000000000000000000000000000006",
+        "amount": "116.608286045961247557",
+        "usd": 299113.08
+      },
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "2054.593936",
+        "usd": 2054.19
+      }
+    ]
+  },
+  "refs": [
+    "https://blog.solidityscan.com/dexodus-finance-hack-analysis-d699135f575c/",
+    "https://www.quillaudits.com/blog/hack-analysis/dexodus-finance-exploit"
+  ],
+  "campaign": [
+    "eip155:8453:0x6ffb494293fc5c32c5a6ab7dc3fff1fcc6e90fba9a6d6e486ba0a15ce518147e"
+  ],
+  "notes": [
+    "Anchor: the attacker's probe 0x94b074f4, 14 hours before the drain, called performUpkeep through its contract 0xb0aafa4e with a report observed on 2025-05-21 and settled a 0.1 USDC position for 0x3c402c1e on market 0x95d7f9d6; it exercised the defect but moved only dust. The drain 0x6ffb4942 is the campaign. Every other FuturesCore position settlement (event 0x9b583924) from block 24900000 to 30760000 came through the Chainlink automation registry 0xf4bab6a1 (transmit) or users' executeOrder; the attacker's earlier five calls went to the empty address 0xcbccd578 and did nothing.",
+    "Reset: FuturesCore's Safe pointed automationPositionsV2 for the ETH and other market keys from the earlier automation proxy 0x3953ba8d to 0xf6aad394 in 0x5b5f12b1, three days after 0xf6aad394 was created with this implementation (a registry route change, rule 7). FuturesCore's later implementation upgrade (block 25441343) is not a target: it settles whatever price its registered automation passes, and the missing freshness and caller checks are in AutomationPositionsV2.",
+    "Loss is the liquidity pool 0x1a84d7e2's net depletion in the drain (it swapped 116.6 WETH for USDC to pay the profit); the attacker's 10,000 USDC collateral left in FuturesCore is not subtracted, nor is the reported return of funds."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "EraLend",
+  "name": "EraLend SyncSwap LP oracle read-only reentrancy",
+  "summary": "EraLend's oracle priced the eUSDC/WETH cSLP collateral, a SyncSwap USDC/WETH LP token, from the pool's live totalSupply and stored reserves with no reentrancy check. SyncSwap's burn burns LP supply before updating reserves and calls back the burner first, so the attacker borrowed USDC.e from nUSDC inside syncSwapBaseBurnCallback against inflated LP collateral, in two transactions.",
+  "targets": [
+    {
+      "address": "0xa6380073c0a1472943c866eacc763864fea8d1cc",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4e305992f20648bff2bcdfc61057d2484d4101192bb602120696778be0eaec00",
+        "address": "0x0171ca5b372eb510245f5fa214f5582911934b3d",
+        "slot": "0x8fc203a14778664096cc2a1c6dcbc94c564bbaf84e4eda4eae9051aa427f9911"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:324:0x7ac4da1ea1b0903dfabda56f713ea5e4a960a3fc34467a844d037f86ee8bfe98"
+  ],
+  "loss": {
+    "usd": 3437049.74,
+    "assets": [
+      {
+        "token": "0x3355df6d4c9c3035724fd0e3914de96a5a83aaf4",
+        "symbol": "USDC.e",
+        "amount": "3435724.597462",
+        "usd": 3437049.74
+      }
+    ]
+  },
+  "refs": [
+    "https://rekt.news/eralend-rekt/",
+    "eip155:324:0x9f293dc15f360fb53d1599c90ed9f8b07390e1148fb37e0599bc5d937d78c9bd",
+    "eip155:324:0x2bc325a29dd735f191a5370052c24d3a2d122ad5c655014e6cda1568e804fdcd"
+  ],
+  "notes": [
+    "The oracle (unverified source) is the defect; the comptroller and cTokens run stock Compound code. The reset is the comptroller giving the cSLP market its first collateral factor (0 to 0.7), after the oracle's deployment and LP-pool registration, the comptroller's switch to it (0x9f293dc1) and the market listing. The later cut to 0.6 (0x2bc325a2), supply-cap raises and pause toggles only sized or gated the loss.",
+    "Campaign: the only transactions in which nUSDC borrowed while the SyncSwap pool burned LP (log scan of Borrow and LP burns from the reset to block 9510000) are the anchor and the same EOA's second attack five minutes later; no earlier exploit."
+  ]
+}

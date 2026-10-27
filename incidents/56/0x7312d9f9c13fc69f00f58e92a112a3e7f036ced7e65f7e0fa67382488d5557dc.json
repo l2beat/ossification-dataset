@@ -1,0 +1,26 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "EEE",
+  "name": "EEE sell contract pays out protocol liquidity at the manipulated spot ratio",
+  "summary": "EEE's unverified sell contract 0x5002f2d9 handled swap(EEE, amount) by removing amount * lpSupply / pairEEEBalance of its protocol-owned EEE/USDT liquidity and paying the seller 65% of the USDT. The attacker flash-borrowed 750k USDT, bought nearly all EEE out of the pair so its EEE balance was tiny, sold 9.4M EEE through the contract to withdraw most of the protocol liquidity's USDT, then sold the remaining EEE back to the pair.",
+  "targets": [
+    {
+      "address": "0x5002f2d9ac1763f9cf02551b3a72a42e792ae9ea",
+      "reset": { "kind": "deployment", "tx": "0xfebcc047d594265095c27f8d80fbef2a1aa075f3dae7393e40c4fbdd9d8c111e" }
+    }
+  ],
+  "loss": {
+    "usd": 24789.19,
+    "assets": [
+      { "token": "0x55d398326f99059ff775485246999027b3197955", "symbol": "USDT", "amount": "24764.429976888383296284", "usd": 24789.19 }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-11/EEE_exp.sol"
+  ],
+  "notes": [
+    "The EEE/USDT pair 0x0506e571 (non-PancakeSwap factory 0x0a76c877) only enforced its invariant; the defect is the sell contract's spot-ratio withdrawal. Its only storage change before the exploit is a running counter.",
+    "USDT that left protocol control: the attacker's 22,814.43 net plus the 1,950 flash-loan fee paid from the proceeds. The 45,112.65 USDT the sell contract paid to its fee recipients 0xfef7b2b4 and 0xe568a4ce is not counted: both had received the protocol's sell fees since its predecessor 0x0c19cb7d, and 0xe568a4ce later funded 0xb92c3f80, the deployer of the protocol's next fee-paying contract.",
+    "No earlier sell paid more than 51 USDT; later calls are ordinary trades."
+  ]
+}

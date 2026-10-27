@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "XSD Stablecoin",
+  "name": "BankX Router swapXSDForETH pays ETH before burning the pool's XSD",
+  "summary": "BankX Router.swapXSDForETH() sends the ETH to the caller with safeTransferETH before XSD.burnpoolXSD() burns a tenth of the caller-chosen amountInMax from the XSD/WETH pool and syncs it. The attacker sold 39,566 XSD for 9.84 BNB and, from its receive hook, swapped 3,800 flash-loaned WBNB into the pool for 263,933 XSD, so the burn then removed 3,957 XSD from a nearly emptied reserve; it sold the XSD back at the inflated price for 3,857 WBNB.",
+  "targets": [
+    {
+      "address": "0xfadda925e10d07430f5d7461689fd90d3d81bb48",
+      "reset": {
+        "kind": "config",
+        "tx": "0xdab2a98f2290d57f5b4db4fa064fc5ed46f00d6325bd302ce465b7ca6f8b06f8",
+        "address": "0xfadda925e10d07430f5d7461689fd90d3d81bb48",
+        "slot": "0x41"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 12041.75,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "56.854339410199718035",
+        "usd": 12041.75
+      }
+    ]
+  },
+  "refs": [
+    "https://twitter.com/CertiKAlert/status/1706765042916450781",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-09/XSDWETHpool_exp.sol",
+    "eip155:56:0x9403b1e630e7b87565e61d52d913e8ee170ebfcbfa69eb83701ee6bbf231c399"
+  ],
+  "notes": [
+    "Reset is the owner's setPIDController (Router slot 0x41): swapXSDForETH burns only while the new controller's bucket1() is false and calls it in refreshPID, so the exploited path ran through it (rule 8). It postdates the Router deployment and XSD.setRouter (slot 0xa), which granted the Router burnpoolXSD.",
+    "Campaign: campaign.mjs over swapXSDForETH and swapETHForBankX from the Router's deployment to the current block finds only EOA callers besides the anchor, and an EOA cannot re-enter.",
+    "Loss is the pool's 66.80 WBNB outflow in the anchor less the 9.95 BNB the attacker paid the pool for the 39,566 XSD in its setup transaction 0x9403b1e6 (refs, rule 11), priced at the anchor; the pool's XSD is valued at nothing (rule 12)."
+  ]
+}

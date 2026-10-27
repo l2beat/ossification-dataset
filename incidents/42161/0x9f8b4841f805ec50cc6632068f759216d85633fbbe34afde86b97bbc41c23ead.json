@@ -1,0 +1,66 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Sharwa Finance",
+  "name": "Sharwa margin swaps sold collateral into a manipulated pool with no post-swap solvency check",
+  "summary": "MarginTrading.swap() checked the margin account's ratio only before swapping and passed the caller's amountOutMinimum, which the redeployment's FacadeTradeRouter set to 0, so an account's assets could be sold into a Uniswap V3 pool the caller had just skewed. With Morpho flash loans the attacker dumped WBTC, closed a leveraged long whose 0.362 WBTC sold for 2,076 USDC, and bought the WBTC back; the same move with a borrowed WBTC short, and a second attacker against the February 2025 deployment's MarginTrading, left Sharwa's USDC, WBTC and WETH pools with unpaid debt.",
+  "targets": [
+    {
+      "address": "0xd50dffb8a9997d1651f3ab67e55a394c81170137",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa7e23763f8574bc9c52440b3db4c99052aee96ec54d7d97c4843e5d521f5b102",
+        "address": "0xd50dffb8a9997d1651f3ab67e55a394c81170137",
+        "slot": "0xbf13f1a2240635bd62fa627d73f7114a6c35790ddfaaf1b3ba0402deea813729"
+      }
+    },
+    {
+      "address": "0xb84945ec1c4e9973cb108a6ba76fa6d46856e679",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa14f4141e957df77dce65d1f4170cc5d0a4758497450e9d451131eae34c4f0b4",
+        "address": "0xb84945ec1c4e9973cb108a6ba76fa6d46856e679",
+        "slot": "0x9aae8a7ff173180e7cbdcb64804799f61b827c145e410a7fa1009b529848f7ec"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 194890.47,
+    "assets": [
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "87852.008011",
+        "usd": 87834.76
+      },
+      {
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "0.59980143",
+        "usd": 66456.2
+      },
+      {
+        "token": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        "symbol": "WETH",
+        "amount": "10.000413246997093659",
+        "usd": 40599.51
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:42161:0x35a523bdaf60a9e8b66ab92bb8b78d5012e102e462b665e98ce46f7e07addd36",
+    "eip155:42161:0xb0bf77475818b2501e78f0927f4131e52c6efd45bc4978992cbbe218a57e6f7f",
+    "eip155:42161:0xef6923493de13e3f80464871ee8d0bf8ccb61a8868b2ff38c3fb3b1df421f24b"
+  ],
+  "refs": [
+    "https://blog.verichains.io/p/vulnerability-analysis-deconstructing",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-10/SharwaFinance_exp.sol",
+    "eip155:42161:0xd64729c528e6689cb18b0c90345ab0c9ed18fea44247c89af2f1374643fc89c2"
+  ],
+  "notes": [
+    "Anchor: the seed tx 0xd64729c5 only opened a 0.362 WBTC long at the market price with 39,953.19 USDC borrowed from pool 0x02434cd2; the loss arose when 0x9f8b4841 closed it into the skewed pool.",
+    "One incident under rule 4: the February 2025 MarginTrading 0xeac9a2fb has the same swap() (only the access modifier differs: onlyApprovedOrOwner instead of ONE_CLICK_PROXY_ROLE), and 0xb0bf7747/0xef692349 called it directly with amountOutMinimum 0 after skewing the same WBTC/USDC pool; 0xef692349 first deposited 2 WBTC so the pre-swap ratio check would pass.",
+    "Resets: the ONE_CLICK_PROXY_ROLE grant to OneClickProxy 0x742b9169 on MarginTrading and the ONE_CLICK_CONTRACT_ROLE grant to TradeRouter 0xd3fde5af on FacadeTradeRouter opened the path the anchor took; TradeRouter only forwards the call and is not listed.",
+    "No earlier exploit: of 623 txs that emitted MarginTrading Swap events on either deployment, all before 0x9f8b4841 came from EOAs directly or through Sharwa's own OneClick, router and keeper contracts; none followed 0xef692349.",
+    "Loss is the pools' unpaid principal: USDC pool 0x02434cd2 37,877.466107 (39,953.190409 lent in the seed tx less 2,075.724302 repaid in the anchor, priced at the seed tx), WBTC pool 0x20d96638 0.3, and old pools 0x9b6ceb59 49,974.541904 USDC, 0xb17e214d 10.0004 WETH and 0x6736da3c 0.29980143 WBTC, all still owed by accounts 18, 20 and 73. The attackers' own deposits and pool liquidity provided and withdrawn within each tx are not victim assets."
+  ]
+}

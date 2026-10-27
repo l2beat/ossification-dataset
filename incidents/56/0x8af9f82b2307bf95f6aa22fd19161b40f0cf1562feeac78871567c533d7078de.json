@@ -1,0 +1,49 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "GPT",
+  "name": "GPT transfer hook buys back and burns from its pair",
+  "summary": "The unverified GPT token's transfer hook, on every transfer into its USDT pair, removes part of the token contract's own liquidity from that pair and spends the USDT buying GPT from the pair, sending it to the zero address, so each transfer pushes the GPT price up. The attacker bought GPT with flash-loaned USDT, sent 0.5 GPT to the pair and skimmed it back 50 times, then sold its GPT into the inflated pair; it repeated this in four transactions.",
+  "targets": [
+    {
+      "address": "0xa1679abef5cd376cc9a1c4c2868acf52e08ec1b3",
+      "reset": {
+        "kind": "config",
+        "tx": "0x302d9081035f44b3db88201114e4877d347423ddc43389107017af9f018c8683",
+        "address": "0xa1679abef5cd376cc9a1c4c2868acf52e08ec1b3",
+        "slot": "0x5"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 154444.95,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "154444.952787095411662141",
+        "usd": 154444.95
+      },
+      {
+        "token": "0xa1679abef5cd376cc9a1c4c2868acf52e08ec1b3",
+        "symbol": "GPT",
+        "amount": "153.336364922307603923",
+        "usd": 0
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/GPT_exp.sol",
+    "https://twitter.com/Phalcon_xyz/status/1661424685320634368"
+  ],
+  "campaign": [
+    "eip155:56:0xb77cb34cd01204bdad930d8c172af12462eef58dea16199185b77147d6533391",
+    "eip155:56:0x4902f672bf47ac9130e171788537f31b0d4e9d0c7dc07fc36c76a9069163b75d",
+    "eip155:56:0x67cee277abfff10e9a8e26febbee617d5e733c932cc743dd14f621ec9ff2f833"
+  ],
+  "notes": [
+    "GPT is unverified; the mechanism is read from the trace (router removeLiquidity and swapTokensForExactTokens to 0x0 inside each transferFrom to the pair).",
+    "Victims are the GPT/USDT pair and the GPT contract, whose own liquidity the hook spent; netting them per transaction leaves the USDT the attacker kept. GPT is unpriced (rule 12).",
+    "The anchor is the first of four identical transactions by 0x054a3574 (attack contract 0x2a9ab219); the PoC's 0xb77cb34c is the second. No other transaction has more than three pair Syncs.",
+    "Reset is the owner setting slot 5 to the pair (0x302d9081), which the hook keys on, 2.4 hours before the anchor; later owner calls changed fee parameters only."
+  ]
+}

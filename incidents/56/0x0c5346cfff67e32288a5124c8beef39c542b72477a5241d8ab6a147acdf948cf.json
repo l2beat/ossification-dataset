@@ -1,0 +1,60 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "TokenHolder (0x2eed)",
+  "name": "BorrowerOperationsV6 buy() approves borrowed WBNB to a caller-named address",
+  "summary": "BorrowerOperationsV6.buy() borrows WBNB from the TokenHolder and approves it to the caller-supplied whitelistedDex, whose whitelist check is commented out, before calling a caller-supplied router with caller-supplied calldata. The attacker deposited cheap SURGE as collateral, named itself as whitelistedDex and the whitelisted EOA 0x1f183188 with empty calldata as router, so no purchase happened, the TokenHolder booked a loan against the SURGE at its admin lend price, and the attacker pulled the borrowed WBNB with transferFrom.",
+  "targets": [
+    {
+      "address": "0x616b36265759517af14300ba1dd20762241a3828",
+      "code": "0x54eecd330d5dd08d43abc22df416fe243977dc01",
+      "reset": {
+        "kind": "config",
+        "tx": "0xf4c95fdb0242406bc0e06d1440a38f082f8bcb669ff32887f7207e68e17abf1e",
+        "address": "0x616b36265759517af14300ba1dd20762241a3828",
+        "slot": "0xbda400925fe6fb33ed1c293b2bd1ba712f2058150afb048c75a46404f154ab7f"
+      }
+    },
+    {
+      "address": "0x2eed3dc9c5134c056825b12388ee9be04e522173",
+      "code": "0xf2279bb5cf19b853e2b772d62493af5acb4976d7",
+      "reset": {
+        "kind": "config",
+        "tx": "0x6cb3f72163ca408e4043ad91365bb65a7d306f766f5b7862cd204a51c2fa4f4d",
+        "address": "0x2eed3dc9c5134c056825b12388ee9be04e522173",
+        "call": "0xc665471f00000000000000000000000074ac77d7ca54c38eb5ea2e638a80a5182558d3a2"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3477.41,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "5.579151928640704482",
+        "usd": 3477.41
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x70b9f264f26368e967db5768f1f47a89daa4e5d51b9c9a0dc1a0680bbe286be6",
+    "eip155:56:0x7d13349b5a6762fbd98e832721a19c19dcc4d664211735a2747b101f55fbc664",
+    "eip155:56:0xeaa193626dbdea43df3e2fb18157f33c1faf5dc028df708ec2014ea8ec41db9f",
+    "eip155:56:0x2cce74654a201a1d6874dc7ffe2eecaa7d382c1307bf8d51d2133e3ad1793f97",
+    "eip155:56:0x13767ecf44b843e44f7258369a2b5319c1fbf702fdf7f9b842ffb94e9df7fd35",
+    "eip155:56:0xaa2734bf091c9bce5ebfd9f0e84c8d13a44ada2a1c7bc56ce9a63e013b9bc1bb",
+    "eip155:56:0x7f5ef5c020794a8071f00912e8b0f4576e7d43cf9103f27e7f233ccb039f1167",
+    "eip155:56:0x5e34cc7cf8e5bd3b37206899a892eda8266c9713e7cbaff16e6608d356c6530f",
+    "eip155:56:0x062248edc9bb6f251bdb6131bfe3894d78bfa6dad8e1c0663f88f282919c13d4",
+    "eip155:56:0xc21c91831d608c2f84453124cc81d4c422ef45ee5ade2cbbde6bfe737bca9693",
+    "eip155:56:0x123961b4af32054a0a2ca17bc70e6cfcfc6c26e64a37373855f44b0815465aa6"
+  ],
+  "refs": [
+    "eip155:56:0x3185cbfc1f73443c06c287b0af80eae57a685ea788bb72b7b858a02b9b144468"
+  ],
+  "notes": [
+    "A separate incident from incidents/56/0xc291d70f\u2026 (sell() arbitrary call on implementation 0x8c7f): this is buy() on implementation 0x54eecd33, installed in 0x3185cbfc at block 65183627.",
+    "Reset: the anchor's router 0x1f183188 (an EOA, so the empty call succeeds) was whitelisted by addWhitelistedDex in 0xf4c95fdb, after the upgrade and after the TokenHolder listed SURGE as collateral (addCollateral in 0x6cb3f721). A benign call on an earlier-whitelisted router may have served too; the later change is kept as the conservative reset. maxLendPerToken values are pushed by the operator's updateMaxLendPerTokenBulk keeper and are not resets (rule 8).",
+    "Campaign: every buy() with zero initial margin (Buy events since block 65183627): the attacker's 7 transactions (each borrowing half of the TokenHolder's remaining WBNB) and 5 copycats by 0xbe236580 and 0xfc3facd6. In all 1,372 earlier buys the WBNB left BorrowerOperations to DEX pools, never to the buyer. Loss is the TokenHolder's WBNB outflow; the SURGE and 0xa6f33a4c collateral it received is not subtracted."
+  ]
+}

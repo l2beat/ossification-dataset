@@ -28,6 +28,7 @@ const RPC_ENV = {
 // Public fallbacks: enough for transactions and blocks, rarely for traces.
 const PUBLIC_RPC = {
   30: 'https://public-node.rsk.co',
+  122: 'https://explorer-node.fuse.io',
   250: 'https://rpcapi.fantom.network',
   288: 'https://mainnet.boba.network',
   1868: 'https://rpc.soneium.org',
@@ -35,7 +36,10 @@ const PUBLIC_RPC = {
   369: 'https://rpc.pulsechain.com',
   999: 'https://rpc.hyperliquid.xyz/evm',
   1030: 'https://evm.confluxrpc.com',
+  1101: 'https://zkevm-rpc.com',
+  787: 'https://eth-rpc-acala.aca-api.network',
   4114: 'https://rpc.mainnet.citrea.xyz',
+  4663: 'https://rpc.mainnet.chain.robinhood.com',
   33139: 'https://rpc.apechain.com/http',
   80094: 'https://rpc.berachain.com',
 }
@@ -82,10 +86,18 @@ export async function keccak256(chainId, data) {
   }
 }
 
+const prefixed = (value) => (typeof value === 'string' && /^[0-9a-f]+$/i.test(value) ? `0x${value}` : value)
+// Some nodes (Fuse) omit the 0x of addresses and calldata in callTracer frames.
+const normalized = (frame) => {
+  for (const key of ['from', 'to', 'input', 'output']) if (key in frame) frame[key] = prefixed(frame[key])
+  frame.calls?.forEach(normalized)
+  return frame
+}
+
 // callTracer tree; parity trace_transaction output is rebuilt into the same shape.
 export async function callTrace(chainId, hash) {
   try {
-    return await rpc(chainId, 'debug_traceTransaction', [hash, { tracer: 'callTracer' }])
+    return normalized(await rpc(chainId, 'debug_traceTransaction', [hash, { tracer: 'callTracer' }]))
   } catch (debugError) {
     const flat = await rpc(chainId, 'trace_transaction', [hash]).catch(() => null)
     if (!Array.isArray(flat) || flat.length === 0) throw debugError
@@ -113,6 +125,22 @@ export function traceFrames(frame, ancestors = [], output = []) {
   return output
 }
 
+// Some nodes (seen on BSC) return a log with the transactionHash of a neighbouring transaction; the
+// block's own transaction at the log's index is authoritative. Takes a log or { block, index, hash }.
+const blockHashes = new Map()
+export async function logTx(chainId, log) {
+  const block = log.blockNumber ?? blockTag(log.block)
+  const index = log.transactionIndex === undefined ? log.index : hexInt(log.transactionIndex)
+  const reported = (log.transactionHash ?? log.hash).toLowerCase()
+  const key = `${chainId}:${hexInt(block)}`
+  if (!blockHashes.has(key))
+    blockHashes.set(key, rpc(chainId, 'eth_getBlockByNumber', [block, false]).then((found) => found?.transactions ?? [], () => []))
+  const actual = (await blockHashes.get(key))[index]?.toLowerCase()
+  if (!actual || actual === reported) return reported
+  console.error(`warning: eip155:${chainId} block ${hexInt(block)} index ${index}: node reported ${reported}, block lists ${actual}`)
+  return actual
+}
+
 export const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 export const lower = (value) => value?.toLowerCase()
 export const word = (value) => `0x${value.replace(/^0x/, '').padStart(64, '0')}`
@@ -124,18 +152,18 @@ export const succeeded = ({ frame, ancestors }) => !frame.error && !ancestors.so
 
 /** The entry of a prestateTracer state keyed by address, whatever its case. */
 export function account(state, address) {
-  const key = Object.keys(state ?? {}).find((candidate) => candidate.toLowerCase() === address)
+  const key = Object.keys(state ?? {}).find((candidate) => prefixed(candidate).toLowerCase() === address)
   return key === undefined ? undefined : state[key]
 }
 
-/** fn over items with `size` concurrent workers; results in order. */
+/** fn(item, index) over items with `size` concurrent workers; results in order. */
 export async function pool(items, size, fn) {
   const out = []
   let next = 0
   const worker = async () => {
     while (next < items.length) {
       const index = next++
-      out[index] = await fn(items[index])
+      out[index] = await fn(items[index], index)
     }
   }
   await Promise.all(Array.from({ length: size }, worker))
@@ -161,11 +189,17 @@ export async function token(chainId, address, block = 'latest') {
     const at = block === 'latest' ? '0x' : await rpc(chainId, 'eth_call', [{ to: address, data }, blockTag(block)]).catch(() => '0x')
     return at !== '0x' ? at : rpc(chainId, 'eth_call', [{ to: address, data }, 'latest']).catch(() => '0x')
   }
-  const [decimalsHex, symbolHex] = await Promise.all([call('0x313ce567'), call('0x95d89b41')])
+  // A fallback function answers any selector (TheDAO returns true, read as 1 decimal); what it returns
+  // for an unknown selector is not metadata.
+  const [decimalsHex, symbolHex, fallbackHex] = await Promise.all([call('0x313ce567'), call('0x95d89b41'), call('0xdeadbeef')])
+  const real = (hex) => (fallbackHex.length > 2 && hex === fallbackHex ? '0x' : hex)
+  const symbolData = real(symbolHex)
   let symbol
-  if (symbolHex.length >= 194) symbol = Buffer.from(symbolHex.slice(130, 130 + 2 * hexInt(symbolHex.slice(66, 130))), 'hex').toString('utf8')
-  else if (symbolHex.length === 66) symbol = Buffer.from(symbolHex.slice(2), 'hex').toString('utf8')
+  if (symbolData.length >= 194) symbol = Buffer.from(symbolData.slice(130, 130 + 2 * hexInt(symbolData.slice(66, 130))), 'hex').toString('utf8')
+  else if (symbolData.length === 66) symbol = Buffer.from(symbolData.slice(2), 'hex').toString('utf8')
   symbol = symbol?.replace(/[^\x20-\x7e]/g, '').trim() || `${address.slice(0, 8)}…`
-  const decimals = decimalsHex.length >= 66 ? hexInt(decimalsHex.slice(0, 66)) : undefined
+  const decimalsData = real(decimalsHex)
+  const read = decimalsData.length >= 66 ? hexInt(decimalsData.slice(0, 66)) : undefined
+  const decimals = read <= 77 ? read : undefined
   return metadata.set(key, { decimals, symbol }).get(key)
 }

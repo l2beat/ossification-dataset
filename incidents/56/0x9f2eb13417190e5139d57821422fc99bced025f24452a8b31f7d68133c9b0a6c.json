@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "FIL314",
+  "name": "FIL314 hourBurn inverted time check allows unlimited reserve burns",
+  "summary": "FIL314 is an ERC314 token whose contract is its own BNB/FIL314 pool. Its public hourBurn() returns early only when hourBurnTime + 3600 < block.timestamp (the check is inverted), so while the clock is current every call advances hourBurnTime by an hour and burns 0.25% of the pool's FIL314 reserve without a sync of the BNB side. Three blocks after liquidity was added, the attacker bought for 0.05 BNB, called hourBurn thousands of times to shrink the token reserve, and sold back in ten steps for most of the pool's BNB.",
+  "targets": [
+    {
+      "address": "0xe8a290c6fc6fa6c0b79c9cfae1878d195aeb59af",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc96a6f6553ad693b411acad4c529d122f6b85ce1b8d3f230f00cea69ed00374f"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 9116.71,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "14.821033888301526615",
+        "usd": 9116.71
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/FIL314_exp.sol"
+  ],
+  "notes": [
+    "Before the anchor hourBurn ran once an hour (five calls, from 0x9116565b and contracts deployed by 0x6aeecf39), keeping the clock current; trading opened only with addLiquidity three blocks before the anchor, so no earlier transaction could profit. addLiquidity set the reserve and opened trading, which the exploit needed only as pool state (rule 8).",
+    "Loss is the BNB that left the pool net of the 5.36 BNB the same sells routed to FIL314's own dividend tracker 0x73cb8b07; it includes 0.74 BNB of marketing fees. The pool's burned FIL314 is valued at nothing (rule 12)."
+  ]
+}

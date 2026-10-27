@@ -1,0 +1,50 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Pythia Finance",
+  "name": "Pythia staking share transfers keep the sender's reward points",
+  "summary": "PythiaTokenStaking corrects reward points on stake and unstake but inherits plain ERC20 transfers without adjustPointsForTransfer, so a fresh recipient of staking shares can claim all rewards accrued since launch again. The attacker staked 348.7 PYT and passed the shares to helper contracts for 140 claims over six transactions, restaking each claim, then unstaked 24,217 PYT and sold it into the PYT/WETH pair for 20.23 ETH.",
+  "targets": [
+    {
+      "address": "0xe2910b29252f97bb6f3cc5e66bfa0551821c7461",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa227b2651fbe0c9f142f1c7513878201a3f488b8e42a3ea935c3c1ef2be0d9c5",
+        "address": "0xe2910b29252f97bb6f3cc5e66bfa0551821c7461",
+        "slot": "0xb"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0x0bff5640f996baf66ce506a7a5a261174618fddae7bb601ee4655cb8058b1a65",
+    "eip155:1:0xe740ceee58ad222794e6672d1ed8d254706fdd5333cdde257ca3da76fd8acf35",
+    "eip155:1:0xee5a17a81800a9493e03164673ac0428347d246aa30cdb124b647787faaabbea",
+    "eip155:1:0x63bb898399cc59f2012d799e6cce113b24db4835d80500ce6a955fe138923ec4",
+    "eip155:1:0x9e8f39e0c6832eaf62bf0b920e04563929bdb02a82f703c3fcbd4bada313779a"
+  ],
+  "loss": {
+    "usd": 50139.01,
+    "assets": [
+      {
+        "token": "0x66149ab384cc066fb9e6bc140f1378d1015045e9",
+        "symbol": "PYT",
+        "amount": "22657.250510146049544667",
+        "usd": 50139.01
+      }
+    ]
+  },
+  "refs": [
+    "https://quadrigainitiative.com/casestudy/pythiafinancestakingcontractvulnerabilityandrugpull.php",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-09/Pythia_exp.sol",
+    "eip155:1:0xa3f9b46e4ecc1767ec40f3ad880fac793cef5fbd7b1d5bbe4fb670640d4ddc20",
+    "eip155:1:0x2de0821f60aab9536209e56e953882f12f914feba6d8da6e5b12cc7b4dde9cfb",
+    "eip155:1:0x13da5bcfb605ca767aa1172f34ddabbf108029ff5f1330b819b0219fec5d9dc7",
+    "eip155:1:0x9de5afda396ca396a0e9a269af997ac01d6bccf58bb2e95590658d811385caaa",
+    "eip155:1:0x04c3d1db885acdfd5a23e33058bd0127ea0d7585e5d4c02423c129d5bfd46272"
+  ],
+  "notes": [
+    "The reset is the owner's addDepositRewardToken(PYT, PYT), which set the staked and reward token 221 blocks after deployment; nothing else changed the staking contract's configuration before the exploit.",
+    "No earlier exploit: the anchor is the first transfer of staking shares since deployment; the attacker's stake (0xa3f9b46e), unstake (0x2de0821f) and three sales (0x13da5bcf, 0x9de5afda, 0x04c3d1db) are in refs.",
+    "PYT is valued at the attacker's realised 20.23 ETH for the 23,006 PYT it sold, which took 39% of the pair's WETH, less the share from its own 348.7 PYT stake (rule 11).",
+    "The escrowed half of each claim (25,869 PYT vested for the helpers) is not valued: the attacker realised nothing from it and the owner withdrew the escrow's PYT a few hundred blocks later; the 1,211 PYT unstake fee went to the protocol's fee receiver."
+  ]
+}

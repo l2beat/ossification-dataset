@@ -1,0 +1,75 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Vicuna Finance",
+  "name": "Vicuna Lending BeetsVaultOracle spot-balance LP pricing",
+  "summary": "BeetsVaultOracle priced Vicuna's Beefy-wrapped Beets LP collateral (Vifi USDC-scUSD, Vifi wS-stS) from the pool's spot token balances times external prices, divided by BPT supply. In a contract-creation transaction, the attacker supplied about 99k Vifi USDC-scUSD and 295k Vifi wS-stS. It then unbalanced each Beets pool with flash-borrowed USDC (13.5m) and wS (100m), which inflated the LP price, borrowed the stable and Sonic markets' scUSD, USDC, USDT, wS, stS and wOS against it, and unwound the pools.",
+  "targets": [
+    {
+      "address": "0x7d670e8d2195752ca2d226cee1dd33cdc90af758",
+      "reset": {
+        "kind": "config",
+        "tx": "0xb5610a0e63130cd756711e64a5f74a63f7fd8669a2b4845fbba4082e18caf530",
+        "address": "0x4d18e0d40e059933d00003457481ef9b4c58f803",
+        "call": "0x92bf2be0000000000000000000000000037bb13fb35da590d1144b082f4b08ff7c8c531c"
+      }
+    },
+    {
+      "address": "0x73311fb84796bf2dab6652dfc863d8148c4ce8b3",
+      "reset": {
+        "kind": "config",
+        "tx": "0x517e2c02951220fc85ca893c482f247a29c67340e1cd019d4a39f829394bae71",
+        "address": "0x66a4eb6d52f66bd749709f3d8575c061fcb76a89",
+        "call": "0x92bf2be000000000000000000000000002d742f182d2a588c54e7dc998ad19f9d795bc51"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1018409.49,
+    "assets": [
+      {
+        "symbol": "S",
+        "amount": "569741.792380433150683814",
+        "usd": 322043.7
+      },
+      {
+        "token": "0xd3dce716f3ef535c5ff8d041c1a41c3bd89b97ae",
+        "symbol": "scUSD",
+        "amount": "283589.443008",
+        "usd": 283501.53
+      },
+      {
+        "token": "0xe5da20f15420ad15de0fa650600afc998bbe3955",
+        "symbol": "stS",
+        "amount": "276797.203465094314672406",
+        "usd": 158667.35
+      },
+      {
+        "token": "0x29219dd400f2bf60e5a23d13be72b486d4038894",
+        "symbol": "USDC.e",
+        "amount": "115558.397359",
+        "usd": 115534.48
+      },
+      {
+        "token": "0x6047828dc181963ba44974801ff68e538da5eaf9",
+        "symbol": "USDT",
+        "amount": "101002.195438",
+        "usd": 100959.47
+      },
+      {
+        "token": "0x9f0df7799f6fdad409300080cff680f5a23df4b1",
+        "symbol": "wOS",
+        "amount": "66137.792659401657845799",
+        "usd": 37702.96
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/VicunaFinance",
+    "https://medium.com/@vicunafinance"
+  ],
+  "notes": [
+    "Each oracle's reset is the listing transaction (0xb5610a0e for the stable market, 0x517e2c02 for the Sonic market). In one transaction it initialised the Vifi reserve, set its collateral parameters and pointed the market's AaveOracle at the BeetsVaultOracle. The latest of the two sets the age. A later cap change (0x3f24585a) on scUSD, USDC and USDT only sized the loss.",
+    "Sonic's RPC gives no traces, so campaign.mjs cannot confirm the campaign. Scanning Supply logs instead, the Vifi reserves were supplied only at listing and in the anchor up to block 16800000, so no other transaction borrowed against them. The 2025-03-20 Deleverager exploit is a separate incident.",
+    "Loss is the six borrows; the Vifi collateral the attacker left behind is not subtracted. DefiLlama has no wOS price, so wOS is valued at convertToAssets (1.01825 OS per wOS) times DefiLlama's OS price (0.559849 USD). The total exceeds Vicuna's reported ~700k USD."
+  ]
+}

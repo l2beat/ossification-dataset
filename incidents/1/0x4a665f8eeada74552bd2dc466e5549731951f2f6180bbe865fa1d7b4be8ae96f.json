@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Chi Protocol",
+  "name": "Chi Protocol ArbitrageV5 burn gated on manipulable USC spot price",
+  "summary": "ArbitrageV5.burn() redeems USC from the reserve holder at a hard-coded $1, gated only by the USC/WETH Uniswap V2 spot price being within maxMintBurnPriceDiff ($0.50) of peg and by a reserve-deficit check. With USC trading near $0.0005 in a pool holding 0.005 WETH, the attacker bought 17,343 USC for 0.158 flash-loaned WETH, lifting the spot to about $0.50, deposited 3.9 WETH into the reserve holder to pass the deficit check, burned the USC for 1.71 weETH, 2.82 stETH and its 3.9 WETH back, and sold the rest.",
+  "targets": [
+    {
+      "address": "0x594f4983df88c3d84caa6eb30c18fba1986ed6f1",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa824315f04c43dba08ecf4bf29cb110016265812aa4a6883977071e2756a1a32",
+        "address": "0xc36303ef9c780292755b5a9593bfa8c1a7817e2a",
+        "slot": "0x7f9e71e809b94aa710c6c7a2933426f62d91fde2d1bf21578293ea24092fceec"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 8493.95,
+    "assets": [
+      {
+        "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "symbol": "stETH",
+        "amount": "2.820261435472125253",
+        "usd": 5095.59
+      },
+      {
+        "token": "0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee",
+        "symbol": "weETH",
+        "amount": "1.712100778539935954",
+        "usd": 3398.35
+      },
+      {
+        "symbol": "ETH",
+        "amount": "0.00000310949251009",
+        "usd": 0.01
+      }
+    ]
+  },
+  "refs": [
+    "https://hacked.slowmist.io/?c=ETH&page=1",
+    "eip155:1:0x706158ece260383c6928b29940f93ce92454e9c9e839ce65122f9069699c4d6a"
+  ],
+  "notes": [
+    "Reset is the reserve holder's setArbitrager(ArbitrageV5, true) (isArbitrager mapping, slot 105), which let burn() redeem reserves; ArbitrageV5 was deployed 7 days earlier. Later owner changes only resized the gate: maxMintBurnPriceDiff $0.05 to $0.50, per-call burn limits to 5M USC, and maxMintBurnReserveTolerance 1% to 100%; a larger purchase, more burn calls or a larger deposit pass the old values (rule 8).",
+    "The seven burns since block 23686246 ran at unmanipulated spot prices of $0.59-0.97. USC collapsed after an unrelated stUSC self-transfer inflation dumped 16,949 USC into the pool 20 hours before (0x706158ec, separate defect). Loss is the reserve vaults' outflow; the attacker's 3.9 WETH deposit nets out (rule 11) and the pool's USC is worthless (rule 12)."
+  ]
+}

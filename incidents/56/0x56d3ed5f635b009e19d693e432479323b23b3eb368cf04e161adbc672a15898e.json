@@ -1,0 +1,48 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "unverified_667d",
+  "name": "Unverified ChainBridge-style bridge with no-op role check",
+  "summary": "The unverified ChainBridge-style Bridge 0x8de7eaba compiled an AccessControl whose role check never reverts (both branches of _checkRole return), so grantRole() let anyone take DEFAULT_ADMIN_ROLE. The attacker's contract granted itself admin and called adminWithdraw to pull the ERC20 handler's 10,463.64 DAI; copycats repeated it as users deposited more DAI over the next ten weeks.",
+  "targets": [
+    {
+      "address": "0x8de7eaba58efb23b6f323984377af582b23134e9",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc7348ebd8a47abb777592f02815a22f0ea90d0e883d657f4741c7440bc97e87c"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 12064.82,
+    "assets": [
+      {
+        "token": "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3",
+        "symbol": "DAI",
+        "amount": "12033.79855",
+        "usd": 12064.82
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-08/unverified_667d_exp.sol",
+    "https://x.com/TenArmorAlert/status/1828983569278231038"
+  ],
+  "campaign": [
+    "eip155:56:0x398ccc4e29660e175ea0aac69c3b6ed39ff3ec6a85273cbf89da3be4553e2e07",
+    "eip155:56:0x99ef2b49c7d79683730375fb4dc4d092da7767b76b41df1a6a62afa429b1073d",
+    "eip155:56:0xfa56d3904a61cad8052618873929ea3cfcb92f21c9c4ecf3821a34b8cc2f0302",
+    "eip155:56:0xc4abf12cc657638be41de7e775e0d7ab353184ef4a177af1b50fe735349bd1a0",
+    "eip155:56:0xb415f1c7c86bf2c98d97977185df7e40c791385030a28649309bcff8307ecd9e",
+    "eip155:56:0x3df61aa9939d3692b6a610785464381d9a02e4eae331fe6c6e798402cc9b8cbc",
+    "eip155:56:0xb70acad9250b875c947829cdd6a4ed8f194f00f850cdf730d4045da0f619eaf3",
+    "eip155:56:0x5acdddfac683b259f79b6fd0b5df6394686807b12a22fd2cfee14a28d119aff2",
+    "eip155:56:0x8b253bc1a5bc7e7338004a905d8be3907ab72b5258d0ff82cfc0250e03f9f980",
+    "eip155:56:0x47d756c24ee623ca19af32de630dcb59f4e8ff5832929fbd5a5220010880f897",
+    "eip155:56:0xe628247a83553c8e8e67f8a1895aaf99908def7c04435055d8ee5de934997ef1",
+    "eip155:56:0x193facb8f1349ba9e40ebb9db12ddb4132292b31fddb6fc592047731c7e2b45f"
+  ],
+  "notes": [
+    "Defect from bytecode: grantRole (0x2f2ff15d) routes to a role check that jumps to the return label whether or not hasRole holds; a debug_traceCall of grantRole(0x00, 0x...dead) from 0x...dead at block 41770501 writes the role slot. Only the deployer and its successor admin 0xe9fcb406 granted roles before the anchor.",
+    "Campaign: every later grantRole or adminWithdraw by a non-admin caller (campaign.mjs plus the handler's DAI transfers); three in blocks 42463654-42463692 named a fake handler and took nothing. Loss is the handler's net DAI outflow per transaction (loss.mjs); 0x8f103d1e's repeated deposit-and-withdraw transactions count only their net drain."
+  ]
+}

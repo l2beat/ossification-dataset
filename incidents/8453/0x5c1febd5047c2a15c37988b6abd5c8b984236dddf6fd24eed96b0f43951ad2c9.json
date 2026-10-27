@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "GoldPesa",
+  "name": "GPXHooks rebalances protocol liquidity at the manipulated spot price",
+  "summary": "GoldPesa's Uniswap v4 hook GPXHooks re-centres its protocol-owned GPX/USDC position from beforeSwap whenever an hour has passed since the last rebalance, burning the position and re-minting all its USDC from the pool's current spot price. With a Morpho USDC flash loan the attacker bought GPX to raise the price, swapped again to trigger the rebalance at that price, and sold the GPX back into the re-placed liquidity, taking 114,428 USDC.",
+  "targets": [
+    {
+      "address": "0x4519e2b040ff1b64fa03abe2aef0bc99d7cceaa8",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xcf1cdda7f596605d8b86cea9374f723d0f017186bd685d0493eaf1ccd1db72ec"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 114417.13,
+    "assets": [
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "114428.509331",
+        "usd": 114417.13
+      }
+    ]
+  },
+  "refs": [
+    "https://www.cryptotimes.io/2026/10/03/goldpesas-gpxhooks-allegedly-drained-for-114k-in-base-exploit/",
+    "eip155:8453:0xa7910f17481af4352c62b77ab449a4bc35601b4960437ef7d58216f04b57f634"
+  ],
+  "notes": [
+    "The hook's own rebalance writes (position id, lower tick, reserves, last rebalance) are automated live values, not resets; mintInitialLiquidity and setAddresses ran in the deployment block. The 126 earlier rebalances were triggered by ordinary swaps: none moved USDC out of the pool beyond a plain GPX sale. The attacker's repeat 0xa7910f17 reverted.",
+    "Loss is the pool's USDC outflow net of the swap fees the hook paid to GoldPesa's own pawn and owner addresses; the position's GPX went back to the hook."
+  ]
+}

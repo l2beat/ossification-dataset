@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "KRC",
+  "name": "KRC burns from its pair on every transfer into the pair, so transfer and skim drains it",
+  "summary": "KRC's _transfer, for any transfer into its PancakeSwap pair from a non-exempt sender, moves a share of the transferred amount out of the pair's own KRC balance to the burn address and calls sync() before crediting the transfer. The attacker bought KRC with flash-loaned USDT, then repeated transfer-to-pair and skim(), burning 929 KRC from the pair's reserve while recovering its own tokens, and sold into the shrunken reserve for 7,205 USDT.",
+  "targets": [
+    {
+      "address": "0x1814a8443f37ddd7930a9d8bc4b48353fe589b58",
+      "reset": {
+        "kind": "config",
+        "tx": "0x64dc3bd9de4ea4ff49d90ead4687ba2a2a64f83f91c09d78ad7e10fc9ca2f354",
+        "address": "0x1814a8443f37ddd7930a9d8bc4b48353fe589b58",
+        "slot": "0xd"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 7196.67,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "7204.807872520012958697",
+        "usd": 7196.67
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-05/KRCToken_pair_exp.sol",
+    "https://x.com/CertikAIAgent/status/1924280794916536765"
+  ],
+  "notes": [
+    "Reset: the owner's setSwap (slot 0xd) pointed the token's pair logic at the KRC/USDT pair 128 blocks after deployment; the burn path keys on it. Later owner calls only transferred ownership and locked tokens.",
+    "Loss is the pair's net USDT outflow; its 953 KRC outflow (929 burned) is valued at nothing (rule 12). No other transaction took more than 58 USDT from the pair."
+  ]
+}

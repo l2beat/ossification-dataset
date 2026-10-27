@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Keom",
+  "name": "Keom kNative redeemUnderlying pays the requested amount after capping the burned shares",
+  "summary": "Keom's Compound-V2-fork kNative market caps the kTokens burned in redeemUnderlying at the redeemer's balance but still pays the requested underlying amount, so a holder of dust kNative outside the market (no liquidity check) can withdraw any amount of the market's cash. A user who had already withdrawn their 0.02 ETH deposit redeemed 0.02 ETH again against 112 leftover units in 2023; in 2026 an attacker minted 4,918,683 units for 0.001 ETH, exited the market and redeemed the whole 38.60 ETH cash.",
+  "targets": [
+    {
+      "address": "0xee1727f5074e747716637e1776b7f7c7133f16b1",
+      "code": "0x4c6e83b9f7e8835f583be748de899c5881fbc403",
+      "reset": {
+        "kind": "config",
+        "tx": "0x5e9c287e5abc412ec5d3e33d5f2e3082c28ad11a21bf2dbf1a615a02e03374e8",
+        "address": "0x6ea32f626e3a5c41547235ebbdf861526e11f482",
+        "call": "0x8e8f294b000000000000000000000000ee1727f5074e747716637e1776b7f7c7133f16b1"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 89218.98,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "38.620532955759610473",
+        "usd": 89218.98
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1101:0x4ccde7fc6b240397228c1a740d15a149d2062ae0c11336ff81ad394603d9dfd8"
+  ],
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-incident-roundup-mar-16-mar-22-2026",
+    "eip155:1101:0x82f309e7d957c91d9a6effa7c8c196f4e235fb7e00f580f65814a192c6725351",
+    "eip155:1101:0x147ff53866924e479803cfa893459bec040e7b17549134239b84d96feacb6565",
+    "eip155:1101:0xb939d6389e43092ac770af4c3bfe5805bef184db48e7dd1f03a766b75336f7a0",
+    "eip155:1101:0x19f2d6f043c3c79a68a95c7eefc10be30bef8ba9181c0b3e78c518cc2820d0a1"
+  ],
+  "notes": [
+    "Anchor: 0xd25ca546 minted 0.02 ETH of kNative, redeemUnderlying(0.02 ETH) in 0x19f2d6f0 left 112 units, and redeemUnderlying(0.02 ETH) again in the anchor was paid 0.02 ETH more; intent is unknown but the transaction took other suppliers' ETH through the defect. Scanning all 114,065 kNative Redeem events finds only this and the 2026 drain paying more than one unit's worth beyond the burned shares.",
+    "The defect was never fixed in between: the proxy moved to 0x6ad33c60 (0x147ff538) and 0xf7faa3f1 (0xb939d638, which ran the 2026 drain), and an eth_call probe with the comptroller stubbed pays the requested 0.01-0.02 ETH while burning only the holder's balance on all three implementations, so the 2026 drain belongs to this incident (rule 4).",
+    "Reset: kNative's MarketListed in the comptroller (block 149), which redeemAllowed requires, is 41 blocks after the proxy's creation with this implementation (0x82f309e7).",
+    "Loss: ETH priced manually (DefiLlama coingecko:ethereum at each block: 1827.26 and 2310.39 USD) because loss.mjs has no Polygon zkEVM config; the 2026 figure nets the attacker's 0.001 ETH mint."
+  ]
+}

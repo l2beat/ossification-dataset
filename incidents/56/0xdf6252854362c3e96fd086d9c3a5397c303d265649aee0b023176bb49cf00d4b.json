@@ -1,0 +1,55 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Sion",
+  "name": "Sion StrategyThenawUsdrUsdc unprotected unstake",
+  "summary": "The strategy proxy's unstake(address,uint256,address,bool), meant for the portfolio manager, had no access control in the deployed StrategyThenawUsdrUsdc implementations, so anyone could withdraw the strategy's Thena gauge LP and rewards, swapped to the requested asset, to a beneficiary of their choice. The attacker's contract called it with targetIsZero set and received the strategy's whole position as 10,198 USDT; two later callers took about 25 USDT each from residual dust.",
+  "targets": [
+    {
+      "address": "0x39e29f4fb13aec505ef32ee6ff7cc16e2225b11f",
+      "code": "0xaedb00947b0bfd2723898f78018b4bb7b2398cdc",
+      "reset": {
+        "kind": "config",
+        "tx": "0xbdf529b3c6a6f5859d4ce221634c8e1f55cc058fcac0790fbcbf56b63eccaf79",
+        "address": "0x39e29f4fb13aec505ef32ee6ff7cc16e2225b11f",
+        "slot": "0x13d"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 10268.31,
+    "assets": [
+      {
+        "token": "0xa99c4051069b774102d6d215c6a9ba69bd616e6a",
+        "symbol": "vAMM-wUSDR/USDC",
+        "amount": "0.157219242187592466",
+        "usd": 10160.17
+      },
+      {
+        "token": "0xf4c8e32eadec4bfe97e0f595add0f4450a863a11",
+        "symbol": "THE",
+        "amount": "254.657556497840133933",
+        "usd": 87.21
+      },
+      {
+        "token": "0x2952beb1326accbb5243725bd4da2fc937bca087",
+        "symbol": "wUSDR",
+        "amount": "20.140150223",
+        "usd": 20.93
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-03/Thena_exp.sol",
+    "https://twitter.com/LTV888/status/1640563457094451214",
+    "eip155:56:0x7b99d246f700dc07960baa3d4b035b6495c169db0160960531531f6585971257"
+  ],
+  "campaign": [
+    "eip155:56:0x0404f6748a79d96affd23d3695778896e5dcce77ab6431e80fa675da67eee918",
+    "eip155:56:0xb3f2c73339282d5e1fc89140ffb9b243bec4ca49f5930548ecfffda53bb8a35d"
+  ],
+  "notes": [
+    "Protocol: the strategy, its portfolio manager 0x5ee314a2 and the SION token 0x39176bcc were deployed by 0x564b06d3 from Overnight's USD+ code; DeFiHackLabs files it as Thena, whose gauge only held the stake. The upgrade at block 26844534 (0x7b99d246) added the portfolio-manager check; a probe call from an arbitrary address then reverts 'Restricted to PORTFOLIO_MANAGER'.",
+    "Reset: the implementation installed at block 26832875 (0x03811bd7) reverted on unstake until setParams in 0xbdf529b3 (block 26832896) set the strategy's asset to USDT (slot 0x13d), the asset the exploit requested. The previous implementation 0x0b9bf996 (verified source, from block 26638106) already lacked the check, but no Unstake event precedes the anchor.",
+    "Loss: the LP has no price and is valued at what the callers realised, the USDT they received (10,247.82 USDT, $10,268.31) less the THE and wUSDR priced separately. Later portfolio-manager calls (0xd8fbb0c6, 0xa5e39b18, 0xfd469d83) are normal operation."
+  ]
+}

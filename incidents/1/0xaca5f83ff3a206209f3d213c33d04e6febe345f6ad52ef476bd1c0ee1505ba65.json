@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Set Protocol",
+  "name": "Set Protocol v1 RebalancingSetTokenV3 actualizeFee unit-share rounding",
+  "summary": "RebalancingSetTokenV3 stores unitShares floored at issuance, but the public actualizeFee() re-derives it with divCeil even when no fee is minted, so issue, actualizeFee, redeem in one transaction returns one extra currentSet unit per naturalUnit issued. With flash-borrowed capital the attacker drained set 0x54e8371c's backing, and copycats repeated the round trip on 46 more sets, draining 40 of them.",
+  "targets": [
+    {
+      "address": "0x54e8371c1ec43e58fb53d4ef4ed463c17ba8a6be",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x53d5aed42eb0d6d752f6a2ac61a3ff3116c856212e85060b9b36468fc93af6dc"
+      }
+    }
+  ],
+  "campaign": [
+    {
+      "chainId": 1,
+      "count": 452,
+      "from": 26131974,
+      "to": 26151955,
+      "selection": "successful txs after the anchor in which a RebalancingSetTokenV3 (code hash 0xd18acd88\u2026, factories 0xa367a251\u2026 and 0x2058a1d2\u2026) emits IncentiveFeePaid (topic0 0x819f13b7\u2026) and mints and burns its own token to the same address, excluding 4 txs (0x2866dc7f, 0xda5ca0a7, 0xc0f790e1, 0x1e034d61) that only touched sets holding no currentSet in the Vault"
+    }
+  ],
+  "loss": {
+    "usd": 508001.32,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "amount": "116.336316311453817734",
+        "usd": 314420.65
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "amount": "2.10691016",
+        "usd": 180859.35
+      },
+      {
+        "token": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "amount": "949.638710689605807463",
+        "usd": 12435.65
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "amount": "285.682687",
+        "usd": 285.67
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-10/SetProtocol_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-10/SetProtocolETHMACOAPY_exp.sol"
+  ],
+  "notes": [
+    "Loss is the drop in each drained set's currentSet balance in the Set Vault (getOwnerBalance) over the blocks holding the round trips, converted to components at the currentSet's units and priced hourly (DefiLlama). No other issue or redeem of these sets occurred in the window. loss.mjs undercounts: many attackers left the surplus in Vault internal balances instead of withdrawing it in the exploit transaction.",
+    "No round trip appears among the 461 earlier IncentiveFeePaid transactions since block 8,000,000, so the anchor is the first exploit; all 457 later ones are round trips by 22 senders.",
+    "Reset is the set's deployment: later storage changes are its July 2020 rebalance to currentSet 0xd5447466 and live unitShares/totalSupply values, which the round trip does not depend on (rule 8).",
+    "The 40 other drained sets run identical code (created through the same two factories in March-August 2020) and are campaign victims, not targets."
+  ]
+}

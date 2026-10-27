@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "NewFi",
+  "name": "NewFi StakedV3 Invest rebalance at manipulated pool price",
+  "summary": "StakedV3.Invest is public and, when the vault's PancakeSwap V3 farm position is out of range, withdraws it, swaps the proceeds with a minimum output quoted from the same pool's current price, and re-mints at the current tick. The attacker pushed the BUSD/USDT pool out of range with flash-loaned BUSD, called Invest with 1 BUSD so the vault sold about 36,100 BUSD for 1,627 USDT, and swapped back.",
+  "targets": [
+    {
+      "address": "0xb8dc09eec82cab2e86c7edc8dd5882dd92d22411",
+      "reset": {
+        "kind": "config",
+        "tx": "0x4bb8441939d20de8a35a63f842425d8827048702c6f647f4b02825b7143ad049",
+        "address": "0xb8dc09eec82cab2e86c7edc8dd5882dd92d22411",
+        "slot": "0x5d6016397a73f5e079297ac5a36fef17b4d9c3831618e63ab105738020ddd722"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 34114.34,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "34114.342258351564409378",
+        "usd": 34114.34
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/NewFi_exp.sol"
+  ],
+  "notes": [
+    "The reset is the owner's poolCreat for pool id 2 (the BUSD/USDT 0.01% pool and farm Invest rebalanced), a market listing made 216 blocks after deployment; the later poolControl weight edit only sizes the swap.",
+    "Loss is the net BUSD depletion of the vault and the V3 pool holding its position, which nets the position's withdrawal and re-mint; USDT nets to zero and the 2.33 CAKE farm harvest is not subtracted.",
+    "No earlier exploit: every earlier Invest call since pool creation was sent directly by an EOA, so none moved the pool price within its transaction; campaign.mjs found no call after the anchor."
+  ]
+}

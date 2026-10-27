@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "WHALE",
+  "name": "WHALE credits hashrate to its own pair and lets anyone harvest it into the pair",
+  "summary": "WHALE's transfer hook stages and settles LP credit as hWHALE hashrate; after the attacker's skim of the WHALE/USDT pair to itself and an LP mint, a zero-value WHALE transfer settled 10.43M hashrate to the pair itself. WHALEHashrate harvests mining rewards for the sender of any transfer and transferFrom(pair, dead, 0) needs no allowance, so the attacker had 293,639 WHALE minted into the pair and swapped that unaccounted balance out for the pair's USDT, using Moolah and Pancake Infinity Vault USDT to set up the reserves.",
+  "targets": [
+    {
+      "address": "0xabc79b7c5a0f1fe0ac55fcb7e659d5817e530123",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xe5f4a952112c966aafdd7e530b243860433f24484598e0e727647f879694d0d6"
+      }
+    },
+    {
+      "address": "0x436c1758e9a9458b54187a2774e0ac32de223691",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x7acd9eecda7318365b950febf45c185ddcf572c93a321b7efbe99092953274dc"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3458.35,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "3461.927636834787326038",
+        "usd": 3458.35
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-06/WHALE_exp.sol",
+    "https://x.com/audit_911/status/2067451654694412720"
+  ],
+  "notes": [
+    "Both contracts were deployed in one setup by 0x11b7a617; the later storage changes resets.mjs lists are live accumulators and reserves. Before the anchor no WHALE or hWHALE had been minted to the pair. The pair kept its hashrate, and later transactions (e.g. eip155:56:0x67b472a54192de17539f8c654d6d2563a92f88071f47f47847041404736b14bd, eip155:56:0x1d124157e0ca40a30a6f6c31c1b988df5a27d1eb4354bafa414589c0e7ecd141) harvested it again into the pair, each taking under 7 USDT from the drained pool; they are omitted from the campaign as below any material loss.",
+    "Mechanism read from the anchor trace: the hWHALE mint to the pair runs inside WHALE.transfer(attacker, 0), and the WHALE mint to the pair inside hWHALE.transferFrom(pair, dead, 0) via awardMiningEmission. Which staging branch attributed the credit to the pair was not traced line by line in the 13k-line source."
+  ]
+}

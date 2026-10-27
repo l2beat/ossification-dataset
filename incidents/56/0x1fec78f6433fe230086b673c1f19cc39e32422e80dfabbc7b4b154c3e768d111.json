@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MRP",
+  "name": "WMRP removeLiquidity reentrancy",
+  "summary": "WMRP, the BNB/MRP pool wrapper of the ERC314-style MRP token, burned an account's LP and sent its BNB in _removeLiquidity() before transferring the MRP share out. Attack contracts added liquidity with flash-loaned BNB, removed it, and on receiving the BNB re-entered receive() to buy MRP against reserves that had already paid out the BNB but still counted the MRP owed, then took that MRP too and sold everything into MRP's own BNB pool.",
+  "targets": [
+    {
+      "address": "0x35f5cef517317694df8c50c894080caa8c92af7d",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf1ab1c998227e8478ae221020f4105dab359d5da39bf3cef1c0d2abaeea6c2a6"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 63746.2,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "109.890191205002849241",
+        "usd": 63746.2
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-07/MRP_exp.sol"
+  ],
+  "campaign": [
+    "eip155:56:0x4353a6d37e95a0844f511f0ea9300ef3081130b24f0cf7a4bd1cae26ec393101"
+  ],
+  "notes": [
+    "Anchor: 0x6605b4a4's 0x1fec78f6, two blocks before DeFiHackLabs' 0x4353a6d3 (0x132d9bbd), with the same 8,981-byte attack contract; they are the only BurnLP events from contract accounts.",
+    "Reset: WMRP's deployment; setMRPPriceAndStartTime five blocks later only set the opening price and trading start time.",
+    "Loss: net BNB outflow of WMRP and the MRP contract's pool in both transactions (loss.mjs), including 2.4 BNB of flash-swap fees and 3.8 BNB of sell fees paid to 0x2712c550; the MRP that left WMRP was sold back into the MRP pool, so it is not counted separately."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "INVISTECH",
+  "name": "INVISTECH liquidity helper's public addLiquidity trades at a manipulable spot price",
+  "summary": "The INVISTECH team's unverified liquidity helper 0x2945b340 exposes addLiquidity() (0xe8078d94) to any caller; it swaps its whole USDT balance to WBNB, adds half to the INVISTECH/WBNB pool and buys INVISTECH with the rest, with minimums derived from the current spot quote. The attacker bought INVISTECH with 3,000 flash-loaned WBNB, called addLiquidity so the helper's 12,348.82 USDT bought in at the inflated price, then sold its INVISTECH back to the pool.",
+  "targets": [
+    {
+      "address": "0x2945b340d851649871a4195ad68fe0ac53885591",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x29730c1adbb76aa4fef512cdb44043c4b150aa7faaecb0cc11693e640e3dd7cf"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3463.61,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "5.437937396574487084",
+        "usd": 3463.61
+      }
+    ]
+  },
+  "refs": [
+    "https://t.me/defimon_alerts/515",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-02/INVISTECH_exp.sol"
+  ],
+  "notes": [
+    "The helper is unverified; the mechanism is read from the anchor's trace and the DeFiHackLabs reconstruction. The seed's claim that INVISTECH taxes buys out of the pair is wrong: _transfer sends amount minus tax to the buyer and the tax from the same pair debit. Before the anchor addLiquidity was only called directly by the deployer 0x9617a91d and the keeper 0xc38d716b; the anchor is the only helper USDT outflow reached through another contract. The deployer's setDistribution calls (latest eip155:56:0xc97c3cfc9f849f5f70d16c61810a11ae27e61698f239ca5fc7699dac73dfbc0d, slot 3 set to 50) only split the USDT between the liquidity and buy legs, both of which buy in at spot (rule 8).",
+    "Loss is what the sandwich took from the helper's purchase: the attacker's 5.1379 WBNB profit plus the 0.3 WBNB flash-loan fee it paid from it. The helper's 12,348.82 USDT became pool liquidity owned by the deployer and INVISTECH bought at the top; counting the whole USDT would include value the protocol kept as LP (rule 12)."
+  ]
+}

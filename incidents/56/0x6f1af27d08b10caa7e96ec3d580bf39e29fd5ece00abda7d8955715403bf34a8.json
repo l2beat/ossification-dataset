@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SEAMAN",
+  "name": "SEAMAN sells its fee balance for GVC without slippage protection on any transfer to its pair",
+  "summary": "SEAMAN's _transfer runs swapAndLiquifyV3/V1 on any transfer into the SEAMAN/USDT pair, selling the contract's fee SEAMAN through USDT into GVC with amountOutMin 0 at whatever price the pools hold. The attacker flash-borrowed USDT, bought 500,000 USDT of GVC, sent 1-wei SEAMAN transfers to the pair 20 times so the contract bought GVC at the inflated price with 8,586 USDT of its fee tokens, and sold its GVC back; bots repeated the sandwich 263 times in the following years.",
+  "targets": [
+    {
+      "address": "0x6bc9b4976ba6f8c9574326375204ee469993d038",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc560fab0c0dc725585f521a4fbe03922e11e44c225d185bc594640ab4165e99f"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 16626.47,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "16627.541506799996211848",
+        "usd": 16626.47
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/SEAMAN_exp.sol",
+    "https://twitter.com/peckshield/status/1597493955939405825"
+  ],
+  "campaign": [
+    {
+      "chainId": 56,
+      "count": 263,
+      "from": 26253140,
+      "to": 58011131,
+      "selection": "successful transactions after the anchor in which USDT both entered and left the GVC/USDT pair 0x84d26ad5f7d12ae783fee433fd0d2b2b1a7e9260 (Etherscan tokentx) and the SEAMAN/USDT pair 0x6637914482670f91f43025802b6755f27050b0a6 had a net USDT outflow from the token contract's fee sale"
+    }
+  ],
+  "notes": [
+    "Reset: deployment. Later owner calls only launched trading (Launch), set an excluded address and dividend thresholds, none of which the forced swap needs.",
+    "Campaign: of the 316 transactions that round-tripped USDT through the GVC pair since deployment, the 264 from the anchor on also sold the contract's SEAMAN into the SEAMAN pair; the 52 others (none between deployment and the anchor did) left the SEAMAN pair untouched. Bots 0xf6b381af (129) and 0x2af9cb19 (87) sent most of the tail.",
+    "Loss is the two pairs' combined net USDT outflow over the anchor and the bundle (loss.mjs --tx), which equals the sandwichers' profit: 7,782 USDT in the anchor and 8,846 in the tail. The SEAMAN the contract sold and the GVC it bought at inflated prices, then paid out as dividends, are unpriced and valued at that realised USDT (rule 12)."
+  ]
+}

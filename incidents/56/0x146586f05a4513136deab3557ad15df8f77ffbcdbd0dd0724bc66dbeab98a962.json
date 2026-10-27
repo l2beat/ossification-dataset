@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Starlink (STARL)",
+  "name": "Starlink's buy fee split is not renormalised, so transfers out of the pair pay out 192% of the amount",
+  "summary": "StarlinkCoin's SetBuyValues updates the per-recipient buy fees but not buyFeeRate, so after the owner set the marketing share to 100 while buyFeeRate stayed 8, every transfer out of the STARL/WBNB pair sent the full amount to the marketing wallet plus 92% to the recipient. With flash-loaned WBNB the attacker bought STARL and repeatedly sent it to the pair and skim()med it back, each round removing nearly twice the excess from the pair, then sold into the collapsed STARL reserve for 38.4 WBNB net.",
+  "targets": [
+    {
+      "address": "0x518281f34dbf5b76e6cdd3908a6972e8ec49e345",
+      "reset": {
+        "kind": "config",
+        "tx": "0x91147e0aca4d3c164464e79f894c4e977125fd28b8fd17ab9fb5c08b6fd937f6",
+        "address": "0x518281f34dbf5b76e6cdd3908a6972e8ec49e345",
+        "slot": "0x1b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 11816.37,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "38.359839689566746539",
+        "usd": 11816.37
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-02/Starlink_exp.sol",
+    "https://twitter.com/NumenAlert/status/1626447469361102850"
+  ],
+  "notes": [
+    "Reset is the owner's SetBuyValues(0, 100, 0), which set marketBuyFees (slot 0x1b) to 100 against an unchanged buyFeeRate of 8 five days before the exploit; the code defect dates from deployment, but transfers out of the pair only overpaid once the split exceeded the rate (rule 1, privileged state creating the vulnerability; rule 8, an accounting rule). The only earlier such window, [0, 24, 0] and [0, 49, 0] at blocks 19026695-19028815, saw no WBNB move through the pair.",
+    "Campaign: the pair's only WBNB movements between the reset and the anchor were two buys of 0.003 and 0.01 WBNB. Loss is the pair's net WBNB outflow; its STARL is valued at nothing (rule 12)."
+  ]
+}

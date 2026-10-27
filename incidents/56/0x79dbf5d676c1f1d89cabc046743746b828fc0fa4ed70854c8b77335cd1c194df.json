@@ -1,0 +1,33 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "NFT Auction Marketplace 0x46c9",
+  "name": "NFT Auction Marketplace settle-then-delist double payout",
+  "summary": "The marketplace's completeAuction(saleId) pays the seller and fee recipient from the buyer's BNB but leaves the sale open, so delist(saleId) can afterwards refund the same price to the buyer out of the contract's pooled escrow. Inside a WBNB flash loan the attacker listed a self-minted NFT, bought it for 2.2176 BNB from a second helper, then delisted the settled sale and was refunded 2.2176 BNB of other users' escrow.",
+  "targets": [
+    {
+      "address": "0x46c958a169b9f2688e126080c4ec422956621e09",
+      "code": "0x3735eb3dc4a509573c3701eb6026c6897e1f044d",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x46b77b476edcb54883921ade72cf4b1f5c449538db0328c37cecf11091c4cfb3"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1257.31,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "2.217610999999999999",
+        "usd": 1257.31
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/NFTAuctionMarketplace_exp.sol"
+  ],
+  "notes": [
+    "The implementation 0x3735eb3d is unverified; the mechanism is read from the trace (completeAuction 0x21b62886 pays 2.1733 BNB to the seller helper and 0.0444 BNB to the fee recipient, then delist 0x964bc33f of the same sale sends 2.2176 BNB to the buyer helper). The Upgraded log at block 8482034 is the proxy's only route change.",
+    "Campaign: no other transaction drained the escrow. Its earlier outflows outside direct calls (blocks 64500625-66435652) are delists of 2021 sales by EIP-7702-delegated EOAs that were bidders or sellers then, forwarding to sweeper addresses; they look like key-compromise sweeps of owed refunds and are not counted. Loss is the marketplace's whole remaining balance; the DeFiHackLabs ~$4.15k uses a higher BNB price than DefiLlama's $567 at block time."
+  ]
+}

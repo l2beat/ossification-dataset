@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Kipseli",
+  "name": "Kipseli PropAMM quote-unit mismatch",
+  "summary": "Kipseli's PropAMM engine priced a PropAMMWrapper swap with the quoter registered for that wrapper, which returns a USDC-denominated (6-decimal) amount whatever tokenOut is, and paid that integer out in tokenOut from its market-maker inventory without checking tokenOut against the quote asset. The attacker swapped 0.04 WETH for cbBTC and received 92.6 million cbBTC base units (0.926 cbBTC, about 92 USDC as a USDC amount); copycats repeated it with small WETH amounts.",
+  "targets": [
+    {
+      "address": "0x579f7d1ca8d2bac367375a834c288aa82fa49a07",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x8035f9206dacde8a4a33f6a01009cc6afc5aceef6c7c5e1443648faa089a157d"
+      }
+    },
+    {
+      "address": "0xc2be7b94d5498b1aceb914f3a1dec4ce502d235f",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x7aa8bf21c93d858eb3ed800865e6e71231cb834a9c7a5f5a53c2a6f945157cb9"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 84008.49,
+    "assets": [
+      {
+        "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+        "symbol": "cbBTC",
+        "amount": "1.10760517",
+        "usd": 84008.49
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:8453:0x05a9411cc0f561638fe87368235604560dc51d61c88faf2c2ef0717f704aed17",
+    "eip155:8453:0xa704185b0d7bfa0a7013155c18e258b76edb71b3430082d22b18d8805ed821a8",
+    "eip155:8453:0xc0b8019de663d86ebad281c78c93d729d6358c0c3130c9de5f3196fa21708875",
+    "eip155:8453:0xa72dcbd7907f78f4c4191b8e11e3067aa9a9a0abd6a7a58100108d5b253252e6",
+    "eip155:8453:0x7be19a16f2a648a0a2c60560e0a0f0884597a17f111bc2830e80323944b53195",
+    "eip155:8453:0x0c9c47a3b40b75a67d18f3d6be40d3cadbf89d02e7db43c62f4c0a82b966e229",
+    "eip155:8453:0x256f9d137e17a0d23301dc15cd951b89b145268fc9f4448ec0c0084949c090f5",
+    "eip155:8453:0xbca4fe0db30c5d928bd0975b72dab21154a9d5094e8f483ed4f7a6025218315a",
+    "eip155:8453:0xa3921c4a6f1dc0689411203de57cb619d76d837fcce9845bc2e48e8834f59fb0",
+    "eip155:8453:0xcb5953b06c6039399089571192ab9cdb1987a39e22348617886df284c3faaa7f",
+    "eip155:8453:0x3c72adace24e70799f7df0565a60040179d4d6835a58be61412b9bb0ed78dad4",
+    "eip155:8453:0x4d6a15953465305281ea127da8e36541a2f3140a5793a71bdbd825facfe413d1",
+    "eip155:8453:0x58a4fc75c6c917879dce3efb39b57676f7f643d8fea472a858bed9e2eea8bff6",
+    "eip155:8453:0x465daeaccf986b950801f04eccda928ab98bb65667d3b436f12b0ddee6a872ef",
+    "eip155:8453:0x1b88bd76988f8c03dc80e44ebef8efbcb341e7e6395064fae196dfd491b085a3"
+  ],
+  "refs": [
+    "https://blocksec.com/blog/weekly-web3-security-roundup-2026-04-26",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-04/KipseliPropAMM_exp.sol",
+    "https://x.com/DefimonAlerts/status/2046873857571934254"
+  ],
+  "notes": [
+    "Targets: the engine 0xc2be7b94 and the quoter 0x579f7d1c are unverified. For the anchor's input (0.04 WETH, tokenOut cbBTC) the quoter, its core 0x3f1aa1c6 and the quoter it replaced (0xce6e5008) all return USDC-scale amounts, so the missing tokenOut check is in the engine/quoter path, not in the verified PropAMMWrapper, which only forwards tokenOut and is not a target. The age is set by Kipseli's Safe batch 0x8035f920, 31 hours before the anchor, which granted 0x579f7d1c the quoter role on 0x3f1aa1c6 in place of 0xce6e5008 and registered it in the engine for the wrapper (engine.0x526b94e9): a route change to new code (rule 7), even though the old quoter mis-scaled the same way.",
+    "Campaign: every WETH -> cbBTC swap through the wrapper (Etherscan token transfers of 0xd35c6717, full history); the anchor is the first, followed by 15 copycat swaps of 0.0001-0.001 WETH in the next eight hours. All other wrapper swaps were USDC pairs. Loss is cbBTC depletion of the market-maker inventory 0xbee3211a; the WETH it received is not subtracted."
+  ]
+}

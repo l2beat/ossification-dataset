@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "ApeDAO",
+  "name": "APEDAO accrues a pair burn on every transfer into the pair and lets anyone execute it",
+  "summary": "APEDAO's _transfer adds 20% of every transfer into its PancakeSwap pair to amountToDead, even when the tokens are skimmed straight back, and the public goDead() burns amountToDead from the pair's balance and syncs. The attacker bought APEDAO with flash-loaned USDT, looped transfer-to-pair and skim() 16 times to inflate amountToDead, called goDead() to burn most of the pair's APEDAO, and sold into the shrunken reserve.",
+  "targets": [
+    {
+      "address": "0xb47955b5b7eaf49c815ebc389850eb576c460092",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x5d1cb8484654a0256afee5c16404379311cbaa28cf5bdad3f62d1a6f56603fe6"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 19155.19,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "19155.190926317811152304",
+        "usd": 19155.19
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-07/ApeDAO_exp.sol",
+    "https://twitter.com/BeosinAlert/status/1681316257034035201"
+  ],
+  "notes": [
+    "Reset: deployment. Owner setTax (0x14ab4649, two hours before the anchor) cut the LP tax from its 99% launch value to 2%, which opened trading like an unpause (rule 8); the burn accrual and goDead() were unchanged since deployment.",
+    "Loss is the pair's net USDT outflow, as LPs lost it whoever received it: 7,127 USDT to the attacker and 12,028 USDT the token's tax swap took from the inflated pair for the contract and its child pool; the pair's APEDAO outflow is valued at nothing (rule 12). The pair's only other outflows above 1,000 USDT are ordinary sells, and direct goDead() calls by other accounts only burned normally accrued amounts."
+  ]
+}

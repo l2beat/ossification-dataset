@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BOSS",
+  "name": "BOSS helper's userBurn burns 1.8 times the caller's amount from the BOSS/USDT pair",
+  "summary": "The unverified BOSS helper, which holds BOSS's mint and burn rights, burns from the BOSS/USDT pair's balance and syncs on every userMint and userBurn; userBurn(amount) sells the caller's BOSS for USDT and then burns 1.8 times the amount from the pair, unbounded by the pair's reserve. With 1.25m flash-loaned USDT the attacker minted through userMint, bought BOSS with the rest, then called userBurn with 475,271 BOSS, which burned the pair's BOSS down to 10 wei, and swapped the pair's USDT out against dust-sized BOSS deposits.",
+  "targets": [
+    {
+      "address": "0x978118ece639ba4a9ac3fb8b1d3bf239f0caddc1",
+      "reset": {
+        "kind": "config",
+        "tx": "0x360ad8bac370d2533ffe593d268bab063b41e021eece844df84f40462280d44d",
+        "address": "0x978118ece639ba4a9ac3fb8b1d3bf239f0caddc1",
+        "slot": "0x6"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 10213.24,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "10207.540850606516712154",
+        "usd": 10213.24
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-06/BOSS_exp.sol",
+    "https://x.com/audit_911/status/2063819348305985748"
+  ],
+  "notes": [
+    "The helper only reached BOSS and its pair after the owner's setTokenContractAddress (slots 0x3, 0x5 and 0x6, previously pointing at an unused earlier token and pair), which followed the token's deployment and its setPoolAddress grant of mint and burn rights to the helper; it is the latest reset (rule 8). The token's later 0x9208b879 call wrote slots the exploit did not read. The token, which burns from any address for its pool, is the helper's instrument and not listed separately.",
+    "Campaign: every USDT movement of the BOSS/USDT pair since creation; the anchor is its only net outflow above 300 USDT, and the one earlier userBurn (block 102599163) burned 1 BOSS. Loss is the pair's net USDT outflow; its BOSS is valued at nothing (rule 12)."
+  ]
+}

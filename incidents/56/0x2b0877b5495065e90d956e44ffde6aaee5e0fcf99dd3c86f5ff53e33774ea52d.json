@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Kub_Split",
+  "name": "Split price-triggered doubling rebase dumped through spot-priced StakingRewards sells",
+  "summary": "Split's setSplit(), run on every transfer, doubles the total supply whenever the spot USDT price of Split in its KUB pair exceeds 100, and each account's stored balance doubles lazily when it is next touched. The attacker pushed KUB into the KUB/Split pair to lift that price, triggered 35 doublings with zero-value transfers, skimmed the pairs' doubled balances, and sold the inflated Split for KUB and the KUB for USDT through two StakingRewards contracts whose sell() pays out at the manipulable spot rate of the token's pair, removing their liquidity to cover the payouts.",
+  "targets": [
+    {
+      "address": "0xc98e183d2e975f0567115cb13af893f0e3c0d0bd",
+      "reset": {
+        "kind": "config",
+        "tx": "0x68af51bbb50b1f6b889a7b1b7206f3f1f75a7d67554d1bd40a36ecbbc5ca9c55",
+        "address": "0xc98e183d2e975f0567115cb13af893f0e3c0d0bd",
+        "slot": "0xc"
+      }
+    },
+    {
+      "address": "0x3a006dd44a4a0e43c942f57d452a6a7ada25adc3",
+      "reset": {
+        "kind": "config",
+        "tx": "0xab0113ad3f0b2761bb00025596ab6afc8ad085a05fcf3976e9b0928fb61024fa",
+        "address": "0x3a006dd44a4a0e43c942f57d452a6a7ada25adc3",
+        "call": "0x1fc1e25f000000000000000000000000c98e183d2e975f0567115cb13af893f0e3c0d0bd"
+      }
+    },
+    {
+      "address": "0x26eea9ff2f3cadec4d6fc4f462f677b58ab31ab0",
+      "reset": {
+        "kind": "config",
+        "tx": "0x88fe36f4874b963d542b6898a0580f034dbaff0e26ee0cde34ce1e4e4cf7f234",
+        "address": "0x26eea9ff2f3cadec4d6fc4f462f677b58ab31ab0",
+        "call": "0x1fc1e25f000000000000000000000000808602d91e58f2d58d7c09306044b88234ab4628"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 95850.54,
+    "assets": [
+      {
+        "token": "0x808602d91e58f2d58d7c09306044b88234ab4628",
+        "symbol": "KUB",
+        "amount": "548.031397034973388075",
+        "usd": 69576.83
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "26274.047731859181960684",
+        "usd": 26273.71
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-09/Kub_Split_exp.sol",
+    "https://twitter.com/CertiKAlert/status/1705966214319612092"
+  ],
+  "notes": [
+    "Not part of the SELLC StakingRewards incident (incidents/56/0x59ed06fd...): that defect is addLiquidity() listing any caller's token, which this StakingRewards fork (0x26eea9ff) removed (listing needs the auditor's setListToken). Here the listed KUB and Split pairs' spot prices were moved through Split's own rebase defect, a different vulnerability in a different codebase (rule 4).",
+    "Resets: Split's setdex() (0x68af51bb) set the KUB/Split pair setSplit prices against; the auditor listed Split with KUB as pair token on StakingRewards 0x3a006dd4 (0xab0113ad, the latest) and KUB on 0x26eea9ff (0x88fe36f4). Later OwnershipTransferred calls hand over unchanged roles.",
+    "Campaign: Split's split counter (allSp) went 0 to 5 in organic transfers on 2023-09-20 and 5 to 40 in the anchor, and has not moved since, so no earlier or later exercise.",
+    "Victims: the KUB/USDT pair 0x39adfe6e (StakingRewards 0x26eea9ff's liquidity, removed in sell()), the KUB/Split pair 0x16bf07cc and both StakingRewards; 431.7 of the KUB was burned by sell(). KUB has no DefiLlama price: valued at the pre-exploit spot of its deepest pair 0x39adfe6e (126.96 USDT). Inflated Split and the LP tokens are not counted separately."
+  ]
+}

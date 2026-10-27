@@ -1,0 +1,57 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "AutoShark",
+  "name": "AutoShark JAWS minter pays for donated NOVA harvest profit (Oct 2021)",
+  "summary": "The NOVA vault counted as profit whatever WBNB its harvest swap returned, and that swap used the fee-on-transfer router path, which credits NOVA already sitting in the NOVA/WBNB pair to the swapper; the JAWS minter then minted JAWS at a set rate per BNB of the vault's performance fee and zapped the fee into JAWS/WBNB liquidity with no slippage limit. The attacker bought NOVA and sent it to the pair, harvested its dust vault position so the vault reported about 561 WBNB of profit and the minter minted 640k JAWS for it while the attacker sandwiched the minter's JAWS buy, then withdrew the locked JAWS and sold it into the JAWS/WBNB pair; it repeated this five times with growing size.",
+  "targets": [
+    {
+      "address": "0x6cab4c89efbb1e7938abbf3dd0363bced9a1505a",
+      "code": "0xa73272f7401926c28a90903b2420a82289becf12",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x0b560b33528f3b55932fefbe28d3e0be461cfa267c3ff0386c2453bce88fbe43"
+      }
+    },
+    {
+      "address": "0x342aff01fe4781fc15ee6977c20cc55ad8da3121",
+      "code": "0x6e649d043749dc688a26935ec92dfb96513f7c1d",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xb1246f0883e45df4d7ac4d20d9cc62243a5e07d5b9e3ce0e69f671d0b6fedb3b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2239519.05,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "4537.665306793855753538",
+        "usd": 2239519.05
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x93bfa349452ea04d02934b0225e8bad15fd0b441e65639c01540eea9cc697cde",
+    "eip155:56:0xe51969f2ec5dcd16d3f7c11bf0484dabf56124f0ab7f93cfeae597264c550b07",
+    "eip155:56:0xc6601186cb2645ff8d492bcc9034cfe0faabe32dede69585f8d71ff29d6cad01",
+    "eip155:56:0x6bd9d95de0bdb6a08e177faa1925354e3d5319be43cd40e53f4220db0983c605",
+    "eip155:56:0xf90c49a90b1e0341ceb4a3c9029f42f39a32a90047e90399c1213c21af70a5cf",
+    "eip155:56:0x069afa80c01763a84f8bf4b998bb093659efc959ea31b7f27584f8a853c16556",
+    "eip155:56:0xb839635bc79ce95fb423dac978bc4759960d9e2a9fbf13677d57d874163afd87",
+    "eip155:56:0x2fa4534f02988523ae050b42155c98c8ceb9671ea83199a30911a03e84e0400b",
+    "eip155:56:0x62efce817b525b36753d0ea04161626f6d7f5f89e8bd470bdd0d4bac0d03d11b"
+  ],
+  "refs": [
+    "https://twitter.com/peckshield/status/1454026801869590529",
+    "eip155:56:0x4970136cdc6ab230f06680bc7c5301ab552b087b69b0b8372df03212b692cac3",
+    "eip155:56:0x840642000c1791b8914a3c75094a8dca8ff4e12bf5ebfe54afaddf55492c060b"
+  ],
+  "notes": [
+    "A different defect and codebase from the May 2021 SharkMinter incident (minter zapping donated balances, 0xfbe65ad3): here the donation goes to the NOVA/WBNB pair and reaches the minter as real vault profit, through the JAWS minter proxy 0x342aff01 deployed after that incident.",
+    "Both contracts are unverified proxies. The minter is listed because its fixed-rate mint and unprotected zap made the bought profit pay, and it was the contract upgraded 115 blocks after the anchor (0x84064200), after which no JAWS mint above 30,000 occurs through block 12217839; its latest route change (block 11567840) sets the age. The owner's change of minter slot 0x6d (1000e18 to 950e18) at block 12185849 only sizes the mint. The vault's later storage changes are the attacker's own deposit (0x4970136c) and settings.",
+    "Anchor is the first JAWS mint above 52,255 JAWS since the minter upgrade; the five d428ab1f transactions mint and the five 47255f47 transactions withdraw and sell.",
+    "Loss is the JAWS/WBNB pair's WBNB depletion over the campaign (6,361.18 WBNB) less the 1,823.51 WBNB it gained in the mint transactions, which was the attacker's own WBNB routed through the vault fee and the sandwich and taken back in the sales (rule 11). Minted JAWS is unpriced and not counted separately."
+  ]
+}

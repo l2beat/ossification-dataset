@@ -1,0 +1,35 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "NEM",
+  "name": "NemTokenV2 counts any transfer into the pair as a sell and lets anyone burn the pending amount out of the pair",
+  "summary": "NemTokenV2 treats every transfer into its NEM/USDT PancakeSwap pair as a sell and queues the net amount in pendingLpSellRecycle, and the public flushLpSellRecycle() burns 70% of that queue (capped at 20% of the pair's balance) from the pair and syncs it, with no check that a swap settled. With flash-loaned USDT the attacker transferred NEM into the pair, skimmed it back and flushed, 42 times, burning down the pair's NEM reserve, then sold NEM for the pair's 821,920 USDT.",
+  "targets": [
+    {
+      "address": "0x9cf0e3ad4efa7ab602d7b5a38c55795cfa777777",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x01bf92ffda24d294f89714562633c0c19d7e7ccf14355098ac1e65f69efe8d76"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 821197.69,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "821920.437218535429773209",
+        "usd": 821197.69
+      }
+    ]
+  },
+  "refs": [
+    "https://hacked.slowmist.io/",
+    "https://dev.to/pandasecurity/nem-token-exploit-a-skim-and-burn-loop-drained-822k-2fi8"
+  ],
+  "notes": [
+    "Reset is the token's deployment, which also created the pair; the only later admin writes the exploit read are the trade and profit tax recipients (setTradeTaxAddresses/setProfitTaxAddresses, about 3 hours later) and the owner's renunciation, fee recipients and ownership that rule 8 does not count.",
+    "Loss is the pair's USDT; about 95,600 USDT of it went to the PancakeSwap pools the attack contract flash-borrowed from. The pair's 53.1m burned NEM is valued at nothing (rule 12).",
+    "The attacker's four earlier helper contracts (e.g. 0x0c3dac1d, 0xa16f9a31) reverted on their attack call and were only emptied back to the attacker. campaign.mjs finds no earlier external flushLpSellRecycle call; two later ones by 0x8d952fa3 (block 129155055) burned 16 NEM and moved no USDT."
+  ]
+}

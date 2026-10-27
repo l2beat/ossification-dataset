@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Aave credit-delegation rebalancer",
+  "name": "Rebalancer arbitrary call spends its owner's Aave credit delegation",
+  "summary": "The unverified rebalancer 0x7a7bab45, to which its deployer had delegated unlimited WAVAX borrowing on Aave V3, exposes a function (0xb2a13230) that borrows for the caller and then executes caller-supplied target and calldata from the rebalancer's own address. The attacker had it call Pool.borrow(WAVAX, 7000e18, variable, 0, deployer) against the delegation and then WAVAX.transfer to the attack contract.",
+  "targets": [
+    {
+      "address": "0x7a7bab45363efb0394ff27bfa29bb7c0534ca8c9",
+      "reset": {
+        "kind": "config",
+        "tx": "0xbf3bbbaba3007c49fd3e9a2d3262dbac8e19dafb03517a9de6ab76af04509855",
+        "address": "0x4a1c3ad6ed28a636ee1751c69071f6be75deb8b8",
+        "call": "0x6bd76d240000000000000000000000006fdae9edacc6461b21f71a1a6a420197d2b0c3aa0000000000000000000000007a7bab45363efb0394ff27bfa29bb7c0534ca8c9"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 64862.77,
+    "assets": [
+      {
+        "token": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+        "symbol": "WAVAX",
+        "amount": "7000",
+        "usd": 64862.77
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/DefimonAlerts/status/2046504796463808991",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-04/AaveRebalancerCreditDelegation_exp.sol",
+    "https://blocksec.com/blog/weekly-web3-security-roundup-2026-04-26",
+    "eip155:43114:0xfabb46bcf977bb5d411ceaed9bd2f92041aba2a78ff1dfb3bec5cbc0b79156fe",
+    "eip155:43114:0xdeddb5de643cb4018914d29adb35d68de36445791a3ba56c0798f38fbfa413f9"
+  ],
+  "notes": [
+    "The reset is the deployer's approveDelegation(rebalancer, max) on variableDebtAvaWAVAX, a borrowing grant the exploit spent, made 17,420 blocks after the rebalancer's deployment. The allowance stayed at max until the anchor, so the delegation was never spent before; the deployer revoked it about 38,000 blocks later (0xdeddb5de).",
+    "Not a rescue: the attacker EOA forwarded the 6,999.91 WAVAX to 0x36b11287 (0xfabb46bc), the address that funded it and collects its other proceeds; nothing went back to the victim.",
+    "Loss is the 7,000 WAVAX borrowed against the victim's delegation; the victim's debt-token balance rose by 7,047 because it includes interest accrued on its existing debt."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "DEXRouter (unverified BSC bot router)",
+  "name": "DEXRouter update() checks authorization against the caller-supplied registry",
+  "summary": "The unverified router 0x1f7cf218 (a trading-bot router of deployer 0xe7209880) lets anyone call update(a,b,c,d), which overwrites its four stored addresses including the authorization contract and then asks that new contract (e44a73b7) whether the caller is allowed. The attacker installed its own contract as authorizer and called functionCallWithValue to send the router's 20 BNB, idle since 2021, to itself.",
+  "targets": [
+    {
+      "address": "0x1f7cf218b46e613d1ba54cac11dc1b5368d94fb7",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xb8a2ee168a6dd47fadcd61903222aceed9c5794be2168b0c7e4aa68d5fce6d65"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 4324.6,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "20",
+        "usd": 4324.6
+      }
+    ]
+  },
+  "refs": [
+    "https://twitter.com/DecurityHQ/status/1707851321909428688",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-09/DEXRouter_exp.sol"
+  ],
+  "notes": [
+    "The router is unverified; the mechanism is read from the anchor's trace: update() replaced storage slots 1-4 (previously 0xa025f4e8, the PancakeSwap router, a constant and 0xa2ed9fbd) with the attacker contract and the authorization staticcall went to the new slot-1 value. The router's only funding was the deployer's 20 BNB (0x1be51983, 2021) and it had no outflow before the anchor. The deployer's sibling routers carrying the same selectors show only operator activity in their outflows."
+  ]
+}

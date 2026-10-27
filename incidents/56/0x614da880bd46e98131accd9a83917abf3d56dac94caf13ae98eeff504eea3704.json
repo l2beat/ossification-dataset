@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "WXETA",
+  "name": "WXETA facet initialize() is callable again because it never sets initialized",
+  "summary": "The WXETA diamond facet's initialize(max) checks initialized but never sets it, so any caller can rerun it to become owner and authorized minter and to set the mint cap. The attacker's contract called initialize(2^256-1) from its constructor, minted 10^15 WXETA to the WXETA/BUSD PancakeSwap pair and swapped out its 49,848 BUSD.",
+  "targets": [
+    {
+      "address": "0x05c2dd9cf547c6cccf91245346e6e1bc9926cae7",
+      "code": "0x7c83dc9221cfd48ac760710b7f1cd7b76ff6fcc2",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xe62285b2153aca90950043f507babe523ec3b0fc3dc3f8069a8e4de803285543"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 49897.35,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "49847.502413020099894895",
+        "usd": 49897.35
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-09/WXETA_exp.sol",
+    "eip155:56:0xc64611b8a4cbe84cb5d2a44b94f4b37de6f6be00334fdc71d2cdb38411c7bf1b",
+    "eip155:56:0xdd29fdca374bd47c08aea2bab9895dfa7bd20a11bb03176dad1680115f0ba38f",
+    "eip155:56:0x1ba6219f95d5aea9eb42281b1e16e295b3a89741bb854b0c14e7ff6fddc7a6a6",
+    "eip155:56:0xb0ce1a3de5cfa102d229f11b3f3d1263f0941e40d76b58bcf8ccda8ad0867063"
+  ],
+  "notes": [
+    "Anchor per rule 10: a bisection of the facet's owner and max-supply storage from deployment to the latest block finds the deployer's own initialize (block 36927353) and then the anchor as the first takeover; the reset is the DiamondCut routing the facet's selectors.",
+    "Four later initialize calls are in refs and not counted. 0x89e7aa1c re-initialized, minted 1M WXETA and burned 100 of it through the bridge; 0xee239f61 and 0xccfe064d, which took over afterwards, burned the minted balances (including 89e7aa1c's remaining 999,900), so they look like recovery. None of these sold WXETA on BSC, and any payout on the Xeta side of the bridge is unmeasured, so the loss is the anchor's BSC depletion."
+  ]
+}
