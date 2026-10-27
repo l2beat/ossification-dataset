@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "JumpFarm",
+  "name": "JumpFarm staking rebase catches up one stale epoch per stake or unstake",
+  "summary": "JumpFarm's Olympus-fork Staking.stake() and unstake(_rebase=true) call rebase(), which advances only one epoch per call and pays that epoch's distributor-minted reward to current sJUMP holders, with no warmup. The epoch clock was about 60 epochs behind, so the attacker bought JUMP with 15 flash-loaned WETH, cycled stake/unstake to collect the backlog of rebases on the whole position and sold the inflated JUMP back into the JUMP/WETH pair; two blocks later it repeated this on the FUMOG fork of the same staking template.",
+  "targets": [
+    {
+      "address": "0x05999eb831ae28ca920ce645a5164fbdb1d74fe9",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa21654d6d010a96a879740a45ce013797472b48b983a4ac7eda9b704d0e5c5bc",
+        "address": "0x05999eb831ae28ca920ce645a5164fbdb1d74fe9",
+        "slot": "0x5"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 5998.2,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "3.685894825734388883",
+        "usd": 5998.2
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-09/JumpFarm_exp.sol",
+    "https://twitter.com/DecurityHQ/status/1699384904218202618"
+  ],
+  "campaign": [
+    "eip155:1:0xa4659632a983b3bfd1b6248fd52d8f247a9fcdc1915f7d38f01008cff285d0bf"
+  ],
+  "notes": [
+    "Reset is setDistributor (staking slot 5), which installed the distributor whose treasury mints fund each epoch's reward; the staking contract was deployed 2,420 blocks earlier. The seed's fee-on-transfer explanation is wrong: the trace shows each stake/unstake call running sJUMP.rebase and distributor.distribute once.",
+    "The campaign transaction hit QWAStaking 0x69422c7f (FUMOG, another deployer's copy of the same Olympus staking code, idle since block 17942165). Loss is the WETH that left the JUMP/WETH pair 0x20746fde (2.7233) and the FUMOG/WETH pair 0xdb98950d (0.9626); the inflated tokens the pairs received are not counted (rule 12). 0.31 WETH of the JUMP pair's outflow went to JumpFarm's own tax wallets."
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BEGO",
+  "name": "BEGO bridge mint accepts an empty signature set",
+  "summary": "BGeoToken.mint() is gated by isSigned, which recovers one signer per (r, s, v) entry and requires each to be an authorised signer, but sets no minimum count, so empty signature arrays pass. The attacker called mint with empty arrays and a fresh txHash string, minting 1e12 BEGO straight into the BEGO/WBNB pair, and swapped that balance out for the pair's 12.03 WBNB; copycats then minted with empty arrays and sold into the same pair.",
+  "targets": [
+    {
+      "address": "0xc342774492b54ce5f8ac662113ed702fc1b34972",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x7c8c6a3d4aded254bed7fbc254554b658682f4a65d565dfd5c12b44422d03047"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 4651.17,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "17.043737636558159343",
+        "usd": 4651.17
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/BEGO_exp.sol",
+    "https://twitter.com/peckshield/status/1582892058800685058"
+  ],
+  "campaign": [
+    {
+      "chainId": 56,
+      "count": 585,
+      "from": 22325193,
+      "to": 23560224,
+      "selection": "transactions in which an address that received BEGO from an empty-signature mint after the anchor (16 minters, e.g. 0xcbaf4512, 0x0e61a8fb, 0x9c4a5320) transferred BEGO to the BEGO/WBNB pair 0x88503f48 and the pair's WBNB balance fell"
+    }
+  ],
+  "notes": [
+    "The anchor's mint call carries empty r, s and v arrays and names the pair 0x88503f48 as receiver. Earlier mints were bridge mints with signatures (last at block 21890452, to deployer 0x56de05b6); the attacker's second empty-signature mint (1e16 BEGO to its EOA, eip155:56:0x2673936a1191a35c24b60dd697644c953da321b4395b836439faa319b8335886) was never sold.",
+    "Loss is the pair's WBNB outflow in the anchor (12.03) plus the copycat sales bundle (5.0137 WBNB over 585 transactions, mostly 0xcbaf4512 selling 2e11 BEGO at a time); later sales of BEGO by ordinary holders are not counted."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "RFB",
+  "name": "RFB buy lottery seeded from same-block values",
+  "summary": "RFB's _transferFrom runs a lottery on every buy from the pair, drawing randnum = keccak256(block.number, block.timestamp, buyer, pair balance) and paying the buyer up to 90% of a capped BNB prize from its distributor. With 20 flash-loaned BNB the attacker repeated buy-then-sell attempts inside try/catch calls that revert unless they end in profit, keeping only winning draws.",
+  "targets": [
+    {
+      "address": "0x26f1457f067bf26881f311833391b52ca871a4b5",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x2a31e017d9d95fd4f01cc384e8c12639ecb26bed351a430b133da8ddbd578774"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 4340.15,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "14.963481196159674992",
+        "usd": 4340.15
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/RFB_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1599991294947778560"
+  ],
+  "notes": [
+    "Loss is the distributor 0x2bd049f1's net BNB outflow in the anchor (17.7226 BNB) less the 2.7591 BNB that reached RFB's own deployer and marketing wallet 0x5c0a527b. The 36 earlier distributor payouts after tradingStart were single buys through the PancakeSwap router or generic trading bots, not repeated draws. tradingStart (block 23645473) only opened trading and set_luck_multiplier (block 23646368, 1 to 2) only scales the odds, which the attacker's retries absorb; neither resets (rule 8)."
+  ]
+}
