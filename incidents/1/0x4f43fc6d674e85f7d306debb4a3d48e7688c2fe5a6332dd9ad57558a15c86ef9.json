@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Meta Pool",
+  "name": "mpETH Staking mints shares through the inherited ERC4626 mint() without taking ETH",
+  "summary": "Meta Pool's Staking (mpETH) overrides _deposit on the assumption that the ETH has already arrived, but leaves OpenZeppelin's ERC4626 mint() public, which calls _deposit without collecting any assets. Attackers called mint() for free mpETH (after emptying the liquid unstake pool's mpETH with a flash-loaned depositETH, or letting mint() spend the Staking contract's own ETH buying the pool's mpETH) and sold it to the LiquidUnstakePool and the Uniswap v3 mpETH/WETH pool for ETH.",
+  "targets": [
+    {
+      "address": "0x48afbbd342f64ef8a9ab1c143719b63c2ad81710",
+      "code": "0x3747484567119592ff6841df399cf679955a111a",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xbc3f63a2dc307b04116200f343ba0149608736e05efc0484f10d3e2a4da67b0b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 158789.78,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "61.394257906591454376",
+        "usd": 158789.78
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x691c8070749f00a5a5be3135d3912ff97d0dad05a0fb2b77b235aaa13260f002",
+    "eip155:1:0x4858abc51876e1de9f506f34799d4f1852b4255f467b9e1f40951c631ddfa747",
+    "eip155:1:0x57ee419a001d85085478d04dd2a73daa91175b1d7c11d8a8fb5622c56fd1fa69",
+    "eip155:1:0x22a4bdce5c1dd68b3106fc488b1c3e1353f6af35243214170c9258c4bd34505a",
+    "eip155:1:0x831a6fa2727b95ae356dc93685c5c48de4bd08b3e764e4f29d0be1be0e7d5cc2"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/MetaPool_exp.sol",
+    "https://www.quillaudits.com/blog/hack-analysis/meta-pool-hack-analysis",
+    "https://blog.verichains.io/p/free-minting-from-meta-pool-ethereum"
+  ],
+  "notes": [
+    "Anchored on the Yoink MEV bot's mint() exploit (block 22722394), which predates the DeFiHackLabs transaction of attacker 0x48f1d0f5 (block 22722911); a mint() scan from the implementation's upgrade at block 18851457 finds nothing earlier. The campaign is that attacker's three transactions and two by 0xc0ffeebabe.",
+    "Loss is the ETH the Uniswap v3 mpETH/WETH pool, the LiquidUnstakePool and the Staking contract's own balance lost, netted per transaction (rule 11); the unbacked mpETH the pools received and the attacker's unsold 9682 mpETH are not counted."
+  ]
+}
