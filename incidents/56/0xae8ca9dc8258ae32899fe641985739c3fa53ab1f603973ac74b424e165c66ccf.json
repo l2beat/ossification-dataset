@@ -1,0 +1,67 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "HEALTH",
+  "name": "HEALTH pair-burn timer lets any transfer burn the pair's balance repeatedly",
+  "summary": "HEALTH's _transfer() burns burnFee (0.1%) of its PancakeSwap pair's HEALTH balance and syncs the pair whenever block.timestamp is past pairStartTime + jgTime, but advances pairStartTime by only one 15-minute step per transfer. With the timer weeks behind, the attacker bought HEALTH inside a flash loan, made about 1,000 transfers in one transaction, each burning 0.1% of the pair's HEALTH, and sold back into the shrunken reserve for WBNB.",
+  "targets": [
+    {
+      "address": "0x32b166e082993af6598a89397e82e123ca44e74e",
+      "reset": {
+        "kind": "config",
+        "tx": "0x0042f6a5bbe84e1429ff2e1652ac4b49a3f64271bdbcba040963ea02d69ff726",
+        "address": "0x32b166e082993af6598a89397e82e123ca44e74e",
+        "call": "0x49bd5a5e"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:56:0x780f712866bc2ad2a32239b2702121856693476580ffee772f9a49148be0266a",
+    "eip155:56:0x0daad55e460d673a554fc9458032ce70d3d201b6506474b15b24f2f14aa3a462",
+    "eip155:56:0xeb5255a0bb1000530ba672a4ce7a894ad0f1e3f5b78f652d95e8a7b5cf8ddb06",
+    "eip155:56:0xdfe4b61b44618f7d5cc761d6f8906e6d72a97f7d255a34398c0460df317bb18b",
+    "eip155:56:0x4c50e98e50964ae448674da07d876723b36b1fc869356ff88fbaa8bd9d2d445f",
+    "eip155:56:0x13d8cb62c92ffa632e4341a84a24d0b631a5eaad5858f3c5eb9297a13cd2ba5a",
+    "eip155:56:0xd4580316e348404c4983533572a26f137946a3e7e32544ba27a9e80e52dbb4d4",
+    "eip155:56:0xdbec7ce944868b22fb04b05108dbe676dbbaed291373de204b768559686d88b5",
+    "eip155:56:0xa642c4e41b68f837579c4207ca7cf9b497b447d8ad927445f29d010f6d52b7b5",
+    "eip155:56:0x8f5175a32bca40f5db471fb1a0e7f503f44be5588c14f5715f71e50f2b51d45a",
+    "eip155:56:0x9112f773bb898425914c4663f1b536d6ba7248ac62618cfa54098c933f01df4e",
+    "eip155:56:0x8299b005df94f2212c55ab0fe47a8dbce8caa2e100417d859ea508dc7a01abd2",
+    "eip155:56:0xe75f4fb2cb78d2fa7128c2806d733e6213cf896830a7cbb34fb7a13e0ec143d3",
+    "eip155:56:0x3543a19354c3167474050983e7bc329342baa2203294c568023ff5927f01e574",
+    "eip155:56:0x7aee9a5e35f80e067e2ede58d1d3e82d4e3e1f8535c90cd497a3a5304a1400b7",
+    "eip155:56:0xd7845719b0a06feb59128ca0ff4437436fb414b8cbff03a547027358def0391c",
+    "eip155:56:0xa97d3200f411a80216d2e6cfd4fb8f56776118a8930bb9d8d0462ad13f5a91cd",
+    "eip155:56:0x46e4cd5a351c9c7935c5c5429027f995a8055b4a93a0ded48a143ae04f21db41",
+    "eip155:56:0x5381d5a801edb84d75515c70532b159cdc85b0b13791dc4469c3758b58c71099",
+    "eip155:56:0x6f386fe09b8f3f47228b9bd351eaf1ef158b233f3bca6b2a0bd6bc505fa5bd87",
+    "eip155:56:0x68d1d51e3a4df0a051521ee0a1efa0077170df8320a7e4da2526297f82a285f6",
+    "eip155:56:0xbbc647dfae06f0cdf0200824982b762eb6e93f6ec0eec49a5b7da614f3a96806",
+    "eip155:56:0xa26c30b2d9f8b0b01930a84aeb55da9b471a41781893c55fa6fabd332ad9cfc3"
+  ],
+  "loss": {
+    "usd": 10311.49,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "37.525363080315704813",
+        "usd": 10311.49
+      },
+      {
+        "token": "0x32b166e082993af6598a89397e82e123ca44e74e",
+        "symbol": "HEALTH",
+        "amount": "59827657.554279508320485047",
+        "usd": 0
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/HEALTH_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1583073442433495040"
+  ],
+  "notes": [
+    "The burn path is in the deployed code, but it is inert until the owner sets burnFee (setFee, block 21099475), pairStartTime (block 21099480) and the pair pointer; the owner toggled the pair pointer between two pairs and its last change to the exploited pair (block 21100365) is the latest of these; a same-value write at block 21102836 and the renunciation followed. They are accounting rules the exploit needed (rule 8).",
+    "Campaign: every transaction burning the pair's HEALTH at least 90 times in one call, from the token's deployment to block 23644705; before the anchor no transaction burned it more than four times. The anchor's attacker repeated it twice within 21 blocks and 20 copycats followed. Loss is the pair's net WBNB outflow per transaction; its burned HEALTH is valued at nothing (rule 12)."
+  ]
+}

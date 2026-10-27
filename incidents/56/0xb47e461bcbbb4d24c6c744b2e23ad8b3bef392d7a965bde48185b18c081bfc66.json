@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BigBangSwap",
+  "name": "BigBangSwap sellRewardToken pays out LP value regardless of BGG market price",
+  "summary": "The BigBangSwap proxy's sellRewardToken(amount) takes BBG from the caller, burns it, removes an equal number of the protocol's BBG/USDT LP tokens from its own BigBangSwap pair and pays the caller USDT from the proceeds, so the payout tracks the LP's value rather than BBG's market price. Inside DODO flash loans, attackers bought BBG cheaply on the PancakeSwap BBG/USDT pair through fresh helper contracts and sold it straight back to the proxy, draining USDT from the protocol's liquidity.",
+  "targets": [
+    {
+      "address": "0xa45d4359246dbd523ab690bef01da06b07450030",
+      "code": "0x6ef66fd568903c072a9654e2c8db9520686932cf",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd469745c40f017c959278644e3b55071979a1e546f1898a1f07aec00253e4588"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 49424.15,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "49427.348727554493979586",
+        "usd": 49424.15
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/DecurityHQ/status/1778075039293727143",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/BigBangSwap_exp.sol"
+  ],
+  "campaign": [
+    "eip155:56:0x05aca126a6a6588e33f4236ab017f10ca87a47a7a2631393c48bf71b1e6a4055",
+    "eip155:56:0x0b56cae16893cef8085960aa31f284aa8b3f731421741c469a07ea82ce8e9f2c",
+    "eip155:56:0x0cd6159f016f84001fa5c0b478dc95140b35eb9bbe0b6c391bf8d337ec6f1e0a",
+    "eip155:56:0x0e2058f44377273ad5b525da4d3a297810d23790e95a5409d3d9da14a551ddc1",
+    "eip155:56:0x13fe49c14c5690e6f4b1f83286dce9e31ec2886c2084396963921fcb44b0f9c9",
+    "eip155:56:0x22492f57b703f7789698497d98764ce12426863f8f0bee90dbce3b07e3d961c4",
+    "eip155:56:0x24c6bbb82f14aeec355a73477385d3d1b107b4ef2abdf1726b47a704692625b0",
+    "eip155:56:0x3304f85267c2a111e32e87a1e55dcdcf5eb4a407cf2c23c312f0d9f646bcc98f",
+    "eip155:56:0x45f059dbcaf37e836f1905f505fa9da545e0a87336f421f9c2d8be9a8273d5f1",
+    "eip155:56:0x472cdc0e87c4258f307450961440cc5bba21f470fe5a5668b925d248c73ac1fe",
+    "eip155:56:0x4ca9df8e57060be8e4950ec74dcc47376c14665fe6b68bdb100b59d79e6a063b",
+    "eip155:56:0x576499093c2485fef5e7259289781c8ba0d05c384084c669c0530cfed148af07",
+    "eip155:56:0x70807a01ccf6195953b7ddc0b3b660b951129123c5033da982a935d1a527229a",
+    "eip155:56:0x7b0bc454ad933533bab51fcc8c867f80c4e8e182901f396b0dfc99548fcf5eb4",
+    "eip155:56:0x8a88161ff3f32ba5889f6bc4697f929235575a64cbbc8f408510b9799c608b68",
+    "eip155:56:0x8d382afdf8f8d9dd1fc4cdca49a960f88b38587a4f4410d6c820593671d8b70f",
+    "eip155:56:0x8f21465535198cd190c1af4d12f0731750f68c122573d846cb1cf1578c8eaf61",
+    "eip155:56:0x9373c727c2bf4fffeaa8643e5b30a0ddea18acccde72cd0d92c8fe68d4697e67",
+    "eip155:56:0x94055664287a565d4867a97ba6d5d2e28c55d10846e3f83355ba84bd1b9280fc",
+    "eip155:56:0xa16e828a22a21b216ba075d3d9cdd4f688a40a10d987a8cc5556d94441ae8726",
+    "eip155:56:0xd8483af1ff25125b538bfd9a0248d59e82b79990886be04a5cc07194a6302298"
+  ],
+  "notes": [
+    "The implementation 0x6ef66fd5 is unverified; the mechanism is read from the traces (BBG burn, removeLiquidity of the same amount of LP, USDT to the caller). The proxy was upgraded repeatedly before; the last route change to 0x6ef66fd5 (0xd469745c, block 37550555) is the reset, and the Unpaused at block 37739116 is pause state (rule 8).",
+    "Anchor is 0xb47e461b by 0x27055ae4 (index 0 of block 37740058), ahead of the DeFiHackLabs attacker 0xc1b6f989's first transaction 0x05aca126 in the same block; the DeFiHackLabs tx 0x94055664 is in the campaign. Campaign: every sellRewardToken call made by a contract rather than an EOA from the reset to block 130031520, where successful calls end at block 37740280 (22 transactions in blocks 37740058-37740276, two senders); the 667 direct EOA calls are ordinary reward sales of about 600 BBG for about 93 USDT.",
+    "Loss is the USDT that left the proxy and its BigBangSwap pair, netted together per transaction; it includes the USDT the attackers paid PancakeSwap for BBG and fees, so it exceeds the attackers' profit (about 4,718 USDT in 0x94055664 alone, against the DeFiHackLabs header's ~5k for the whole incident). BBG and the burned LP are not counted separately."
+  ]
+}
