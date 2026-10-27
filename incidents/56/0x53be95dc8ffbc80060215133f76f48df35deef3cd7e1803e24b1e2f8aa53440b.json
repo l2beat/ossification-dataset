@@ -1,0 +1,35 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Minto",
+  "name": "Minto ReferralCrowdsale unchecked payment token",
+  "summary": "Minto's ReferralCrowdsale.buyTokens() checked the payment token against its whitelist only on the DEX/CEX purchase path; while a manual price was set it went straight to _buy(), which sends BTCMT first and then pulls payment from the caller-supplied token. The attacker passed its own contract, whose transferFrom just returns true, as payment for 12,100 USDT worth and received 14,724 BTCMT, which it sold for 9,646 USDT.",
+  "targets": [
+    {
+      "address": "0xdbf1c56b2ad121fe705f9b68225378aa6784f3e5",
+      "code": "0x0d116ed40831fef8e21ece57c8455ae3b1e4041b",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc5e93da27c1eb4c018aeeddab6470637c6c44c1b96937edfffc30a0b00eaeff2"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 10110.02,
+    "assets": [
+      {
+        "token": "0x410a56541bd912f9b60943fcb344f1e3d6f09567",
+        "symbol": "BTCMT",
+        "amount": "14724.096385542168674698",
+        "usd": 10110.02
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/MintoFinance_exp.sol",
+    "https://twitter.com/bbbb/status/1683180340548890631"
+  ],
+  "notes": [
+    "Reset: the crowdsale proxy's creation, which installed implementation 0x0d116ed4 and has not been upgraded; dexInfo.manualPrice was nonzero from initialisation, and changePrices() only moved its value (e.g. 0x3ffb885e).",
+    "The queue draft's signature-replay description is wrong: no signature is checked on this path (linkSignature and buySignature are empty). BTCMT is valued at DefiLlama's price; the attacker's sale realised 9,646.45 USDT."
+  ]
+}
