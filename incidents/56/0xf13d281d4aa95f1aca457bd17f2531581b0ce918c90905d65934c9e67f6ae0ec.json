@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Mosca",
+  "name": "Mosca2 join re-credits existing balance",
+  "summary": "Mosca's join() adds the caller's existing balance above 127 USD (diff) to the new deposit before crediting it, so every join re-credits the whole balance. With a DODO flash loan the attacker joined seven times for 1,000 USDT each, compounding its internal balance, then withdrew it as USDT and USDC through withdrawFiat.",
+  "targets": [
+    {
+      "address": "0xd8791f0c10b831b605c5d48959eb763b266940b9",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xec9bd53d2dca03d117c569a7c7ca4516bb9415c9950b05ccd85f4ed688b8a0ad"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 37712.45,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "26254.2",
+        "usd": 26254.2
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "11458.252074171625860499",
+        "usd": 11458.25
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-01/Mosca2_exp.sol",
+    "eip155:56:0x4e5bb7e3f552f5ee6ee97db9a9fcf07287aae9a1974e24999690855741121aff"
+  ],
+  "notes": [
+    "A defect, not designed MLM payout: diff is already in user.balance, and join adds it again without the caller paying it.",
+    "Same deployer redeployed Mosca as this contract after the first Mosca exploit (0x4e5bb7e3 on 0x1962b335), which abused a different defect (exitProgram paying fiat balances it never zeroes), so this is a separate incident (rule 4). The earlier contract carries the same join code but no exploit of it was found.",
+    "Victim is the Mosca contract, net of the 7,000 USDT the attacker joined with in the same tx."
+  ]
+}
