@@ -1,0 +1,52 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Token 8633",
+  "name": "Token 8633 public autoSwapAndAddToMarketing sandwiched",
+  "summary": "The Token 8633 (\"9419\") marketing helper exposed autoSwapAndAddToMarketing() to any caller; it sold the helper's whole Token6827 balance along Token6827 -> USDT -> 8633 with zero minimum output. Under a 1.1M USDT flash loan the attacker bought 8633 to pump its USDT pair, called the helper 900 times so it bought 8633 at the inflated price, then sold its 8633 back into the pair.",
+  "targets": [
+    {
+      "address": "0x11cd2168fc420ae1375626655ab8f355f0075bd6",
+      "reset": {
+        "kind": "config",
+        "tx": "0x13ca841180bc64edf40d09057c48c22df14ed437eaca629cdde948f2d44d4004",
+        "address": "0x11cd2168fc420ae1375626655ab8f355f0075bd6",
+        "slot": "0x6"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:56:0xb51b79d038a51d8257817aadc60c09de5a9bb20986ce44bdd104ee1be5d443d5"
+  ],
+  "loss": {
+    "usd": 29447.21,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "29466.622151970235857969",
+        "usd": 29447.21
+      },
+      {
+        "token": "0xea8db921475764f7fb8e2548d77f5a6425605b45",
+        "symbol": "6827",
+        "amount": "576307954.54958516350488019",
+        "usd": 0
+      },
+      {
+        "token": "0x86335cb69e4e28fad231dae3e206ce90849a5477",
+        "symbol": "9419",
+        "amount": "1134775925691.926824388563195536",
+        "usd": 0
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/Token8633_9419_exp.sol"
+  ],
+  "notes": [
+    "The helper is unverified; the trace shows each autoSwapAndAddToMarketing call swapping the helper's Token6827 via swapExactTokensForTokensSupportingFeeOnTransferTokens with amountOutMin 0 along 6827 -> USDT -> 8633 to 0x128112af. Its reset is the deployer setting the token it sells (slot 6) 0x13ca8411, 323 blocks after creation; setMarketingPoolAddress seven blocks later only chose the recipient, and the owner renounced afterwards.",
+    "The sibling helper 0x128112af3af5478008c84d77c63561885fbbc438 (autoAddLp, also public with zero minimums) is not a target: the attacker called it 130 times before the pump, funding it with 12,963 USDT, so it added liquidity at the unmanipulated price and received the LP tokens; it lost nothing. 0x5a522c94 is the deployer's 9419 exchange contract, used only to route the attacker's own 8633 purchase.",
+    "Loss nets the deployer's helpers and the Token6827/USDT and 8633/USDT pairs together: in the anchor the Token6827 the helper sold drained 52,536 USDT from its pair, of which 25,219 USDT stayed in the 8633/USDT pair. The Token6827 and 8633 that left this set have no market price and went to 0x1e6cb84c and the 8633 token contract, not the attackers, so they are valued at zero (rule 12).",
+    "Earlier exploits: campaign.mjs traced the helper's calls from block 27716707 on, and every one except the anchor and the copycat 0xb51b79d0 (next block, sender 0x7cb74265, contract 0x91809810, 2,154 USDT net) came from the 8633 token's own transfer hook. Before that, the only direct calls were the deployer's and one plain EOA call (0xc50c08da), which cannot sandwich its own swap."
+  ]
+}
