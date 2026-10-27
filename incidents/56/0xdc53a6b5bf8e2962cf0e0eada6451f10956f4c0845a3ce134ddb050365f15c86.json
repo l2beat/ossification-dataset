@@ -1,0 +1,61 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MBC / ZZSH",
+  "name": "Public swapAndLiquifyStepv1() adds the token contract's reserves as liquidity at any price",
+  "summary": "MBC and ZZSH, two deployments of one token template, expose swapAndLiquifyStepv1(), which adds the token contract's own token and base-token balances as PancakeSwap liquidity with zero minimum amounts. In one transaction the attacker flash-borrowed USDT, bought each token to skew its pair, called swapAndLiquifyStepv1() so the contract's reserves entered the pair at the skewed price, then sold the tokens back, first sending 1,001 wei of USDT to the pair so _isAddLiquidityV1() treated the sale as a liquidity add and skipped the contract's automatic swapAndLiquify().",
+  "targets": [
+    {
+      "address": "0x4e87880a72f6896e7e0a635a5838ffc89b13bd17",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x57268027a200cebad66365ba156e5d2ae3dfa4cb6aa293c4fd2d96f6162c7633"
+      }
+    },
+    {
+      "address": "0xee04a3f9795897fd74b7f04bb299ba25521606e6",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x562d29a39936abb353b8d3dcafc452e4693c0371090479ee67546baf93a979df"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 6645.83,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "6645.625584504439671481",
+        "usd": 6645.83
+      },
+      {
+        "token": "0x4e87880a72f6896e7e0a635a5838ffc89b13bd17",
+        "symbol": "MBC",
+        "amount": "893.601272636102972352",
+        "usd": 0
+      },
+      {
+        "token": "0xee04a3f9795897fd74b7f04bb299ba25521606e6",
+        "symbol": "ZZSH",
+        "amount": "47.337873234617917906",
+        "usd": 0
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/MBC_ZZSH_exp.sol",
+    "https://twitter.com/CertiKAlert/status/1597639717096460288",
+    "https://twitter.com/AnciliaInc/status/1597742575623888896"
+  ],
+  "campaign": [
+    "eip155:56:0x3405bcae77149ceeb63cd1f12291f555294f1fd95624612ceaa09376620a7335",
+    "eip155:56:0x4d3418d654c46c00ebb836f6712234ac6f2860c8181caa3b81cffefcaa9e973e",
+    "eip155:56:0x44e76343bc219086856f5584a257023d223ffc6a7ad7c3b4a0511fa65d8e7e86",
+    "eip155:56:0x67916755ee1fe150ff7fe877e424fcbe4823fc9cdcce1d38ebbc33cf87a722ad"
+  ],
+  "notes": [
+    "One incident under rule 4: the two tokens come from different deployers but carry the same template's swapAndLiquifyStepv1() and _isAddLiquidityV1() verbatim, and the attacker hit both in the same transaction.",
+    "Victims are each token contract and its USDT pair, netted per transaction: the contract's USDT that swapAndLiquifyStepv1() put into the pair as liquidity went to the token owner's LP position and is only lost to the extent the attacker took it out. The token contracts' USDT outflow history shows no earlier drain; the campaign lists four later sandwiches of ZZSH by other senders (0xd3455773, 0xf2310c4d, 0xb5c54ee8, 0x888a8dfe). The tokens are unpriced and valued at nothing (rule 12).",
+    "ZZSH's deployment is the latest reset; MBC's later owner calls (0x5a3bcafa setting slot 0xb, changeSwapStats at block 20031556) all precede it, and ZZSH had no owner change before the exploit."
+  ]
+}

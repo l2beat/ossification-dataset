@@ -1043,6 +1043,16 @@
     "rule": "keys",
     "reason": "The victim is Ostium's public OLP liquidity vault on Arbitrum, TransparentUpgradeableProxy 0x20d419a8e12c45f88fda7c5760bb6923cee27f98 over implementation 0xacff332d0d8c34162be6bbabf7d676fea7cd0f3e (verified name OstiumVault). Scanning native USDC 0xaf88d065e77c8cc2239327c5edb3a432268e5831 Transfer logs across blocks 484136200-484138604 shows the vault paying attacker 0x321df194646029e7a6193ea05573d4b9c398bfd9 in six settlements: 6,290,901.90 + 4,763,111.22 + 718,959.42 USDC in the anchor transaction at block 484137113 (2026-07-15T14:18:48Z), then 4,493,501.10 (0xd9f91cc3eaec695f45bffad3a068fa52e1625ed44bfcc47d6ac3938f78d9061d), 3,594,800.70 (0x3b04639ab9b40760b2138e7bfa7eccc9657f3a767a5c414dbb1b3632ed71f3bf), 2,696,100.30 (0x6c254483fa47a14622662e792bc3728ab3c408a33d3cbb5712434ba96f5ecdc2) and 1,078,439.58 (0xfaf6d3d4d7f1a75bfc11fb4d36d0525791546267fda1cdd371703ce03ae8ba8c), about 23.6m USDC in total, all batched through attacker contract 0xfe12f6360000de49d5506d52ee5ac4bc9dd5bd2e from EOA 0xd1794196f0fc99c7f27970e661597d77d9a85869. The window matches founder Kaledora Fontana's statement that funds left the public OLP vault between 14:18 and 14:23 UTC. SlowMist and DefiLlama both attribute the exploit to a compromised oracle signer key used to submit fraudulent future-dated price reports, which the settlement path then honoured; without that key the attacker's trades do not settle profitably, so the stolen signer is the necessary cause. Reviewer flag: if a full post-mortem later shows the vault would also have accepted stale or future-dated reports from an honest signer, the acceptance logic becomes an independent code defect and this lead should be reopened."
   },
+  "eip155:42161:0x536463212dfcdf99616b8fda50795bc8374b07b0cddc505da431f37786d1f857": {
+    "name": "BeefyZapRouter misapproved allowances",
+    "date": "2025-08-13",
+    "rule": "no-defect",
+    "reason": "BeefyZapRouter 0xf49f7bb6 (verified) pulls order inputs only through its TokenManager 0x3395bdae (pullTokens, visible in the exploit trace) or Permit2 and runs route steps from its own context by design, so users approve the TokenManager, not the router. The two victims, EOAs 0x402a29fb and 0x8bc19c94, had approved the router itself for unlimited shares of Beefy vaults 0x25071c7c and 0x36295709 (0xdd10a20e at block 360204698, 0xbd69f269, 0x89223dc9, 0xe280a55c). The attacker's executeOrder route called transferFrom(victim, attacker) on those vault tokens, taking 2,782.48 and 2,779.11 shares. No router check failed; as with the LZMultiCall and MulticallWithETH exclusions, the loss came from approvals the protocol never asks for.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-08/BeefyZapRouter_exp.sol",
+      "https://t.me/defimon_alerts/1664"
+    ]
+  },
   "eip155:42161:0xb13b2ab202cb902b8986cbd430d7227bf3ddca831b79786af145ccb5f00fcf3f": {
     "name": "EverValueCoin",
     "date": "2025-08-30",
