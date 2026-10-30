@@ -1,0 +1,51 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "InitcodeFactoryFees",
+  "name": "Factory collectFees trusts any position's token creator and fake WETH",
+  "summary": "Factory.collectFees(tokenId) accepted any Uniswap V3 position the Factory held, authorized the caller as token0.creator() of that position's own token, treated the other token as WETH without checking it, and paid the creator half of the measured token1 fees in ETH from its own balance after calling token1.withdraw(). The attacker deployed a token whose creator() named its helper and a fake WETH with a no-op withdraw() and an inflatable balanceOf, minted a 0.05% pool position for the pair to the Factory, swapped through it to accrue fees, and called collectFees, which sent the helper 0.979 ETH of the Factory's launch taxes; copycats repeated it over the next three days.",
+  "targets": [
+    {
+      "address": "0x930f9fa91e1e46d8e44abc3517e2965c6f9c4763",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x38cb966cde9f3606d7ad5efe5f5105f59f96f9dbc41f708571b479d19eb97964"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3368.51,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "1.387248442571760422",
+        "usd": 3368.51
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0xaf50de05d89769ec92a980d9e5d12e344bc591950e10dd723f37f7cb1f6b229d",
+    "eip155:1:0xb8163e0f17351b6c9477dd876ad5f8b737caccdbdbcec6b7a99938caf739f9ae",
+    "eip155:1:0x4a3ec7bb86e590309b649d0c7ed13623dc8ce0dad6660d7a9dca41772b605c03",
+    "eip155:1:0x669b69eea300ffa8d86fb5352ae55daae18d5281c99757016f4bf7c7db06b3ef",
+    "eip155:1:0x6f015489e9588a1750f99b1a7641ba430f6f946178e740b02670c054b76f067f",
+    "eip155:1:0x5c3f6519db2ebcad1d1ee3603a81035d0d1a6bf8ab0c88023235e4a697807055",
+    "eip155:1:0xcce4022f4271ad54e3cda369dfc8182491861f7889f4f9dab8511859e1145b8b",
+    "eip155:1:0x81dee4a3584b6f3f52f314b5059ea3f19eae9ad79551a5a8165075dcb9ce2e65",
+    "eip155:1:0x76401314e8bef8cb299c5dfbf9202edbbb02536e2b0b2ce70e198ebfdeeaf75e",
+    "eip155:1:0x0103de8edebf695cf6faf920e09aac4d18bb2cbc7c2f0032259b41e9d817695b",
+    "eip155:1:0x9d5028700128db91fac1d1ffbaaf16432a179e56fc8d23d5d6fbe843fe57d101",
+    "eip155:1:0xf51323617c31e05cd6d8821378ce8ab494a42608b237c7c1e5ed3fc5e006a382",
+    "eip155:1:0xba0c74c0201754e2fdc9a5360a9cfa587a92c174f5f54dfa064b1165e52c8379",
+    "eip155:1:0xb870c083506bd18764555f26c082772a98cbf3707f34b6d11d7a8f6ea70b806f",
+    "eip155:1:0x13fbafeba70ecfa2afc7e19152d8efda7a708462a7d9bbbb7d7823b5fd25f3f2",
+    "eip155:1:0xce2259a7b6de3517592c2ed797a4364d4fe8ce22414c0b8b2db54722fb96c644"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/InitcodeFactoryFees_exp.sol"
+  ],
+  "notes": [
+    "Campaign: every collectFees call in which the Factory called withdraw() on a contract other than WETH, found by tracing all 2,366 transactions with an ETH outflow from the Factory to a non-router address (Etherscan internal transactions, through block 26078306). The anchor is the first of 17; the other 2,328 collectFees calls unwrapped real WETH for launched tokens' creators. The copycats are the anchor attacker again (0x4a3ec7bb, 0x669b69ee), 0xd9a34af0, 0xb180ef1b, 0xddeb9e72 and the MEV bot 0x0000000000004f3d8aaf, through 2025-07-01.",
+    "Reset is the deployment; resets.mjs finds no change before the anchor and the Factory is not upgradeable.",
+    "Loss is the ETH the Factory paid out in those 17 transactions, priced by loss.mjs; the worthless test tokens the attackers left in the Factory are not subtracted."
+  ]
+}

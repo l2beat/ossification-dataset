@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "FixedTokenBSwap",
+  "name": "FixedTokenBSwap pays fixed RTV for any input token",
+  "summary": "FixedTokenBSwap.swap(path, amountInMax) accepted any path ending in RTV, priced the input with router.getAmountsIn on that path, pulled path[0] with transferFrom and then paid a fixed 10 RTV, so a worthless token quoted through its own Uniswap V2 pool bought real RTV; the once-per-day limit is per msg.sender and the only global bound is a 1,000 RTV daily cap. The first attacker created a fake token whose transferFrom moves nothing, paired it with RTV bought for 0.01 ETH, swapped from 50 fresh helper contracts for 500 RTV and sold 490 of them into the RTV/WETH pool for 0.465 WETH; copycats repeated it each time the daily cap reset until the owner withdrew the remaining 6,010 RTV on 2025-06-15.",
+  "targets": [
+    {
+      "address": "0x746b3d7e9953cdaa8c4d4fd3ee24fe133f459f32",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8502138e6eb531be85a0aafd474739711fa608ff191a51eb300e15e22293feea"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 9665.36,
+    "assets": [
+      {
+        "token": "0x61e24ce4efe61eb2efd6ac804445df65f8032955",
+        "symbol": "RTV",
+        "amount": "3980",
+        "usd": 9665.36
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x7a1199b09cd3e5be398766d1a8efc40ac55e55b115e0cc194bc6d4e7ae1f6b90",
+    "eip155:1:0x46e897988e1617228904b5eea40060a6c0d9d0c762cf4e636b098ee960412535",
+    "eip155:1:0xfa7cc0270c9d6fc07ed5c1f44d26dbf1d83866cafe27f7f91e874473a4c38f48",
+    "eip155:1:0xf11375a416d984f4b3356645ffd5bc7fcd65844bbe6346fa4d1feb38bb3b6aa7",
+    "eip155:1:0x2dd5107b52181d62c30fe34db9de20c703f73ee12fb1d41537f0981ef81869dd",
+    "eip155:1:0x5db22f0edc1a9eda5343573da27dd2168c8a36a7f948401db76e22ba1fab71ea",
+    "eip155:1:0xce3cb06a312a51790a7dcdeb37a052eebd9821b71bc2873e5f098c9295b87381"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/FixedTokenBSwap_exp.sol",
+    "eip155:1:0xb5ce270105571aaaf29433f523260d9282a6ad18b788b6462e94aea7513ca10c"
+  ],
+  "notes": [
+    "The DeFiHackLabs lead tx (0x5db22f0e, 2025-06-15) is the seventh of eight drains; campaign.mjs over the contract's whole history finds the same fake-token swap pattern from 0x577c46cd on 2025-06-13 08:02 UTC as the first, then 0x9efc0416 (480 RTV through the first attacker's fake pair), and 0xcc3a5dc0, 0xc9a5643e and 0x5ff8645b at each 16:00 UTC daily-cap reset. The only other swaps are two swapWithETH calls paying real ETH on 2025-06-12; the ref tx is the owner's withdrawal of the remaining RTV.",
+    "Reset is the deployment; the two slot changes resets.mjs lists before the anchor are todayTotalOut and lastRecordedDay from those two swaps, live counters.",
+    "Loss is the 3,980 RTV that left the contract (eight drains of 500 or 480), at DefiLlama's RTV price (about 2.34 to 2.49 USD) via loss.mjs; the attackers' sales realised a similar 0.43 to 0.47 WETH per 490 RTV, so the market absorbed them."
+  ]
+}

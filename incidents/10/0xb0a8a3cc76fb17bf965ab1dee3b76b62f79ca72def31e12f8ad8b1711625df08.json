@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Perpetual Protocol",
+  "name": "Perpetual Protocol pre-launch OrderBook unguarded funding-growth update",
+  "summary": "Two Perpetual Protocol v2 deployments that the team set up on Optimism on 2021-11-24/25, before the launch deployment, ran an OrderBook whose updateFundingGrowthAndLiquidityCoefficientInFundingPayment(trader, baseToken, fundingGrowthGlobal) lacked the _requireOnlyExchange() guard, so anyone could overwrite an order's cached funding growth with a fabricated global growth. In its constructor the attack contract added a dust order (2 wei base, 1 wei quote) through each deployment's ClearingHouse.addLiquidity, called the OrderBook function directly with a twPremiumX96 of about 1e70, and then Vault.withdraw settled the resulting fake funding payment as realized PnL and paid out both vaults' entire 71.78 and 2,990.44 USDC.e.",
+  "targets": [
+    {
+      "address": "0x772f48f073c1f328c264619fc3bba28e3efdefb0",
+      "code": "0xa0d9966de6dcb7982dc9a1bd7a6087f6f3edd928",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc932f7506fd34444e10e220072da43aa34961377865b89b27011419ee4a6811a"
+      }
+    },
+    {
+      "address": "0x4e26b6815d82baa6b8c15fe4ffb646dfb4b474c7",
+      "code": "0x6ba44773cc1388605f57e7c3730f8aff70773e5a",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x69b6960eb5a4f6a385b7b31ff03beabc7e7e38ba99c53b2bce30d9ffe4b2c675"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3061.9,
+    "assets": [
+      {
+        "token": "0x7f5c764cbc14f9669b88837ca1490cca17c31607",
+        "symbol": "USDC.e",
+        "amount": "3062.213107",
+        "usd": 3061.9
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-07/PerpetualProtocol_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/e9e8373e98b41eab024c162cfdf0220624aed8e1/src/test/2026-10/PerpetualProtocol_exp.sol",
+    "eip155:10:0x3f48c1e13831c3697b6c773dbbbf76a813dc9974d414cfc3f75627d9a131d344"
+  ],
+  "notes": [
+    "Both deployments (vaults 0x28bb4820 and 0xf127fdb8, ClearingHouses 0x4f7961ee and 0x8098c627) were created by Perpetual's deployer 0x849a19c0, which deployed the launch contracts (Vault 0xad7b4c16) on 2021-11-27. The launch OrderBook 0xdfcaebe8 ran the same unguarded function until the ref upgrade (2021-12-10) added _requireOnlyExchange(); the two earlier deployments were never upgraded and sat idle after 2021-11-29.",
+    "Resets are the OrderBook proxies' deployments; their implementations never changed (eip1967 slot unchanged; the route change resets.mjs shows at block 105235063 is the Bedrock boundary). The wiring the exploit needed (OrderBook clearing house in slot 0x67, market registry pool listings, exchange parameters) was set within 10 minutes of each deployment, and no configuration changed after 2021-11-25.",
+    "campaign.mjs finds 138 earlier calls into the two OrderBooks, all from the deployments' own Exchange, ClearingHouse or AccountBalance during November 2021; the anchor's attack contract is the only outside caller. The launch OrderBook's unguarded window (2021-11-27 to 2021-12-10) was not traced; no exploit of it is reported.",
+    "Loss is the two vaults' USDC.e outflow, priced by loss.mjs; a third vault by the same deployer (0x23bf79a3, 112 USDC.e) was not touched."
+  ]
+}

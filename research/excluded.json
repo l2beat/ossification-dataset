@@ -1101,15 +1101,6 @@
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-09/YamFinance_exp.sol"
     ]
   },
-  "eip155:1:0xfab5912f858b3768b7b7d312abcc02b64af7b1e1b62c4f29a2c1a2d1568e9fa2": {
-    "name": "MainnetSettler",
-    "date": "2024-11-20",
-    "rule": "no-defect",
-    "reason": "The recorded victim address is a truncation artifact (the first 20 bytes of the exploit tx hash); no contract exists there. No verified victim contract was ever identified.",
-    "refs": [
-      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-11/MainnetSettler_exp.sol"
-    ]
-  },
   "eip155:1:0xfc1bcc3f2c1e134904625990f1fedbbd21fb55f2da80495d81a43ed208badc89": {
     "name": "BingX hot wallet compromise",
     "date": "2024-09-19",
@@ -1157,6 +1148,16 @@
     "reason": "The seed calls a profitable order fill an accounting exploit. Reproduce eth_getTransactionReceipt and debug_traceTransaction(callTracer) on Arbitrum: block 373990723 transaction 9, logs 14/16 exchange 884760000 WBTC base units (8 decimals) for 60000000000000000000000 EVA base units (18 decimals). Logs 20/23 realise 1004091045 WBTC units on resale; 119331045 units paid to the caller at log 28 are trading profit, not established theft. Verified OrderBookFactory source at https://arbiscan.io/address/0x03339ecae41bc162dacae5c2a275c8f64d6c80a0#code, inlined PairLib.partiallyFillOrder, collects quantity * maker price / 1e18, credits the maker, and decrements available quantity. With pair 0x3e0eda1b16003a6bbf05702d0b0474c698229478dc3cf66aa0f56dcb3d4df98f and order 0x5f10c77ae865c7d18861f527c1cc9ccb6f526303eef674cf7871a83ee3aff3ce, eth_call getOrderDetailForPair(bytes32,bytes32) at blocks 373990722/373990723 returns price 14746, original quantity 100000e18, and available quantity 100000e18/40000e18. checkBalanceTrader(bytes32,address) for maker 0x61e66f0d08f64681d891d2b7e03fa3304d7b68d2 returns (0,0)/(0,884760000): the maker receives exactly its asking price. The maker placed that sell order directly in 0x67b850688fbf816be50425772f12640bc3b0bfc5aaa7d3d5cbcf77375b486883, block 372630214 transaction 1. Runtime keccak256 is 0x6004a8083b7c8ff04c4933c4f432934a4b734cb219f8d045b14ff9ec4cca82ae at deployment block 370463837 and pre-trade block 373990722; deployment 0x70e14e39c318c82277636f33506fdba5a97b5dd3a09825676ff01028b257680c transaction 4 by 0xc534be123a0f0a293774a1709bd8bdf04b6b5f73, no code at block 370463836. Etherscan V2 txlist for the orderbook, blocks 0..373990723 ascending, returns 12 direct transactions; this is not a complete internal-call history. Unresolved: whether the linked report https://x.com/SuplabsYi/status/1961906638438445268 concerns a different transaction or an additional violated invariant. Reopen only with that exact path and wrongful depletion; next inspect the original report and compare any alternative transaction against maker entitlement and payment. The named transaction and PoC do not establish the cohort admission claim.",
     "refs": [
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-08/Hexotic_exp.sol"
+    ]
+  },
+  "eip155:42161:0xd4fad993e3dfd37e406be0d5225986a2605ba509d893dafc0c77e0be29ab535d": {
+    "name": "Deri BaseSwapperUniswapV3 public refund of stuck DERI",
+    "date": "2025-08-08",
+    "rule": "no-loss",
+    "reason": "BaseSwapperUniswapV3 0xb5eff2a8 on Arbitrum (Deri Protocol ichain swapper, deployed 2023-12-26) exposes swapTokensForExactTokens publicly and refunds its whole token1 balance to a caller-chosen recipient; 472,997.61 DERI had been left in it since block 359243492, when a 549,000 DERI swap used only 76,002. The attacker made a 0.0001 USDC exact-output swap with DERI as token1, received the 472,997.59 DERI, and sold 79,385.38 of it into the DERI/WETH Uniswap V3 pool 0x96c39665 for 0.048470 WETH, which exhausted the pool's in-range liquidity (price 1.25e-6 ETH per DERI before, liquidity 0 after); the other 393,612 DERI remain unsold in attack contract 0x3b7ef30a. The market could not absorb the DERI (rule 12), so the loss is the 0.04847 ETH realised, 193.7 USD at 3,996.69 USD/ETH, below the 1,000 USD threshold; at DefiLlama's 0.00421 USD the DERI would be about 1,990 USD. campaign.mjs --outflows over the swapper's whole life finds no other outflow.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-08/ArbitrumBaseSwapper_exp.sol",
+      "https://t.me/defimon_alerts/1638"
     ]
   },
   "eip155:42161:0xed932cf2d55dce38ac9d16a7bbeae1d7ba74895e05d6933493f3a0d800637e9b": {
