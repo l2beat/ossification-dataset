@@ -1,0 +1,52 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "NovaX",
+  "name": "NovaX TokenStake books and repays stakes at the pair spot price",
+  "summary": "TokenStake.stake() records each deposit's USD value through Oracle 0xaeb77ff2, whose convertUsdBalanceDecimalToTokenDecimal() (typeConvert 2) is the live reserve ratio of the NOVAX/USDT PancakeSwap pair 0x05a911cc, and withdraw() pays that USD value back in NOVAX at the ratio then, so a staker who moves the pair between the two calls withdraws more NOVAX than deposited. In pool 0, which has no lock, the attacker flash-swapped 500k USDT, bought 81,308 NOVAX, staked 40,654 at the inflated price, sold the other half to crash it, withdrew 124,973 NOVAX and sold them, taking 84,319 NOVAX from the contract. The HYDT attacker's contract 0x8f921e27 repeated it in the next block and two copycats in the block after, draining 1.02M NOVAX in all.",
+  "targets": [
+    {
+      "address": "0x55c9eebd368873494c7d06a4900e8f5674b11bd2",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x30847922a8599c2b4916858bac178e8131bfa5711a678a92c8a6c92210826830"
+      }
+    },
+    {
+      "address": "0xaeb77ff298970a7fb6dc6f5c4a7f02426db814ea",
+      "reset": {
+        "kind": "config",
+        "tx": "0x45466065f5ac89b994b27f43fbf58490e2f6f0d88e45ffe83c27863dd2bfedde",
+        "address": "0xaeb77ff298970a7fb6dc6f5c4a7f02426db814ea",
+        "slot": "0x6"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 154187.83,
+    "assets": [
+      {
+        "token": "0xb800aff8391abacdeb0199ab9cebf63771fcf491",
+        "symbol": "NOVAX",
+        "amount": "1021566.72668970597300499",
+        "usd": 154187.83
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-08/NovaXM2E_exp.sol",
+    "https://x.com/EXVULSEC/status/1820676684410147276",
+    "eip155:56:0x452b977f69585ca3ae6f839fc745df011c36716565fd83262b2e583ce2ccc6e8",
+    "eip155:56:0x030da2978ed98a449f19e764ad5946dc70fb4cfa2716387a151182f517c10276"
+  ],
+  "campaign": [
+    "eip155:56:0x2dd67488d958d5d966b779e84678c696eeb1e8eb6ee924b6dbad7232b3677315",
+    "eip155:56:0x3065bdbc88ff9c7e5bd40c7bf0aab3bf3ffa9b3c3d5ab0744fe774a8f68d0357",
+    "eip155:56:0xb0454dc07a6cc328ea517dbebd8c90fe569d78d443e5170a815a65fe0bf28970"
+  ],
+  "notes": [
+    "In the cohort as a code defect: TokenStake denominates principal in USD and converts both ways through a single-pair spot price with no TWAP. The Oracle's min/max token bounds are dead code, since tokenPairConvert is overwritten with the raw ratio after the checks.",
+    "Two targets carry the defect. TokenStake 0x55c9eebd ages from its deployment (0x30847922, block 39580326), whose constructor wired the Oracle and created pool 0 (no lock, NOVAX in and out); the owner's later setStakeTokenPool(0, ...) at block 39580940 rewrote the same values and setStakeTokenPool(6, ...) at block 40602777 touched another pool, so neither resets. The Oracle 0xaeb77ff2 became a pair-spot oracle when setTypeConvert(2) (slot 0x6, block 38285009) followed setPairAddress (block 38285004); that is earlier, so TokenStake's deployment sets the age.",
+    "Campaign: the HYDT attacker's EOA 0x46458632 repeated the trick through contract 0x8f921e27 one block later (0x2dd67488), and two unrelated contracts did so in block 41116213 (0x3065bdbc from 0xb5c54ee8, 0xb0454dc0 from 0x4307fa0f). campaign.mjs --outflows over TokenStake finds no flash-funded outflow before the anchor; the largest earlier ones (16.6k NOVAX and below) are EOAs calling withdraw or claim directly. The owner then repointed NOVAX to a new oracle 0xa250969a (setOracleContract, 0x452b977f) and pulled the remaining 525k NOVAX with withdrawTokenEmergency (0x030da297).",
+    "Loss is the 1,021,567 NOVAX that left TokenStake in the four transactions, valued at what their sale realised (rule 12): the NOVAX/USDT pair lost 154,187.83 USDT net across them (26,476 in the anchor). DefiLlama's 1.089 USD would put them at 1.11M USD, but the pair held only 198k USDT and every sale paid NOVAX's 40% sell tax to 0xb45fe3a6. The attackers' profit after four 1,504.5 USDT flash-swap fees was 148.2k USD; DeFiHackLabs' 25k is the anchor alone."
+  ]
+}

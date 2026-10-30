@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "StackMarket",
+  "name": "StackMarket graduation seeds the Uniswap V3 pool with all ETH but only the leftover curve tokens",
+  "summary": "StackMarket sells each account token on a bonding curve and, once a buy takes the sold share to 50%, graduates it by depositing all of the account's ETH liquidity and only the tokens left in the market into a full-range Uniswap V3 position, so a single buy that takes nearly the whole remaining balance seeds the pool at an absurd token price and can sell straight back into the market's ETH. The attacker flash-borrowed 26.66 WETH from Morpho, bought 4,461,782 tokens of account 0x1fd2978a for it, triggering a graduation that put 27.434 WETH against 488.76 tokens into the pool 0x4bd05394, and sold its tokens there for 27.431 WETH, keeping 0.771 ETH of the 1.307 ETH earlier buyers had paid in. It repeated this on three more accounts within 30 minutes, and a copycat followed on a fifth.",
+  "targets": [
+    {
+      "address": "0x555555555a4161c1c0ba310fc1c993086d3de042",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x0118c6a173c11ab0b8f16ec0b7eef5044f7832ce1de7cafa2177932e373ad4f5"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 11757.09,
+    "assets": [
+      {
+        "token": "0x4200000000000000000000000000000000000006",
+        "symbol": "WETH",
+        "amount": "5.484565215553501827",
+        "usd": 11757.09
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-03/StackMarket_exp.sol",
+    "https://t.me/defimon_alerts/575"
+  ],
+  "campaign": [
+    "eip155:8453:0x859a266d371188807e317fc214cd0d649575019808eeaee02ae1824a4d2694e2",
+    "eip155:8453:0xd7f25bdf7c67cd5b57e191ec600b6188b01865e063ac54b459ef9e8278a086d3",
+    "eip155:8453:0x9d863dd54a5db7624f2250ce12e13debb605218cc8d3356b3399aa287121f713",
+    "eip155:8453:0x7caeae2f64ca0c86733403fd7517b59e5a7c10980b56c7242f289cbfe049a05d"
+  ],
+  "notes": [
+    "In the cohort as a code defect: _executeGraduation prices the new pool from marketEth over the leftover market tokens, both of which the graduating buyer sets in the same call, and _createUniswapPosition accepts any ratio; the queue's description (a flash-loan driven round trip) understates that the drained ETH is the previous buyers' liquidity.",
+    "Reset is the StackMarket deployment (0x0118c6a1, block 23380203); it is not upgradeable and its BondingCurve library 0x83be7ba2 is linked at deployment. The per-account markets are storage in the same contract created by permissionless create() calls, so they do not reset its age; the slot resets.mjs shows at block 23381334 is solady's reentrancy guard.",
+    "DeFiHackLabs names the attacker's second round (0x859a266d). The graduation history (13 TokenGraduated events) shows seven ordinary graduations of about 10 ETH against about 2M tokens before block 27309235, then the attacker 0x97d8170e's rounds 0xf2bfe196, 0x859a266d, 0xd7f25bdf and 0x9d863dd5 (27.4 ETH against 180-2,462 tokens) and copycat 0x9943f268's 0x7caeae2f (10,290 tokens) two hours later. A graduation of 27.44 ETH against 1,000 tokens in August 2026 (0x37987c6c, sender 0xb00b527d, half of the 6.7 ETH going to the protocol fee recipient) is left out as unconfirmed.",
+    "Loss is the ETH the market lost net in the five transactions, the earlier buyers' liquidity of the five accounts (rule 11); the protocol and account-owner fees (1% each of the purchase here) came out of the attackers' own payments and are not part of it. DeFiHackLabs' 0.56 WETH is the profit of its single transaction."
+  ]
+}

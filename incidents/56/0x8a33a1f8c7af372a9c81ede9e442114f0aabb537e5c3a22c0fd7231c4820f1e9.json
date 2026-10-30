@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Discover",
+  "name": "Discover ETHpledge pays team bonuses at the pair's spot balance ratio",
+  "summary": "ETHpledge.pledgein() pays the pledger's upline team bonuses in Discover, converting their USDT value at getprice(), the USDT balance over the Discover balance of the PancakeSwap pair 0x92f961b6 at call time, so draining the pair's USDT in the same transaction makes each bonus nearly unbounded. The attacker's EOA 0x446247bb first had its helper 0xab21300f pledge 1 USDT; in the anchor its contract flash-swapped 19,810.78 of the pair's 19,811.55 USDT and pledged 2,000 USDT under the helper, whose bonus at the collapsed price was 62,536.76 Discover, which it sold back into the pair while repaying. A second round 80 blocks later (0x1dd49890) took another 352,282 Discover.",
+  "targets": [
+    {
+      "address": "0xe732a7bd6706cbd6834b300d7c56a8d2096723a7",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x91ec9b6d4de3d17296c962c12f72829809a278ee41b8e5ef416cb00b037fc698"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 19179.8,
+    "assets": [
+      {
+        "token": "0x5908e4650ba07a9cf9ef9fd55854d4e1b700a267",
+        "symbol": "Discover",
+        "amount": "414819.135826640256265517",
+        "usd": 19179.8
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-06/Discover_exp.sol",
+    "eip155:56:0xf09946da1fb8badb4af5fe946ed170e173cea53b55d4b3b3160b6099575ce2ec"
+  ],
+  "campaign": [
+    "eip155:56:0x1dd4989052f69cd388f4dfbeb1690a3f3a323ebb73df816e5ef2466dc98fa4a4"
+  ],
+  "notes": [
+    "In the cohort as a code defect: the bonus is priced from the pair's live token balances with no TWAP or bound, and the pair is the one the attacker borrows from.",
+    "Reset is the contract's deployment (0x91ec9b6d, block 18243860), whose constructor set the pair; the owner's later set_test(2) (block 18273392) only lengthens the re-pledge interval, which the exploit does not depend on. The helper's 1 USDT pledge (0xf09946da, 264 blocks before the anchor) is the attacker's setup, not a reset.",
+    "Every earlier Discover outflow of ETHpledge (Etherscan tokentx from deployment) is an EOA calling pledgein or ETHreceive directly, the largest 235 Discover, or the owner's transferOutusdt/transferOutother; the anchor is the first contract-driven call. The attacker's second round 0x1dd49890 is the only later one.",
+    "Loss is the 414,819 Discover that ETHpledge paid the attacker's helper in both rounds. DefiLlama has no Discover price and the pair held only 12,148 Discover, so it is valued at what the sale realised (rule 12): the pair lost 19,180.89 USDT net in the two transactions. The 4,000 USDT the attacker pledged (3,280 of it to ETHpledge) is not subtracted (rule 11); its profit was about 48.9 BNB (15.1k USD), the figure reported elsewhere."
+  ]
+}

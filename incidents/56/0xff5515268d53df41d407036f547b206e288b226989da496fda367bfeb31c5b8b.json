@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "UN",
+  "name": "UN token burns 40% of each transfer to its pair from the pair's own balance",
+  "summary": "UN._transfer calls _swapBurn whenever tokens are sent to swapPair, the UN/USDT PancakeSwap pair 0x5f739a4a: it burns 40% of the amount from the pair's UN balance and calls sync(), whether or not the tokens are then sold, so transferring UN to the pair and skimming it back shrinks the pair's UN reserve for free. The attacker flash-borrowed 29,100 USDT from the DODO pool 0xfeafe253, bought 84,995 UN, three times sent most of its UN to the pair and skimmed it back, burning 74,654 UN of the pair's reserve, then sold its UN for 55,659 USDT and repaid the loan. A copycat contract (0x16cfc66e) repeated it three times over the next 330 blocks.",
+  "targets": [
+    {
+      "address": "0x1afa48b74ba7ac0c3c5a2c8b7e24eb71d440846f",
+      "reset": {
+        "kind": "config",
+        "tx": "0xbd5a0cfd06a6c34cf90d535f1d9439bdb9990cc849cecf1089a3e73fc43d521b",
+        "address": "0x1afa48b74ba7ac0c3c5a2c8b7e24eb71d440846f",
+        "slot": "0x14"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 29608.18,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "29686.580499574434055429",
+        "usd": 29608.18
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/UN_exp.sol",
+    "https://twitter.com/MetaTrustAlert/status/1667041877428932608"
+  ],
+  "campaign": [
+    "eip155:56:0x641c0638318463c63efe0deb3269c394960f4dee8a1ad6c69725aa0a3146355d",
+    "eip155:56:0x2e8e8e701afde0b02eeab998b5cc6b3aa4a09e2445f1f1b290876a41f5807fe1",
+    "eip155:56:0x74fd5367a1af650306ce1e056b834a93eadbe8e39b9e4d186bdc7f3695d82392"
+  ],
+  "notes": [
+    "In the cohort as a code defect in the token: the burn from the pair is triggered by any transfer to the pair, and the pair's skim() returns the transferred tokens, so the reserve can be burned without selling. The queue's description (a buy-back sized from live reserves) does not match the verified source; the exploit is the transfer-skim burn.",
+    "Reset is the manager's setSwapPair(0x5f739a4a) (0xbd5a0cfd, block 28862740, slot 0x14), which switched on _swapBurn for that pair 1,434 blocks before the anchor; the token was deployed at block 28657480. setSwapRouter (block 28862763) shares slot 0x17 with the _inSwapAndLiquify flags the exploit reads but only feeds getPrice(), which the exploit does not call; setHoldEnd (block 28863342) moved an anti-whale deadline that had already passed either way.",
+    "campaign.mjs --outflows over the pair from the reset finds no earlier skim: the earlier USDT outflows (up to 7,126) are launch-hour bots selling UN through a router with no skim call. Copycat 0xa247e816 (contract 0x16cfc66e) failed one block before the anchor (0x0cc304f6) and once after, then succeeded three times (0x641c0638, 0x2e8e8e70, 0x74fd5367); the anchor's contract 0x98e241bd is a generic bot with no other UN transaction.",
+    "Loss is the 29,686.58 USDT that left the pair across the four transactions (26,558.71 in the anchor); the 185,640 UN burned or taken from it is unpriced, and the USDT is what the attackers realised for it (rule 12)."
+  ]
+}

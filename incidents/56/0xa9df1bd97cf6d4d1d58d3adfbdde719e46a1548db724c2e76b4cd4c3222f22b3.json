@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "HYDT",
+  "name": "HYDT InitialMintV2 mints at the WBNB/USDT pair spot price",
+  "summary": "InitialMintV2.initialMint() mints HYDT for the BNB sent at DataFetcher.quote(), msg.value times the USDT reserve over the WBNB reserve of the PancakeSwap WBNB/USDT pair 0x16b9a828, a spot price the caller can move in the same transaction. The attacker flash-borrowed 11M USDT from the PancakeSwap V3 pool 0x92b7807b, swapped it for WBNB in that pair to push the quote to about 5,542 USD per BNB, called initialMint with 11 BNB and received 60,961.92 HYDT (about 9.7 times the fair amount), sold the HYDT into the HYDT/USDT V3 pool 0xd5f07fed, the HYDT/WBNB pair 0xbb8ae522 and the HYDT/USDT pair 0x03fed6ec for 25,521 USDT and 12.42 WBNB, swapped the WBNB back and repaid the loan.",
+  "targets": [
+    {
+      "address": "0xa2268fcc2fe7a2bb755fbe5a7b3ac346ddfedb9b",
+      "reset": {
+        "kind": "config",
+        "tx": "0x2f143065d5aa2417d34413c2e31ca70c46c503cfc61254fe3737947f51df9c63",
+        "address": "0x9810512be701801954449408966c630595d0cd51",
+        "call": "0x91d1485419efed7511dad497f336fbaa05740ad432d42bb8e64228479f57ef6936bb2a9c000000000000000000000000a2268fcc2fe7a2bb755fbe5a7b3ac346ddfedb9b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 32556.71,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "25521.057444220181154032",
+        "usd": 25477.67
+      },
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "12.421323513597163913",
+        "usd": 7079.04
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-10/HYDT_exp.sol",
+    "https://x.com/TenArmorAlert/status/1844241843518951451"
+  ],
+  "notes": [
+    "In the cohort as a code defect: the mint amount is the live reserve ratio of one PancakeSwap pair with no TWAP or bound, so the caller sets its own mint price inside the transaction.",
+    "Reset is HYDT's grantRole(CALLER, 0xa2268fcc) at block 39548007 (0x2f143065), the mint grant without which initialMint cannot mint (rule 8). It came 55 blocks after initialize() (0x53e1e528, block 39547952) set the HYDT, Reserve and start-time slots, and five months after the contract's deployment (0x36f3d470, block 34976094). resets.mjs shows only the live mint counters changing after it.",
+    "All 12 earlier InitialMint events (blocks 39572304-42904657) are EOA mints of 0.001-0.1 BNB at 497-609 HYDT per BNB, the market rate; the anchor minted at 5,542 per BNB. The only later mint (0x56bf1ecb, 0.008 BNB) is again at the market rate, so the anchor is the whole campaign.",
+    "Loss is the USDT and WBNB that left the three HYDT pools (rule 11); the 60,961.92 HYDT they received is the attacker's unbacked mint and is not offset, and the 11 BNB it paid into the Reserve 0xc5161ae3 is not subtracted. The WBNB/USDT pair 0x16b9a828 is not a victim: it kept about 27k USD of swap fees from the 11M USDT round trip, which is why the attacker's profit (about 10.2 BNB, 5.8k USD as DeFiHackLabs reports) is far below the depletion."
+  ]
+}
