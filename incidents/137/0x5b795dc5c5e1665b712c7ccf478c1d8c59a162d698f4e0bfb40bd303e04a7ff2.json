@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BitBay",
+  "name": "BitBay StableVault pays the whole balance to any withdrawal when liquidity is zero",
+  "summary": "BitBay's UsdcDaiV4Vault (StableVault.sol) keeps its DAI/USDC in a narrow Uniswap v4 position. When liquidity == 0, _withdraw transfers the vault's entire DAI and USDC balance to the caller and ignores shareAmount, and reposition() is callable by anyone once the pool tick is outside [tickLower, tickUpper). The attacker deposited 1 wei of DAI for one share, used flash-loaned DAI to swap the v4 USDC/DAI pool's tick above the vault's 3-tick range, called reposition(), which pulled the position's 14,838.46 DAI into the vault and left liquidity at 0, and then withdraw(1, deadline, false) sent it the vault's whole 14,838.47 DAI balance.",
+  "targets": [
+    {
+      "address": "0x048e88311ca84876aea086125825492e2af2e5a0",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xa48f1c88764e4068799acf47b6033b39c3f3460594e708a18efdd231dc18d543"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 14836.71,
+    "assets": [
+      {
+        "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+        "symbol": "DAI",
+        "amount": "14838.466608989135865711",
+        "usd": 14836.71
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-10/BitBay_exp.sol",
+    "https://x.com/SlowMist_Team/status/2108399198035202138"
+  ],
+  "notes": [
+    "Loss is the DAI the vault paid to the attacker's 1-wei share. The vault's position sat in the shared Uniswap v4 PoolManager, so per-address netting shows the vault itself down only 8.39 DAI in the anchor: reposition() moved the position's 14,838.46 DAI from the PoolManager into the vault, and withdraw sent it on. The attacker's tick-pushing swap traded at the near-peg pool price and its flash loans were repaid; it netted 14,813.55 USDC.",
+    "Reset is the vault's deployment (block 86151272, 2026-04-29). Later writes are live values (totalShares, ticks, liquidity, lastReposition) and setTimelocks halving POSITION_TIMELOCK from 3 to 1.5 days (0x8a1a92c65dbea149d9a5d1264b8fa6fc43749b527101c40e569370dd96633ded), a timing parameter rather than a HIGH-rated field. mintThis, which would have restricted reposition() to the minter, was never set. campaign.mjs found 321 earlier exercises, all deposits, minter repositions and proportional withdrawals; the largest earlier withdrawal paid 6.6 DAI. No later exploit transaction was found."
+  ]
+}

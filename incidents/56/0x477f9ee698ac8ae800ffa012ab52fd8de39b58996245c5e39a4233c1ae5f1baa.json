@@ -1,0 +1,35 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "EAC",
+  "name": "EAC proxy public USDT buyback without slippage bound",
+  "summary": "The EAC staking proxy's unverified implementation exposes 0xe6a24c3f(amount), which anyone may call to make the proxy swap that amount of its own USDT for EAC through PancakeSwap with amountOutMin 0, the EAC going to 0x279b8306. The attacker flash-borrowed 300k USDT from a DODO pool, bought EAC to inflate its price, called 0xe6a24c3f with the proxy's whole 14,300 USDT balance so it bought 34 EAC at the top, then sold its EAC back into the pair and left with 29.2 BNB.",
+  "targets": [
+    {
+      "address": "0xa08a40e0f11090dcb09967973df82040bff63561",
+      "code": "0xb803ed66ab449d80ed12cacf83eae5147fdc6922",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x2a2e1360f713791fa45bc94ec29a34c26d504648ae3f4a2f902aefa5e154563b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 14291.83,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "14300",
+        "usd": 14291.83
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-08/EAC_exp.sol"
+  ],
+  "notes": [
+    "The proxy was created with implementation 0xb803ed66 (0x73bfc044, block 31251214) and upgraded to the same implementation 143 blocks later (0x2a2e1360, block 31251357); that round-trip upgrade is the latest route change and the reset (rule 7). The implementation is unverified; the mechanism is read from the anchor's trace.",
+    "In the cohort as a code defect: the swap's size is caller-chosen and its price is the live pair price with no bound, so the payout depends on a price the caller moves in the same transaction. The 16 earlier 0xe6a24c3f calls are the deployer's 10 USDT test and a keeper EOA (0xf8044d0c) buying 700 USDT of EAC every ~600 blocks, not exploits; campaign.mjs finds no calls in the 90 days after the anchor.",
+    "Loss is the 14,300 USDT that left the proxy (rule 11); the 34 EAC it received went to 0x279b8306 and is unpriced. The attacker's profit was 29.2 BNB (~$6.36k), the figure DeFiHackLabs reports."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Fence Finance",
+  "name": "Fence TranchePool day-rollover credits unpaid scheduled principal, restoring draw capacity",
+  "summary": "Fence Finance's (Valinor Digital) USDC TranchePool 0xe25cb545 on Avalanche lets any account open a facility naming itself as borrower, and draw() checks the requested amount against funded minus outstanding principal. At each UTC day rollover the pool books the facility's scheduled principal as repaid without any USDC arriving, so outstanding principal falls and capacity that was already drawn becomes drawable again. On 2026-10-27 at 23:56 UTC the attacker's helper 0xf09dcf4e opened a facility, funded it with 1,013,353.61 USDC flash-loaned from Aave and drew the same amount back in one transaction; four minutes later, after midnight, it repeated the identical draw (0x8e27c105), which paid out the pool's standing liquidity of 1,013,353.61 USDC.",
+  "targets": [
+    {
+      "address": "0xe25cb545bdd47a8ec2d08001cb5661b00d47621a",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x1bfe3a216117490735e261fada5454fd19b40ee78ff4fc6b052d3aef3f78ac2b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1012689.92,
+    "assets": [
+      {
+        "token": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+        "symbol": "USDC",
+        "amount": "1013353.611686",
+        "usd": 1012689.92
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/e9e8373e98b41eab024c162cfdf0220624aed8e1/src/test/2026-10/FenceTranchePool_exp.sol",
+    "https://x.com/SlowMist_Team/status/2115281126516490514",
+    "eip155:43114:0x19ab145e7f771549ca2f1da4b1768d7f728834015b2480ddb5be19c9769899fd"
+  ],
+  "notes": [
+    "The pool and its strategy contract 0x0e710a20 are unverified and their selectors are unknown; the mechanism is the PoC's reading of the two transactions, consistent with their traces: the second draw is called with calldata identical to the first and the pool pays it, consulting only the strategy (0xe44d0797, all zeros) and the attacker's own borrower hook (0x717505a9, returns 1).",
+    "Anchor is the second draw, the first transaction that took pool funds. The setup transaction 0x19ab145e (open, configure, flash-loan fund, draw) left the pool's balance unchanged; the facility state it wrote is the attacker's own (rule 10), not a reset.",
+    "Reset is the pool's deployment (block 68589595, 2025-09-11). resets.mjs shows no other write to the slots the anchor read; the only owner call, 0x23e6fc8e (2026-06-30), set slot 5 to 0x6c8a694a, which the anchor did not read.",
+    "No earlier exploit: apart from the attacker, the pool's only USDC counterparties since deployment are the lenders 0x7a75539c and 0xe3cde6f0 (3,000,000 USDC deposited 2025-10-06 and 2026-02-11) and the operating borrower 0x41d95696, whose draws track its repayments. Loss is the anchor's outflow to the attacker; its own deposit in the setup transaction was taken back in the same transaction."
+  ]
+}

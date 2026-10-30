@@ -1,0 +1,54 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "AlpsCon",
+  "name": "AlpsCon AI Trade Hub credits predecessor-hub stakes with the full reward history",
+  "summary": "AlpsCon's AI Trade Hub V7, V8 and V9 count an unmigrated user's locked stake in the previous hub version (read live through getStats, down to V6) as their own and pay it profitPerShare minus an entryProfitPerShare that is still zero, so a stake added to an old hub after rewards accrued is paid every reward the newer hubs ever distributed. The V6 hub still took deposits, and its migrate() turns a fresh deposit into locked stake at once. The hubs admit only whitelisted callers, and the whitelist held Hardhat default account #0 (0xf39fd6e5), whose private key is public. The attacker signed an EIP-7702 delegation for that account to its contract 0xbe5d79b4 and, as that account, flash-borrowed 1,027,990 USDC from Aave, bought 9.97m ALPS, deposited them in V6 (purchaseServiceCredits), called V6.migrate(), claimed 331,311 USDC from V9 (claimServiceResults; 312,916 USDC to the account and the rest as fees to AlpsCon's fund module), pulled 21,635 USDC from V8 and 2,070 USDC from V7 via transfer(USDC, attacker, amount), withdrew and sold the ALPS for 845,364 USDC and repaid the loan, netting 152,295 USDC.",
+  "targets": [
+    {
+      "address": "0x9b210da482217afc24074e57f6f8337fe07f0124",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xdb502fbcf69198fd209c5f66d0f15d7176a39b59e7c95fe6c957f4ad5bd96a70"
+      }
+    },
+    {
+      "address": "0xa58fbe390210460b7b07e52a29d4eb84308472e1",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x15293cdd5f2b49a8109f8dcf6669042b34c0444f673f7ba8e569d2cba495652a"
+      }
+    },
+    {
+      "address": "0x047284b1e752e39ae7a721d361ec0b0a554ef014",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x53a30a2f97738e3af3ebcb873593039ecc3f55b8b16853de8d1b294c9aea0ffb"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 354924.05,
+    "assets": [
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "355016.010382708579092617",
+        "usd": 354924.05
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-10/AlpsCon_exp.sol",
+    "https://www.rektradar.xyz/web3-daily-exploits-19-oct-2026-alpscon-152k-hardhat-eip7702/",
+    "eip155:56:0x22d5ae272faaad195b045e47935b19a40593a8e3882c54183b7319ec6eeaa2f8",
+    "eip155:56:0x29d790bfa04f3b989291f4e9b713cd9544735db5c6f2206166851fef5db11608",
+    "eip155:56:0xa69e7250e48d8a1207a3e0ff6754185f6eb1625762ce7d5d234c6d1ea4ee03e8",
+    "eip155:56:0x6b0148ee33d63877b9c018e9f920152e1f3423539e61e7a08e45c6b4fd7e9178"
+  ],
+  "notes": [
+    "Cohort: not a key compromise. The key of 0xf39fd6e5 is published with Hardhat and Anvil and was never secret; the deployer's whitelist import put it on the hubs' verified list (SwapContract 0x9be357bd, 0x29d790bf on 2025-08-24, used by V6; router 0x7227d229, 0x22d5ae27 on 2026-01-16, used by V7-V9), which made the onlyVerified gate open to anyone. That is a configuration defect in onchain state, not a stolen credential, and the reward over-credit itself is a code defect any whitelisted user could trigger (the router whitelist holds thousands of ordinary users added one by one). The deployer removed the address on 2026-10-18 (router 0xa69e7250, after two attempts that removeAddressInWhiteList skipped because the account still held funds; SwapContract 0x6b0148ee).",
+    "Targets are the three hubs that paid out; V9 is verified and its deployment (block 86328227, 2026-03-13) is the latest reset. V7's swapContract was repointed to the router in 0x7fb23de1 (2026-01-16) and the whitelist entries date from 2025-08-24 and 2026-01-16, all before V9 existed. Later writes to the hubs are reward distributions, fee checkpoints and user accounting. The V6 hub 0x74f091a7 (2025-08-24), which took the deposit and whose migrate() converted it to locked stake, is older and not listed.",
+    "No earlier exploit found: V6 and V7 took no purchaseServiceCredits after V9's deployment other than the attacker's, the attacker EOA had one earlier transaction, and the largest V9 USDC transfers among the 10,000 before the anchor were fee transfers of at most 3,488 USDC. V8 kept taking deposits after V9's deployment; whether any of those depositors were over-credited on V9 before the anchor was not scanned. After the anchor V6 took no further deposits and nobody else called V7's transfer, so no later campaign transaction was found; campaign.mjs over the three hubs did not finish within 15 minutes on BSC.",
+    "Loss is the USDC that left V9, V8 and V7 in the anchor (loss.mjs with the three hubs as victims): 331,311.01 + 21,635.46 + 2,069.54 = 355,016.01 USDC, of which 335,435.32 went to the attacker and 19,580.69 as withdrawal fees to AlpsCon's fund modules. The attacker's ALPS round trip left 182,626 USDC in AlpsCon's vault 0x7e84f721, which is why reports quote the net 152.8k; under rule 11 that is collateral left behind and not subtracted."
+  ]
+}

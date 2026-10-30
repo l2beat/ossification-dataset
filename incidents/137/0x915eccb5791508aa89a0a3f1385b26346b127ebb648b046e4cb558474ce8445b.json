@@ -1,0 +1,63 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Malt",
+  "name": "Malt stabilized pool credits treasury-injected DAI to the swapper",
+  "summary": "Malt's MALT/DAI stabilized pool 0xfe6c096a (a Uniswap-v2-style pair with swap(uint256,uint256,address)) calls its stabilizer hook 0xf61ab339 before paying out a swap; below peg the hook has the swing trader 0x6f96483f move DAI from the Capital Source 0xf0d31484 into the pool to buy MALT, and swap() then checks the constant-product invariant against the pool's final balances, so the injected treasury DAI counts as the swapper's input while the swing trader receives almost nothing. With a 1,300 DAI Balancer flash loan the attacker bought MALT on QuickSwap, sold it into the pool to push it below peg, sent 1 DAI and requested 7,823.54 MALT; the hook injected 6,286.10 DAI of treasury funds and the pool released the MALT, which was sold back on QuickSwap. A second round injected 6,458.54 DAI for 8,229.25 MALT, and the attacker kept 13,440.58 DAI. Copycats repeated it over the following week.",
+  "targets": [
+    {
+      "address": "0xfe6c096a2871337d4f6f7dd04ebda733e94d7a13",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8a1c3e5d05ef9f3c3c30eaece9b8051cbe16fe7c8a1721ffdc2ecb9a1f3b22f7"
+      }
+    },
+    {
+      "address": "0xf61ab33917fd056bb7ddd4f474a237928f63d5d6",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x847f2f4fde7efc61f934ad170c91548a79a0e488b1df1305fc931a181ae4d0cd"
+      }
+    },
+    {
+      "address": "0x6f96483f951db6cca759b9b032eeaf1754c7188a",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xa210a416650a9c8370f018b4fdb96d23af150199bad8e9a90beca063e27e5f13"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 81995.94,
+    "assets": [
+      {
+        "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+        "symbol": "DAI",
+        "amount": "82000.355569375294892537",
+        "usd": 81995.94
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:137:0xa34063941113e3acd3c7d3a57570c97290cb53da084dd5905e5e125fc30224d6",
+    "eip155:137:0xc0196e2259f9b5a099f7710883aed960ffbba9c7aab805c6f82a3b0863435209",
+    "eip155:137:0x81c7747a7f2d360697334b9fd6c34edf53154ae10177ab0153a9423f6a810150",
+    "eip155:137:0x96910d1252e17ed86c798bc43bfbb2414603ad859e891f059c11036a9ccea5fd",
+    "eip155:137:0x954f99cf7bffcf30fdfd8b563411f80f0c58f2e78a7dedc2e811dafd187b5ccc",
+    "eip155:137:0xf001313738813258726913c7d6894ed031c2405d216c5dca188f2188c56b029b",
+    "eip155:137:0xaa4fa7dddd8b64f9d9bb22a04e4bb0083e98868b1d74f276294acde9627cb8ef",
+    "eip155:137:0x13910fe9618f85f2c281dca777f5109c73fb06c8825882c7e4750f455b301aa5",
+    "eip155:137:0xcf65b3384c51cf6af3ea139f50d1eec17764c91f28f106b32960d82c047a350d",
+    "eip155:137:0xa93aed0c4e492999d63ba8f858932e01cbe86407477c5020e4bfec3dae5aa330"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/56adc62f45a4774c4d584014b3e5284b0f4d5742/src/test/2026-10/MALT_exp.sol",
+    "https://x.com/SlowMist_Team/status/2106418632041668784"
+  ],
+  "notes": [
+    "The pool, hook, swing trader and Capital Source are unverified; the mechanism is read from the anchor's trace, as in the PoC and SlowMist's alert. In every exploit transaction the swing trader's buy (0xcb323c23 on the pool) returned at most a few MALT for thousands of DAI while the caller's 1-DAI swap released tens of thousands of MALT.",
+    "Reset of the hook target is 0x847f2f4f (block 59331588, 2024-07-14), which pointed the pool's slot 6 from the previous hook 0xc21d6ac3 to 0xf61ab339; it is later than the pool's and swing trader's deployments (2024-06-04) and the swing trader's role grant to the new hook (block 59331375). Later writes to these contracts are reserves, price accumulators and swing-trader accounting.",
+    "No earlier exploit: all 28 earlier transactions moving Capital Source DAI into the pool (blocks 57896806-88742494) are ordinary stabilizations in which the swing trader received MALT at about the pool price (keeper 1-DAI pokes, or arbitrage bots whose MALT output matched their own DAI input under the constant product). The anchor is the first where the swing trader got nothing.",
+    "Campaign: four transactions by 0xfc3facd6 on 2026-10-03 (34,513, 9,595, 9,592 and 10,475 DAI injected), five by four other senders at blocks 94879141-94879143, and 0x584f5162's on 2026-10-10 (10,734 DAI). In 0x96910d12 and the five later 2026-10-03 transactions the attacker routed 6,600 or 10,300 DAI of its own through the swing trader back to the Capital Source; those deposits are netted within their transactions.",
+    "Loss is the Capital Source's DAI depletion per transaction over the campaign (loss.mjs with the Capital Source and swing trader as victims): 82,000.36 DAI. SlowMist's ~72k covers 2026-10-03 only (71,266.54 DAI); the 2026-10-10 transaction adds 10,733.81 DAI. The pool's own DAI/MALT reserve changes are trades at pool prices and are not counted."
+  ]
+}

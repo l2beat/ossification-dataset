@@ -1,0 +1,49 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Locus Finance",
+  "name": "Locus vault accepts forged strategy messages through SgBridge's same-chain path",
+  "summary": "Locus's USDC.e vault 0x6318938f (xUSD shares) handles strategy messages in sgReceive whenever the caller is its SgBridge 0xc66534d9, and SgBridge.bridge() with the destination chain equal to the current chain calls sgReceive on any destination with the caller's own payload. StrategyReport messages are checked only by a strategist signature over (strategy, nonce, chainId), not over the reported figures, and WithdrawSomeResponse messages not at all. The attacker deposited 1 USDC.e, queued a withdrawal of its 0.949053 xUSD, then called bridge(USDC.e, 0, 110, vault, payload) twice: first with a StrategyReport for strategy 0x57c81725 that reused the signature of nonce 23 from a July 2024 report whose LayerZero delivery had failed, setting creditAvailable to 200m USDC.e and inflating totalDebt and the share value; then with a WithdrawSomeResponse for withdraw epoch 45, which fulfilled the epoch and paid the queued requests from idle funds, 8,010.99 USDC.e to the attacker.",
+  "targets": [
+    {
+      "address": "0x6318938f825f57d439b3a9e25c38f04ef97987d8",
+      "code": "0x62ed3fb4c5798725aaa9dc020fd593b78a80b779",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xbe853393b99b478e2a481bce1b88b84ee4459cf09c8b7b8d40320cd6801e0caf"
+      }
+    },
+    {
+      "address": "0xc66534d9f18a9ab1b092861590495f6e4b4cfe14",
+      "code": "0x70f92c756285f8f3cf3a3cc67ef6b264b8bd78cf",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd36569f802d0a21a3558faf5cc5e6c466e10e75cd2d9790302cd0d21ae292f02"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 8046.22,
+    "assets": [
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC.e",
+        "amount": "8048.537256",
+        "usd": 8046.22
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:42161:0xf8e6a0c26ede17e671ce97e9d4de28ae433a9b0af460e4f04e7831e643829500"
+  ],
+  "refs": [
+    "https://defillama.com/protocol/locus-finance",
+    "eip155:42161:0x8a351bfeb5291f18f6f8441de6ec07a100186f072ae48d8c490c71ef26298895",
+    "eip155:42161:0x8f76e0ea6df644331ca1687653f98ab095cfaf12bb8b01b31c65fc767c03eb0c",
+    "eip155:42161:0x5f1d2205074131d44b62ebb7dc53d8c9cf29ae66776c35859f3b2c5b75130496"
+  ],
+  "notes": [
+    "The signature reused is the one the keeper submitted in harvest 0x8a351bfe (2024-07-08); the vault logged that report's LayerZero delivery as MessageFailed, so nonce 23 was never marked used and the signed tuple stayed valid. The attacker's deposit (0x8f76e0ea) and withdrawal request (0x5f1d2205) are ordinary user calls and set up the payout; the anchor is the first forged message.",
+    "Targets: the vault runs implementation 0x62ed3fb4 since upgrade 0xbe853393 (block 221073128, 2024-06-12), the latest reset; SgBridge runs 0x70f92c75 since upgrade 0xd36569f8 (2024-02-26). The vault's sgBridge (setSgBridge 0xc29fc4fa), SgBridge's same-chain pool ids, and the strategy's registration and strategist on chain 110 were all set in February 2024. Later vault writes are a LayerZero gas setting, harvest accounting and a strategy debt ratio set to 0, none of which the exploit needed. SgBridge has no other caller than its owner and the attacker, so there is no earlier exploit.",
+    "Loss is the vault's USDC.e outflow in the payout transaction: 8,010.985591 to the attacker and 37.551665 to the other request in the epoch (0x70f1bddf, 0.003 xUSD queued since 2025-11), paid at the inflated share value. The attacker's 1 USDC.e deposit came back inside that payout and is not subtracted separately. DefiLlama's 18k is a TVL change; the forged 200m credit also corrupts the vault's debt accounting, but no further assets moved."
+  ]
+}
