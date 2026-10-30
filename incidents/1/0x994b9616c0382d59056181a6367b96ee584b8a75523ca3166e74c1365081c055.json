@@ -1,0 +1,68 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SushiSwap",
+  "name": "SushiMaker converts fees through thin WETH pairs without slippage limits",
+  "summary": "SushiMaker.convert(token0, token1) is callable by any EOA; it burns the fee LP it holds and swaps each side to WETH through _swap, which takes the pair's spot reserves with no slippage limit, and bridgeFor() defaults to WETH for any token without a configured bridge. For a token whose only WETH pair is nearly empty, convert dumps SushiMaker's share into that pair for almost nothing and the caller buys it back. In the anchor the attacker called convert(PHOON, USDT): SushiMaker sold 1.5709 PHOON (about $4.3k) into the thin PHOON/WETH pair 0x7f9426c6 for 0.0001 WETH, and the next transaction bought it back with 0.001 ETH and sold it for 3.12 ETH. The attacker then created a DIGG/WETH pair with 0.001 ETH and repeated this on the DIGG/WBTC fees four times (3.79 DIGG), and two copycats did the same with LON and oneLINK.",
+  "targets": [
+    {
+      "address": "0xe11fc0b43ab98eb91e9836129d1ee7c3bc95df50",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xb72346185c6a5aea7687be3b4ef12c4e36343af3f76f8d19c7748a1519d004da"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 317709.88,
+    "assets": [
+      {
+        "token": "0x798d1be841a82a273720ce31c822c61a67a601c3",
+        "symbol": "DIGG",
+        "amount": "3.792398839",
+        "usd": 310141.72
+      },
+      {
+        "token": "0x79256db1bdb6259315a1a3d7dd237f69cadfd8fc",
+        "symbol": "PHOON",
+        "amount": "1.570888480877386468",
+        "usd": 4278.93
+      },
+      {
+        "token": "0x0000000000095413afc295d19edeb1ad7b71c952",
+        "symbol": "LON",
+        "amount": "1062.611249255792",
+        "usd": 3251.5
+      },
+      {
+        "token": "0x18cc17a1eed37c02a77b0b96b7890c7730e2a2cf",
+        "symbol": "oneLINK",
+        "amount": "37.206927792",
+        "usd": 37.73
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x747088ed3054d66fbd2c2ec6f6e0b077e71c3155dab0d56ccea2b5841903738f",
+    "eip155:1:0x09450b78ecc1e588e5545fc1769a8180f78ec999bec77ce1c00d792783e114b0",
+    "eip155:1:0x41a7f1a6e956ff0ce060bb9a2763da6bf8507c915ca5c4b2f84b17408dce4777",
+    "eip155:1:0xd9fc665489e3b4bed1e31d2ecb318819d05b3e8136af872929378fb73252ff3d",
+    "eip155:1:0x90fb0c9976361f537330a5617a404045ffb3fef5972cf67b531386014eeae7a9",
+    "eip155:1:0xa2725b449af9b024f2fc1420a0be5c4f834c7c4d8572bb3b92a6aedd76afb976"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-01/Sushi_Badger_Digg_exp.sol",
+    "https://cmichel.io/replaying-ethereum-hacks-sushiswap-badger-dao-digg/",
+    "https://slowmist.medium.com/slow-mist-sushiswap-was-attacked-for-the-second-time-a47f2d110a84",
+    "https://rekt.news/badgers-digg-sushi/",
+    "eip155:1:0xd8a9c9f0d33eb1e59830560a648fd8399896cee022ceeb6bdf18e5a37386f99b",
+    "eip155:1:0xf3852f2e4484180be04926f08adda8c2b3d3fafc7f732192e7950e887edc2314",
+    "eip155:1:0xa0c8e03b99868df0b086d8a3bbaaf1eb57abba6379d168579f130e64f03195e6",
+    "eip155:1:0xd5ea3818c3d1372dec7e87b29f3c55ebcde19656698a30dc7d5676c6a20e2a52"
+  ],
+  "notes": [
+    "Reset is the SushiSwap factory's setFeeTo through its Gnosis Safe (0xb7234618, block 11630484), which replaced the old SushiMaker 0x95c69c32 with 0xe11fc0b4 in factory slot 0 so that LP fees accrued to it; it follows the deployment (0x0bbbd203, block 11626958). setBridge calls before the anchor (0xf10d3c77) configured other tokens; the missing bridges for PHOON, DIGG, LON and oneLINK are the absence of a fix, not a change. The PHOON/USDT pair 0xd1482dc5 whose fees the anchor converted (created by 0x29fd05ec, block 11693835) and the thin WETH pairs are permissionless pairs reached through factory.getPair: PHOON/WETH 0x7f9426c6 was created by an unrelated 0x3dca07e1 (block 11698926) and DIGG/WETH 0xf41e354e and oneLINK/WETH 0x110c19ce by the attackers themselves, so none resets the age (rules 9-10).",
+    "Earlier exploits: of the 66 convert and 14 convertMultiple calls between the feeTo switch and the anchor, all but the Sushi deployer 0x9e6e344f's and operator 0xe5350e92's came from nine outside EOAs. Checked swap by swap against DefiLlama prices, their swaps ran at market rates through deep pairs (largest shortfall about 4%, price impact on WETH to SUSHI), and none of these callers traded within three blocks of its call.",
+    "Each exploit is a convert by the exploiter followed by its own buy-back: 0x7b0798e1 after the anchor, then 0xba833487, 0x0eff5e17, 0x65f4145f and 0x0af5a6d2 after the four DIGG converts (the last is the DFHL 'attack tx', 0.001 ETH to 81.68 ETH); the attacker 0x51841d9a realised about 214 ETH. Copycat 0x4bae2507 converted LON/USDT (0x41a7f1a6, LON sold for 1.04 WETH) and bought back 1,049.96 LON for 0.94 ETH (0xf333b73c); copycat 0x3091e35b seeded a oneLINK/WETH pair with 0.0001 ETH (0x3deaebb0) before 0xa2725b44. Other post-anchor converts, including small DIGG/WBTC calls after DIGG's bridge was set to WBTC (0xd8a9c9f0, block 11727173) and 0x88c70e24's RUNE convert, swapped at market rates.",
+    "Loss is, per thin-pair swap, the market value (DefiLlama at block time) of the token SushiMaker sold minus the WETH it received from that pair (0.0131 WETH for DIGG over four swaps, 0.0001 for PHOON, 1.0419 for LON), since convert normally trades fees for WETH; the burned LP and SushiMaker's other swaps at market rates are not counted. oneLINK has no price and is valued at what copycat 0x3091e35b realised selling it (0.0285 ETH pro rata). Valuing DIGG at what the attacker realised through the DIGG/WBTC pair instead gives about 8% less."
+  ]
+}

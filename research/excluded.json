@@ -360,12 +360,33 @@
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-03/PAID_exp.sol"
     ]
   },
+  "dfhl:src/test/2021-06/88mph_exp.sol": {
+    "name": "88mph v2 deposit NFT unprotected init",
+    "date": "2021-06-08",
+    "rule": "no-exploit",
+    "reason": "The unprotected init(address,string,string) (selector 0xb2b45df5) on the 88mph NFT contracts of the yaLINK, Harvest CRV:STETH and Harvest CRV:RENWBTC pools (0xf0b7de03134857391d8d43ed48e20edf21461097, 0x6a76f1c362f2c871beb9d930c9efd02b07841a28, 0xa08b1215ff7ad33fa431e35569f95f684cd9bf9c) was reported by iosiro through Immunefi on 2021-06-07. trace_filter over these and the three pool contracts from block 11870901 to 12700000 finds init called only by 88mph's factory 0x95816fa25d54061086d4f4ad9a48fdbe9068e541 inside the creation transactions sent by 88mph's deployer 0xc0fcf8403e10b65f1d18f1b81b093004b1127275 and by 88mph's whitehack contract 0x4b83ddf91cf66df7a7188ff3a2a2dbaaeb27638b (driven by 0x7fdef304e2d4b464a745042f8db5abad277d3f11) at blocks 12596387-12596398, after which 88mph returned the funds to their owners. No unaffiliated party exercised it.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-06/88mph_exp.sol",
+      "https://immunefi.com/blog/bug-fix-reviews/88mph-function-initialization-bugfix-review/",
+      "eip155:1:0x30107c15bb1173828c822d8c5492583c4b13dabd4251134643969dfccb17ffc4"
+    ]
+  },
   "dfhl:src/test/2021-07/Levyathan_exp.sol": {
     "name": "Levyathan",
     "rule": "keys",
     "reason": "The pinned PoC attributes the incident to private keys published by the project.",
     "refs": [
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-07/Levyathan_exp.sol"
+    ]
+  },
+  "dfhl:src/test/2021-09/Sushimiso_exp.sol": {
+    "name": "SushiSwap MISO DutchAuction batch msg.value reuse",
+    "date": "2021-08-17",
+    "rule": "no-exploit",
+    "reason": "The PoC reuses one msg.value across several commitEth calls through BoringBatchable's delegatecall batch() on MISO DutchAuction 0x4c4564a1fe775d97297f9e3dc2e762e0ed5dda0e (created block 12992424, the BitDAO raise). samczsun found it on 2021-08-17 while the auction held over 109k ETH; the raise team finalized the auction manually the same day, and Paradigm reports no monetary damage. trace_filter over the auction from block 12992424 to 13300000 finds no batch(bytes[],bool) (0xd2423b51) call at all, direct or internal; its 9,542 successful direct calls are plain commitEth. The DFHL entry's transaction 0x78d63557 is a finalize() on another contract (0xc2704dec), not an exercise of this bug.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-09/Sushimiso_exp.sol",
+      "https://www.paradigm.xyz/2021/08/two-rights-might-make-a-wrong"
     ]
   },
   "dfhl:src/test/2022-03/RedactedCartel_exp.sol": {
@@ -846,6 +867,16 @@
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-03/CGT_exp.sol"
     ]
   },
+  "eip155:1:0x544e5849b71b98393f41d641683586d0b519c46a2eeac9bcb351917f40258a85": {
+    "name": "Build Finance governance takeover",
+    "date": "2022-02-11",
+    "rule": "privileged",
+    "reason": "Build Finance's Governance 0x5a6ebeb61a80b2a2a5e0b4d893d731358d888583 counts locked BUILD one token one vote with a fixed 5,000 BUILD quorum and a 100 BUILD proposal threshold. Proposal 7, created by 0xd6dbed6297b539a11f1aab7907e7df7d9ffeda7e (0xfa9cca40, block 14169198), called setGovernance (0xab033ea9) on the BUILD token 0x6e36556b3ee5aa28def2a8ec3dae30ec2b208739 in favour of 0xdcc8a38a3a1f4ef4d0b4984dcbb31627d0952c28; proposals(7) records 5,042.68 for and 5,000.17 against, and 0xdcc8a38a executed it (0x544e5849, block 14182038, 2022-02-11). As the token's new governance it minted 99,999.99, 7,600 and 1,000,000 BUILD within minutes (from 0xe6f47156, block 14182042) and sent them on (DefiLlama puts the loss at 470k USD); proposal 8 by 0xe9e4573daece61ca5651cd09ffa2182c15a8520b (10,365.09 for, 0 against) later approved itself the treasury's BAL and took 79 BAL (0x60309986, 0x938a87a7). The DFHL PoC replays the second step against BUILD instead of BAL. Every vote, quorum and execution check behaved as written; voting power was acquired on the market, as in the Yam, DeXe and StrongBlock exclusions.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-02/BuildF_exp.sol",
+      "eip155:1:0x60309986e6488dd1d93c5303e6f8b5fdd946dfaa4b1cb037137ba11832a3a10c"
+    ]
+  },
   "eip155:1:0x5e151627dc06ec4f2db5be2f48248f320ad3450aba42b1bbd00131bcbaa4f0ae": {
     "name": "VRug",
     "date": "2024-11-07",
@@ -976,6 +1007,16 @@
     "date": "2024-05-20",
     "rule": "keys",
     "reason": "The anchor transaction is a bare mint(address,uint256) call (selector 0x40c10f19) sent at block 19913232 by externally owned account 0xec78b484a28a73f4f1cff23b9cd31aa12c1d9b4e directly to the GALA v2 token proxy 0xd1d2eb1b1e90b638588728b4130137d262c87cae; status 1, exactly one log, a Transfer from the zero address of raw 500000000100000000 (5,000,000,001 GALA at 8 decimals) to 0xe2ca471124b124831e231fb835778840ad100f97. That EOA was a dormant third party still holding the token's minter role after a 2023 partner integration; Gala's own incident report and rekt.news both describe a compromised minter key. The deployed code did exactly what it says: an authorised minter minted. There is no invariant failure in executed EVM code, so no code-age observation exists. The owner-controlled blocklist froze the recipient and capped realised loss at about 21.8m USD (5,913 ETH, returned two days later) against the roughly 216m USD nominal mint."
+  },
+  "eip155:1:0xad89ff16fd1ebe3a0a7cf4ed282302c06626c1af33221ebe0d3a470aba4a660f": {
+    "name": "BEC batchTransfer integer overflow",
+    "date": "2018-04-22",
+    "rule": "no-loss",
+    "reason": "BecToken 0xc5d105e63711398af9bbff092d4b6769c82f793d (created block 5058736) computes uint256 amount = uint256(cnt) * _value in batchTransfer without SafeMath, so the anchor (block 5483643, from 0x09a34e01fbaa49f27b0b129d3c5e6e21ed5fe93c) with two receivers and _value = 2^255 overflowed the total to 0 and credited 0xb4d30cac5124b46c2df0cf3e3e1be05f42119033 and 0x0e823ffe018727585eaf5bc769fa80472f76c3d7 2^255 BEC each. A scan of all BEC Transfer logs from creation to block 5483642 finds no earlier transfer above 1e36 raw units, and blocks 5470000-5484695 contain no other overflow credit; the owner paused BEC in 0x6f2e019c (block 5484698) and no Unpause event follows through block 9000000. The only onward movement is 111,000,000 BEC (four transfers, blocks 5484095-5484287) from 0xb4d30cac to 0xa461857da44d2b708ba03890855765acea2eb556, an exchange deposit address gas-funded by OKEx hot wallet 0x6cc5f688a315f3dc28a7781717a9a798a59fda7b, whose four sweep attempts to 0x6cc5f688 (blocks 5490952-5504283) all reverted on the paused token; 0x0e823ffe never moved its BEC. No ETH or other reserve asset left any contract and no onchain sale proceeds exist; any dumping happened inside OKEx's ledger. Same treatment as the SmartMesh proxyOverflow lead (eip155:1:0x1abab4c8...). Other tokens with copied batchTransfer code are separate codebases and were not hit by this attacker.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2018-04/BEC_exp.sol",
+      "eip155:1:0x633b6075c89e0b80ac298e0fee24cd9b51c5508e0c7eeb11a825555e1d81d816"
+    ]
   },
   "eip155:1:0xb2c7332d9e1be6a86d9d37083aa4cc0d94b60eb95cc9b29494555a3c09764930": {
     "name": "EtherVista VISTA/WETH pair drained through a router set by the routerSetter",
