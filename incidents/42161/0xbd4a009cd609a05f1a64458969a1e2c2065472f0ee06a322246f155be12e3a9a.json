@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Atomic",
+  "name": "Atomic keeper position close accepts a replayable static signature and swaps at spot",
+  "summary": "Atomic's position manager proxy 0x51ff48f2 (implementation 0x62cc5522) exposes 0xa806010f(strategy, positionId, swapData, signature), the keeper's call that closes a leveraged concentrated-liquidity position: it withdraws the position's liquidity through the strategy, sells it through the pool at the live price (with no minimum when swapData is empty) and repays the position's AtomicLending debt. Its only authorization is an ecrecover of a fixed hash (0x466fdbcf...) that resolves to keeper 0x075bfea8, so the signature, published in hundreds of earlier keeper and user transactions, works for any position. The attacker's contract flash-borrowed 2,230,717.8 ARB from Aave, sold it into the ARB/USDC.e Uniswap V3 pool 0xcda53b1f, closed 21 positions with the copied signature so the proxy sold their 390,508 ARB into the crashed pool for 94 USDC.e (covering their debt from 4,349.66 USDC.e of their collateral), bought 2,618,590 ARB back for its 18,485 USDC.e, repaid the loan and left with 29,984 USDC.",
+  "targets": [
+    {
+      "address": "0x51ff48f2d43966be796692bdddfae96a435242a8",
+      "code": "0x62cc552215303341f9651e89db40e7336a394a0a",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x8f4ef48b2e293386e9a2ba63f8aaa2d3ccb5656b2aeb4e8453bddda87723b128"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 30728.71,
+    "assets": [
+      {
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "390508.1189",
+        "usd": 30563.32
+      },
+      {
+        "token": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "symbol": "WBTC",
+        "amount": "0.0025559",
+        "usd": 165.39
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-08/Atomic_exp.sol",
+    "https://api.llama.fi/hacks"
+  ],
+  "campaign": [
+    "eip155:42161:0x712d0666553a1dbb09cfb4417bf0e1da9a08cb679bbd121875f794b8d93416c0"
+  ],
+  "notes": [
+    "Contracts are unverified; the mechanism is read from the traces. In every one of the 21 calls the proxy ecrecovers the same hash 0x466fdbcf... with the same signature (r 0xe5fb7e1d...) and gets 0x075bfea8, the keeper that sends Atomic's own 0xa806010f, 0x136dd661 and 0xabb7ef89 calls; the hash binds neither the position nor a nonce, and the same r value appears in calldata of the proxy's transactions since 2022. In the cohort as a code defect: a replayable authorization on an unwind that trades at a price the caller moves (DefiLlama: signature replay plus price manipulation).",
+    "Target is the proxy, which runs the signature check and the unbounded swap; reset is the upgrade to 0x62cc5522 (0x8f4ef48b, block 436195197, 2026-02-26), the latest of 16 Upgraded events since the proxy's creation in 2022 (rule 7). The strategy 0xf617a3ad and AtomicLending 0xc1b67703 only executed the proxy's instructions.",
+    "campaign.mjs (selector 0xa806010f, reset to 90 days after) finds before the anchor only the keeper's own calls; after it, contract 0x3e5d7ee2 (EOA 0x1e7bd709) closed a WBTC position the same way seven hours later (campaign), and six later calls by other contracts moved dust or nothing and are not counted.",
+    "Loss is the position assets the proxy sold into the manipulated pools: 390,508.1189 ARB in the anchor (withdrawn from the pool by the strategy and sold back for 94.24 USDC.e) and 0.0025559 WBTC in the copycat, at DefiLlama prices (0.07827 and 64,709.55 USD). The positions' USDC.e collateral that repaid their AtomicLending debt (4,349.66 and 99.8) is not counted, as it extinguished equal debt. The attacker realised 29,984 USDC from the 387,873 ARB it kept, 98% of market, so the market price stands (rule 12)."
+  ]
+}

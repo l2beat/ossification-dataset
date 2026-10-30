@@ -1,0 +1,89 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Asymmetry USDaf",
+  "name": "USDaf branch price feeds treat a Chainlink round as stale at exactly its heartbeat",
+  "summary": "Each USDaf (Liquity V2 fork) collateral branch has a WETHPriceFeed whose fetchPrice() shuts the branch down for good when block.timestamp - updatedAt is not below its staleness threshold, and Asymmetry deployed every feed with the threshold equal to its Chainlink feed's heartbeat (3,600 s for sDAI and sUSDS, 86,400 s for tBTC, sfrxUSD, sUSDe and scrvUSD); its sDAI and sUSDS oracle wrappers count a round as stale only after the heartbeat, so in the seconds between a heartbeat expiring and the next round landing anyone can call fetchPrice and shut a healthy branch down. A shut branch then lets anyone urgentRedemption() USDaf against troves they pick for collateral worth the redeemed debt plus a 2% bonus. On 2025-06-17 searcher bot 0x84483314 redeemed through CollateralRegistry at the exact second (updatedAt + 3,600) the sDAI and sUSDS feeds went stale, shutting both branches, and urgent-redeemed them two days later; the tBTC, sfrxUSD, sUSDe and scrvUSD branches were shut the same way at the heartbeat second through 2025-07-05 and urgent-redeemed, three times with flash-loaned USDaf (237,030 USDaf against sfrxUSD in its shutdown transaction itself).",
+  "targets": [
+    {
+      "address": "0xc470a1574b469a562fb237e289fdb217f8c14dc9",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xd91a8822408d0ea0bfd364d32510e1186a179345eab3025424b6f957efc7f2e7"
+      }
+    },
+    {
+      "address": "0x806b2921e394b3f84a549ab89cf73e57f0c882c5",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x11dc793124557e22dacfd8650829dbc460048e2790f08c543de0212c51fdca63"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 15987.14,
+    "assets": [
+      {
+        "token": "0xa3931d71877c0e7a3148cb7eb4463524fec27fbd",
+        "symbol": "sUSDS",
+        "amount": "303.27",
+        "usd": 320.07
+      },
+      {
+        "token": "0x83f20f44975d03b1b09e64809b757c47f942beea",
+        "symbol": "sDAI",
+        "amount": "34.58",
+        "usd": 40.11
+      },
+      {
+        "token": "0x18084fba666a33d37592fa2633fd49a74dd93a88",
+        "symbol": "tBTC",
+        "amount": "0.000249",
+        "usd": 25.79
+      },
+      {
+        "token": "0xcf62f905562626cfcdd2261162a51fd02fc9c5b6",
+        "symbol": "sfrxUSD",
+        "amount": "4387.47",
+        "usd": 5001.72
+      },
+      {
+        "token": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "symbol": "sUSDe",
+        "amount": "2041.23",
+        "usd": 2408.46
+      },
+      {
+        "token": "0x0655977feb2f289a4ab78af67bab0d17aab84367",
+        "symbol": "scrvUSD",
+        "amount": "7786.11",
+        "usd": 8190.99
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x8bd1dbfb7632d7f7f5c8894b718f15376c44562cb547c1b3213915a7dd1f0f10",
+    "eip155:1:0x8fcee87be199b2faba0cb7ecff5b2d341797c4c5cd5b1075761ca79dbeade60f",
+    "eip155:1:0x75ea48d3c48fadd9e1062c0ca89a728d9c5b0cf08c072856dfad3ef0ea51945d",
+    "eip155:1:0x3b2a097556e6dfc7079b1f3e00ef788b4aa431dc1ea9967cca5460d1d52a3b70",
+    "eip155:1:0x5782584deb66fb4935a609b877c85b5658c35856009e6c9bcba9248d8d54e74d",
+    "eip155:1:0x4ecb880610c6c41799a4436319d86f32e4c49ae0dd7b932bbc478396bb273b01",
+    "eip155:1:0x6a88f1d561dc1184cda3d7c157eff2628e420dfee1480afebdee9e7c8ece1b15",
+    "eip155:1:0xc8ac54bdab9a2ce670a6ac2540e07dc88b5eeb7e0306e86d1d66f584428b3e0d",
+    "eip155:1:0x2588a92855cc5c782ea3c2884eb64436fdbe55b40bf4702bf970972bd7f1a566",
+    "eip155:1:0x0cf19b3f83f574c1911eb42457f22578359483dfef197f8906678bc0a76a740b",
+    "eip155:1:0x6e250bd21f64368f2a87aa10f33ca332d2b94d9aa3067c33aaf270d8ec52b795",
+    "eip155:1:0xb64d5686c3fa1c9f02258c54069ca7837401e0b5ad34e363b99a624ad5c4655d"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-07/ActivePoolUrgentRedemption_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-07/ActivePoolScrvUsdUrgentRedemption_exp.sol",
+    "https://t.me/defimon_alerts/1379",
+    "https://t.me/defimon_alerts/1415"
+  ],
+  "notes": [
+    "In the cohort as a defect in deployed configuration (rule 1): MainnetPriceFeedBase._isValidChainlinkPrice requires block.timestamp - updatedAt < stalenessThreshold, and with the threshold equal to the heartbeat a feed that is merely on schedule fails it for the seconds before its next round. Every one of the six shutdowns (ShutDownFromOracleFailure on the feeds 0xc470a157, 0x806b2921, 0xce1ca28e, 0xcda8cca9, 0x0daafddc, 0x629b6c0d) landed at updatedAt + threshold (sfrxUSD at +12 s), and the sUSDe round arrived 24 s after its shutdown. urgentRedemption and its 2% bonus are Liquity V2's designed shutdown path; the defect is that a routine heartbeat gap triggers it.",
+    "One incident (rule 4): the same threshold choice in six feeds of one deployment, exercised by several searchers within three weeks. The anchor is the first exercise, the 2025-06-17 redemption by 0x84483314 (a general MEV bot with 6,700 transactions since 2024) that shut sDAI and sUSDS at the heartbeat second and was followed by its own urgent redemptions; the DeFiHackLabs sUSDe (0xc8ac54bd, after the attacker's own fetchPrice 0x6a88f1d5) and scrvUSD (0x0cf19b3f, after 0x2588a928) transactions are campaign entries, as are 0x3d782c0c's one-transaction shutdown and redemption of sfrxUSD and two other redeemers on scrvUSD.",
+    "Targets are the two feeds the anchor shut down; each sets its threshold in the constructor with no setter, so the reset is its deployment (0xd91a8822 block 22548826, 0x11dc7931 block 22549101). The other four feeds were deployed in blocks 22548806-22549141 and would give the same age.",
+    "Loss is the redeemed trove owners' equity, as for forced liquidations (rule 11, as in the LlamaLend and Aave CAPO records): collateral removed at DefiLlama's price (oracle price for sDAI and sUSDS, which DefiLlama does not price then) minus the USDaf debt each redemption extinguished, at par: 779,964 USDaf of debt against 795,951 USD of collateral over nine urgent redemptions (Redemption events on the six TroveManagers from the shutdowns to block 23450000), stated per collateral as the net token equivalent. Gross collateral outflow, which loss.mjs reports, would be about 796k USD; the attackers' combined profit was a few thousand USD (DeFiHackLabs: 2,696 and 4,205)."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "AISOTH",
+  "name": "AISOTH migration presale left open at its default price with claims live",
+  "summary": "The AISOTH Presale 0x796c5e8c, deployed to migrate an earlier presale's buyers, keeps buy(amount) open whenever startTime and endTime are unset and sells AIS at the constructor default price of 0.035 USDT with a 10,000 USDT per-wallet cap. Once the owner called enableClaim() for the migrated users, anyone could buy AIS at 0.035, claim it at once from the AIS the contract held for those users, and sell it into the AIS/USDT pair, where it traded at about 0.58 USDT. The attacker flash-swapped 5,746.57 USDT from the USDT/WBNB pair, bought and claimed 164,187.76 AIS, sold 159,262.13 AIS (after the token's transfer fee) into the AIS/USDT pair 0x9efb2e8b for 36,075.73 USDT, repaid the flash swap and kept 30,314.76 USDT.",
+  "targets": [
+    {
+      "address": "0x796c5e8ca10010654dafaef096bd1f4a7ad87672",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4b28039f39ce82ecc885f7f0a5e8d911a8f0e7d51a17476e5ece30abd618500b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 36075.73,
+    "assets": [
+      {
+        "token": "0x67b6b8b8867e501385c95b843a23f9bfe34811db",
+        "symbol": "AIS",
+        "amount": "164187.758641224972478942",
+        "usd": 36075.73
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/AISOTHPresale_exp.sol",
+    "https://x.com/audit_911/status/2063565495073415618",
+    "eip155:56:0x03b79a1dcaf4b68423f587ca57ab7e60ff8bffb2b6d203f585c99ea2c795ca83"
+  ],
+  "notes": [
+    "In the cohort as a configuration defect in persistent state (rule 1): the contract was meant to serve migrated buyers' claimMigrated(), but its buy() stayed open (no start or end time) at the default 0.035 price, far below the AMM price the deployer's own AIS/USDT pair (created the same day) set, so enableClaim() exposed the AIS held for migrated users to instant buy-and-claim. The owner paused the presale half an hour after the anchor, then called setPrice (refs) and withdrew the USDT, treating it as an exploit. Unlike a stale fixed-price order that a market move made cheap, the price was below market from the moment claims opened.",
+    "Reset is the deployment (0x4b28039f, block 102250737): the open sale window and the 0.035 price are constructor defaults that never changed before the anchor. enableClaim() (0xe97c0671, block 102312169) only lifted a gate, like a pause flag, so it does not reset (rule 8); it would give the same one-day age.",
+    "No earlier buy() call exists: before the anchor the contract saw only the owner's migrateUsersBatch and enableClaim and migrated users' claimMigrated calls, and it was paused 4,173 blocks after.",
+    "Loss is the 164,187.76 AIS that left the presale. AIS has no DefiLlama price and the attacker's sale took the pair from about 0.58 to 0.09 USDT per AIS, so it is valued at what the sale realised (rule 12): 36,075.73 USDT. The 5,746.57 USDT the presale received is not subtracted (rule 11)."
+  ]
+}
