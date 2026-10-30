@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Auctus",
+  "name": "Auctus ACOWriter write() makes an arbitrary call with users' approvals",
+  "summary": "ACOWriter.write(acoToken, collateralAmount, exchangeAddress, exchangeData) accepts any acoToken and then calls exchangeAddress with exchangeData unchecked, as the contract users had approved to pull their collateral. The attacker's contract 0x0c3bff87 passed itself as the ACO token (so mintToPayable and the strike-asset sweep were no-ops) and USDC.transferFrom(user, attacker, balance) as the exchange call, six times, taking 725,680.73 USDC from six approvers; copycats repeated it against remaining approvals.",
+  "targets": [
+    {
+      "address": "0xe7597f774fd0a15a617894dc39d45a28b97afa4f",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xb4ab6459017ba544d792308210fe27221bbfc05d95ef07b7085809ab3e2a8290"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0x0f0955a80cf0222caf5b684179f4fb2178515cfb3a3124691960e80e2f94cb32",
+    "eip155:1:0x4d35753a897cc5aeb83936758aa46026b868be845c4c486e7d87472f1dfaa097",
+    "eip155:1:0x647b5020d3fe48a860854cea23f80455e41c6a5a6d7d49df77a2da272a884bf8",
+    "eip155:1:0xe75ac7994bdffc984fedb1fd4d8fb6285d40598f78904df6066e8633f81ead08",
+    "eip155:1:0x16a7656ea3dbe72899e9737a767bfed7cdde319abe1acd99b6154a3663eef330",
+    "eip155:1:0xa79276b9649b99abffe5d38b3754b6d38cf25e87bd03be3410030441b3ed33a2"
+  ],
+  "loss": {
+    "usd": 755352.6,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "755370.854197",
+        "usd": 755352.6
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/Auctus_exp.sol",
+    "https://blog.auctus.org/action-required-critical-vulnerability-3d448d4d0dcb",
+    "https://revoke.cash/exploits/auctus"
+  ],
+  "notes": [
+    "write() requires msg.value > 0, so every use of ACOWriter appears in its txlist or internal-transaction list: the 39 direct writes ran from June 2020 to February 2021 (last at block 11805760) and nothing touched the contract again until the anchor, which is the first call through a contract.",
+    "Campaign is every later write() found the same way, each a transferFrom of a remaining approver by a different, unaffiliated caller: 94.12 USDC (0x0f0955a8), 0.0000624 YFI (0x4d35753a, worth about 1.5 USD and left out of the loss), 18,895.66 USDC (0x647b5020), 699.35 USDC (0xe75ac799), 10,000 USDC (0x16a7656e, from 0x223d24d8, already drained in the anchor and refilled) and 1 USDC (0xa79276b9). None returned the funds.",
+    "Loss is the USDC that left the approvers: 725,680.73 in the anchor plus 29,690.12 in the campaign, priced by loss.mjs."
+  ]
+}
