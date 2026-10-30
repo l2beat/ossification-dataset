@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MEV bot 0xbadc0de",
+  "name": "MEV bot 0xbadc0de dYdX callFunction executes caller-supplied calls",
+  "summary": "The MEV bot 0xbadc0de (a proxy delegating to 0xdd6bd08c) handles dYdX SoloMargin's callFunction callback by executing calls encoded in the action's data without checking that the bot started the operation. The attacker's contract 0x6554ff0f called SoloMargin.operate with a single Call action on its own account naming the bot as callee and data encoding WETH.approve(0x6554ff0f, max); the bot granted the allowance, and 14 blocks later the attacker's transferFrom took the bot's 1,101.65 WETH. A copycat later used the same callback for the bot's leftover MLP, VEE and GUSD.",
+  "targets": [
+    {
+      "address": "0xbadc0defafcf6d4239bdf0b66da4d7bd36fcf05a",
+      "code": "0xdd6bd08c29ff3ef8780bf6a10d8b620a93ac5705",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xc4a8c93f603574f8bb3a62c0c3b4e3735496c3aea298961790d1c653977f0233"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1529018.76,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "1101.650251927809373491",
+        "usd": 1528972.3
+      },
+      {
+        "token": "0xe22020f47b7378dfedcedd2c81d4137c22fe1152",
+        "symbol": "MLP",
+        "amount": "1605.999999999999999999",
+        "usd": 25.22
+      },
+      {
+        "token": "0x340d2bde5eb28c1eed91b2f790723e3b160613b7",
+        "symbol": "VEE",
+        "amount": "6247.307260781604937468",
+        "usd": 10.97
+      },
+      {
+        "token": "0x056fd409e1d7a124bd7017459dfea2f387b6d5cd",
+        "symbol": "GUSD",
+        "amount": "10.26",
+        "usd": 10.27
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x631d206d49b930029197e5e57bbbb9a4da2eb00993560c77104cd9f4ae2d1a98",
+    "eip155:1:0x869469a7bf7f4f215f4a97320b9fb6e1ac6b520e8dfbd37e0d4880d45d54c0f1",
+    "eip155:1:0x4521da2250191b74a66787884c7ac88354d0241416363f2a56c44415fcdcb4a1",
+    "eip155:1:0x9013eb6174638bf241163d6915c17a4d13697c155a5ad8f3fd4589cfc4b287b1"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/MEVbadc0de_exp.sol",
+    "https://immunefi.com/blog/bug-fix-reviews/hack-analysis-0xbadc0de-mev-bot-september-2022/",
+    "https://santandersecurityresearch.github.io/blog/0xbaDc0dE"
+  ],
+  "notes": [
+    "Anchor is the approval transaction 0x59ddcf5e, the defect's first use (the DeFiHackLabs PoC forks at its block); the transferFrom that moved the WETH (0x631d206d) is in campaign. The bot's code is unverified: the trace shows SoloMargin calling the bot's callFunction (0x8b418713), the bot delegating to 0xdd6bd08c and then calling WETH.allowance, WETH.approve(0x6554ff0f, max) and the attacker contract. Its only storage reads are the implementation slot, slot 3 (holding SoloMargin, written by the bot's own trade 0x05b06779 at block 15623336) and slot 4; slot 3 is a value the bot's own trading pushes, not a reset (rule 8).",
+    "Reset is the operator's 0x5f850252 call (0xc4a8c93f, block 13823543) that wrote the implementation 0xdd6bd08c into the bot's slot 0, 352 blocks after the factory created the bot; slot 0 never changed again. The other route changes resets.mjs lists are its probes reverting on slot 3, not code changes.",
+    "Earlier exploits: every SoloMargin LogCall naming the bot as callee from its creation (block 13823191) to block 15700000 has the bot as account owner (66 logs, its own flash loans) except the anchor and three by 0x000000000000df8c (sender 0x000000000002e33d) at blocks 15627362-15627702, which drained the leftover MLP, VEE and GUSD and are in campaign.",
+    "Loss is the bot's depletion with loss.mjs: 1,101.65 WETH plus about $46 of the three small tokens."
+  ]
+}

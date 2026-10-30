@@ -682,6 +682,15 @@
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/ArcadiaFi_exp.sol"
     ]
   },
+  "eip155:137:0x31d1024de3c3d3e9f5567a6a00f5be989235bc0a4713e663913afcd0c9e0f836": {
+    "name": "Polygon Multicall multicallWithoutCheck arbitrary call",
+    "date": "2022-10-24",
+    "rule": "no-loss",
+    "reason": "Multicall 0x940ce652a51ebadb5df09d605dbeda95fdcf697b on Polygon (deployed block 34736730 by 0x066723f4) exposes multicallWithoutCheck(Call[]), which makes the contract call any target with any calldata and value. 0x2978231d's transaction 0x31d1024d (block 34743974, via 0xe1c66210) had it transfer its 619.74846 USDT. The contract only ever held the owner's 620 USDT and 700 MATIC, and the owner had already swapped the MATIC away (balance 0.0116 MATIC before the drain); the other token movements are the owner's own 1inch swaps. Loss about $620, below $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-10/MulticallWithoutCheck_exp.sol"
+    ]
+  },
   "eip155:137:0x70f7e0376c25dcd0dd9263bdd3a1936e21253d734559411a2457be70c1861458": {
     "name": "GAMEE GMEE deployer-key recoverERC721s drain",
     "date": "2024-01-22",
@@ -980,6 +989,17 @@
       "eip155:1:0x51dd3b46c580395df96fe9aa7a22f94c2367d55c559561f7c72aadbe608348ae"
     ]
   },
+  "eip155:1:0x804ff3801542bff435a5d733f4d8a93a535d73d0de0f843fd979756a7eab26af": {
+    "name": "LuckyTiger publicMint predictable lucky refund",
+    "date": "2022-08-24",
+    "rule": "no-loss",
+    "reason": "LuckyTiger 0x9c87a5726e98f2f404cdd8ac8968e9b2c80c0967 (deployed block 15388589) refunds 1.9x the 0.01 ETH mint price when keccak256(block.difficulty, block.timestamp) is odd, which a contract can compute before minting. The attacker contract 0x880df6cc30bb7934d065498ed9163a6e3b5aa67d (EOA 0x3392c914) minted only in lucky blocks in 0x804ff380 (block 15403431) and 0x95793cf2 (block 15403459): 61 mints paying 0.61 ETH and receiving 1.159 ETH, a net 0.549 ETH (about $909 at $1,655) out of the contract (loss.mjs nets the same-transaction mint payments, rule 11; gross refunds were $1,918). Over the contract's whole history 3.011 ETH came in and went out; no other address minted more than a few times at a winning ratio, so the incident's victim depletion stays below $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-08/LuckyTiger_exp.sol",
+      "https://github.com/0xNezha/luckyHack",
+      "eip155:1:0x95793cf28e842096fcabec2782addcaa19637165be1b566df26bbfe7715f2326"
+    ]
+  },
   "eip155:1:0x81e5f7158b7ef59f45864e34375bd52bb8227f51ef970fe07ec2abf1d421acf8": {
     "name": "Zerogoki validly signed false REI price",
     "date": "2021-08-08",
@@ -1071,6 +1091,15 @@
       "https://pro.edgex.exchange/en-US/news/article/ethervista-dex-loses-18600-swap-function-exploit",
       "eip155:1:0xc97ad886a4cbd022edc33deaa44656d66814fe3df1142d03802c96ce7632cc7a",
       "eip155:1:0x7adfb703f74f7e46ce4b7d79f12b9a5310406e6f220ade5f8e8c6fc987226eda"
+    ]
+  },
+  "eip155:1:0xb613c68b00c532fe9b28a50a91c021d61a98d907d0217ab9b44cd8d6ae441d9f": {
+    "name": "Bad Guys by RPF WhiteListMint unchecked chosenAmount",
+    "date": "2022-09-02",
+    "rule": "no-loss",
+    "reason": "Bad_Guys_by_RPF 0xb84cbaf116eb90fd445dd5aeadfab3e807d2cbac WhiteListMint(proof, chosenAmount) checks the Merkle proof and that the caller minted nothing before, but not chosenAmount, so the whitelisted attacker 0xbd8a137e79c90063cd5c0db3dbabd5ca2ec7e83e minted 400 NFTs for free in 0xb613c68b (block 15460094). The NFTs were unissued free-mint supply that no victim held: the attacker sent 170 to the project owner 0x09eff244 and 180 to its other address 0x40d0f1c7, and sold the rest through Seaport for about 2.42 ETH from buyers who took the NFTs plus 0.2223 WETH from accepted collection offers (about $350). Unbacked mints sold on the secondary market are not victim depletion (rule 11), and even counting the passive offer-makers the loss is under $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/BadGuysbyRPF_exp.sol"
     ]
   },
   "eip155:1:0xb6a07c2c591e43abc63add833aaf4d6ab47e66f05cf6b49a9dda7c2317b2d61c": {
@@ -1334,6 +1363,17 @@
     "reason": "LP owner 0xbe8351c14e5108a57a545dfa8669fa31aa6adc68 mistakenly transferred its Pancake V2 ATM/WBNB LP balance to the pair contract itself, and permissionless burn() redeemed the pair-held LP for the underlying 1,603.99 WBNB exactly as designed. No executable logic violated an invariant; the loss is a self-inflicted mis-transfer harvested by a watcher, not a vulnerability in executed code.",
     "refs": [
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-06/ATM_LP_Burn_exp.sol"
+    ]
+  },
+  "eip155:56:0x57aa9c85e03eb25ac5d94f15f22b3ba3ab2ef60b603b97ae76f855072ea9e3a0": {
+    "name": "Thunderbrawl House_Wallet claimReward reentrancy",
+    "date": "2022-09-30",
+    "rule": "no-loss",
+    "reason": "House_Wallet 0xae191ca19f0f8e21d754c6cab99107ed62b6fe53 (BNB Chain, deployed block 21781153 and funded with 3.31 BNB by its deployer) pays a winner amount*2 in claimReward and then calls sendReward, whose THBR NFT mint gives the receiver an onERC721Received callback, before deleting winners[id][player]; the attacker contract 0xfed1b640633fd0a4d77315d229918ab1f6e612f9 (EOA 0xbc62b9ba) re-entered claimReward from that callback. Its three transactions 0x57aa9c85 (block 21785005), 0xc105947f and 0xfa0c91d0 took 4.0588 BNB while staking 0.7333 BNB in shoot() in the same transactions: net 3.3255 BNB, $947.04 by loss.mjs (gross $1,155). The contract's whole history has 4.84 BNB in and 4.82 BNB out and no other player netted more than 0.14 BNB, so victim depletion is below $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/THB_exp.sol",
+      "eip155:56:0xc105947f9d47fc9397e6767fb48d8ad6758ecdbc5d2c766a9ade8d33a6f6d207",
+      "eip155:56:0xfa0c91d0767427c9287b2da2d92500673f019636ab22c01b5f772e0cdac28e95"
     ]
   },
   "eip155:56:0x6466cad9ad300054f0d560db5619a299f67883ad51b6aeafad3061d09674ac84": {
@@ -2224,7 +2264,10 @@
     "name": "Optimism Wintermute counterfactual Safe takeover",
     "date": "2022-06-05",
     "rule": "no-defect",
-    "reason": "The attacker replayed Wintermute pre-EIP-155 deployer transactions on Optimism to front-run deployment of the counterfactual Safe holding 20m OP, then transferred the tokens from an address they controlled. The theft path executes only CREATE and transfer logic as designed; no defect in executed EVM code selected or authorized the loss, so no knot exists to age. Operational deployer-replay hygiene, outside the EVM code-bug cohort."
+    "reason": "The attacker replayed Wintermute pre-EIP-155 deployer transactions on Optimism to front-run deployment of the counterfactual Safe holding 20m OP, then transferred the tokens from an address they controlled. The theft path executes only CREATE and transfer logic as designed; no defect in executed EVM code selected or authorized the loss, so no knot exists to age. Operational deployer-replay hygiene, outside the EVM code-bug cohort. The DeFiHackLabs PoC shows the mechanism: it forks Optimism at block 10607735 and calls the replayed Gnosis Safe ProxyFactory 0x76e2cfc1f5fa8f6a5b3fc4c8f4788f0116861f9b createProxy (nonce-based CREATE) until it returns Wintermute's address 0x4f3a120e72c76c22ae802d129f599bfdbc31cb81, with the attacker's own setup.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-06/Optimism_exp.sol"
+    ]
   },
   "optimism:2023-03-26:kokomo-finance-deployer-cbtc-takeover-exit-scam": {
     "name": "Kokomo Finance deployer cBTC takeover exit scam",
