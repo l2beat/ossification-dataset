@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BRAND",
+  "name": "BRAND trading bot contract exposes buyToken() to anyone",
+  "summary": "The unverified contract 0x831d6f9a that operator 0x70547a2c used to trade BRAND exposes buyToken() (0xa4821719) without access control; each call swaps the contract's configured 1 BNB for BRAND on PancakeSwap with no minimum output. The attacker flash-borrowed 300 WBNB from a DODO pool, bought 2.98m BRAND to push the price up, called buyToken() 25 times so the contract spent its whole 25 BNB at the inflated price, then sold its BRAND back for 323.18 WBNB and kept 23.18 WBNB.",
+  "targets": [
+    {
+      "address": "0x831d6f9aa6af85cead4ccec9b859c64421eeefd4",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x8e71ead4da1463b364ea5193593ce7ec14cbee71b3cd998ba2641519d102fea5"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 5780.75,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "25",
+        "usd": 5780.75
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/BRAND_exp.sol",
+    "https://x.com/MetaSec_xyz/status/1720035913009709473",
+    "eip155:56:0x5974db3b13a1de0746df0b5dd9afd266c06ac0804434354008ce494e004f060f",
+    "eip155:56:0x9024a8ac62ce67f38f4e2ada08ca437fa4351a15abe262e320c512680aaaaece"
+  ],
+  "notes": [
+    "The contract is unverified; the mechanism is read from the anchor's trace (each buyToken call does one swapExactETHForTokensSupportingFeeOnTransferTokens of 1 BNB through the PancakeSwap router to the contract itself). Reset is its deployment by 0x70547a2c (0x8e71ead4, block 33135933), 2.7 hours before the anchor. The only later write to a slot the exploit read is updateTransactionAmount lowering the per-call amount from 10 to 1 BNB (slot 3, 0x67853698, block 33137804), a parameter that only changes the loss size (rule 8).",
+    "Earlier exploits: campaign.mjs on buyToken from deployment to the chain head finds 59 exercises; the 58 before the anchor were sent by the operator 0x70547a2c itself (direct buyToken calls and its exec() trading loop), and none follow the anchor: the operator sold the leftover BRAND (0x5974db3b, 0.6124 BNB) and withdrew the remaining 0.9281 BNB (0x9024a8ac) within three minutes.",
+    "Loss is the 25 BNB that left the contract in the anchor at $231.23 (loss.mjs; rule 11). BRAND has no DefiLlama price; the BRAND the contract received realised 0.6124 BNB when the operator sold it, a later recovery that is not subtracted. The attacker kept 23.18 WBNB, the figure DeFiHackLabs reports."
+  ]
+}

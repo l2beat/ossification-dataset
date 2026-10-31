@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Neutra Finance",
+  "name": "Neutra LP migration Convert prices the old LP from spot reserves",
+  "summary": "Neutra's Convert contract swaps old NEU/WETH Camelot LP for new NEU1/WETH LP; getAmountOut() values the deposited LP by the WETH it represents at the old pair's current getReserves(), so pushing WETH into the old pair inflates the payout. The attacker flash-loaned 1,000 WETH from Balancer, added 0.15 WETH and 387 NEU of liquidity for 7.39 old LP, swapped 849 WETH into the old pair, called convert(7.39e18) and received 951.74 new LP (all but 0.26 of the contract's balance), swapped back, burned the new LP for 13.31 WETH and 68,157 NEU1 and sold the NEU1 for 10.62 WETH, keeping 23.57 ETH.",
+  "targets": [
+    {
+      "address": "0xdbd3d6040f87a9f822839cb31195ad25c2d0d54d",
+      "reset": {
+        "kind": "config",
+        "tx": "0x00bd836aa0b541c86b44126c8e65f62d2fd068a25a1004de87c8affc0fb05d62",
+        "address": "0xdbd3d6040f87a9f822839cb31195ad25c2d0d54d",
+        "slot": "0x1"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 49234.36,
+    "assets": [
+      {
+        "token": "0x2ea3ca79413c2ec4c1893d5f8c34c16acb2288a4",
+        "symbol": "CMLT-LP",
+        "amount": "951.735531148986388193",
+        "usd": 49234.36
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-08/NeutraFinance_exp.sol",
+    "https://twitter.com/phalcon_xyz/status/1686654241111429120",
+    "eip155:42161:0xa33bd912239618a034965364aada6e166f91da26b8d97d353f2745cfb5411d27"
+  ],
+  "notes": [
+    "Reset is setConfigs(0x65ebc8cf old NEU/WETH pair, 0x2ea3ca79 new NEU1/WETH pair) (inputToken, slot 1; outputToken in slot 2 set in the same call), 669 blocks after the contract's deployment (0x99bcabc6, block 103452926): it named the pair whose spot reserves price the conversion. The Convert is a plain verified contract (no proxy); its only later governance calls before the anchor are a withdrawToken (block 109668501), a balance change.",
+    "The five earlier Converted events (blocks 103455368-106171394) paid 1.03-1.22 new LP per old LP, ordinary migrations; the anchor got 128.8 per old LP. No convert happened after the anchor before gov paused the contract (0xa33bd912, block 117285009).",
+    "Loss is the 951.74 NEU1/WETH LP that left the Convert at DefiLlama's LP price 13 minutes before the anchor ($51.73, loss.mjs), i.e. its 13.307 WETH plus 68,157 NEU1 at $0.36. The attacker realised 23.928 ETH ($44.3k at $1,850.57) because selling the NEU1 into the pair it had just shrunk cost about 20% slippage; that is ordinary price impact on a priced token, not a market that could not absorb it, so rule 12 is not applied. The 7.39 old LP the attacker left in the Convert is not subtracted (rule 11)."
+  ]
+}

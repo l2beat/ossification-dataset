@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "KR",
+  "name": "KR sellKr pays out the contract's liquidity without taking the caller's KR",
+  "summary": "The unverified KR token contract holds the KR/USDT PancakeSwap LP, and its sellKr(amount) removes the LP share holding amount of KR, keeps or burns the KR and pays 85% of the released USDT to the caller (5% to the bonus address, 10% to 0x44a07c78), without debiting any KR from the caller or checking a per-user limit. With no KR, the attacker called sellKr with 94% of the pair's KR (101.56m), so the contract burned 1.346m of its 1.437m LP and paid it 15,174 USDT of the 17,852 released; two more calls (5.86m and 0.94m KR) took the rest, leaving the pair 5.8 USDT.",
+  "targets": [
+    {
+      "address": "0x15b1ed79ca9d7955af3e169d7b323c4f1eeb5d12",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xeaeb0f689e3a25b56b9963dc52c9484410755d796f7e5cc949c28dc9dbd61935"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 19052.48,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "19052.307092752601608566",
+        "usd": 19052.48
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/KR_exp.sol"
+  ],
+  "notes": [
+    "KR is unverified; the mechanism is read from the transactions: sellKr's state reads cover no per-caller limit (the setUSDTLimit writes never touch a slot the anchor read) and no caller balance, and the callers' KR balances are unchanged by their sellKr calls. Reset is the token's deployment (0xeaeb0f68, block 33201632), which also created the KR/USDT pair; the later writes to slots the anchor read are setBonusAddress (slot 12, a fee recipient) and balances.",
+    "Earlier exercises: campaign.mjs on sellKr from deployment to the chain head finds two calls before the anchor, by holder 0xc9cf57d5 (0x9b8fcc63 and 0x14b9e48c, blocks 33264272-33264285), each selling 1,000 KR of the 1,362 it held for 0.149 USDT, the market value of 1,000 KR; its KR was not debited, but these are ordinary sale-sized calls by a holder and are not counted as exploits. All later sellKr callers held no KR: the attacker's two follow-ups and five small copycat calls by unrelated bots (0x9448ad2f, 0x407f7dbd, 0x5d730c03; 2023-11-09 to 2025-07-04) are the campaign.",
+    "Loss is the USDT the KR contract's LP position released over the campaign (loss.mjs on the pair), 19,052.31 USDT, including the 15% the contract forwarded to its bonus address 0xa11c1c39 and to 0x44a07c78 (fees are not subtracted, rule 11); the attacker received 16,190 USDT. The 108.4m KR released went back to the KR contract or was burned by the same logic and is unpriced, valued at 0 (rule 12). DeFiHackLabs' '~5 ETH' figure does not match the chain."
+  ],
+  "campaign": [
+    "eip155:56:0xbafe05fd604e03a52b8606671e765f9a46cd39ac0ed1f59f0ec7562b87c719bc",
+    "eip155:56:0xc446c67ceae627e45711773778bfdfc6d2aaffad482feded78e4ba1efe505337",
+    "eip155:56:0xdd1fcb8aa22d106753c21aa209bce84dc459f67a7413cea0c2697f01b1266fa5",
+    "eip155:56:0x7ad2b82d8279a8c063d62477f6797858dfad3d4af03806aecb9cd850dd0244ae",
+    "eip155:56:0x156f68a35734c01b72da0aba6ccda85962b6794277bf86d524c91cec5bd6d2e9",
+    "eip155:56:0xffe37f35ec08dbe1bd6192d1e7104b1b3c82899ca18f71b31165e3c7265c1180",
+    "eip155:56:0x0589a1812c279d97df9922ed56ac023ed04a8c8137e94262a8688d4e8ffbe4bc"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "pSeudoEth",
+  "name": "pSeudoEth transfer to self inflates the sender's balance",
+  "summary": "The unverified pSeudoEth (pEth) token increases an address's balance when it transfers to itself instead of leaving it unchanged, so a Uniswap V2 pair that skims its excess to itself grows its own pEth balance. The attacker flash-loaned 51,970.86 WETH from Balancer, bought 1.538 pEth from the pEth/WETH pair, sent 1.384 pEth back to the pair and called skim(pair) ten times, which raised the pair's pEth balance from 1.54 to 101.54 while its reserve stayed put; selling 0.154 pEth then counted the whole inflated surplus as input and returned 51,972.30 WETH, leaving the attacker 1.4375 WETH of the pair's 1.4598.",
+  "targets": [
+    {
+      "address": "0x62abdd605e710cc80a52062a8cc7c5d659dddbe7",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x9b92ef6b6174fc404282ee1aa943a989947223b89e6b056e7597533089630490"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2335.18,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "1.43754528900789197",
+        "usd": 2335.18
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-10/pSeudoEth_exp.sol",
+    "https://twitter.com/CertiKAlert/status/1710979615164944729"
+  ],
+  "notes": [
+    "pEth is unverified; the mechanism is read from the anchor's state: the pair's pEth balance rose from 1.538 to 101.538 over the ten self-skims with no matching debit, while its reserve stayed at 1.546. Reset is the token's deployment (0x9b92ef6b, block 17424494). The only later write resets.mjs finds to a slot the exploit read, other than balances, is the deployer's 0x89edd9ef call (0xe68c2ecd, block 17424530) setting slot 0x11 to the unverified contract 0x4ae3f1b6; the token consults it only in the attacker's final, reverted skim, so the exploit did not need it. The pEth/WETH pair 0x2033b54b (created block 17446157) is a standard Uniswap V2 pair and not a target.",
+    "Earlier exploits: the pair's six WETH outflows before the anchor (campaign.mjs --outflows from the token's deployment) are ordinary sales of at most 0.23 WETH in June-July 2023, and its reserves were last synced on 2023-06-28 before the anchor; the seven later outflows are under 0.031 WETH each.",
+    "Loss is the pair's 1.4375 WETH net outflow (loss.mjs), priced at $1,624.42; the attacker's 51,970.86 flash-loaned WETH went in and out in the same transaction (rule 11)."
+  ]
+}

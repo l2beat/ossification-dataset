@@ -1354,6 +1354,26 @@
       "https://twitter.com/HypernativeLabs/status/1650382589847302145"
     ]
   },
+  "eip155:56:0x0d13a61e9dc81cfae324d3d80e49830d9bbae300f760e016a15600889a896a1b": {
+    "name": "LaEeb transfer-and-skim triggers the token's liquify routine",
+    "date": "2023-10-30",
+    "rule": "no-loss",
+    "reason": "The attacker (0x7cb74265, contract 0x91809810) flash-borrowed 8.67 WBNB from a DODO pool, bought LaEeb and ten times sent LaEeb to the LaEeb/WBNB pair 0x3921e8cb and skimmed it back; each transfer ran LaEeb 0xa2b8a15a's fee and swap-and-liquify logic against the pair, and selling back left it 1.7433 WBNB (about $397 at $227.92). The whole value moved came from the token contract's own BNB: its balance fell from 3.573 to 0.070 BNB, of which 1.43 WBNB stayed in the pair as added liquidity, 0.33 went to its fee wallet 0xac109c80 and the rest to the attacker; even counting all 3.50 BNB as lost the total is about $798. A WBNB outflow scan of the pair (campaign.mjs --outflows, blocks 32,000,000-34,500,000) finds no other drain (three later outflows of 0.25, 0.08 and 0.02 WBNB). Loss stays under $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-10/LaEeb_exp.sol",
+      "https://x.com/MetaSec_xyz/status/1718964562165420076"
+    ]
+  },
+  "eip155:56:0x13e75878a21af9a9b2207f5d9e18f19a43083a9ffbac36df5a7d4d67a52c164f": {
+    "name": "Swamp Finance public earn() lets a flash deposit capture harvested BELT",
+    "date": "2023-11-01",
+    "rule": "no-loss",
+    "reason": "Attacker 0xfe2105e1 (contract 0x22ad9eef) flash-borrowed 3,100 WBNB and 150k USDT, borrowed 500 BNB on Venus against the USDT, deposited 3,600 WBNB into beltBNB and Swamp's NativeFarm 0x33adbf5f pool 135, called the strategy 0xda937ddd's public earn(), which sold about 6,400 harvested BELT (about $448 at $0.070) for 1.906 WBNB and reinvested it, and withdrew with its share of the compounded rewards: its profit was 0.5491 WBNB (about $123 at $224.34). The same bot made two similar calls on other farms that day (0xc801ff7a, 0.0464 ETH; 0xae1cbe99, 0.2429 WBNB). Even the whole harvested reward is under $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/SwampFinance_exp.sol",
+      "https://x.com/MetaSec_xyz/status/1720373044517208261"
+    ]
+  },
   "eip155:56:0x1bae633eda9b3d98999ea116bc403712eaa07093ec32bd6d559085cc4607f5b8": {
     "name": "SQTokenStaking hardcoded backdoor beneficiary",
     "date": "2026-05-12",
@@ -1374,6 +1394,16 @@
     "date": "2026-06-01",
     "rule": "keys",
     "reason": "Attacker 0x2201037A1755eC48eC5F00Fea21A10A9E56f2Dd8 minted 99,000,000 TSR from the null address in tx 0x25093e573c116562c8839dc67a15ac21761271006a8dfe50b18fa475564bfcd1 at 2026-06-01T11:38:25Z after seizing ownership control of the contract, then dumped for about $2.4-2.5m USDT and bridged to Ethereum (1,285.5 ETH through Tornado Cash). The mint executed through the owner's mint authority as designed; no permissionless mint flaw in the deployed logic is evidenced. Re-enter only if a non-privileged mint path is verifiably pinned."
+  },
+  "eip155:56:0x2b251e456c434992b9ac7ec56dc166550c4cd7db3adefbf7eb3ab91cef55f9bf": {
+    "name": "XAI burn mixes token and reflected units, shrinking the pair's balance",
+    "date": "2023-11-15",
+    "rule": "no-loss",
+    "reason": "XAI (CoinToken 0x570ce7b8, deployed block 33502676) implements burn() by subtracting the token amount from the caller's reflected balance _rOwned and from _tTotal, which raises the reflection rate and shrinks every holder's balance, the pair's included. The attacker (0xea75aec1, contract 0x7b11ae85) bought XAI with 2,562 flash-borrowed WBNB, burned 99.99bn of the 100bn supply, synced the XAI/WBNB pair 0xe633c651 (created four blocks earlier with 1.09 WBNB) and sold back, keeping 0.5308 WBNB (about $129 at $243.79). The pair's remaining 0.559 WBNB was gone by block 33,600,000; the whole pool was 1.09 WBNB (about $266). Loss stays under $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/XAI_exp.sol",
+      "https://x.com/MetaSec_xyz/status/1724683082064855455"
+    ]
   },
   "eip155:56:0x2b6b411adf6c452825e48b97857375ff82b9487064b2f3d5bc2ca7a5ed08d615": {
     "name": "WETC_Token",
@@ -1450,6 +1480,16 @@
       "eip155:56:0xad37d3e77e930cb233a5dd3183116157182f6237d05937b4d634fff233cc7b77"
     ]
   },
+  "eip155:56:0x7260ad0e4769ae68f0a680356c63140353c18d7be1b86a8c4e99a0fc3b6842c1": {
+    "name": "Ferrum FiberRouter swapAndCrossOneInch arbitrary calldata pulls approvals",
+    "date": "2023-11-28",
+    "rule": "no-loss",
+    "reason": "FiberRouter 0x4826e896 (BSC, deployed by Ferrum's 0x4da35bf3 at block 33856519, 15 hours earlier) forwards caller-supplied calldata to the caller-chosen router in swapAndCrossOneInch, so the attacker's constructor (0xfbe9b230, from 0x4d9c5586) had it call USDC.transferFrom(0x4da35bf3, attacker, 59.01 USDC) on Ferrum's own deployer, which had approved the router. campaign.mjs on swapAndCrossOneInch from deployment to the chain head finds this as the only third-party pull; the other three calls are the deployer's own (0x5f71229e, 0x928d3c41) and a bot call that moved dust (0x0a25ee7b). The deployer's other FiberRouter deployment found on Polygon (0x5cd2ffc2) has only the deployer's own eight transactions. Loss is 59.01 USDC.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/FiberRouter_exp.sol",
+      "https://x.com/MetaSec_xyz/status/1729323254610002277"
+    ]
+  },
   "eip155:56:0x7ca710d5f575276e12ed7a3617a65002159c87d512fb19e6f59bc31b46b19c95": {
     "name": "The Sandbox SAND BNB Chain OFT delegate takeover",
     "date": "2026-08-21",
@@ -1482,6 +1522,16 @@
     "date": "2024-11-10",
     "rule": "privileged",
     "reason": "The pump-and-withdraw drain (pair 0xadc4eca2 loses 486995.55 USDT) needs buy caps far above the defaults: buyMaxValue()/tolDayBuyMaxValue() are 100e18/20000e18 at block 43881715. Owner 0x207ce5c0 called setBuyValue(1e25,1e25) in 0xd0925f155ac6a5961754391a3ff4f7bd8a9abd43774ca2f06be9aa486df619a8 (block 43881716, index 180), one block before the exploit (43881717, index 2). The owner was funded with 0.01 BNB by LP provider 0x5b55eb22 at 43881709; 0x5b55eb22 had itself tried the identical call and reverted (0xda110920..., block 43881658). The attacker's exploit contract 0x00c0f54d was deployed at 43850396, about 26h before the caps were raised. Earlier attacker 92930b45 withdraw+sell transactions (e.g. 0xd1f5a7f5..., block 43878820) have no in-transaction pump; pair USDT history shows 0x85808250 is the only pump-and-withdraw."
+  },
+  "eip155:56:0x8b528372b743b4b8c4eb0904c96529482653187c19e13afaa22f3ba4e08fbfbb": {
+    "name": "EHX transfer-and-skim triggers the token's liquify routine",
+    "date": "2023-11-15",
+    "rule": "no-loss",
+    "reason": "Attacker 0xddaaedcf (contract 0x9d0d28f7) ran six transactions (0x8b528372, 0x623b4357, 0xf1985a12, 0x27945baf, 0x923f1b7a, 0x415cb91e; blocks 33503912-33507720), each buying EHX 0xe1747a23 with flash-borrowed WBNB, looping transfer-to-pair plus skim on the EHX/WBNB pair 0x3407c539 so the token's fee logic ran, and selling back. The pair held only 0.118 WBNB before and gained WBNB overall; the value came from the EHX contract's own BNB, which fell from 5.288 to 3.176 BNB (2.11 BNB, about $515 at $243.79), and the attacker withdrew 0.9624 WBNB in total (0x758d0083 and 0xb5482813, about $235). Loss stays under $1,000.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/EHX_exp.sol",
+      "https://x.com/MetaSec_xyz/status/1724691996638618086"
+    ]
   },
   "eip155:56:0x8de43ba77f9a14ecff1268acb9d7c9bf3afe1f2a45bd8d8681d824a2460000f6": {
     "name": "Cysic bridge unauthorized CYS mint",
