@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "AM",
+  "name": "AM deferred sell burn empties the AM/USDT pair after a zero-address buy",
+  "summary": "AM's _update records each sell's net amount in toBurnAmount and, on the next sell, first burns the whole toBurnAmount from the AM/USDT pair 0x84858eff and syncs, with no cap against the pair's balance. Buys are restricted to the staking contract, but transfers to or from the zero address skip every check. With USDT flash-borrowed from two lenders and Venus, the attack contract sold 4,303.16 of its 5,063.55 AM (toBurnAmount = 4,303.16), bought the pair's other 3,513,745 AM for 109.04M USDT with address(0) as recipient, so the pair held exactly toBurnAmount, then a 6-wei sell burned it and synced the reserve to zero AM; after adding 18.64M USDT and 1 wei AM and syncing, it sold 0.85 AM for 127.82M USDT, netting 133,376 USDT from the pair.",
+  "targets": [
+    {
+      "address": "0x27f9787dbdca43f92ccc499892a082494c23213f",
+      "reset": {
+        "kind": "config",
+        "tx": "0x56df58ff8250c67e45edfce9127835d935cb79becca42957309f32872b556ca8",
+        "address": "0x27f9787dbdca43f92ccc499892a082494c23213f",
+        "slot": "0x9"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 133352.36,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "133376.108623827613226007",
+        "usd": 133352.36
+      }
+    ]
+  },
+  "refs": [
+    "https://api.llama.fi/hacks"
+  ],
+  "notes": [
+    "Reset is setTPair (0x56df58ff, block 79486713, 2026-02-05), which stored the pair 0x84858eff in uniswapV2Pair (slot 0x9), the address the deferred burn debits; it followed the deployment (0x7fd659ba, block 79486343) by about three minutes. Later writes the exploit read are lastBurnTime, toFeeAmount and toBurnAmount, which are live values (rule 8).",
+    "Earlier exploits: campaign.mjs --outflows over the pair's USDT from the deployment finds no drain before the anchor; the largest earlier outflow is an ordinary 317 USDT sell (0x775dc382).",
+    "Loss is the pair's net USDT outflow in the anchor (loss.mjs, priced at 0.99982): the attacker EOA 0x0b9a1391's 131,572.53 USDT profit, the 1,800 USDT flash-loan fee it paid from the drain, and 3.58 USDT of AM's fee swap sent to its market wallet; the 3.52M AM burned from or bought out of the pair are unpriced."
+  ]
+}

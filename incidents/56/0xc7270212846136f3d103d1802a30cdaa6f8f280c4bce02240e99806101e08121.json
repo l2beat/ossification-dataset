@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "PGNLZ",
+  "name": "PGNLZ pre-launch deferred sell burn empties the pair before the sell",
+  "summary": "Before trading opens, PGNLZ's _handleSellTax adds each sell's net amount to pendingBurnFromLP, and the next sell of at least 10 PGNLZ first calls _executeBurnFromLP, which moves pendingBurnFromLP (capped at the pair's balance) from the PancakeSwap USDT/PGNLZ pair 0x8cd8e57b to the dead address and syncs, before the seller's tokens reach the pair. With BTCB flash-borrowed from Moolah as Venus collateral for 30M USDT, the attack contract bought 978,266 of the pair's 982,507 PGNLZ for 23.34M USDT with the dead address as recipient (fee-exempt, so the trading gate was skipped), then sold 17.07 PGNLZ: the deferred burn took the remaining 4,240 PGNLZ and left a reserve of 1e-8 PGNLZ, so 14.85 PGNLZ bought 23.44M USDT, the pair's original 100,901 USDT on top of the attacker's own.",
+  "targets": [
+    {
+      "address": "0x6b923cf1d592e6aa07ea7249d817a843c30ac69e",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x91c2449ce3a51cd044cf9b38f87a1382740adc3b1e249593e50731e610410e16"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 100769.4,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "100901.091670654947873079",
+        "usd": 100769.4
+      }
+    ]
+  },
+  "refs": [
+    "https://api.llama.fi/hacks",
+    "https://www.odaily.news/en/newsflash/466117"
+  ],
+  "notes": [
+    "Reset is the token's deployment (block 77074953, 2026-01-24), which also created the pair; tradingEnabled was still false at the exploit (read at block 77721026) and the burn path needs no owner configuration. The pair held 100,901.107 USDT and 982,506.561 PGNLZ before the exploit.",
+    "The attacker EOA 0xfe95ecc0 obtained the 17.07 PGNLZ it sold from the project's investment contract 0x5f76b063 (0x90fe13a4, 0x98c5254f) and deployed the attack in the same transaction as the exploit; its PGNLZ purchases and claims before it moved no pair funds.",
+    "Earlier exploits: campaign.mjs --outflows over the pair's USDT from the deployment lists no earlier drain; the largest earlier outflow, 63,236.36 USDT in 0x42c51fbe (block 77716506), is the deployer 0x12a8b3c0 removing its own liquidity, and the next ones are ordinary sells (the deployer's 900 USDT sell 0x8f435cb2 and the 4,888 PGNLZ sell 0x7e16bfdc that left pendingBurnFromLP at 4,240.11 PGNLZ, a live accumulator rather than a reset).",
+    "Loss is the pair's net USDT outflow in the anchor (23,438,853.46 out, 23,337,952.37 in), equal to the attacker EOA's 100,901.09 USDT profit, priced by loss.mjs at 0.99869. The 982,491.71 PGNLZ the pair lost (bought to the dead address with the attacker's USDT, then burned) are unpriced and realised nothing for the attacker (rule 12)."
+  ]
+}
