@@ -107,6 +107,16 @@
     "rule": "offchain",
     "reason": "AMBCrypto (https://ambcrypto.com/ai-linked-wallet-drained-via-prompt-injection-in-bankr-exploit/) and CoinTurk (https://en.coin-turk.com/bankr-halts-swaps-after-440000-ai-exploit-hits-users/) report that attackers used prompt injection and social engineering against Bankr's AI agent, which controls custodial user wallets, to have it transfer funds out of 14 wallets, about 440k USD in linked addresses, after which Bankr paused swaps and transfers. The transfers were validly signed by the agent's own keys on instruction from its offchain model; no contract failed."
   },
+  "base:2026-07-25:bankrbot-account-and-wallet-compromise": {
+    "name": "Bankrbot X account and project wallet compromise",
+    "date": "2026-07-25",
+    "rule": "keys",
+    "reason": "SlowMist reports that the Bankrbot X account was taken over and posted fake airdrop links while the project's Bankr wallet, which had no MFA, was drained of about 1.5 billion BNKR that were then dumped ($479,885); DefiLlama classifies it as social account takeover on Base. The wallet's transfers were signed through the compromised account; no contract defect is reported. Separate from the May 2026 Bankr prompt-injection exclusion.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
   "bitcoin:2024-04-29:rain-exchange-custodial-wallet-drain": {
     "name": "Rain exchange custodial wallet drain",
     "date": "2024-04-29",
@@ -330,6 +340,16 @@
     "date": "2024-07-26",
     "rule": "non-evm",
     "reason": "Casper's preliminary incident report (https://www.casper.network/news/casper-blockchain-security-update-preliminary-incident-report) states that on 2024-07-26 an elevation-of-privilege vulnerability in the Casper node let an attacker gain access to 13 accounts and move about 6.7m USD, after which validators paused consensus until a patch on 2024-07-31. Casper is a WebAssembly layer-1, not an eip155 chain, so there is no EVM code to age."
+  },
+  "chia:2026-08-23:warp-green-chialisp-cat-bridge": {
+    "name": "warp.green Chialisp puzzle accepts worthless CATs as burned wUSDC",
+    "date": "2026-08-23",
+    "rule": "non-evm",
+    "reason": "SlowMist reports that a flaw in warp.green's Chia-side Chialisp puzzle let the attacker present worthless CAT tokens as burned wUSDC, obtain validator signatures and withdraw about $93k USDC from the Base and Ethereum bridge contracts. The EVM contracts released funds on correctly signed messages; the defect is in Chia code, outside eip155.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
   },
   "constellation:2026-08-24:pacaswap": {
     "name": "PacaSwap DEX",
@@ -770,6 +790,19 @@
     "date": "2021-08-12",
     "rule": "privileged",
     "reason": "DAO Maker's own statement of 2021-08-12 says the company 'faced malicious use of one of our wallets with access to admin privileges', and the chain agrees. The sender 0x0eba461d9829c4e464a68d4857350476cfb6f559 had been operating DAO Maker admin functions since April 2021 (changeAssetDepositState on the SHO deposit contract 0x41b856701bb8c24cece2af10651bfafebb57cf49 on 2021-04-12 and 2021-04-21, addOrganizer/removeOrganizer/changeOrganizerAddress on 0x380c2c68ebcb38473e91b32e19ffb5519d7822b7 through 2021-08-03). At 2021-08-12T01:17:13Z it deployed the helper contract 0x1c93290202424902a5e708b95f4ba23a3f2f3cee (verified source, contract 'XXX', hardcoding victim 0x41b856..., collector 0xd8428836ed2a36bd67cd5b157b50813b30208f50 and USDC), then at 01:20:53Z and 01:27:39Z called grantRole(bytes32,address) on the victim to authorise it. The helper loops over user addresses calling selector 0x4b4f892a getUserAvailableBalance(address,address) and then 0x50b158e4 withdrawFromUser(address,address,uint256) - a role-gated administrative function that executed exactly as written for a caller holding the role. The first successful drain is 0x26aa86261c834e837f6be93b2d589724ed5ae644bc8f4b8af2207e6bd70828f9 at block 13007501 index 7, status 1 (an earlier attempt at 01:24:48Z, 0x11671333..., reverted before the second grantRole); about thirty further successful h(address[]) calls follow through 2021-08-12T18:18:02Z from 0xd8428836..., 0xed3112d1cf4895eb15f52e71f492235ed8ca7897, 0x414354db069cea6fa536c3d2ea1bbf5730b7715c and others. eth_getLogs over USDC and USDT for blocks 13006975-13008611 shows 0x41b856... emitting 5,252 outbound USDC transfers totalling 7,387,245 USDC in that window, matching DAO Maker's '5251 users affected, approximately 7m'. This is the August incident and is distinct from the already-admitted September 2021 record incidents/1/0xd5e2edd6089dcf5dca78c0ccbdf659acedab173a8ab3cb65720e35b640c0af7c.json (unprotected init() on the vesting minimal proxies). No deployed-code invariant failed here: an authorised administrative withdrawal path was used by whoever controlled the admin key."
+  },
+  "eip155:1:0x2be8704f5a59b69e0b71f64aefdb99eb0e8ae9fb3926147c581910d71bcf3e65": {
+    "name": "JaredFromSubway MEV bot lured into approving attacker wrappers",
+    "date": "2026-06-20",
+    "rule": "offchain",
+    "reason": "Blockaid, CertiK and SlowMist report that over several weeks the attacker deployed fake WETH/USDC/USDT wrappers and pools that the jaredfromsubway bot's automated strategy traded against, so the bot operator's own transactions (e.g. 0xf570bdf2, block 25360599, from 0xae2fc483 to bot 0x1f2f10d1) approved the attacker's wrapper contracts, which skipped transferFrom and left the allowances unspent. In 0x2be8704f (block 25360696, sender 0x5af38735) 66 activated bait contracts used those allowances to transferFrom about 2.87m USDC, 2.03m USDT and 1,474 WETH (about $7.5m) straight out of the bot; no bot code ran in the drain. The flaw is in the bot's offchain trade selection, which granted approvals to attacker-chosen spenders, comparable to approval phishing; SlowMist states it was not a vulnerability in the victim contracts.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks",
+      "https://www.certik.com/blog/jaredfromsubway-mev-bot-incident-analysis",
+      "https://blockaid.io/blog/the-predator-becomes-the-prey-how-a-counter-mev-honeypot-drained-75m-from-jaredfromsubway",
+      "https://www.theblock.co/post/405464"
+    ]
   },
   "eip155:1:0x2ff7c23dca7e9a86c70004696802cbd37d6a77fc4f3e02522b16617045b764f6": {
     "name": "Yearn StrategyLlamaLendConvex dust deposit redemption",
@@ -2168,6 +2201,18 @@
     "rule": "privileged",
     "reason": "Voltage's post-mortem (https://medium.com/@voltage.finance/voltage-finance-transparency-post-mortem-report-simple-staking-hack-ecde06c6b8bc), summarized in SlowMist's March report (https://slowmist.medium.com/slowmist-monthly-security-report-march-estimated-losses-at-33-99-million-34bffcceda67), says a developer who deployed the SimpleChefStaking contracts never transferred their ownership to the team, and on 2025-03-18 171,027.20 USDC.e and 151,085.87 USD of WETH were withdrawn from the Simple Staking pools; the team revoked his access and filed police reports. The withdrawal ran through retained owner authority; no permissionless defect is evidenced."
   },
+  "harmony:2026-08-11:harmony-cross-shard-receipt-replay-mint": {
+    "name": "Harmony cross-shard receipt replay ONE mint",
+    "date": "2026-08-11",
+    "rule": "offchain",
+    "reason": "QuillAudits, Rekt and SlowMist report that the attacker replayed used cross-shard receipts (and possibly an empty-signature quorum bug for old blocks) in Harmony's node software to mint billions of ONE without a matching debit; validators stopped it with emergency release v2026.1.1, which changed the quorum calculation, and the chain was rolled back to before the exploit. The defect is in the Go consensus and cross-shard code, not in executed EVM contracts.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks",
+      "https://www.quillaudits.com/blog/hack-analysis/harmony-receipt-replay-exploit",
+      "https://alpha.rekt.news/harmony-rekt2"
+    ]
+  },
   "haven:2021-07-03:haven-protocol-xusd-offshore-mint-validation-flaws": {
     "name": "Haven Protocol xUSD offshore mint-validation flaws",
     "date": "2021-07-03",
@@ -2213,6 +2258,16 @@
     "rule": "non-evm",
     "reason": "The DefiLlama hacks API entry (https://api.llama.fi/hacks, name Virtue, date 1787875200, 894,500 USD) lists chain [\"Iota\"] and language \"Move\", and DefiLlama protocol 6455 (slug virtue, app.virtue.money) lists chains [\"IOTA\"], i.e. IOTA Rebased Move rather than IOTA EVM."
   },
+  "kiichain:2026-08-22:kiichain-cosmos-evm-staking-precompile-underflow": {
+    "name": "KiiChain Cosmos EVM staking precompile underflow",
+    "date": "2026-08-22",
+    "rule": "offchain",
+    "reason": "SlowMist reports that the attacker abused bugs in the shared Cosmos EVM module (an arithmetic underflow in the staking precompile's balance write-back after delegation, combined with vesting-account handling), deploying a contract to a vesting account and repeating it 18 times to drain about 148.3m KII; KiiChain halted at block 9355723. The precompile is Go node software, not executed EVM bytecode, as in the MANTRA exclusion.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
   "liquid:2026-09-06:liquid-network-unbacked-peg-in-mint": {
     "name": "Liquid Network unbacked peg-in mint",
     "date": "2026-09-06",
@@ -2252,6 +2307,15 @@
     "date": "2026-05-20",
     "rule": "non-evm",
     "reason": "The flaw is in Haveno's offchain trade-protocol messaging (a fake out-of-order arbitrator ACK overwrote the arbitrator address before multisig creation), and the 7,000 XMR moved inside Monero multisig wallets. Haveno clients are Java, the defect is message handling in peer software, and Monero has no eip155 chain id and no EVM contract state. There is no executed EVM code to age."
+  },
+  "monero:2026-06-08:openmonero-p2p-server-root-breach": {
+    "name": "OpenMonero P2P server root breach",
+    "date": "2026-06-08",
+    "rule": "offchain",
+    "reason": "SlowMist reports that OpenMonero's P2P trading platform server was breached on 2026-06-08 and the attacker gained root access and took about 200 XMR (about $62.9k); the owner said on Telegram that all funds were lost and that the attack was not at the application layer. The funds were Monero held by a centralised server, so no EVM code or eip155 chain is involved.",
+    "refs": [
+      "https://hacked.slowmist.io/"
+    ]
   },
   "multiversx:2026-09-19:multiversx": {
     "name": "MultiversX",
@@ -2350,6 +2414,17 @@
     "rule": "privileged",
     "reason": "CertiK's findings reported by Cointelegraph (https://cointelegraph.com/news/4m-exit-scam-suspected-as-kokomo-finance-flies-off-radar-token-plunges) and QuillAudits' breakdown (https://medium.com/coinmonks/decoding-kokomo-finance-4-million-rug-pull-quillaudits-d5d027522bf3) show the KOKO deployer reset reward speeds, paused borrowing and replaced the cBTC market implementation, after which 0x5a2d... was approved over 7,000 So-WBTC and swapped it out for about 4m USD; the team then deleted its accounts. The drain ran through admin-controlled implementation and parameter changes by the project itself."
   },
+  "oraichain:2026-08-08:oraichain-evm-transfer-path-unauthorized-mint": {
+    "name": "Oraichain cross-chain transfer path unauthorized ORAI mint",
+    "date": "2026-08-08",
+    "rule": "non-evm",
+    "reason": "Oraichain (reported by Coinfomania and SlowMist) says a vulnerability in its EVM cross-chain transfer path enabled unauthorized minting of native ORAI; the network was halted from 04:00 UTC on 2026-08-09 and the team burned the unauthorized balances by reconciling chain state, while about 3.9m minted ORAI reached MEXC and KuCoin. The mint happened in the Oraichain Cosmos SDK chain's own state: the ORAI ERC-20s on BNB Chain (0xa325ad6d9c92b55a3fc5ad7e412b1518f96441c0) and Ethereum (0x4c11249814f11b9346808179cf06e71ac328c1b5) show no mint and no transfer above 100k ORAI between 2026-08-07 and 2026-08-10. No eip155 contract was exploited.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks",
+      "https://coinfomania.com/oraichain-network-suspended-following-exploit-of-evm-transfer-path/"
+    ]
+  },
   "osmosis:2022-06-08:osmosis-lp-share-calculation-bug": {
     "name": "Osmosis LP share calculation bug",
     "date": "2022-06-08",
@@ -2415,6 +2490,16 @@
     "rule": "non-evm",
     "reason": "DefiLlama records a $1.3m weak-key-generation loss on Qubic."
   },
+  "quicksilver:2026-06-21:quicksilver-zone-unchecked-proof-mint": {
+    "name": "Quicksilver Zone unchecked proof minting",
+    "date": "2026-06-21",
+    "rule": "non-evm",
+    "reason": "SlowMist and DefiLlama (chain 'Quicksilver') report that the attacker forged proofs on Quicksilver, a Cosmos SDK liquid-staking chain, to mint about 505k unbacked qATOM and 10m qOSMO, of which about $3.5k was drained before the chain was halted. The defect is in the Quicksilver chain module, outside eip155.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
   "radix:2026-08-30:weft-v2": {
     "name": "Weft V2",
     "date": "2026-08-30",
@@ -2436,6 +2521,25 @@
     "rule": "non-evm",
     "reason": "DefiLlama: missing input validation on the Ravencoin chain.",
     "refs": [
+      "https://api.llama.fi/hacks"
+    ]
+  },
+  "robinhood:2026-09-14:long-bridge-keeper-fed-fabricated-events": {
+    "name": "Long Bridge keeper fed fabricated withdrawal events",
+    "date": "2026-09-14",
+    "rule": "offchain",
+    "reason": "SlowMist reports that Long's custodial bridge keeper released 46.7928 WETH (about $118k) from its Robinhood Chain vault after a third-party RPC fed it fabricated Arc withdrawal events; no onchain contract or key was breached, the keeper was halted and verification rebuilt, and the vault was refilled the same day. The failure is in offchain keeper infrastructure.",
+    "refs": [
+      "https://hacked.slowmist.io/"
+    ]
+  },
+  "rocket:2026-09-05:rocket-perp-illiquid-market-self-trading": {
+    "name": "Rocket perp illiquid-market self-trading",
+    "date": "2026-09-05",
+    "rule": "market",
+    "reason": "SlowMist reports that the attacker posted orders at inflated prices in a dormant, illiquid Rocket perpetual market and traded against its own burner account, booking about $287k of positive PnL on one account while bankrupting the other, then withdrew it through the bridge, with the loss socialised; DefiLlama classifies it as risk-parameter abuse on 'Rocket' and notes the funds were returned. The exchange's matching and risk engine settled trades as designed; this is market manipulation, not an EVM code defect.",
+    "refs": [
+      "https://hacked.slowmist.io/",
       "https://api.llama.fi/hacks"
     ]
   },
@@ -2709,6 +2813,16 @@
     "rule": "non-evm",
     "reason": "CoinDesk (https://www.coindesk.com/business/2026/07/20/cross-chain-protocol-allbridge-halts-after-usd1-65-million-flash-loan-exploit) and crypto.news (https://crypto.news/allbridge-core-halted-after-1-65m-solana-exploit/) report that the attacker flash-borrowed 1.12m USDC from Kamino, traded repeatedly through Allbridge Core's Solana USDC/USDT pool to distort its internal rate and withdrew liquidity at that rate for about 1.65m USD. The pools are a Solana program, outside eip155."
   },
+  "solana:2026-07-21:flashtrade-ephemeral-instance-withdrawal": {
+    "name": "FlashTrade unauthorized withdrawal",
+    "date": "2026-07-21",
+    "rule": "non-evm",
+    "reason": "SlowMist and DefiLlama (chain 'Solana') report an unauthorized $98k withdrawal from FlashTrade's ephemeral instance; FlashTrade is a Solana perpetuals protocol, outside eip155, and the team covered the amount.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
   "solana:2026-08-06:hyperliquid-malaysia": {
     "name": "Hyperliquid Malaysia",
     "date": "2026-08-06",
@@ -2847,6 +2961,16 @@
     "date": "2026-07-23",
     "rule": "non-evm",
     "reason": "Solido Cash runs on the Supra blockchain (Move modules, CDP vaults, CASH/SUPRA pools), not an eip155 chain; the two-wave oracle-misassignment mint of 809,051.55 unbacked CASH and the 293,705,544.97 SUPRA extraction executed outside any EVM state. No EVM code defect and no EVM anchor exist to measure."
+  },
+  "tac:2026-08-22:tac-cosmos-evm-precompile-drain": {
+    "name": "TAC Cosmos EVM precompile drain",
+    "date": "2026-08-22",
+    "rule": "offchain",
+    "reason": "SlowMist reports that the attacker used a vulnerability in the shared Cosmos EVM precompile layer to drain about 2.985b TAC (about $7.5m) from a single account; TAC confirmed it was a drain, not a mint, that the flaw is not in TAC-specific code, and halted the chain at block 24,671,475. The precompile is node software, not executed EVM contract code. Separate from the May 2026 TON-side exclusion.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
   },
   "terra-classic:2023-04-10:terraport-developer-wallet-liquidity-drain": {
     "name": "Terraport developer-wallet liquidity drain",
@@ -3070,6 +3194,16 @@
     "date": "2026-07-26",
     "rule": "keys",
     "reason": "WEMIX discloses the attacker gained administrator privileges over the WEMIX$ contract and minted about 5,225,525 WEMIX$, swapping part into 30,736 WEMIX and 724,198.27 USDC.e before bridging out; about $724,000 was siphoned externally while the headline $6.25m counts the briefly circulating unauthorized issuance. The mint executed through the admin privilege as designed, with no evidenced defect in the deployed contract logic. The WEMIX3.0 chain is not an eip155 chain either, so both cohort conditions fail independently."
+  },
+  "xrpl:2026-08-09:coreum-bridge-fake-deposits": {
+    "name": "Coreum XRPL bridge fake deposits",
+    "date": "2026-08-09",
+    "rule": "non-evm",
+    "reason": "SlowMist and DefiLlama (chains XRPL, Coreum) report that the attacker created fake deposits on the XRPL-Coreum bridge (self-transfers of the bridge's own wrapped tokens with valid memos) that the relayers accepted, releasing about 200,000 XRP from the bridge reserve in 94 multisig transactions. Both chains and the relayer logic are outside eip155.",
+    "refs": [
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
   },
   "xrpl:2026-09-03:xrph-wallet": {
     "name": "XRPH Wallet",

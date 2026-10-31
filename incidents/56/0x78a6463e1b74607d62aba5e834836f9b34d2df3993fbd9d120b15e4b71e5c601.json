@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "FlyCow (FCOW)",
+  "name": "FCOW sell path burns twice the sold amount from the pair and syncs before the sale settles",
+  "summary": "While its sell-burn switch is on, the unverified FCOW token handles a transfer of X FCOW into the FCOW/USDT pair by first moving 2.01 X FCOW from the pair to 0xdead and calling sync(), then swapping its fee balance, and only then crediting the sale, so each sale is priced against a reserve it has just shrunk. One block after the operator switched the burn back on, the attacker flash-borrowed 250,000 USDT from Lista's Moolah, bought 281.9m FCOW, and passed them through 14 fresh helper contracts, each selling about a tenth of its balance (the first 26.56m FCOW, burning 53.39m from the pair) and handing the rest on, which returned 315,180.71 USDT and left the pair 65,257.58 USDT short.",
+  "targets": [
+    {
+      "address": "0xcf51963d55e6ec01d3bc9f55ecd537939a614468",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x943d4174ab6ad382f48b753a703ade3b15b8d6d2fff53098eceadb4e04723835"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 65199.86,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "65257.582370651837111702",
+        "usd": 65199.86
+      }
+    ]
+  },
+  "refs": [
+    "https://hacked.slowmist.io/",
+    "https://api.llama.fi/hacks",
+    "https://ambcrypto.com/median-hack-size-declines-despite-3-defi-exploits-in-24-hours-heres-why/",
+    "https://phemex.com/news/article/fcow-token-on-bsc-chain-hit-by-suspicious-attack-61300-lost-93472"
+  ],
+  "notes": [
+    "Located by scanning Lista Moolah FlashLoan transactions of 2026-07-16/17 for an FCOW transfer; reports name only the ticker (TenArmor, $61.3k realised). The pair's USDT depletion matches DefiLlama's $65.3k. The token is unverified, so the mechanism is read from the anchor's trace and logs; the FCOW at 0x4849cf13 (deployed 2026-07-22) and 0xd4bb9d6e are other tokens.",
+    "Reset: deployment, 20.5 hours before the anchor. The constructor sets the sell-burn switch on (slot 0x14, byte 21); operator 0xe9e51058, funded by the owner 0xd59538d9, toggled it with 0x7477ed76 (off at block 110255219, on 110261817, off 110323722, on 110415809, one block before the anchor, off again 110416109). Pair-to-0xdead burns occur only while it is on. The switch turns an existing mechanism on and off like a pause, so it is not taken as a reset; with it the age would be under a second instead of 20.5 hours.",
+    "Earlier exploits: the attacker's earlier calls to its own contracts (0x6791778c, 0x678a7593) moved nothing while the switch was off. The only earlier pair burns are two sales by sniper bot 0xd8dccd9d (blocks 110323681, 110323719) of tokens it bought seconds earlier at trading open, which took 3,422 and 2,952 USDT; campaign.mjs --outflows on the pair's USDT to block 110450000 ranks the anchor first, and no other transaction took more than 7,918 USDT, all of them ordinary sales. Later sales after the anchor took at most 7.4 USDT each.",
+    "Loss: the pair's net USDT outflow in the anchor (loss.mjs). The FCOW burned from the pair has no other market and is valued at the USDT realised (rule 12)."
+  ]
+}
