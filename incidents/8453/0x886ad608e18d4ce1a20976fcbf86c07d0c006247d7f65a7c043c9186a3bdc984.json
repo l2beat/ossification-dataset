@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Henlo Kart",
+  "name": "Henlo Kart ETH transfer helper skips payment when the caller is the payer",
+  "summary": "Henlo's Transfers.transferEth(from, to, amount) sends ETH from the contract whenever from == msg.sender and only checks msg.value when to is the caller or the contract, so HenloKart.commitToRace and Jackpot.addCredits, which call it with (msg.sender, this, amount), credit ETH deposits without receiving any; HenloKart.cancelCommitment's inverted lock check (revert when lockedUntil < now) then refunds a fresh commitment at once. The attacker's contract committed 120 x 0.01 ETH for free and cancelled it for 1.2 ETH, had a helper add 13.5 ETH of free Jackpot credits and spend them on a commitment, which pulled 13.5 ETH from the Jackpot into HenloKart, then committed and cancelled another free 13.5 ETH, leaving with 14.7 ETH.",
+  "targets": [
+    {
+      "address": "0x27fafc210e4b240786d9ef3aa44399fb7e107f6f",
+      "code": "0x5e30de98d133f956e118233ed8e054e0f5e65781",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x157d89792288cccdaed7e626eebb40b3c32f9caef7ed17837f5c650763878447"
+      }
+    },
+    {
+      "address": "0x0ccff98a38984886969be5c5d4fd5a3ae1cfdcf6",
+      "code": "0xe2a7daa79d43120960510769f7eac0434f7c12b3",
+      "reset": {
+        "kind": "config",
+        "tx": "0x3bd06e5b9ba30792177da786c289480458d7bf8bc95f046dbdcbf28d37ec7f39",
+        "address": "0x0ccff98a38984886969be5c5d4fd5a3ae1cfdcf6",
+        "call": "0xe2e5bcaf00000000000000000000000027fafc210e4b240786d9ef3aa44399fb7e107f6f"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:8453:0xf9ccb244be71ce3ff8c61021dc43a51c21bd1e11d73e61e64d05a9218f832c7e",
+    {
+      "chainId": 8453,
+      "count": 116,
+      "from": 26884421,
+      "to": 26926857,
+      "selection": "transactions after 0xf9ccb244 and before the fix in which HenloKart 0x27fafc21 logged PlayerCommitted for an ETH commitment with betSize > 0 while it received less ETH from outside the HenloKart/Jackpot pair than betSize * count - creditsUsed; 107 of them cancel the commitment in the same or a later transaction"
+    }
+  ],
+  "loss": {
+    "usd": 38978.03,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "15.627358270873932",
+        "usd": 38978.03
+      }
+    ]
+  },
+  "refs": [
+    "https://t.me/defimon_alerts/518",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-02/HenloKart_exp.sol",
+    "https://t.me/defimon_alerts/517",
+    "eip155:8453:0x9422e805ac3c4539f63db47d1353548f17560bd8d81813fa75f262407607dbe9",
+    "eip155:8453:0x6e2c6a5a488d3303e90fc85c376065a9f2683d40435f8af43c43768aa47d864d"
+  ],
+  "notes": [
+    "Anchor is 0x1ecf1999's transaction (Defimon alert 517, $36.7k), 80 minutes before the DeFiHackLabs transaction 0xf9ccb244 (alert 518, 0.59 ETH by 0xc2b2197c), which is in the campaign. 0x1ecf1999 was funded with 0.09 ETH 4 minutes earlier, made only this exploit, and bridged the 14.7 ETH out through deBridge months later; nothing went back to Henlo.",
+    "Both proxies run the same Transfers library (byte-identical source): HenloKart's commitToRace and the Jackpot's addCredits each credited ETH they never received in the anchor. The HenloKart proxy ran implementation 0x5e30de98 from its creation (0x157d8979) until the fix; the Jackpot's reset is its toggleGame(HenloKart) grant (0x3bd06e5b, gameEnabled), which lets HenloKart pull credits through fundCommitment and comes after the Jackpot proxy's creation (0x160115d7) in the same block, so all resets share one timestamp. HenloKart's later toggleRacing(true) (block 26745802) is pause state and setFeeReceiver only routes fees (rule 8).",
+    "Earlier exploits: every PlayerCommitted from the proxy's creation to the anchor (23,530 events, 19,146 transactions with a paid ETH deposit) was compared with the ETH HenloKart received from outside itself and the Jackpot in that transaction (Etherscan txlist and txlistinternal); only the anchor and 0xf9ccb244 were underpaid (campaign.mjs finds 8,055 candidate transactions and traced only the 600 nearest the anchor, all ordinary paid commitments and races). The same scan from 0xf9ccb244 to the fix (both proxies upgraded in block 26961952: 0x9422e805, 0x6e2c6a5a) gives the 116-transaction copycat bundle.",
+    "Loss is the free ETH deposits the victims paid back out: 14.7 ETH in the anchor (1.2 ETH of HenloKart's balance and 13.5 ETH the Jackpot moved into HenloKart against free credits, $36,688.11), 0.59 ETH in 0xf9ccb244 ($1,454.17), and 0.33736 ETH in the bundle ($835.75 at hourly DefiLlama ETH prices; 107 of its commitments were cancelled for 0.33236 ETH, the other nine (0.005 ETH) were left to race and are counted in full). The Jackpot's 0.14 ETH outflow in bundle transaction 0xb9c16fff is the same pattern as the anchor and is inside its 0.14 ETH free deposit, not added."
+  ]
+}

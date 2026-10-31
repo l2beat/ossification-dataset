@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Unverified swap contract 0xd132b6e4",
+  "name": "Unverified swap contract pays its Uniswap V3 callback to any caller-named pool",
+  "summary": "The unverified swap contract 0xd132b6e4 that 0x929d13c8 deployed for its traders exposes 0x14776a7c(pool, recipient, tokenIn, minOut, amountIn), which pulls tokenIn from the caller and calls swap on the caller-named pool, and its uniswapV3SwapCallback pays the token the pool reports as owed from the contract's own balance to whatever pool calls back, without checking that the pool is a real Uniswap V3 pool. The attacker deployed a fake token and a fake pool, called 0x14776a7c with 1 fake token in, and had the fake pool call back claiming 3,131.11 DAI, the contract's whole DAI balance, which it forwarded to the attacker.",
+  "targets": [
+    {
+      "address": "0xd132b6e4cdb57e8e992c9b968cd4ccdde3b0baff",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x61080e61e5faa8b0626159689b11b57b7db7ece0679e78f39a54a4c09b2dedc8"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3132.08,
+    "assets": [
+      {
+        "token": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+        "symbol": "DAI",
+        "amount": "3131.10663091028807959",
+        "usd": 3131.08
+      },
+      {
+        "token": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        "symbol": "USDT0",
+        "amount": "1",
+        "usd": 1
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-08/unverified_d132_exp.sol",
+    "https://t.me/defimon_alerts/1675"
+  ],
+  "campaign": [
+    "eip155:137:0x7a8e5a9f3aca9b4430b8febf6ecbfe335a6d582f071b08611a22db6687dab927"
+  ],
+  "notes": [
+    "Mechanism from the exploit trace, as the contract is unverified: the callback (0xfa461e33) transferred 3,131.11 DAI to the fake pool 0xe69ac220 that the caller had named, and the entry also sent the caller's fake-token fee to the deployer 0x929d13c8. The DAI had sat in the contract since block 68192388, when a trader's 3,876.71 DAI swap output was forwarded only in part (745.60 DAI).",
+    "campaign.mjs over all calls into the contract from its deployment to the chain head: the 233 earlier exercises of 0x14776a7c and the callback are traders swapping their own tokens through real pools with nothing paid to the caller; the only later one is 0x3128a77f's fake-pool call taking 1 USDT0 (0x7a8e5a9f, block 91700169). The contract is direct and unchanged since deployment; its admin changes (createAdmin, deleteAdmin, changeSupperAdmin) only replace holders of roles the exploit did not use.",
+    "Loss is the contract's DAI and USDT0 outflow to the fake pools, priced by loss.mjs."
+  ]
+}

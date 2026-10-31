@@ -1,0 +1,51 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "RnsPay",
+  "name": "RnsPay pay makes an arbitrary call that spends approvals to RnsPay",
+  "summary": "RnsPay.pay(payment) pulls payTokenAmountIn of payToken from the caller and then, for a non-zero dexRouterContractAddress, calls it with the caller's dexRouterFeedData; the exchanges whitelist is never consulted and the only checks are that RnsPay's own payToken and receiptToken balances do not fall. With a fresh fake token as both payToken and receiptToken and USDC as the 'router', the attacker's contract had RnsPay call USDC.transferFrom(0x6d191737, attacker, 1,050 USDC) against that wallet's approval to RnsPay, and swapped the USDC for 0.46 ETH. The same call later drained six more approving wallets' USDT and RnsPay's own small USDT balance.",
+  "targets": [
+    {
+      "address": "0x4c7f92d77b331ea74092e2e347c9fd026faa1c3f",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xeedc6650a39e5cf8964f2b5f87844b253edc6a89207bf7fbb5ccb39ceebd0535"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2467.13,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1050",
+        "usd": 1049.87
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "1417.464298",
+        "usd": 1417.26
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-03/RnsPay_exp.sol",
+    "https://t.me/defimon_alerts/562"
+  ],
+  "campaign": [
+    "eip155:1:0xce89ee93478865bb494886d4d537a42a1704ea71372d38b667cc27167c0c0825",
+    "eip155:1:0x484ade7986c1d12d4240df900ac28cb30b920afaa656f81db0e1061871822325",
+    "eip155:1:0x2fe9a8b824062cdb04bfc88652a88ff2b63c070d124522b78b2a64c90411108f",
+    "eip155:1:0x082eba06cc7128c6be4416bf941ed81c735df7a154e9bb73c0027d66ccc4ff51",
+    "eip155:1:0x0993ba2da78703a1eaf2221cd2eb8a86f9895fb2e0d17e956901624aa7f06e87",
+    "eip155:1:0xb8094c412f3246f788bd6d759924aaf3d89afad8af49d5111f11120220db480f",
+    "eip155:1:0xf7f901ea4dfc72ea8d14bea73427fbd7082fed2c4b7bfd1a86b96ab2a11716bf",
+    "eip155:1:0x48596555c5cf0e5c3f85e4b9debc64053738aad485d92ef8f42101e8f82f323e"
+  ],
+  "notes": [
+    "campaign.mjs over every call into RnsPay from its deployment to the chain head: the nine earlier pay calls only pull the caller's own tokens; from the anchor on, eight calls (by 0x806d9d1f three times, 0x43debe92, 0x01b78576 twice, 0x0000768e and c0ffeebabe) pull approvers' USDT or empty RnsPay's balance, the last in September 2025.",
+    "Direct, immutable deployment with no state change before the anchor (resets.mjs). The deployer's only other contract, an earlier RnsPay build (0x4538eae6, other bytecode), saw two pay calls by one wallet and was never drained.",
+    "Loss is the approvers' and RnsPay's outflow across the nine transactions, priced by loss.mjs."
+  ]
+}

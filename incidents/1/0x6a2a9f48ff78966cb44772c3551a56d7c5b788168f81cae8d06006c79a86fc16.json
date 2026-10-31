@@ -1,0 +1,72 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MEV bot 0x6704713b",
+  "name": "MEV bot 0x6704713b repays Balancer flash loans it did not take",
+  "summary": "The unverified bot proxy's implementation 0xc3f215a7 handles receiveFlashLoan(tokens, amounts, fees, data) by repaying amounts plus fees to the Balancer vault from its own balance, without checking that the vault is the caller or that the bot took the loan. Inside its own Balancer flash loans of 0.4735 WETH, 0.00052 WBTC and 18.72 USDC, the attacker's contract called the bot's receiveFlashLoan with the same amounts, so the bot repaid each loan and the attacker kept the borrowed tokens, swapping the WBTC and USDC to ETH. Copycats repeated the call fifteen times until the operator upgraded the proxy.",
+  "targets": [
+    {
+      "address": "0x6704713b32cb1b3e89b0cf7d77417807061bdeb8",
+      "code": "0xc3f215a7742ea5a4ac3ed0ea1c6f0323c24e5458",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xdb4ea5b184899e3634500e586ce5562e10d0dc208012f02327ea7b62a216e14e"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2848.96,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "0.672048895468828557",
+        "usd": 2605.51
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "163.045577",
+        "usd": 163.05
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.0005229",
+        "usd": 61.69
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "18.718287",
+        "usd": 18.71
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-07/Unverified670471_exp.sol",
+    "https://t.me/defimon_alerts/1549"
+  ],
+  "campaign": [
+    "eip155:1:0x63f30e29c3a07edfc9b7868d9df564db8cd19520edb91acfc626390bd2fd6e15",
+    "eip155:1:0x5bb98488027f67be7c14e249bc481f33cea3709a2ea4c8d98ab324222b19550b",
+    "eip155:1:0xbed1e6e59c840f95be6618661148140dc6bfce486495402812a9116b2b247213",
+    "eip155:1:0x3453758de9e3ed19d36146b05ba3715b08fff0b1b1d69e89b18028d5e931fcd0",
+    "eip155:1:0x9531b805bf07b66739cf474ce99602a4d13ac6c7556bf1db7a315224437f50a3",
+    "eip155:1:0x3e92978de1e2b6524d93c1c4769a4a49223c00edaf44a7e9b7812a4b0f4fb67c",
+    "eip155:1:0x6dcfbd516906dd656f718cf20e013ea2e44b7820eb65a1361024012348df2e2f",
+    "eip155:1:0x5104c4b120fa424cfb72a6948e9a9dcb3389c097352e15cd587b3a990f65233a",
+    "eip155:1:0x2ed2845951c3974a06a310f554414470d8a5f01064bf6738f08b55ea9b3045bb",
+    "eip155:1:0xe96c057f27167bbfe020d36bb5abe8523784caf6ae15e42f01237ef7f951c5d4",
+    "eip155:1:0x14cd3062aced2552d94c67fb158f21565bb6e74c1f85f1a8566f8e2332fec8ee",
+    "eip155:1:0x7963b0caab5157871fdfad088b070d4f1ad366f7085ed44b28f7d49acb362583",
+    "eip155:1:0x5f198bc99732bf891e4dfd655b6ce1cfd58e42506cc372c8ef5575a76e73b875",
+    "eip155:1:0xd2477e707193dd6941a4ce0e477dd8532200da2f4f1b039bc649d76fdb69973e",
+    "eip155:1:0x0d33417b810de638d94fcf6b9b57bc939b474294bc459af667e887a1e05d3230"
+  ],
+  "notes": [
+    "Mechanism from traces, as the bot is unverified: in each exploit a non-vault contract calls the proxy's receiveFlashLoan (0xf04f2707) and the implementation transfers amount plus fee of each listed token to the Balancer vault 0xba122222.",
+    "Reset is the operator 0x000000dbc80b's upgrade to 0xc3f215a7 (block 22659550); the proxy (created at block 21887406) ran eight earlier implementations, and resets.mjs shows no later change before the anchor. The operator's next upgrade, to 0x0b512509 at block 23160401, ends the drains.",
+    "Earlier exploits: every token movement of the bot (Etherscan tokentx, 3,861 transfers since creation) was grouped by transaction, and outside the operator's 2,639 own transactions the bot lost tokens only from the anchor on. All fifteen later losses (blocks 23006714-23152554, by 0xda0eedc3 through the anchor's contract, 0x7fc9da70, 0xa54408e0 and 0xef45722e) are non-vault calls to receiveFlashLoan and form the campaign.",
+    "Loss is the bot's token outflow in the sixteen transactions, priced by loss.mjs."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SlurpyCoin",
+  "name": "SlurpyCoin buyback runs at a manipulated spot price on any transfer",
+  "summary": "SlurpyCoin's _transfer calls BuyOrSell whenever the token contract holds at least 100,000 SLURPY: 200 times it sells 100,000 SLURPY for BNB, and on the next call it spends its whole BNB balance on swapExactETHForTokens with no minimum output. Anyone can top the contract up to 100,000 SLURPY and transfer 1 wei to advance the counter. The attacker flash-borrowed 40 WBNB, bought SLURPY to raise its price, drove the counter through 194 sells within the transaction by donating SLURPY, triggered the buyback of 28.66 BNB at the inflated price, and sold its SLURPY back, leaving with 7.41 BNB while the contract's BNB fell from 15.09 to 4.47.",
+  "targets": [
+    {
+      "address": "0x72c114a1a4abc65be2be3e356eede296dbb8ba4c",
+      "reset": {
+        "kind": "config",
+        "tx": "0x55c0fcd060d66fe14df7c3fb0f90aecbdd2002f117cac9c79b3502f79556076b",
+        "address": "0x72c114a1a4abc65be2be3e356eede296dbb8ba4c",
+        "call": "0x4a74bb02"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 7597.51,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "10.615940170989016157",
+        "usd": 7597.51
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-12/SlurpyCoin_exp.sol",
+    "https://x.com/CertiKAlert/status/1869580379675590731"
+  ],
+  "notes": [
+    "Reset is the owner's endPresale (block 8806679, 2021-07-02), which turned swapAndLiquifyEnabled on and so enabled BuyOrSell; the token was deployed 2.5 days earlier (0x0dbee1c7). Later owner calls (excludeFromReward at block 8942232) and balance writes do not touch the buyback path, and counter, timeToSlurp (200) and numTokensToSell (100,000) have no setters.",
+    "No earlier exploit is possible: Etherscan's internal transactions of the token show 206 BNB inflows from its sells since 2021 and no BNB outflow before the anchor, so the anchor's 28.66 BNB swapExactETHForTokens was the contract's first buyback; the attacker's EOA made no other call to it.",
+    "Loss is the token contract's BNB depletion in the anchor: 15.0897 BNB before and 4.4737 after, net of the BNB its 194 sells in the transaction brought in (loss.mjs: 10.6159 BNB, $7,597.51). The attacker kept 7.41 BNB; the other 3.20 BNB stayed in the SLURPY/WBNB pair and are not subtracted. The 1.04m SLURPY of its own that the contract sold inside the transaction are already reflected in that BNB net and are not counted again; the 443k SLURPY the attack contract kept were never sold."
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Arbitrage contract 0x6883fe4d",
+  "name": "Arbitrage contract 0x6883fe4d pays any Uniswap V2 pair that calls uniswapV2Call",
+  "summary": "The unverified arbitrage contract's uniswapV2Call (0x10d1e85c) accepts any pair created by a registered factory, so a pair the attacker creates on the spot passes, and then it swaps through a pair named in the callback data and transfers the owed token to the calling pair from its own balance, without checking that it started the swap. Inside a DAI/WETH flash swap, the attacker's contract created a fake token, a genuine Uniswap V2 pair of it with WETH, and a fake second pair, and swapped on its pair with data that made the pair call the contract back; the contract paid the pair 0.269 WETH, which the attacker then swapped out. Copycats used the same callback for 139.90 USDC, 30.73 USDT, 0.00041 WBTC and 0.00041 WETH.",
+  "targets": [
+    {
+      "address": "0x6883fe4d2ee50941b80b41b8f7f9bf2561d844cc",
+      "reset": {
+        "kind": "config",
+        "tx": "0xb605d87b24d89d0f24b8be71331a5b5e119769ee762d1e878b246083f65aca20",
+        "address": "0x6883fe4d2ee50941b80b41b8f7f9bf2561d844cc",
+        "slot": "0xac33ff75c19e70fe83507db0d683fd3465c996598dc972688b7ace676c89077b"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0x920a9a7611c67ed33891e323861e8aeac14705ce3dd6d8837d275591770f13ee",
+    "eip155:1:0x59f8be83099f11f8cb9625bfb1a75cd356dd736c45988efdda09852dd2d7b3e9",
+    "eip155:1:0xa059681e5b16fa0d4e24cb09a5217781444398fbd45da4c91f569dfcf949c22d",
+    "eip155:1:0x5730f6cc62a07ae0f96307b42869556a850c0d60ac28e61d8c0c01bf9dd32d17"
+  ],
+  "loss": {
+    "usd": 1230.67,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "0.26941412",
+        "usd": 1011.6
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "139.902986",
+        "usd": 139.88
+      },
+      {
+        "token": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "symbol": "WBTC",
+        "amount": "0.00041125",
+        "usd": 48.46
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "30.731748",
+        "usd": 30.73
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-07/Unverified6883_exp.sol",
+    "https://t.me/defimon_alerts/1544"
+  ],
+  "notes": [
+    "Mechanism from traces, as the contract is unverified: the exploit's callback comes from 0x986a80de, a real Uniswap V2 pair the attacker created in the same transaction for its fake token and WETH; the only storage the contract reads in the exploit is its registered-factory slot, consistent with a CREATE2 pair check that any new pair of that factory passes. The contract then calls the attacker's fake pair 0x25bcc6f7 and transfers 0.269 WETH to 0x986a80de.",
+    "Reset is the owner's 0x164b34e9(0, UniswapV2Factory) (block 15545578), which registered the factory whose pairs the callback accepts; the contract was deployed two days earlier (0x5c20ac16), and resets.mjs shows no other change before the anchor.",
+    "Every token movement of the contract since deployment (Etherscan tokentx, 49 transfers) was grouped by transaction: before the anchor it only gained from its operator 0x99d2e419's nine arbitrages, so the anchor is the first exploit; the four later losses are uniswapV2Call calls from attacker-created pairs (0x9943f268 three times in the next hours, 0x3e4033d1 in October 2026).",
+    "Loss is the contract's token outflow in the five transactions, priced by loss.mjs."
+  ]
+}
