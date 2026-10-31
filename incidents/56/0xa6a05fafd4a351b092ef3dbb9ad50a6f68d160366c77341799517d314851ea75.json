@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SheepFarm",
+  "name": "SheepFarm register can be repeated for the sign-up bonus",
+  "summary": "SheepFarm.register(neighbor) requires villages[msg.sender].timestamp == 0 and credits 10 or 20 gems, but only addGems (and syncVillage) sets the timestamp, so an account can register any number of times before its first deposit. The attacker's contract created a child contract that called register 402 times, deposited 0.0005 BNB with addGems, spent the free gems on upgradeVillage for farms 0-4, called sellVillage for 120 hours of yield in wool and withdrew 156,000 wool as 0.7644 BNB; within three hours eight senders repeated this in 377 transactions and emptied the game's 935 BNB.",
+  "targets": [
+    {
+      "address": "0x4726010da871f4b57b5031e3ea48bde961f122aa",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x6a982015482c9a2f0b70f0d627089d87c52ee4862e0c85b9615031e72dda249a"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 254872.75,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "925.665083400000000009",
+        "usd": 254872.75
+      }
+    ]
+  },
+  "campaign": [
+    {
+      "chainId": 56,
+      "count": 376,
+      "from": 23087384,
+      "to": 23090670,
+      "selection": "transactions other than the anchor in which SheepFarm emitted more than three Newbie (register) events, from eight senders: 0x2131c67e (105), 0x3b6f4087 (85), 0x40d1594f (81 besides the anchor), 0x8a9b5add (63), 0xe05e17db (34), 0x894eb2f3 (5), 0x286e0993 (2) and 0xddeab289 (1, 0x5a4a1e7a in the anchor's block)"
+    }
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/SheepFarm_exp.sol",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/SheepFarm2_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1592734292727455744",
+    "eip155:56:0x5bf8a02788b47cc9c8ed68ce0e9d80c40ff0205c1a365b63d80c452033e5a4f2"
+  ],
+  "notes": [
+    "Anchor: the first transaction that turned repeated registrations into withdrawn BNB. Newbie logs from deployment to the anchor show 101 accounts that registered twice or more (e.g. 0xbe4bd656 in 0x5bf8a027, block 22917657, the seed lead's key), all but one never deposited or withdrew anything; 0x1d164d2b registered twice, deposited 0.0005 BNB and withdrew 0.0032 BNB through sellVillage, a 0.0027 BNB gain read as play rather than an exploit. Every transaction before the anchor registered once at most; repeat registrations were separate calls.",
+    "The DFHL PoCs' transactions (0x5735026e, 0x6c9aed89, 0x9f47b828, 0x8b3e0e3e by 0x2131c67e) fall in the bundle. Reset: deployment; the manager's initialize() (block 22905502) only opened the game like an unpause (rule 8), and the contract has no proxy or fee/bonus setters.",
+    "Loss is SheepFarm's net BNB outflow over the anchor and the 376 bundled transactions (loss.mjs with --tx), which nets each child contract's 0.0005 BNB deposit and counts the 2% withdraw and 5% deposit fees the contract paid to its dev and marketing wallets; the exploiters sent their proceeds to Tornado Cash and swaps. DefiLlama's 262 BNB counts one attacker only. Users' own withdrawals during the run (about 31 BNB) are not counted."
+  ]
+}

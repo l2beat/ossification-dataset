@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "FlyLong",
+  "name": "FlyLong hands its balance-setting admin role to any empty caller",
+  "summary": "FlyLong (FLG) is an obfuscated token whose tradingTake(account, amount) overwrites any balance, gated only by exemptTeam[msg.sender]; the public tokenMarketing(account) sets exemptTeam[account] for any account holding under 100,000 wei of BNB, once, with no check on the caller. The attacker's helper flash-swapped 99.99% of the FlyLong/WBNB pair's WBNB and in pancakeCall called tokenMarketing(itself) and tradingTake(pair, 100,000 times the pair's FLG balance), so the pair's K check passed with nothing repaid and 1.726 WBNB left the pair.",
+  "targets": [
+    {
+      "address": "0x9ca66a67dc3d77beb59dc11caf96677843797c08",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xff16e3073e7af99ccd8fbc0844ef7716a13f6fd910f3ffe0a13b9d4614b6e7c4"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1045.73,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "1.725862500495854109",
+        "usd": 1045.73
+      }
+    ]
+  },
+  "refs": [
+    "https://t.me/defimon_alerts/968",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-04/flylong_exp.sol"
+  ],
+  "notes": [
+    "Reset: deployment, which also created the pair; the deployer's later tokenShould() only cleared the displayed owner. tokenMarketing works once (it sets tokenSwap), and the anchor's call was its first, so no earlier caller held the role; exemptTeam was otherwise only the deployer's, whose own uses are privileged. campaign.mjs finds no other exercise through 90 days after, and the anchor left the pair 0.00017 WBNB.",
+    "The token is a scam template (an owner-settable isAuto check can block sells), and the drained WBNB was the liquidity of its deployer 0x09dd0143, which held all but 1,000 wei of the LP supply; the attacker 0xd4e11065 sent its proceeds to Tornado Cash and has no other visible link to it. Loss is the pair's WBNB outflow."
+  ]
+}

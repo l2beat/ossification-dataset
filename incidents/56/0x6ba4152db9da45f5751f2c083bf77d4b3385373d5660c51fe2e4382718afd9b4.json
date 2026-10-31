@@ -1,0 +1,53 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "CCV",
+  "name": "CCV treasury proxies swap any amount for any caller without a minimum out",
+  "summary": "CCV's two treasury proxies (ERC1967, unverified implementations) let any caller trigger their swaps: 0x369baafe(amount) on 0x37177ccc sells amount of its CCV for USDT through PancakeSwap with no minimum out, paying the second proxy 0xe38d7ff8, and 0xb7da6a49(amount) on 0xe38d7ff8 buys CCV with amount of its USDT, paying the first. Inside a 100k USDT DODO flash loan the attacker had 0x37177ccc sell its 9,000 CCV, bought CCV with the 100k, had 0xe38d7ff8 spend its whole 8,607 USDT on 2,511 CCV at the inflated price, and sold, netting 3,172 USDT; the proxies lost 6,489 CCV and 896 USDT.",
+  "targets": [
+    {
+      "address": "0x37177ccc66ef919894cef37596bbebd76e7a40b2",
+      "code": "0x18f6e45b017187e19e62ba0118621c9a2200ce0c",
+      "reset": {
+        "kind": "config",
+        "tx": "0xa97136e3e70f838aa26e8d08a0e986f26fbd7818cf537943d084a962bfe41055",
+        "address": "0x37177ccc66ef919894cef37596bbebd76e7a40b2",
+        "slot": "0x162"
+      }
+    },
+    {
+      "address": "0xe38d7ff85bb801d35382eef15eb8263f2c751ecd",
+      "code": "0x238217598abb32a3a031f6a9cccc86f5946a07e3",
+      "reset": {
+        "kind": "config",
+        "tx": "0xfb504dd1720b05e6101d2101083ff6c37c3291064827e40e3afc7ebcdb553a2d",
+        "address": "0xe38d7ff85bb801d35382eef15eb8263f2c751ecd",
+        "slot": "0x162"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3170.81,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "896.254526292098922216",
+        "usd": 895.95
+      },
+      {
+        "token": "0x89c27d81941708dbc9aa4d905443392cb4a8ef73",
+        "symbol": "CCV",
+        "amount": "6489.051154605916542594",
+        "usd": 2274.86
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2023-12/CCV_exp.sol"
+  ],
+  "notes": [
+    "Reset: each target's partner address (slot 0x162), which its swap pays and which the owner set about 5.7 hours after the proxies' deployment (0xa97136e3 on 0x37177ccc, 0xfb504dd1 on 0xe38d7ff8). Unset, the swaps would pay the zero address, which CCV and USDT transfers reject, so the exploit needed it, and it fixes where treasury proceeds go (custody, rule 8). The proxies were created with these implementations and not upgraded until the fix (upgradeTo in 0x8ac7c755 and 0x4fafd8e9, blocks 34742427 and 34742431).",
+    "The other calls before and after the anchor (campaign.mjs: 16 earlier, 9 later before the fix) are the deployer 0x4b8b71a9 and a fixed set of EOAs triggering 100-340 CCV or 10-310 USDT swaps one at a time, the same pattern that continued after the fix; none sandwiched the swap or took funds, so they are operation, not exploits.",
+    "Loss: the USDT 0xe38d7ff8 lost is priced; CCV has no DefiLlama price, so the 6,489 CCV 0x37177ccc lost is valued at what the attacker realised beyond that USDT, the 2,275 USDT the pair paid it (rule 12). At the pool's pre-attack spot price (0.927 USDT) the CCV would be about 6,016 USD; the rest of its value went to CCV's transfer-fee wallet 0x32a02a10 and the pair."
+  ]
+}

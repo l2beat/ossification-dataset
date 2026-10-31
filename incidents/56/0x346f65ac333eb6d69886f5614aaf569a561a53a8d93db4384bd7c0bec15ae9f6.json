@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MyAi",
+  "name": "MyAi MultiSender pulls tokens from any approver",
+  "summary": "The MultiSender (0xdb103fd2) that MyAi's team used for airdrops checks the token allowance of msg.sender but calls transferFrom(_from, this, totalAmount) for a caller-chosen _from, then pays the batch out to caller-chosen addresses. The attacker's contract paid the 0.012 BNB fee and called batchTokenTransfer with _from set to the MyAi deployer 0x003b724f, which had approved the MultiSender, sending 99,999,999.99994 MyAi to itself in 100 parts, and sold them into the MyAi/WBNB pair for 10.77 WBNB; it took 50m more a minute later, and a copycat took the remaining 19.98m in 2026.",
+  "targets": [
+    {
+      "address": "0xdb103fd28ca4b18115f5ce908baaeed7e0f1f101",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xde961c120c747a411705d1819415126fd9d663a8cf02cfffba75111cea7cc469"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2637.47,
+    "assets": [
+      {
+        "token": "0x40d1e011669c0dc7dc7c7fb93e623d6a661df5ee",
+        "symbol": "MyAi",
+        "amount": "169982750.22",
+        "usd": 2637.47
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x0e60c4c6726bb5ba7bd0a7d841672a9905d435c7ca324ca687e1e8aaba080b1c",
+    "eip155:56:0x8441d8f9b2681c500998152fdc19c7c84d0bc3e7d99f3155781de7150858b92c"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-06/MyAi_exp.sol",
+    "https://x.com/DecurityHQ/status/1674781372182048776",
+    "eip155:56:0xee74e199e7618c08f1f074c414196ef410da5b6eca2a804e839eda148a4cc769",
+    "eip155:56:0x9d96743db6626ac45f37d3752381bfe9fcb94a3b4c400b9ab312c81f09d084b4"
+  ],
+  "notes": [
+    "The defect is in the MultiSender, not the MyAi token, which the draft named; the MyAi pair only absorbed the sale. Reset: deployment; the owner's later setDevWallet and setPlatformWallet (blocks 29195635 and 29195648) only redirect the fee and the contract has no proxy. Its only earlier batchTokenTransfer calls (blocks 28887639, 28952276, 28952746) pulled from their own senders; the attacker's two reverted attempts before the anchor are in refs.",
+    "The MultiSender's TransferBatch log has six entries ever: the three self-sends, the anchor, the attacker's second pull (0x0e60c4c6) and 0x8441d8f9 on 2026-10-16 by another party, all three exploits drawing on the same deployer approval. Loss is the 169,982,750.22 MyAi taken from 0x003b724f (94% of supply), valued at the 10.915 WBNB the sales realised (rule 12), since no market could absorb it."
+  ]
+}

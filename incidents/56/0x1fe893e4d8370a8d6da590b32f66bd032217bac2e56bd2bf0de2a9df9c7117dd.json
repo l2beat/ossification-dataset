@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Bitallx",
+  "name": "BitallxPayOut pays the amounts array without bounding it by the deposit",
+  "summary": "BitallxSC.BitallxPayOut(token, wallet[], amount[], totalSendAmount) checks the caller's allowance and balance against totalSendAmount and pulls only that much, then transfers every amount[i] from the contract's own balance without checking that their sum equals totalSendAmount. The attacker's contract called it in its constructor with totalSendAmount 0 and one amount equal to the contract's whole balance, taking the 2,029.47 USDT held for reward claims; a copycat took 1,500 USDT the operator topped up a day later.",
+  "targets": [
+    {
+      "address": "0xa5f3728767f834c591ee99c8c5854b752f39c385",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x635134daab4e1bc1956728fcf04a675b95ed70577a82f6ed01c1cd5ae7589932"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3532.47,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "3529.473999999999986",
+        "usd": 3532.47
+      },
+      {
+        "token": "0xfdaa1b7c115d38dabbb83b8fc4b82a09cce63bc9",
+        "symbol": "GPT-4",
+        "amount": "10",
+        "usd": 0
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x5dc69e59f9eacb3e9ab1d1459477517bb06065adb2030175f5df29c7d72e8e44",
+    "eip155:56:0x2acd9130da7cc741633b3c76c43ab3d9052c98dd6065165409df9f9e539defe8"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-05/bitallx_exp.sol",
+    "https://t.me/defimon_alerts/1065"
+  ],
+  "notes": [
+    "Reset: deployment; the contract has no proxy and BitallxPayOut reads no stored configuration. The only earlier BitallxPayOut call (0xe376ed0f, block 49644066) paid out exactly the 4.3 USDT its caller deposited; all other earlier outflows are the publisher's claimReward payouts. The deployer later deployed a fixed BitallxSC (0xacc880be) whose payout sums the amounts and is owner-only.",
+    "Campaign: 0x5dc69e59 (from 0xd4f04374 through a generic executor 0x5100357b) took the 1,500 USDT that 0xafd99f65 deposited two blocks earlier; 0x2acd9130 took 10 GPT-4, an airdropped spam token with no market that the taker never sold, valued at 0 (rule 12). 0x59378096 called it with nothing left to take, and 0xfee5703b recovered 0.11 USDT its own sender had sent to the contract in 0xf8ba6103, so neither depleted a victim."
+  ]
+}
