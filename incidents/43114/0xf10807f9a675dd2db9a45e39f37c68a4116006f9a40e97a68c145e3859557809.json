@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Overnight",
+  "name": "USD+ StrategySynapseUsdce adds liquidity at the manipulable Synapse pool state",
+  "summary": "On Avalanche, every USD+ buy routes most of the USDC to StrategySynapseUsdce, whose _stake swaps it to USDC.e and calls the Synapse nUSD pool's addLiquidity with minToMint taken from calculateTokenAmount on the same pool, so a skewed pool is not rejected. The attacker flash-loaned 6.84M USDC.e (Aave V2) and 3.33M USDC (Aave V3, posted on Benqi to borrow 2.66M USDC.e), added 9.5M USDC.e to the pool and withdrew nUSD, DAI.e and USDT.e imbalanced until the pool held mostly USDC.e, then bought USD+ with 35,999 USDC: the strategy added 32,784.77 USDC.e and received 14,861 nUSD-LP worth 14,931 USD. The attacker swapped its nUSD, DAI.e and USDT.e back into the pool at the rate that deposit improved, repaid the loans, and redeemed the USD+ at full value in the next block; it ran the cycle six times with growing USD+ buys.",
+  "targets": [
+    {
+      "address": "0x22ecc33bf964ed13d18419fdae725919a757f230",
+      "code": "0x52ee902322dda88ab8eadb57471936394c255756",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x7dd9de22a69ceb5290186e0ac1a6e2cd280b5d312d0894d597290bf8b27fa90f"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 219001.87,
+    "assets": [
+      {
+        "token": "0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664",
+        "symbol": "USDC.e",
+        "amount": "219001.87",
+        "usd": 219001.87
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:43114:0xa068ca421b9460b34b10e1d24107bdc6ef3517f5e9bdd72d7f48c0c44b8ac739",
+    "eip155:43114:0x0df9234d3b8f59e7bb6213431410453f8d097721146e4ee96cef68acba18e857",
+    "eip155:43114:0x7da089dcfeeeab24b611438fe2209394ccac0b68c8783c3a91b9ccb566e67792",
+    "eip155:43114:0xb10fcd916b78c58308fc32489225e08717e736cc86eb8c42cff2fc24d7a891b1",
+    "eip155:43114:0xd486a5e10c6877cd10ab526c1e31a334d8b93ad1bc0085e83cf0c80d8dc662d1"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/Overnight_exp.sol",
+    "https://twitter.com/peckshield/status/1598704809690877952"
+  ],
+  "notes": [
+    "Reset is the strategy proxy's upgradeTo(0x52ee9023) three blocks after its creation (0xe85580ae, block 16939586, already pointing to 0x52ee9023); the route did not change afterwards. Overnight replaced the PortfolioManager on 2022-09-15 (new PM 0xfdf56cf6 created at block 19900227, Synapse strategy weight 67.5% enabled at 19900414, strategy's portfolioManager and PORTFOLIO_MANAGER role moved to it at 19900766, 0xc4943ed4); the strategy had already been staked into 49 times through the old PM 0x11732e21 since July, so this is a new holder of an unchanged role (rule 8) and not a reset. Later weight updates (last 22400729) re-emitted the same Synapse weights and only toggled strategy 0xc2c84ca7, which changes the loss size.",
+    "Earlier exploits: campaign.mjs lists 171 earlier calls into the strategy (PortfolioManager stakes and Mark2Market netAssetValue reads), which carry no outflow signal for a sandwiched deposit, so every transaction in which the strategy received nUSD-LP from blocks 16939586 to 26500000 was checked for the LP's value (at the pool's virtual price) against the USDC.e it added. All 98 stakes before the anchor and the one after it (block 23098200, none after that) returned 0.9996-1.0011 of the deposit; only the attacker's six transactions (0.451-0.455) did not.",
+    "Loss is the strategy's value deficit over the six stakes: 400,484.28 USDC.e added for 180,592.23 nUSD-LP worth 181,482.41 USD at the pool's virtual price after each transaction, 219,001.87 USD in total, borne by USD+ holders. The attacker's realised gain was smaller: it paid in 36,000 USDC (bought with 2,830 AVAX in 0x74dde6b3) and withdrew 175,188.24 USDC (0x581b54cd), so about 139.2k; the rest went to the Synapse pool's LPs and flash-loan fees. The redeem transactions between the cycles (e.g. 0x3a3a2cbc) paid out USD+ at net asset value and are not exploits."
+  ]
+}

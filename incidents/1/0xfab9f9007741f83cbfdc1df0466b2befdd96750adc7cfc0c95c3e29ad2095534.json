@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "NOON (NO token)",
+  "name": "NO token exposes _transfer(sender, recipient, amount) publicly",
+  "summary": "The unverified NO token 0x6feac5f3 has a public _transfer(address,address,uint256) (selector 0x30e0789e) that moves any account's balance without approval. Half an hour after the token launched, the MEV bot 0xa19e4fec called it to move 9.07B NO from holder 0xf6195242 into the NO/WETH pair 0x421a5671 and swapped them out for 0.118 WETH; 2.5 hours later 0x9748c854 used it to move all but 1 wei of the pair's own NO to itself, synced, sent them back and swapped out the pair's remaining 1.136 WETH.",
+  "targets": [
+    {
+      "address": "0x6feac5f3792065b21f85bc118d891b33e0673bd8",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xcf77be5591f4aa955d55b26861951fd869fcd02a448dd8e5f025b779d1843dd3"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2372.84,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "1.254650463614009343",
+        "usd": 2372.84
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x23fb7f093e827ed061aafb574cfd420eab879621c7f78cb341292e106a3a88c0"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/NOON_exp.sol",
+    "https://twitter.com/hexagate_/status/1663501545105702912"
+  ],
+  "notes": [
+    "The token is unverified; the selector 0x30e0789e is keccak('_transfer(address,address,uint256)'), and the traces show it moving balances of accounts other than the caller. trace_filter over the token from its deployment (block 17366706) to block 17500000 finds only two external calls to it, the anchor (block 17366827, by the bot contract 0xf35be9a9 of 0xa19e4fec, an address with over 2,000 transactions) and 0x23fb7f09 (block 17366980), which DeFiHackLabs reproduces; the other calls are the token's own transfer path.",
+    "Loss is the WETH that left the pair in both transactions, 0.1182 WETH at 1,893.53 USD and 1.1364 WETH at 1,891 USD (DefiLlama): in the anchor it realised the holder's stolen NO, which has no other market (rule 12), and in the second it took the 1 WETH the deployer had added plus buyers' WETH."
+  ]
+}

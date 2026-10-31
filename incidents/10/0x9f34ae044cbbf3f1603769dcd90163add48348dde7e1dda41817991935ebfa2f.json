@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Polynomial",
+  "name": "PolynomialZap swapAndDeposit arbitrary call",
+  "summary": "PolynomialZap.swapAndDeposit(user, token, depositToken, swapTarget, vault, amount, swapData) makes swapTarget.call(swapData) with both supplied by the caller, from the zap that users had approved to spend their USDC.e. The attacker's contract called it with token = the ETH placeholder and amount 0, swapTarget = USDC.e, swapData = transferFrom(victim, attacker, amount), and itself as depositToken and vault, so the zap moved 53.17 USDC.e of 0x6467024e's approved balance to the attacker; it then drained the approvals on the second PolynomialZap deployment the same way, and bots copied it for 18 months.",
+  "targets": [
+    {
+      "address": "0xdeeb242e045e5827edf526399bd13e7ffeba4281",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xe645883e3978d5e582aebc881dac1afeaac6f72e7e26e31262722149858f8e9f"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 12002.71,
+    "assets": [
+      {
+        "token": "0x7f5c764cbc14f9669b88837ca1490cca17c31607",
+        "symbol": "USDC.e",
+        "amount": "12002.712253",
+        "usd": 12002.71
+      }
+    ]
+  },
+  "campaign": [
+    {
+      "chainId": 10,
+      "count": 249,
+      "from": 39346643,
+      "to": 121778018,
+      "selection": "transactions other than the anchor in which a token emits Approval(owner, spender) with spender PolynomialZap 0xdeeb242e or its sibling deployment 0xb162f01c and the same owner, not the transaction sender, sends that token to an address other than the zap (all USDC.e 0x7f5c764c; first 0xd2654cbd, 4 by the anchor's attacker 0xcf839601 to block 41224732, then bots such as 0x47a291c1, 0x0000008f, 0xc5e36054 and 0xb893d315)"
+    }
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/Polynomial_exp.sol",
+    "https://x.com/peckshield/status/1602216000187174912"
+  ],
+  "notes": [
+    "Two PolynomialZap deployments by 0x9f76043b carry the same swapAndDeposit arbitrary call: 0xdeeb242e (block 26409172) and 0xb162f01c (block 30572505, which pulls the input with transferFrom instead of transfer). The anchor executed only 0xdeeb242e, whose only approver was 0x6467024e, so it is the one target; 0xb162f01c, where nearly all approvals sat, is a sibling deployment in the campaign (rule 4).",
+    "Earlier exploits: every Approval naming either zap as spender from its deployment to block 158900000 was checked for a transfer out of the approving owner to anyone but the zap. Before the anchor there is none: all earlier zap uses move the caller's own USDC.e into the zap. campaign.mjs misses most exploit transactions because the drains emit no log naming the zap in its first topic.",
+    "Loss is the 359 third-party USDC.e pulls across both zaps, 12,002.71 USDC.e, priced at 1 USD: 6,549.76 by the anchor's attacker 0xcf839601 in its first six transactions and 5,452.95 by copycat bots from December 2022 to May 2024. The DeFiHackLabs figure (about 1.4k) covers only the PoC's first two transactions."
+  ]
+}

@@ -1510,6 +1510,17 @@
     "rule": "privileged",
     "reason": "The code that failed was installed by the protocol's own proxy admin four minutes before it was used, so it never aged and was never trusted by anyone but its author. The two victim proxies are the BUSD vault 0x7e0c621ea9f7afd5b86a50b0942eaee68b04a61c and the WBNB vault 0x639f18c72b6a017bdd209c161d1617c9481a1e4d; reading the EIP-1967 slots at block 5381245 gives admin 0xc1f78cc844ac8e2dd9335e70b9c645e4d79130c5, the Meerkat deployer, and implementation 0x49509a31898452529a69a64156ab66167e755dfb, the honest logic that deployer created on 2021-03-03T16:28:07Z. The replacement implementations 0x9d3a4c3acee56dce2392fb75dd274a249aee7d57 and 0xb2603fc47331e3500eaf053bd7a971b57e613d36 were created by 0xfc76e716c35633a93ad621099a52ffda912fbedd at 2021-03-04T08:49:46Z and 08:49:58Z; the deployer key then called upgradeTo (selector 0x3659cfe6) on the WBNB vault at block 5381239, 08:53:10Z (0x063970f8625f250101a7da8abf914748cf8eaaaa9458041f1928501accfe5d6c) and on the BUSD vault at block 5381246, 08:53:31Z (0xf19fa4bcff4adaebeddd28c851458ba0f01ffedd52b62df56ace94e7c8842553). The new logic exposes an unprotected init(address) (0x19ab453c), called 24 seconds later at block 5381254 by 0x9542966f1114eaa5859201aa8d34358bfedbfa79 (0xfcf48681e382e9f9cc1d6a64ff30487306f6b869924c6594075fcc86b3b21f5d) to take ownership and drain. Balances confirm the outcome: the BUSD vault held 13,968,039.801181389726119981 BUSD at block 5381245 and 0 at block 5381300; the WBNB vault held 73,635.237472535387195192 WBNB at block 5381238 and 0 at 5381300. Meerkat first claimed a hack, and DefiLlama classifies it as a rugpull / admin drain. Attacker-authored code installed by the operator's own key yields no code-age observation."
   },
+  "eip155:56:0xf743dba906255cf6f75f8243ef8192f2a211aacf03df99322584686b5c445c23": {
+    "name": "NovaExchange (NOVA) owner mint and dump",
+    "date": "2022-12-09",
+    "rule": "privileged",
+    "reason": "The Nova token 0xb5b27564d05db32cf4f25813d35b6e6de9210941 (verified, BSC) has rewardHolders(uint256 amount) guarded by onlyOwner, which adds amount to the owner's balance and the total supply. Its deployer and owner 0xcbf184b8156e1271449cfb42a7d0556a8dcfef72, which created the token at block 23616115 and seeded the NOVA/WBNB pair 0x2a9c00f4 with 100 BNB (0xe6290611), called rewardHolders(1e28) itself in 0xf743dba9 (block 23749678) and 78 seconds later sold the minted NOVA for 363.78 WBNB (0x4511a99a), the pair's whole WBNB including buyers' funds; Beosin's alert (https://twitter.com/BeosinAlert/status/1601168659585454081) and DefiLlama ('NOVAToken', Rugpull / Admin Drain) agree. An owner-only mint used by the owner is a rug, not a defect exploitable by an outside caller.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-12/NovaExchange_exp.sol",
+      "https://twitter.com/BeosinAlert/status/1601168659585454081",
+      "eip155:56:0x4511a99ab4df9bc868e0922f2df4644a5facc9c3dca9197dbaf32243c4a2ce70"
+    ]
+  },
   "eip155:56:0xfa1ece5381b9e2b2b83cb10faefde7632ca411bb38dd6bafe1f1140b1360f6ae": {
     "name": "SUT token sale bought out at a stale admin price",
     "date": "2023-07-21",
@@ -1683,6 +1694,23 @@
     "date": "2022-11-12",
     "rule": "keys",
     "reason": "Every drained FTX wallet is an externally owned account and every movement is a plain signed transfer, so no EVM code was executed that could carry a defect. eth_getCode returns 0x for the collector 0x59abf3837fa962d6853b4cc0a19513aa031fd32b and for both source wallets. The earliest Ethereum leg is block 15950923 index 56, 2022-11-12T02:22:23Z, transaction 0x6580bf69c1ee28a1d8a4dec9b949272a449b1c58d91e6692ef34d9ea40fd9653: 9,500 ETH with empty calldata from the FTX hot wallet 0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2, followed at block 15950963 by 10,000 ETH from the second FTX wallet 0x7abe0ce388281d2acf297cb089caef3819b13448 (0x9c9065a994e2c9dfb2...). The collector then approved and swapped through DEX routers, which is laundering rather than victim depletion. Elliptic put the unauthorised transfers at about 477m USD across Ethereum, BSC, Solana and others in the hours after the Chapter 11 filing. In January 2024 a federal grand jury in Washington DC indicted Robert Powell, Carter Rohn and Emily Hernandez for a SIM-swap conspiracy that defeated the multifactor authentication on the victim company's accounts; that is an offchain credential failure, and DefiLlama's hacks dataset likewise files the incident under social engineering/phishing. No contract invariant failed anywhere in the path."
+  },
+  "ethereum:2023-03-17:paraspace-cape-attack-blocked-by-rescue": {
+    "name": "ParaSpace cAPE price manipulation attack blocked by BlockSec rescue",
+    "date": "2023-03-17",
+    "rule": "no-exploit",
+    "reason": "ParaSpace's pcAPE collateral was priced from cAPE's exchange rate, which anyone could inflate by depositing APE to ApeCoinStaking on cAPE's behalf (depositApeCoin), so borrowing against cAPE collateral could drain the pool. The attacker 0x21b7a2c0f7c0c29c0bbc55f5620dc797c29c46b3 sent the attack through contract 0xc1810fb1 three times (0x161427ac, 0xc7c8bf8e, 0xe92b91f4, blocks 16844975-16845200, 03:51-04:36 UTC) and all three reverted. BlockSec's account 0x0000003502aa61a5f1b1fdadff2cf947dfda526e then ran the same attack as a rescue in 0xe3f0d14c (block 16845559), which DeFiHackLabs' paraspace_exp.sol and Paraspace_exp_2.sol replay: it took 2,906.39 ETH, sent 2,900 ETH to 0xd186540f (0xc48d1f40) and the borrowing position (12.16M pcAPE with the vDebt) was moved to ParaSpace's Safe 0xa41084d0 in 0x746547cc (2023-03-19); BlockSec (https://blocksec.com/blog/blocked-paraspace-attack-industry-s-most-important-block-that-rescued-5-000-000) and CryptoSlate report the funds returned to ParaSpace, which covered the 50-150 ETH slippage. The only successful exercise is a rescue whose proceeds went back to the protocol (affiliated, rule 5), so no unaffiliated successful exploit exists (rule 2).",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-03/paraspace_exp.sol",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-03/Paraspace_exp_2.sol",
+      "https://twitter.com/BlockSecTeam/status/1636650252844294144",
+      "https://blocksec.com/blog/blocked-paraspace-attack-industry-s-most-important-block-that-rescued-5-000-000",
+      "https://cryptoslate.com/paraspace-hack-in-retrospect-5m-rescued-large-withdrawals-time-locked-hacker-wants-fees-back/",
+      "eip155:1:0xe3f0d14cfb6076cabdc9057001c3fafe28767a192e88005bc37bd7d385a1116a",
+      "eip155:1:0x161427ac3bfa8047fefaf505f50dc792840c4824d4773760939aa7eaa270e3d9",
+      "eip155:1:0xc7c8bf8ebacaf72d4cba3f7c69c770060bd32b3892697226f9bb9a871a1c1f62",
+      "eip155:1:0xe92b91f4dd13218a24e7328298e4a015cdbe74f3f10ccf60666300a508186e18"
+    ]
   },
   "ethereum:2023-04-09:gdac-exchange-hot-wallet-drain": {
     "name": "GDAC exchange hot wallet drain",
