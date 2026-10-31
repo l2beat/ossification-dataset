@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "ONTR",
+  "name": "ONTR onlyOwner passes for anyone once ownership is renounced",
+  "summary": "The ONTR token's Ownable.onlyOwner reads require(owner == address(0) || owner == msg.sender), so after the launcher renounced ownership in the deployment transaction every caller passed it. The attacker's constructor called transferOwnership(itself), queued a 1e12 ONTR grant with the owner-only desertJasper(), credited it with glenFlash() (a balance write with no mint event), transferred the 1e12 ONTR into the ONTR/WETH pair, bypassing the token's sell restrictions as owner, and swapped out 49.48 of the pair's 50.05 WETH.",
+  "targets": [
+    {
+      "address": "0xf074865358b0dd039beee075831f8a2ae6b1f3f3",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4319b71eb21c2eff4916bf98d395ca94f03eb9dc86cbcedefd3c9c2164bd6a60"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 98553.19,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "49.480100697512152261",
+        "usd": 98553.19
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/TenArmorAlert/status/2060190914547449936",
+    "https://hacked.slowmist.io/?c=ETH",
+    "https://api.llama.fi/hacks"
+  ],
+  "notes": [
+    "The token is an obfuscated launch template (renamed OpenZeppelin parts, a hidden owner-only balance grant desertJasper/glenFlash that emits no Transfer, and a sell filter that only lets the owner, granted addresses and the pair move tokens). It is admitted because the loss came from a defect any caller could use: the launcher contract 0x1cffd81d renounced ownership inside the deployment transaction, and onlyOwner treats owner == address(0) as a pass. The attacker EOA 0xe806b37a was funded 57 blocks earlier by 0x12d66f87 and sent the proceeds to 0xc83e7e1d; no link to the deployer 0x325e0a53 was found, and the deployer afterwards removed what was left of its liquidity (0.52 WETH, block 25193535).",
+    "Reset is the deployment (block 25192445), which also set the zero owner; the only later writes before the anchor are two small buys. No earlier exploit: the only OwnershipTransferred events are the deployment's and the anchor's, and the anchor is the pair's first WETH outflow.",
+    "Loss is the pair's WETH outflow in the anchor (49.48 WETH, $98,553.19 by loss.mjs). Almost all of it was the deployer's 50 WETH seed liquidity; buyers had added about 0.03 WETH before the anchor."
+  ]
+}

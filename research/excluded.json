@@ -1081,6 +1081,19 @@
       "eip155:1:0x633b6075c89e0b80ac298e0fee24cd9b51c5508e0c7eeb11a825555e1d81d816"
     ]
   },
+  "eip155:1:0xae2c6309ed22c4123ce294713302b76a2e33b58a7e55ad505befee9cf8b33baa": {
+    "name": "Aethir AethirOFTAdapter owner-key takeover",
+    "date": "2026-04-09",
+    "rule": "keys",
+    "reason": "The exploited contract is the verified AethirOFTAdapter 0x5786c150609a4ef8957bc614a13e8e29558eaba4 on Ethereum (not BNB Chain), deployed at block 21114859 by Aethir's EOA 0x717d595469efc732cc8c5271e7d288d806469fc0, which had owned and configured it since (setPeer, setEnforcedOptions). At block 24839218 that owner EOA itself signed transferOwnership(0xd5fa8ac45d6a0984d14f3b301b18910948deb11a); the new owner then called setDelegate, setPeer, setSendLibrary/setReceiveLibrary, setConfig and skip through the LayerZero endpoint and the adapter released 842, 842 and 84,200,000 ATH to it (blocks 24840270-24840288). The ATH was swapped through Uniswap's Universal Router and direct pool transfers, about 195 ETH bridged by deBridge to BSC USDT (four orders, 422.5k USDT) and moved on via Symbiosis to Tron, matching PeckShield's BSC-to-Tron trace. Ownership passed only through a transaction signed by the legitimate owner key, so no adapter code failed; Aethir describes the contracts as compromised and disconnected them. The dev.to 'missing onlyOwner' post-mortem is not supported onchain.",
+    "refs": [
+      "https://cointelegraph.com/news/aethir-bridge-exploit-halt-user-compensation-90k-loss",
+      "https://crypto.news/aethir-contains-bridge-hack-while-losses-stay-below-90k/",
+      "https://dev.to/cryip/aethir-adapter-exploit-complete-technical-postmortem-report-1001",
+      "https://api.llama.fi/hacks",
+      "eip155:1:0x20432bcd1c25970b03a7934f994b076575473482f2f20dd65ad2526b90ef8e83"
+    ]
+  },
   "eip155:1:0xb2c7332d9e1be6a86d9d37083aa4cc0d94b60eb95cc9b29494555a3c09764930": {
     "name": "EtherVista VISTA/WETH pair drained through a router set by the routerSetter",
     "date": "2026-10-09",
@@ -1148,6 +1161,17 @@
     "date": "2024-02-09",
     "rule": "keys",
     "reason": "The token's access control held and the caller genuinely possessed the role. PLA 0x3a4f40631a4f906c2bad353ed06de7a5d3fcb430 is a verified Solidity 0.5.15 ERC20Capped/Pausable token using stock OpenZeppelin MinterRole, created at block 9921528 on 2020-04-22T09:40:15Z by 0x6f53e6f92e85c084e10aaf35d4a44dee6a27892d, with no proxy and no upgrade events. Exactly two MinterAdded events exist over the token's life: the deployer at creation, and 0xd151050d43c28690766f50ce9ea8686c5d243a40 at block 19190923, added by the anchor transaction whose sender is the pre-existing legitimate minter 0x6f53e6f92e85c084e10aaf35d4a44dee6a27892d calling addMinter (0x983b2d56). The onlyMinter guard was satisfied because the caller held the role, so no invariant failed; the same key then called renounceMinter, locking PlayDapp out. The new minter minted 100,000,000 PLA at 13:45:11Z (0xe8be05f6a3360f63b9e78a30b4ba16ea4c7d0b530a8abf99390f1c831851fb7e), 100,000,000 more at 14:31:23Z, and 1,590,000,000 on 2024-02-12T13:01:47Z, for 1.79 billion PLA nominal against roughly 32m USD actually realised. PlayDapp's post-mortem and PeckShield both state a stolen private key; Halborn's looser access-control framing is contradicted by the onchain caller. Note that OpenZeppelin MinterRole lets any minter add further minters, which is a centralisation choice rather than a defect."
+  },
+  "eip155:1:0xeabb150cd728253c5d8844673c8d0687ab9881366ed1c9aad5b00016584e6392": {
+    "name": "ATOHook reentrancy-guard slot planted on the attacker's rewards entry",
+    "date": "2026-06-04",
+    "rule": "privileged",
+    "reason": "ATOHook 0xa10de71ddb4e0d51938ef6e0118822e157a62888 (verified, deployed block 25239733 by 0xa10de76dade8e9692485ec8146c0784d54e92121) compiles a modified Solady ReentrancyGuard whose fixed slot 0x02215292eb9609279094554c6e223f800950648ddfa3da30329838d6c170928d equals keccak256(abi.encode(0x2441e480f62bf609a08da09143e4baf8a817d757, 17)), i.e. rewards[0x2441e480] (rewards is slot 17), so the nonReentrant sentinel 0xffffffffffffff written by getReward() reads as that one address's reward. 0x2441e480 is the attack contract, created only later (block 25244005) by the attacker EOA 0x2d2aafc193c24e59bd16139056ac9b4df4d37ad0 at nonce 0; matching a 256-bit keccak output to a chosen address is infeasible, so the constant was written by someone who knew the attacker's future contract address. The attack contract then received 0xffffffffffffff wei (0.072 ETH) per getReward call, 100 times in this transaction (block 25244686) and 200 times in 0xe4e2cc3b (block 25244688), followed by further calls through block 25244791; SlowMist puts the loss at 14.41 ETH (~$25k), and the hook's ETH balance fell from 21.50 ETH to about zero by block 25244800. The hook deployer renounced its role and moved 2 ETH (blocks 25244677-25244679) just before. This is author-installed authority usable only by one address, not a defect an outside caller could trigger.",
+    "refs": [
+      "https://x.com/SlowMist_Team/status/2063576945552462201",
+      "https://hacked.slowmist.io/",
+      "eip155:1:0xe4e2cc3b06144da48fa8577eb0059b713bcce97579bee59ec65c518a04716c6e"
+    ]
   },
   "eip155:1:0xee8a0e425670b53e5066451362324fb6ef36fb5507a525567fc8c9b68a03709f": {
     "name": "BitForex hot wallet extraction",
@@ -1603,6 +1627,19 @@
       "https://shattered.io/base-defi-vault-hack-6-million-19-minutes-2026/",
       "eip155:8453:0xb4d1c2f4a0425802da69b73101f790bbab7df3aef70592eaeb1344d3d1e78692",
       "eip155:8453:0xfc4bba1eb305270e6e137fb3e9e02706c088c025d80ade224fd72d37f9e0cfb2"
+    ]
+  },
+  "eip155:8453:0xea3fb492c354ae113fc74102a74ea605361a33c4b95398ae5aef61bfe52b1733": {
+    "name": "Bitmor DCA V1 executor-key router swap",
+    "date": "2026-05-25",
+    "rule": "keys",
+    "reason": "Bitmor states that its executor wallet was compromised and used to swap the DCA V1 contract's router for an exploiter contract (https://x.com/bitmor_btc/status/2059008082731212839). Onchain on Base, the executor and deployer 0x5c02dc277953b52983f2cdfc15c5f190cfe1f766 of DCA contract 0x1d3f8fcfe508d7031c242e213b27fbe432f52c67 called the owner-gated setUniswapRouter to 0x1ca4f23c2b88b951ebed831b4a6cb1380507249f (block 46473386) and then to the verified contract named Drainer 0x41fcfa5c52e6b33ebfbe5da839c0055b771debcc (block 46476752), and from block 46477234 (this key) sent 152 executeSwap calls that routed users' approved USDC through it (5,909 USDC per Bitmor). Both the router change and the drains were signed by the project's own executor key.",
+    "refs": [
+      "https://x.com/bitmor_btc/status/2059008082731212839",
+      "https://revoke.cash/exploits/bitmor",
+      "https://api.llama.fi/hacks",
+      "eip155:8453:0x83afd3428b0a5f43df4198742e0db9b575d9393bb2a442512c54d19dc2dda610",
+      "eip155:8453:0xbf0a933676ea7446f958d81cd4c749b9f970753fdd7c20032f005eccd4098ee7"
     ]
   },
   "eip155:8453:0xfbf6b17a9de7f9e1e97eb48dc68a993f7663d4b9530a3cd6cc262e554549e59d": {
@@ -2952,6 +2989,74 @@
       "https://decrypt.co/363734/bitcoin-depot-atm-operator-3-6-million-btc-stolen-security-breach",
       "https://www.securityweek.com/3-6-million-stolen-in-bitcoin-depot-hack/",
       "https://www.theblock.co/post/396804/bitcoin-depot-3-7-million-stolen"
+    ]
+  },
+  "web:2026-04-11:zerion": {
+    "name": "Zerion internal hot wallets drained after employee device compromise",
+    "date": "2026-04-11",
+    "rule": "keys",
+    "reason": "Zerion's own disclosure (https://x.com/zerion/status/2044167535231414727), SlowMist's entry and DefiLlama report that a DPRK-linked AI-assisted social-engineering campaign compromised an employee device, giving the attacker sessions, credentials and the private keys of internal hot wallets, from which about $100k was transferred; no user funds, products or contracts were affected. The loss came from signed transfers by stolen keys, not from contract code.",
+    "refs": [
+      "https://x.com/zerion/status/2044167535231414727",
+      "https://cointelegraph.com/news/north-korean-hackers-use-ai-enabled-social-engineering-latest-attack",
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
+  "web:2026-04-26:scallop-deprecated-rewards-contract": {
+    "name": "Scallop deprecated V2 sSUI spool rewards contract",
+    "date": "2026-04-26",
+    "rule": "non-evm",
+    "reason": "SlowMist and DefiLlama place the exploit on Sui: a deprecated Move side contract (V2 rewards for the sSUI spool) with an uninitialized last_index/update_points accumulator let the attacker mint about 162 trillion reward points from 0.2 SUI and drain about 150,000 SUI (~$142k). Scallop is a Sui Move protocol; no EVM code is involved.",
+    "refs": [
+      "https://x.com/Scallop_io/status/2048976878997041499",
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
+  "web:2026-05-19:hermesvault": {
+    "name": "HermesVault withdrawal verification bypass",
+    "date": "2026-05-19",
+    "rule": "non-evm",
+    "reason": "SlowMist and DefiLlama report HermesVault as an Algorand privacy protocol: a flaw in the key-reset defence of its withdrawal verification script let the attacker bypass zk verification and withdraw about 261,000 ALGO (~$29.5k). Algorand is not an EVM chain.",
+    "refs": [
+      "https://x.com/giuliopizzini/status/2056858969403183292",
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
+  "web:2026-05-27:stake-dao-vsdcrv-oft": {
+    "name": "Stake DAO vsdCRV OFT peer repointed with the deployer key",
+    "date": "2026-05-27",
+    "rule": "keys",
+    "reason": "Stake DAO's post-mortem, SlowMist, Blockaid (via The Block) and DefiLlama report that the attacker held the compromised deployer EOA private key, which still owned the vsdCRV LayerZero v2 OFT on Arbitrum after an incomplete ownership handover, repointed the OFT peer to an attacker contract on Ethereum and forged a mint of about 5.44 trillion vsdCRV, extracting about 43.8 ETH (~$91k) from the vasdCRV Curve pool. The peer change was an owner action signed with the stolen key.",
+    "refs": [
+      "https://x.com/stakedaohq/status/2064366142685094064",
+      "https://www.theblock.co/post/402719/security-researchers-flag-ongoing-stakedao-exploit-vsdcrv",
+      "https://thedefiant.io/news/hacks/hacker-mints-5-4-trillion-tokens-in-stakedao-exploit-nets-usd91k",
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
+  "web:2026-05-31:fluid-merkle-rewards": {
+    "name": "Fluid Merkle rewards proposer and approver keys compromised",
+    "date": "2026-05-31",
+    "rule": "keys",
+    "reason": "Fluid (https://x.com/0xfluid/status/2061124908277538827), SlowMist and DefiLlama report that the attacker obtained the operational proposer and approver keys of Fluid's off-chain Merkle rewards infrastructure, submitted and approved fraudulent Merkle roots and claimed about 125k FLUID, 51.9k GHO and some cbBTC (~$215k) with empty proofs. The distributor contracts accepted roots signed by the authorised keys as designed.",
+    "refs": [
+      "https://x.com/0xfluid/status/2061124908277538827",
+      "https://www.kucoin.com/news/flash/defi-project-fluid-loses-215-000-after-reward-contract-exploited",
+      "https://hacked.slowmist.io/",
+      "https://api.llama.fi/hacks"
+    ]
+  },
+  "web:2026-05:cellframe-bridge": {
+    "name": "Cellframe bridge illegal token issuance",
+    "date": "2026-05",
+    "rule": "non-evm",
+    "reason": "The only source, Cellframe's AMA of 2026-05-07 (https://cellframe.net/blog/ama-with-dmitry-gerasimov-may-7-2026/), mentions a recent bridge hack with illegal token issuance worth about $2,000, says the bridge was split into hot and cold parts and USDC moved to new protocols, and gives no chain, contract or transaction. No EVM issuance exists: the CELL tokens on Ethereum (0x26c8afbbfe1ebaca03c2bb082e69d0476bffe099) and BNB Chain (0xd98438889ae7364c7e2a3540547fad042fb24642) each have a single mint, in 2021 and 2022, and none since. The issuance therefore happened on the Cellframe network or in the bridge's off-chain hot wallets, neither of which is EVM contract code.",
+    "refs": [
+      "https://cellframe.net/blog/ama-with-dmitry-gerasimov-may-7-2026/"
     ]
   },
   "wemix:2025-02-28:wemix-play-bridge-vault-monitoring-key-withdrawals": {
