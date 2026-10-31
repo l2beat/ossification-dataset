@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Ethernal Finance (ETHFIN)",
+  "name": "ETHFIN public doBuyback swaps the buyback pot with zero minimum output",
+  "summary": "EthernalFinanceII.doBuyback() is public (its comment says 'set to private') and, once N_holders reaches NextBuybackMemberCount, swaps 40% of the buyback pot's BNB for ETHFIN through PancakeRouter with amountOutMin 0; N_holders counts every first-time recipient, so 1-wei transfers to fresh addresses reach the threshold. The attacker pushed N_holders to the threshold with 1-wei transfers (from 0x8a490cac and in the anchor), flash-borrowed 12 WBNB from a PancakeSwap V3 pool, bought 54.72B ETHFIN with 11.68 WBNB from the ETHFIN/WBNB pair 0x3544da62, called doBuyback so the contract spent 2.63 BNB at the inflated price, sold the ETHFIN back for 14.13 WBNB and kept 2.23 BNB; it repeated this twice within 50 minutes.",
+  "targets": [
+    {
+      "address": "0x17bd2e09fa4585c15749f40bb32a6e3db58522ba",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x1349196622be9b7b616477c7f718356a5e143be8eeb7c5c4dc21ce01accb14f0"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3151.52,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "5.157704945927034551",
+        "usd": 3151.52
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x416ac780f3fdfbe464da9d4b6e7134a3e583bcd517a67ee86f6aadf2995032d6",
+    "eip155:56:0x5a69de35bf8ee9b68ef57ea17080e191e035bc4e730f454603263ca1594486df"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-03/ETHFIN_exp.sol"
+  ],
+  "notes": [
+    "Earlier exploits: the contract emitted Buyback_ 20 times; the 17 before the anchor (blocks 12296127-35441189) were plain doBuyback() calls by the deployer 0xb2be75ae (one by 0x01db8538) with a single router swap and no surrounding trades. The anchor is the first sandwiched buyback; the same attacker 0x52e38d49 repeated it with fresh contracts in 0x416ac780 and 0x5a69de35, the last buybacks the contract made.",
+    "Reset is the deployment (0x13491966, 2021-10-27). resets.mjs lists no later change to the buyback logic: setAutoCalcRewards (0x96f45274), holders' ChooseSinglePayoutToken and ExcludefromTax calls, earlier buybacks' pot and threshold updates, liquidity moves, and the attacker's own holder-count inflation in 0x8a490cac 21 blocks before the anchor (part of the attack, rule 10).",
+    "Loss is the BNB that left the ETHFIN contract's buyback pot in the three transactions (loss.mjs --victims 0x17bd2e09: 2.631, 1.579 and 0.947 BNB). The attacker kept 4.75 BNB; the rest stayed in the ETHFIN/WBNB pair as fees and price impact (netting that pair in gives 2,916 USD) or paid the flash fees. The ETHFIN bought by the pot was burned."
+  ]
+}

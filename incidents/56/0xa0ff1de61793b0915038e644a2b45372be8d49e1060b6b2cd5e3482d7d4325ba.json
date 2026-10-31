@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Revamp",
+  "name": "Revamp pays earlier contributors from principal that stays withdrawable",
+  "summary": "Revamp.revamp() adds each new contribution (net of fees) to accRewardPerShare as a reward for earlier contributors, capped at 2x their stake, yet the new contributor can withdraw that same principal at once with withdraw(), so the reward is backed only by other users' deposits. The attacker flash-borrowed 64.33 WBNB, listed its own token, contributed 1.694 BNB (1.604 net, half of Revamp's 3.208 BNB balance) from its contract and 62.11 BNB from a helper, then withdrew 4.812 BNB (principal plus the full 2x reward) and the helper's 58.82 BNB principal, emptying the contract.",
+  "targets": [
+    {
+      "address": "0x46280c1a2e17cfc151f50a885363408368bb163a",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf13cdaf2ae433dab9570c585ee766ff65b52399245a0d89fbd08405a550d9e22"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2087.59,
+    "assets": [
+      {
+        "symbol": "BNB",
+        "amount": "3.207830444822227642",
+        "usd": 2087.59
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/DefimonAlerts/status/2034532544239088053",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-03/Revamp_exp.sol"
+  ],
+  "notes": [
+    "Earlier exploits: campaign.mjs over Revamp's listNewAsset, revamp and withdraw calls from deployment to 90 days after the anchor finds 470 earlier exercises, all EOA listings and contributions; no withdraw() call precedes the anchor. Etherscan's history agrees: before the anchor all 1,121 calls to Revamp came from EOAs (465 revamp, 648 claim, listings and one delist), claim() only pays pending rewards, and the anchor is the only transaction in which BNB enters Revamp from a contract. The attack drained the contract (balance 3.2078 BNB at block 87423340, 1 wei after), so no repeat followed.",
+    "Reset is the deployment (0xf13cdaf2, block 53083849); the only later state changes are user contributions, claims, token listings (anyone can list for the fee) and one delistAsset, none of which an owner made to the reward logic.",
+    "Loss is Revamp's whole pre-attack balance, its net BNB outflow in the anchor (loss.mjs --victims 0x46280c1a); the attacker kept 2.99 BNB after repaying the flash loan, the rest went as Revamp's native, shareholding and referral fees on the attacker's two contributions."
+  ]
+}

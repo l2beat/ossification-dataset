@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "DFS",
+  "name": "DFS skips the sender debit on fee-exempt pair transfers",
+  "summary": "DFS._transfer debits the sender of a transfer to or from its registered pair only inside the fee branch (takeFee && !exclusiveFromFee[from]) yet always credits the recipient, so once the owner marked the pair 0x4b02d85e fee-exempt every transfer out of it, including skim to itself, created DFS. The attacker flash-borrowed 1,462.55 USDT into the pair, swapped out 99.27 DFS, sent 97.28 DFS back and called skim(pair) 12 times, doubling the pair's surplus each time, then skimmed 398,463 DFS to itself, sold 378,541 DFS into the pair for its 2,924.34 USDT and repaid the loan, keeping 1,458.13 USDT.",
+  "targets": [
+    {
+      "address": "0x2b806e6d78d8111dd09c58943b9855910bade005",
+      "reset": {
+        "kind": "config",
+        "tx": "0x902a4581f5b38d463d8e6c17f7070def63a71257d4e967a0ae311a7d3584670d",
+        "address": "0x2b806e6d78d8111dd09c58943b9855910bade005",
+        "slot": "0xc2caed6f15fd95d454a0b7134d607308c52b8dd14b17c32f77e385b2d902386f"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1463.26,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "1461.796536220582127262",
+        "usd": 1463.26
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2022-12/DFS_exp.sol",
+    "https://twitter.com/CertiKAlert/status/1608788290785665024"
+  ],
+  "notes": [
+    "Reset: DFS was deployed on 2022-12-09 (0x5250ed16); the owner registered pair 0x4b02d85e with setPair (0x18093265, block 24126659) and made it fee-exempt with setExclusiveFromFee([pair]) (0x902a4581, block 24144568, exclusiveFromFee mapping slot 4), the change that turned the pair's transfers into debit-free ones and the latest one the exploit needed (an accounting rule, rule 8). The later slot 0xb change (0x75ae16e9) is the holder list length.",
+    "Earlier exploits: campaign.mjs --outflows on the pair from its creation (block 24126022) shows no DFS outflow above 31.2 DFS before the anchor (liquidity removals and swaps) and no skim doubling; its USDT outflows before the anchor are liquidity removals and sales of at most 241 USDT. After the anchor the pair held 0.75 USDT and its later outflows are liquidity removals.",
+    "Loss is the pair's net USDT outflow in the anchor (loss.mjs --victims 0x4b02d85e); the DFS moved by the skim loop was created by the defect and realised nothing beyond that USDT (rule 12). In the next block two long-running arbitrage bots (0xa5cd2a58 by 0x27791cf4, 0x6e129be3 by 0x05291cfe) bought the cheap DFS from the pair and sold 1,057,223 DFS into the PancakeSwap DFS/USDT pool 0xb5951ff6, taking 16,663.49 USDT of its 16,700 USDT; as routine arbitrage by unaffiliated bots they are not counted as exploit transactions, though their purchases also ran the debit-free path."
+  ]
+}
