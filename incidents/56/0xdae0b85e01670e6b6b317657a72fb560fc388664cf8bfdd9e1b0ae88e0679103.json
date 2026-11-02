@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "BCT",
+  "name": "BCT pays referral rewards on skimmed and self-referred pair transfers",
+  "summary": "BCT's _transfer treats every transfer out of or into its BCT/USDT pair 0x5a25b857 as a trade and, through promoteReward, pays 15/10/5/5/5% of the amount from the payTokenAddress wallet's BCT to the five-level inviter chain of the trader, while anyone can bind inviters by exchanging 0.001 and 0.0005 BCT between their own addresses and pair skims count as buys. After binding a chain of five of its own contracts (setup 0xd4c19d57), the attacker flash-borrowed 20 WBNB, bought 60 BCT through the BCT/WBNB pair for each inviter (30 after the 50% fee BCT charges outside its main pair) to meet the 30-BCT threshold, then repeatedly sent BCT to the pair and skimmed it back, each leg paying 40% of the amount to its inviters against 15% fees; it drained 1,130,499 BCT from payTokenAddress and sold it into the BCT/WBNB pair 0x88b3eb62 for 10.20 WBNB.",
+  "targets": [
+    {
+      "address": "0x70ca72bb4a1386439a2a51476f2335a31005ebe8",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xbc697d89636e43e7677c0bb317d1065fd4d0e7ab666d6c844abc8912b493246b"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2466.32,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "10.204043154622408864",
+        "usd": 2466.32
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/BCT_exp.sol",
+    "eip155:56:0xd4c19d575ea5b3a415cc288ce09942299ca3a3b49ef9718cda17e4033dd4c250"
+  ],
+  "notes": [
+    "The defect is BCT 0x70ca72bb's reward logic: the BCT/WBNB pair is a standard PancakeSwap pair and the helpers (0xcc1378e4, 0xf5eb1f3e, 0x23d16797, 0x64b2006f, 0x3b132c86) are the attacker's own. 0xd4c19d57, 197 blocks earlier, only created the helpers and bound the inviter chain (attacker-installed state, rule 10) and moved no victim funds.",
+    "Reset is BCT's deployment (0xbc697d89, block 29633409), which also created the BCT/USDT pair and set payTokenAddress and promoteRewardSwitch; resets.mjs lists no later owner change, only balances and the attacker's inviter bindings.",
+    "Earlier exploits: campaign.mjs --outflows on payTokenAddress 0x8ebeb2bf (an EOA whose BCT the token moves without allowance) from deployment to 90 days after the anchor finds no BCT outflow before the anchor above 10,133 BCT apart from the wallet's own 250,000 BCT transfer to the deployer (0xe6e83c53); its regular 5,500-10,300 BCT outflows are the wallet's own daily distributions. The anchor alone took 1,130,499 BCT, and no later transaction repeated it.",
+    "Loss is the WBNB the BCT/WBNB pair lost in the anchor (loss.mjs: 10.204 WBNB, of which the attacker kept 10.154 after the 0.05 WBNB flash fee); the 1,130,499 BCT taken from payTokenAddress has no market price and realised that WBNB (rule 12)."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "ElevateFi",
+  "name": "ElevateFi stakeEFI prices packages from DAI/EFI pair reserves",
+  "summary": "ElevateFi's staking proxy 0x816ec920 (implementation 0xcddc83a3) sells fixed-USD staking packages in stakeEFI(packageId): it converts the package's USD price to EFI with getPriceUSD(), the raw reserve ratio of the DAI/EFI QuickSwap pair 0xaec86dc2, burns that EFI from the staker and books a stake that accrues USD-denominated rewards paid in EFI. The attacker EOA 0x7abd3f84, running EIP-7702 code to pass the only-EOA check, flash-borrowed about 1.35M DAI through five nested flash loans (Aave V2, Balancer and three pools), bought 12,713 EFI from the pair to lift its price, created 100 package-7 stakes for 713.5 EFI in total, and sold 11,399.7 EFI back. 34 blocks later, after calling rebase(), it claimed 6,256.53 EFI of stake rewards from the proxy (0x3b366a43) and sold them for 15,745.9 DAI.",
+  "targets": [
+    {
+      "address": "0x816ec92012e61269dcfe72188fe6d2352defce74",
+      "code": "0xcddc83a34fc9a7b9e6b1df7c14b585cf73283174",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x7c8ca8dcb01237870e4f24e0d67b160c35f530db661b8dfe7b369d04ae489c65"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 15757.64,
+    "assets": [
+      {
+        "token": "0xae840deab9916d80fadf42e218119a6051468169",
+        "symbol": "EFI",
+        "amount": "6256.533425502594495059",
+        "usd": 15757.64
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:137:0x3b366a43a2611e4e017392335064ef8423ea1e5b9ac0c630a1032a23bd938f3c"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2026-05/ElevateFi_exp.sol",
+    "https://t.me/defimon_alerts/3040"
+  ],
+  "notes": [
+    "In the cohort as a code defect: getPriceUSD() is the pair's spot reserve ratio, so the EFI a package costs depends on a price the staker moves in the same transaction (rule 1). The anchor is the staking transaction that exercised it; the reward claim that realised the loss is in campaign.",
+    "Reset is the upgrade to 0xcddc83a3 (0x7c8ca8dc, block 87128727, about two hours before the anchor), the latest of 19 implementation changes since the proxy's creation in November 2025; earlier implementations also priced stakeEFI from the pair, but the route change resets the age (rule 7). resets.mjs lists after it only the admin's adminStakeFullWalletEfiToV4 migration bookkeeping. The 7702 delegation is attacker-installed code, not a reset (rule 10).",
+    "Earlier exploits: of the 8,494 PackageStaked/StakedEFI logs on the proxy from its creation to block 87200000, every transaction with more than one stake is the admin 0xe7c458d0's migration or the anchor; other stakes are single EOA calls, and stakeEFI rejects contract callers. Users kept staking and claiming normally afterwards.",
+    "Loss is the 6,256.53 EFI the proxy paid out in the claim (loss.mjs, victim the proxy). DefiLlama prices it at 3.21 USD (20,092 USD), but the attacker's four sales into the pair dropped its price from about 3.7 to 1.9 DAI, so it is valued at what they realised (rule 12): 15,745.90 DAI for 6,250 EFI including the token's sell burn, plus the 6.53 EFI left unsold at the last sale's 1.80 DAI. The 713.5 EFI it staked stays in the proxy as its stake principal and is not subtracted (rule 11)."
+  ]
+}

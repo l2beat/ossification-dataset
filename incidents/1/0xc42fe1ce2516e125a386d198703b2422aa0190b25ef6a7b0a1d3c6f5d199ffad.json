@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Unicly",
+  "name": "Unicly PointFarm deposit reenters through the ERC1155 points mint",
+  "summary": "PointFarm.deposit(pid, amount) mints the caller's pending points as ERC1155 tokens with _mint, whose onERC1155Received callback runs before user.rewardDebt is updated, so a contract can re-enter deposit(pid, 0) and be paid the same pending points again. The attacker staked 3,528 uJENNY in the uJENNY pool on 2023-09-14, and two days later called deposit(0, 0) from a contract that re-entered twice, minting 3 x 3,528 points instead of 3,528; it withdrew its uJENNY, sold it back for 0.4968 WETH and redeemed 10,000 points in PointShop for the uJENNY shop's Realms NFT #4689.",
+  "targets": [
+    {
+      "address": "0xd3c41c85be295607e8ea5c58487ec5894300ee67",
+      "reset": {
+        "kind": "config",
+        "tx": "0x60bac60cb61c984d4abef83e86e95e8064321a348ebdeab5d14ad10b3a2bc4ad",
+        "address": "0xd3c41c85be295607e8ea5c58487ec5894300ee67",
+        "slot": "0x6e1540171b6c0c960b71a7020d9f60077f6af931a8bbf590da0223dacf75c7af"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1304.78,
+    "assets": [
+      {
+        "token": "0x7afe30cb3e53dba6801aa0ea647a0ecea7cbe18d",
+        "symbol": "REALM",
+        "amount": "1",
+        "usd": 1304.78
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-09/uniclyNFT_exp.sol",
+    "https://twitter.com/DecurityHQ/status/1703096116047421863",
+    "eip155:1:0x782d6f7742d7212aa17c3a263d9bff89d7a5510fb3ff80f05c5c75d063abdb42",
+    "eip155:1:0x156c006b7f71deea28154455ecd95af7a083ee7e94f26f752e7cf2b37a883db1"
+  ],
+  "notes": [
+    "Reset is the listing of the uJENNY pool (pid 0; poolInfo[0].uToken and poolInfo length in slot 9), made through PointShop by 0x0ef024d2 at block 13558853, six days after PointFarm's deployment (0xc47d361b, block 13521372): the exploit needed that pool. Later PointFarm writes are the attacker's own preparatory deposit (0x782d6f77, block 18133172), user balances and accumulators (rule 8).",
+    "Earlier exploits: PointFarm's whole log history (19 events) shows only 0x0ef024d2's two deposits in November 2021 and the attacker's two transactions; no points were ever minted before the anchor, whose three TransferSingle mints of 3,528 points to the attack contract 0x9d9820f1 in one call are the reentrancy. No later exploit: no PointFarm event follows the anchor.",
+    "Loss is the Realms NFT #4689 that left PointShop, which has no fungible market price; it is valued at what the attacker realised (rule 12), 0.796 ETH from its Seaport sale for 0.8 ETH two days later (0x156c006b) at $1,639.17. The attacker's 3,528 uJENNY was its own deposit, withdrawn in the same transaction."
+  ]
+}

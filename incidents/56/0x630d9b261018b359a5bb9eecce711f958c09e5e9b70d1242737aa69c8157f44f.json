@@ -1,0 +1,51 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SHELL buy robots",
+  "name": "SHELL buy robots let any caller name the paying wallet",
+  "summary": "The operator's unverified SHELL buy robots (all deployed by 0x72e787aa) expose 0x5f90d725(source, payer, to, amount, ...), which pulls amount USDT from payer and SHELL from the source treasury 0xf5339777, returns part of the USDT to the treasury, adds liquidity and buys SHELL, and sends the bought SHELL half to payer and half to to, without checking that payer is the caller. Any wallet that had approved a robot could be made to buy with the caller collecting half. In the anchor 0xb5c54ee8's contract called robot 0x19f79179 with payer 0xbc45b7f1 (100 USDT) and itself as to, and sold the 46.24 SHELL; it repeated this on three more approvers, then the DeFiHackLabs attacker and four copycats looped robots 0xa898b78b and 0x923aa7c7 over the operator's own approved wallets 0x100006d3 and 0xf5339777.",
+  "targets": [
+    {
+      "address": "0x19f7917921522323308f27f067a7b1062d1a70a1",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xe1ea6df0bf1991e7eb5c5529ebc286e69862358029c7ba83d51bcb142a87cc5e"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:56:0x8b92cb1277b8ee737cb1259d0a410435d5a5ced99e8cb8ba5806f80fb879808b",
+    "eip155:56:0x1a9582f140e7619f7465e3de5b8a2b7d1d82ef49bce0e0fad616c62862d076da",
+    "eip155:56:0xdf05001bdd72c2c0eceb410100e23c5aea889c42e091018992814b84da56ebe3",
+    "eip155:56:0x24f114c0ef65d39e0988d164e052ce8052fe4a4fd303399a8c1bb855e8da01e9",
+    "eip155:56:0x61c81db12c693e6a0deac9e63bf8c2106291263dc3520116a9bc76124df3c9a7",
+    "eip155:56:0x38130244f3444f82bb503512f676a569bb7c46990ff61834b655486c0d6b4c0c",
+    "eip155:56:0x51e4d194683a32e7537cb107cc499d25bea00027ea553412d1b00e0ba5438bc5",
+    "eip155:56:0x03bd08d80123279f56e1f22cb9929093342f5822b6827ea47f2e8a7490bafe24",
+    "eip155:56:0x2c8d60bf2c2f55a55e4edc5eb16bf5556cfe048218250a07aae84352a619ebeb"
+  ],
+  "loss": {
+    "usd": 3559.45,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "3407.583386774992674822",
+        "usd": 3397.04
+      },
+      {
+        "token": "0x5df670150be23c7bcf764e57f24d46ba88dca621",
+        "symbol": "SHELL",
+        "amount": "893.379266505090304136",
+        "usd": 162.41
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2024-01/Shell_MEV_0xa898_exp.sol"
+  ],
+  "notes": [
+    "Mechanism from traces, as the robots are unverified: in every exploit the robot calls USDT.transferFrom(payer, robot, amount) with payer taken from calldata, while in the other 29 calls into 0x19f79179 that campaign.mjs lists up to block 35300000 the payer is the caller (or the operator funds its own test). The robots are successive versions of one codebase with the same entry point and differing bytecode (0xa898b78b at block 35256046, 0x19f79179 at 35262430, 0x923aa7c7 at 35271548), so the earliest exploit of any of them anchors the incident (rule 4); its only target is 0x19f79179, created 3.9 hours before it, with no later change (resets.mjs).",
+    "Exploits found from every Approval whose spender is one of the deployer's 18 robots in blocks 35256000-36700000, taking transactions that spent an allowance while sent by neither the wallet nor the operator (0x72e787aa, 0xf5339777, 0x100006d3 and its funded 0xe92cc20a): 0xb5c54ee8's four calls into 0x19f79179 (the anchor first), and from block 35273751 the DeFiHackLabs transaction 0x24f114c0 by 0x835b45d3 and five copycats by 0x1fb58b08, 0xd4f04374 and 0xd070490b within seven blocks. 0xd0942a12's later calls to robots from block 36265124 move under 1 USDT each, call the robots directly with their own selectors and are not counted.",
+    "Loss is loss.mjs over the ten transactions with the robots, the operator wallets and the four users as victims, which nets the USDT the robots returned to the treasury and kept within each transaction: 3,407.58 USDT ($3,397.04). The 893.38 SHELL the victims lost net in 0xb5c54ee8's transactions are valued at that attacker's realised 0.1818 USDT per SHELL (104.64 USDT for the 575.62 SHELL it sold through the pair, rule 12); the LP tokens and SHELL the robots and the operator gained are not subtracted."
+  ]
+}

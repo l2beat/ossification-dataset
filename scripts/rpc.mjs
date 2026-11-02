@@ -37,6 +37,7 @@ const PUBLIC_RPC = {
   999: 'https://rpc.hyperliquid.xyz/evm',
   1030: 'https://evm.confluxrpc.com',
   1101: 'https://zkevm-rpc.com',
+  747: 'https://mainnet.evm.nodes.onflow.org',
   787: 'https://eth-rpc-acala.aca-api.network',
   4114: 'https://rpc.mainnet.citrea.xyz',
   4663: 'https://rpc.mainnet.chain.robinhood.com',

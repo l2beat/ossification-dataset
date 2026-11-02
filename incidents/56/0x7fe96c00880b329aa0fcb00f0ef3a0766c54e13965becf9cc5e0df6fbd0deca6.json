@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Gym Network",
+  "name": "GymRouter swaps pull the input from the 'to' address instead of the caller",
+  "summary": "GymRouter (proxy 0x6b869795, implementation 0x177dd720) implemented swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, amountOutMin, path, to) with safeTransferFrom(to, router, amountIn), so anyone could sell the tokens of any account that had approved the router, along any path, with the output sent to that account. The attacker created a GYMNET/fake-USDT PancakeSwap pair with flash-swapped GYMNET, called the router for 18 approvers with path [GYMNET, fakeUSDT], so their 151,953.84 GYMNET went into its pair for worthless fake USDT, then removed the liquidity and repaid; it and a copycat later did the same with approvers' BUSD.",
+  "targets": [
+    {
+      "address": "0x6b869795937dd2b6f4e03d5a0ffd07a8ad8c095b",
+      "code": "0x177dd7202eb9ae5154fdf3006f8ae93dcb3b45e9",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xd53cca576faa5161a3e9f47b89e46bfdd0a54774563a7cd67c9c6961614e77a1"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 8891.79,
+    "assets": [
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "4902.3909",
+        "usd": 4900.53
+      },
+      {
+        "token": "0x0012365f0a1e5f30a5046c680dcb21d07b15fcf7",
+        "symbol": "GYMNET",
+        "amount": "151953.8442",
+        "usd": 3991.26
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x7bac86c8e446477a1c9a089e790d1c1c28dc6bb0a7c9babb315a140175ec7d6f",
+    "eip155:56:0x37df9528e2a852838d62719debdd4537ffbe7b19f5c0bfee8266a370bc70c40f"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-07/GYMNET_exp.sol",
+    "https://twitter.com/AnciliaInc/status/1686605510655811584",
+    "eip155:56:0x9ac7bd12952afe46644cdf038818f7faf02108dfa4cb5e5b9d73c04835f98d69"
+  ],
+  "notes": [
+    "Reset is the proxy's upgrade to 0x177dd720 (0xd53cca57, block 28700889, repeating 0x8908a8f9 eleven blocks earlier). The pull from 'to' was already in the earlier implementation 0x72cafcfe (from block 28517294); an upgrade counts even when the code behaves like the old (rule 7). The fix, implementation 0xe5145516 pulling from msg.sender, went live at block 30483997 (0x9ac7bd12, via 0x9ac91bc0 at 30481115).",
+    "Earlier exploits: every token transfer into the router from its creation (block 27223823) to block 30500000 was checked for a sender other than the transaction's sender or target, with log transaction hashes resolved through the block (the BSC node misattributes the anchor's logs to 0x7f600af1). Six transactions qualify: two spam-token airdrops (blocks 28298174 and 28667775), 0x4baf7202 (block 29084051), in which a front-running bot replayed 0x780ce23a's own pending GymRouter sale of 87,844 GYMNET (the user's transaction 0x5b057029 then reverted, and the BUSD output went to the user as intended), the anchor, the attacker's BUSD run 0x7bac86c8 (block 30449864) and the copycat 0xb8396b72's 0x37df9528 (block 30483916, 81 blocks before the fix), which kept the BUSD.",
+    "Loss is the victims' tokens pulled into the router in the three exploit transactions: 151,953.84 GYMNET at DefiLlama's 0.02627 USD (the attacker sold its 117,193.5 GYMNET for about 2,966 USDT, close to that rate) and 4,902.39 BUSD (576.45 in 0x7bac86c8, 4,325.94 from 42 approvers in 0x37df9528); the fake USDT the victims received is worthless. DefiLlama lists 1,193 USD."
+  ]
+}

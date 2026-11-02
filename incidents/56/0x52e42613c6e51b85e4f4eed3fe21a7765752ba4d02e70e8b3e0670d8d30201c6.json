@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "ApeBond",
+  "name": "ApeYieldVault migrateToVotingEscrow counts duplicate pool IDs",
+  "summary": "ApeYieldVault.migrateToVotingEscrow(pids, duration, lockType) sums users[pid][msg.sender].stakedTokens over the pid array in a first pass and only zeroes each position in a second pass, so a pid listed n times is counted n times; the vault then approves and locks the whole sum into the VotingEscrow for the caller. The attacker flash-borrowed 2 WBNB on Moolah, bought 1,710,844.85 ABOND, deposited it into pool 0, and migrated with pid 0 listed 17 times, so the vault moved 29,084,362.42 ABOND, mostly other stakers' deposits, into a rolling VotingEscrow lock (token 1157) owned by the attacker. It ended the rolling lock and claimed the ABOND in the same transaction, sold the ABOND into the ABOND/WBNB pool for 7.72 WBNB and kept 5.72 WBNB after repaying the loan.",
+  "targets": [
+    {
+      "address": "0xcfb6b8b220e877c7d9803bf53da08d78c7f7a535",
+      "code": "0xeacfe55197f35b03b40dcd5af5919eef7cf1c3bd",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x99be78d70dc2eeb73821edd6e1902de185c85dfeea617ea23327d686b8a383e3"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 3574.68,
+    "assets": [
+      {
+        "token": "0x34294afabcbaffc616ac6614f6d2e17260b78bed",
+        "symbol": "ABOND",
+        "amount": "27373517.567768888619260464",
+        "usd": 3574.68
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/clarahacks/status/2062564868130029636",
+    "https://x.com/audit_911/status/2062557762471801139",
+    "https://hacked.slowmist.io/?c=BSC"
+  ],
+  "notes": [
+    "Reset is the proxy upgrade to ApeYieldVault implementation 0xeacfe551 (block 87509448), the code the anchor ran; migrateToVotingEscrow existed since the December 2025 upgrade to 0x634154dd (block 72117919, alongside the VotingEscrow proxy 0xdf1dd618), but per rule 7 the latest upgrade resets. The only later writes are staker balance updates; setVotingEscrow and pool 0 predate the upgrade.",
+    "No earlier exploit: of the 435 transactions with Migrate events from block 72000000 on, the anchor is the only one listing a pool ID twice; none followed it up to block 110000000.",
+    "Loss: the vault paid 29,084,362.42 ABOND into the attacker's lock against the attacker's 1,710,844.85 ABOND deposit, so other stakers lost 27,373,517.57 ABOND. At the ABOND market price that is $19,185.72, but selling it crashed the thin ABOND/WBNB pool (all 29.08m ABOND fetched 7.72 WBNB), so it is valued at what the attacker realised (rule 12): 7.72 WBNB of proceeds less the 2 WBNB it paid for its own ABOND, i.e. 5.7232 WBNB at $624.60 ($3,574.68 by loss.mjs). Counting a pro-rata share of the 7.72 WBNB instead would give about $4,540."
+  ]
+}

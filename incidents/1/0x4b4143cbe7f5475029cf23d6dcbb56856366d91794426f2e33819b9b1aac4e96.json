@@ -1,0 +1,92 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "LI.FI",
+  "name": "LI.FI pre-bridge swap executes arbitrary calls with users' approvals",
+  "summary": "LI.FI's diamond ran swaps before bridging by calling each SwapData.callTo with arbitrary callData (LibSwap via CBridgeFacet 0x73a499e0), checking only that the bridged token balance came out large enough, so any token contract could be called as the diamond. The attacker sent swapAndStartBridgeTokensViaCBridge with one real 50 USDT-to-USDC 0x swap followed by 37 transferFrom calls on token contracts, pulling the balances of 29 wallets that had given the diamond unlimited approvals (USDC, USDT, DAI, MATIC, JRT, AUDIO, RPL, MVI, AAVE, GNO) to 0x878099f0, then bridged the 49.86 USDC.",
+  "targets": [
+    {
+      "address": "0x5a9fd7c39a6c488e715437d7b1f3c823d5596ed1",
+      "code": "0x73a499e043b03fc047189ab1ba72eb595ff1fc8e",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x840d9ec17e8c540070c13b3202262faedb18d5f49dfd2c06e4f559101686de2d"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 597728.79,
+    "assets": [
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "368745.289642",
+        "usd": 368945.51
+      },
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "202012.28458",
+        "usd": 202143.25
+      },
+      {
+        "token": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "symbol": "DAI",
+        "amount": "8421.491022646531180546",
+        "usd": 8419.76
+      },
+      {
+        "token": "0x8a9c67fee641579deba04928c4bc45f66e26343a",
+        "symbol": "JRT",
+        "amount": "136805.061760416718307579",
+        "usd": 5932.48
+      },
+      {
+        "token": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
+        "symbol": "MATIC",
+        "amount": "3144.887368190765126153",
+        "usd": 4731.83
+      },
+      {
+        "token": "0x72e364f2abdc788b7e918bc238b21f109cd634d7",
+        "symbol": "MVI",
+        "amount": "22.950860845096132852",
+        "usd": 3131.65
+      },
+      {
+        "token": "0xb4efd85c19999d84251304bda99e90b92300bd93",
+        "symbol": "RPL",
+        "amount": "44.8608743",
+        "usd": 1416.84
+      },
+      {
+        "token": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "symbol": "AAVE",
+        "amount": "8.989600608542871027",
+        "usd": 1394.93
+      },
+      {
+        "token": "0x18aaa7115705e8be94bffebde57af9bfc265b998",
+        "symbol": "AUDIO",
+        "amount": "1202.371620631794480684",
+        "usd": 1310.6
+      },
+      {
+        "token": "0x6810e776880c02933d47db1b9fc05908e5386b96",
+        "symbol": "GNO",
+        "amount": "0.944405031229340416",
+        "usd": 301.94
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/LiFi_exp.sol",
+    "https://blog.li.fi/20th-march-the-exploit-e9e1c5c03eb9",
+    "https://blocksec.com/blog/li-fi-attack-a-cross-chain-bridge-vulnerability-no-it-s-due-to-unchecked-external-call",
+    "eip155:1:0x75af6c3d48153989240ce55e1a35a21d1409fc9c3bf6a79e3ed99299511e245b"
+  ],
+  "notes": [
+    "Reset is the diamondCut that routed swapAndStartBridgeTokensViaCBridge (0x01c0a31a) to CBridgeFacet 0x73a499e0 (block 14211115); the earlier CBridgeFacet 0x1008080f and the Hop, NXTP and Anyswap swap facets carried the same LibSwap call, and the fix cut (0x75af6c3d, block 14422640, refs) removed all five swap selectors.",
+    "Anchor is the first exploit: traces of all 566 successful top-level calls to the diamond's bridge and swap functions from its creation (block 13984588) to block 14440000 show third-party transferFrom pulls only in the anchor, and trace_filter over the same range finds no internal call to a swap function other than a Connext NXTP fulfilment. The attacker 0xc6f2bde0 / receiver 0x878099f0 made no other exploit transaction and has no activity on the diamond's other chains.",
+    "Loss is the 29 wallets' pulled balances (two of the 37 pulls moved 0), priced by loss.mjs; DefiLlama has no price for MATIC 0x7d1afa7b, valued at CoinGecko's 1.5046 USD, nor for the pre-migration RPL 0xb4efd85c, valued at the 0.4849 ETH the attacker realised (rule 12). LI.FI's reimbursement of the wallets is a later recovery and not subtracted."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "PHX",
+  "name": "PHX sell fee burns from the pair and syncs before the sold tokens arrive",
+  "summary": "On a sale into the PHX/WBNB pair, PHX._takeSellFee first burns sellPairBurnRate (50%) of the sold amount from the pair's own balance and calls sync(), and only then credits the sale, so the pair's PHX reserve can be zeroed while its WBNB stays. With WBNB flash-borrowed from Lista's Moolah, the attacker bought 886,011.37 PHX for 467,555.49 WBNB, delivered to the owner address 0x1e176e52 (buyers must be whitelisted), leaving the pair 296.75 PHX; it then sold 593.50 PHX of its own, whose sell fee burned those 296.75 PHX and synced the reserve to 1e-12 PHX, and swapped the credited 504.47 PHX for all 467,711.69 WBNB in the pair.",
+  "targets": [
+    {
+      "address": "0x2540cdc3317aa614178c29e2a1c7d5cdcebba481",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xcb0b218d7234b49f26ebfd03c96f176ace83c87486e827841aaf0bcad46d95e0"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 89587.57,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "156.205683367023083776",
+        "usd": 89587.57
+      }
+    ]
+  },
+  "refs": [
+    "https://hacked.slowmist.io/",
+    "https://api.llama.fi/hacks",
+    "https://www.cryptotimes.io/2026/07/13/phx-wbnb-liquidity-pool-drained-of-nearly-90k-in-bnb-chain-exploit/"
+  ],
+  "notes": [
+    "Found by scanning Lista Moolah FlashLoan transactions on 2026-07-12 for a PHX transfer; the WBNB depletion matches DefiLlama's $89.5k. The token is 0x2540cdc3, not the later PHX 0x2d5fee84 deployed in September.",
+    "Reset: deployment. sellPairBurnRate (5000), the pair's AMM flag and the owner's whitelist and fee exemption all come from the constructor and setSellPairBurnRate was never called. Later owner writes set the mining contract, the operation and LP wallets and sellBurnFee 1500 -> 0 (block 107371074); those only route or size fees.",
+    "Earlier exploits: campaign.mjs --outflows on the pair's WBNB from deployment ranks the anchor first; no earlier transaction took more than 2.85 WBNB. The attacker's helper deployment (0x7580b8c9, block 109471505) moved nothing. The four August 15 outflows (27.6 WBNB and less) come from the LP-PHX operator 0x66c3cbac calling burnPairPhx, a privileged function, not this defect.",
+    "Loss: the pair's net WBNB outflow (loss.mjs). The 886,011 PHX the pair lost went to the owner address, paid for with WBNB the attacker then took back; PHX has no other market, so it is valued at the WBNB realised (rule 12)."
+  ]
+}

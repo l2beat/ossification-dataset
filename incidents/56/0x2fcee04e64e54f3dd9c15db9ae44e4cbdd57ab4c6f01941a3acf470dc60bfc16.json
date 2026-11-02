@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "KEST",
+  "name": "KEST double-credits transfers between its router and pair",
+  "summary": "KEST (KEKESANTA) _transfer runs a buy-fee branch when the sender is a 'market' (the PancakeSwap router or the KEST/WBNB pair) and then a sell-fee branch when the recipient is one, each writing _balances[from] = fromBalance - amount from the cached balance and adding amount - fee to the recipient, so a pair-to-router transfer credits the router twice. With 200 WBNB flash-borrowed from Radiant, the attacker added liquidity for LP tokens and then, nine times, bought KEST with the router as recipient and called removeLiquidityETHSupportingFeeOnTransferTokens with 1e15 LP, which swept the router's doubled KEST balance to it, and sold, draining 9.2 of the pair's 9.46 WBNB; a second run 27 blocks later took 0.23 WBNB more.",
+  "targets": [
+    {
+      "address": "0x7dda132dd57b773a94e27c5caa97834a73510429",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xafcb52eafe23a7b23311e987db7cca08363b8c9a6a08b9cec7249b6feb55275d"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2322.87,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "9.430659565244285396",
+        "usd": 2322.87
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x0fc724f2a3a2cda252159194142500b0717a7fb55eaf752851976137aedd31d0"
+  ],
+  "refs": [
+    "https://x.com/MetaSec_xyz/status/1736077719849623718",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-12/KEST_exp.sol"
+  ],
+  "notes": [
+    "The defect is the double fee branch, not a missing sync: the anchor's net KEST outflow from the router (21.7 trillion) exceeds what it received, and each loop also skims the pair to itself, which the same branches turn into a 2x fee credit to marketWallet. The pair and router are victims and plumbing, not targets.",
+    "Reset: deployment, which also created the pair and set the router; resets.mjs shows only balance and allowance changes after it, and the fee rates (2%) are unchanged since. KEST Transfer logs show no pair-to-router, router-to-pair or pair-to-pair transfer from deployment until the anchor, so no earlier transaction double-credited; the pair's earlier WBNB outflows (largest 4.16 WBNB) are swapExactTokensForETHSupportingFeeOnTransferTokens sells.",
+    "Loss is the pair's net WBNB outflow in the anchor and the attacker's second run (eip155:56:0x0fc724f2...), which nets the WBNB the attacker deposited with its own liquidity; the LP tokens it kept are a share of the emptied pool."
+  ]
+}

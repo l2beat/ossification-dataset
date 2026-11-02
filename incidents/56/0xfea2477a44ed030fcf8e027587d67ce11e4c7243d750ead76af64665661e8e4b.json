@@ -1,0 +1,67 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Nerve",
+  "name": "Nerve MetaSwap prices the base LP token inconsistently between swap and swapUnderlying",
+  "summary": "Nerve's MetaSwap metapools are clones of Saddle's MetaSwap, whose MetaSwapUtils library prices the base pool LP token (3NRV-LP) inconsistently: swapUnderlying scales it by the base pool's virtual price while swap does not, so swapping a meta token for 3NRV-LP returns too much LP. In the anchor the attack contract 0x0aa95da2 of EOA 0xd5476194 flash-swapped 100,000 UST from PancakeSwap pair 0x9e78183d and ran fifteen rounds against the UST metapool 0x2dcce158: swap(UST to 3NRV-LP), removeLiquidityOneToken on the Nerve 3pool for BUSD, swapUnderlying(BUSD to UST), leaving the pool 3,024.18 UST and 298.39 3NRV-LP poorer, then repaid the flash swap and sold the surplus UST for 4.54 BNB. Over 153 more transactions through four attack contracts it repeated this on the UST and fUSDT metapools, and copycat EOA 0xdfd6a42b followed with seven more, together taking 204,995.25 UST, 565,659.41 fUSDT and 51,824.27 3NRV-LP.",
+  "targets": [
+    {
+      "address": "0x2dcce1586b1664f41c72206900e404ec3ca130e0",
+      "code": "0x91d1dbe983fbcbbac198d5310f1d0c249bb54e65",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xc8f27c9629091a8f3dc6c66276d2b59c2e5036e0b560255bda1bf9303928e966"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 711419.53,
+    "assets": [
+      {
+        "token": "0x049d68029688eabf473097a2fc38ef61633a3c7a",
+        "symbol": "fUSDT",
+        "amount": "565659.41341",
+        "usd": 451401.86
+      },
+      {
+        "token": "0x23396cf899ca06c4472205fc903bdb4de249d6fc",
+        "symbol": "UST",
+        "amount": "204995.253531743778645921",
+        "usd": 208041.05
+      },
+      {
+        "token": "0xf2511b5e4fb0e5e2d123004b672ba14850478c14",
+        "symbol": "3NRV-LP",
+        "amount": "51824.270831066238022498",
+        "usd": 51976.62
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-12/NerveBridge_exp.sol",
+    "https://blocksecteam.medium.com/the-analysis-of-nerve-bridge-security-incident-ead361a21025",
+    "https://blocksecteam.medium.com/how-to-exploit-the-same-vulnerability-of-metapool-in-two-different-ways-nerve-bridge-saddle-774c271c8243",
+    "https://www.halborn.com/blog/post/explained-the-synapse-and-nerve-bridge-hacks-november-2021",
+    "eip155:56:0xea95925eb0438e04d0d81dc270a99ca9fa18b94ca8c6e34272fc9e09266fcf1d"
+  ],
+  "campaign": [
+    {
+      "chainId": 56,
+      "count": 153,
+      "from": 12652465,
+      "to": 12654223,
+      "selection": "successful transactions from EOA 0xd5476194bdc298b6981f5414b693363f94d69228 to its attack contracts 0x0aa95da2, 0xb4486b98 (UST metapool 0x2dcce158) and 0x30864749, 0x34c98668 (fUSDT metapool 0xd0fbf0a2), excluding the anchor"
+    },
+    "eip155:56:0x2d0b84e3ef15129156b628e29278268afe5b6fcb3e48f47bb6fdd630aae54c41",
+    "eip155:56:0x45d0222ce24e98db3efd25ab3bd46746488bcbd849d9146864e40bc895a52987",
+    "eip155:56:0x7e3ce19f3478e64730ae659a30f859838425bb883fc9b6d4b5ddae19baf447e8",
+    "eip155:56:0x84fcc34d961a635f6ed84f9e12cb71de2cc45fc6570b34adb9afdc2312f17aaa",
+    "eip155:56:0x9d88718c91a294fb824432a3d2861269ea45a2d0fc24c9d8dabc43bcc801b5ea",
+    "eip155:56:0xe38dc02b7625fbc82c35b39f4d8f58c1adfa1035f0db0e98691b87259ebcdfd8",
+    "eip155:56:0xff2ce6ba69014e98b17fb73237cc515d2261b9eb76f991e433301164e63e1ea4"
+  ],
+  "notes": [
+    "Target is the UST metapool the anchor hit, an EIP-1167 clone of MetaSwap 0xf642f2a6 created by MetaSwapDeployer 0x2826dd9d in 0xc8f27c96 (block 7362017); the defect sits in the linked MetaSwapUtils library 0x91d1dbe9 (deployed block 7276173), which the clone reaches by delegatecall, so the clone's creation is the reset (rule 9). The fUSDT metapool 0xd0fbf0a2 is a sibling clone of the same template (0x06d5f727, block 7281565) hit later in the same campaign. resets.mjs shows the delegation route unchanged since creation and only balance and cached base-virtual-price writes afterwards.",
+    "The DeFiHackLabs PoC's transaction 0xea95925e (block 12653565, fUSDT metapool) is one of the attacker's 154; its 44 reverted calls are not counted. Every transaction touching either metapool from the fUSDT clone's creation (block 7281565) to block 15079420 was grouped by its TokenSwap (0x66172072) and TokenSwapUnderlying (0xc6c1e063) events: none before the anchor combines the two, and after it only the attacker's 154 and seven by copycat EOA 0xdfd6a42b (blocks 12658574-12661844, through contracts 0x9d452316, 0xd9c839a0 and 0x0008269c), listed in the campaign, do.",
+    "Loss is the two metapools' net outflows over the anchor, the 153 bundled attacker transactions and the seven copycat transactions; no transaction offsets another. UST is priced by loss.mjs at block time. fUSDT has no price and is valued at what the attackers realised selling it into Ellipsis's fUSDT pool 0x556ea0b4: the main attacker 537,532.59 net fUSDT for 423,389.04 USDT and BUSD, the copycat 28,126.83 for 28,012.82 BUSD. 3NRV-LP is valued at the 1.00294 BUSD per LP the Nerve 3pool paid when the attacker redeemed it in the anchor. Reported profit is about 900 BNB (537k USD)."
+  ]
+}

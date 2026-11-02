@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Revert Lend",
+  "name": "Revert GaugeManager lets a borrower run V3Utils on staked vault collateral",
+  "summary": "Revert Lend's Aerodrome V3Vault 0x22ce292d can stake collateral positions through GaugeManager 0x66a2481b, which records the borrower as positionOwners[tokenId]. GaugeManager.executeV3UtilsWithOptionalCompound only checks msg.sender == positionOwners[tokenId], unstakes the NFT and lets V3Utils execute any instructions on it, with no vault health check, so a borrower can withdraw the liquidity backing an open loan. With 10 cbBTC and 10M USDC flash-borrowed from Morpho, the attack contract minted a USDC/cbBTC Slipstream position with 812,729 USDC and 10 cbBTC, deposited it in the vault, borrowed 49,000 USDC, staked it via the vault, then called executeV3UtilsWithOptionalCompound to remove all its liquidity to itself, leaving the 49,000 USDC loan backed by an empty position.",
+  "targets": [
+    {
+      "address": "0x66a2481b784cf26103441ca6067f997f90d3e129",
+      "reset": {
+        "kind": "config",
+        "tx": "0xf1586b84f13499dc909392aa50ce2df7e631ca45089eeed52637910c22f9ce4a",
+        "address": "0x66a2481b784cf26103441ca6067f997f90d3e129",
+        "slot": "0x1eaf4332490b12b365337424936c9b0f42e937700317933183a964da8a1d72a0"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 50081.92,
+    "assets": [
+      {
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "50101.744193",
+        "usd": 50081.92
+      }
+    ]
+  },
+  "refs": [
+    "https://api.llama.fi/hacks"
+  ],
+  "notes": [
+    "Reset is GaugeManager.setGauge(USDC/cbBTC pool, gauge 0xfd548a1c) (0xf1586b84, block 39465589, 2025-12-14), which wrote poolToGauge for the anchor's pool: stakePosition and executeV3UtilsWithOptionalCompound require a gauge for the position's pool, so the exploit needed this listing (rule 8). GaugeManager and the vault were deployed at block 39083195 (0xaeb198d4, 2025-12-05) with v3Utils and the vault's gauge manager set then; resets.mjs finds no later change the exploit read other than the vault's debt-share accumulators, which are live values. The vault itself behaves as designed when it hands collateral to its configured gauge manager, so only GaugeManager is listed; V3Utils 0x7d1f9fc2 only executes the owner's instructions.",
+    "Earlier exploits: campaign.mjs over executeV3UtilsWithOptionalCompound (0x8bcd578e) since the deployment finds twelve earlier calls by 0x8cadb20a, 0x200a1b69, 0x0b82f6a6 and 0x59f4eba0; none moved more than dust to the caller or touched a vault loan (they compound or swap their own positions). The attacker EOA 0xa443e052, funded by 0x8c826f79 (also the funder of the IPOR Fusion attacker), sent only setup transactions before the anchor.",
+    "Campaign: 0xe7f8405d (block 41477209), by 0x74228168 through contract 0x03c20648, repeated the sequence with a Morpho flash loan and borrowed 1,101.744193 USDC against a position it then emptied. Loss is the vault's USDC lent against the emptied positions (49,000 + 1,101.744193), priced by loss.mjs; the attackers' own liquidity, which came back to them, is not counted."
+  ],
+  "campaign": [
+    "eip155:8453:0xe7f8405d3f10d431ce1958942dcf877cf1dcbea4f2a2a918fa8499d778295ee3"
+  ]
+}

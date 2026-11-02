@@ -1,0 +1,60 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Omni",
+  "name": "Omni pool ERC721 withdraw and liquidation reentrancy",
+  "summary": "Omni's Aave-v3-derived pool (proxy 0xebe72cda, implementation 0x50c7a557) lends WETH against ERC721 collateral, but withdrawERC721 and liquidationERC721 burn the nToken, whose safeTransferFrom hands control to the receiver, before clearing the user's collateral flag, and neither is reentrancy-guarded. In the anchor a generalized front-runner (EOA 0x00000000c251, contract 0x3c10e783) replayed the attack one block before its author: with a Balancer WETH flash loan and 20 Doodles flash-loaned from the NFTX vault, two CREATE2 helpers each supplied Doodles (supplyERC721), borrowed WETH and called withdrawERC721; in the NFT callback the main contract liquidated the helper's position with liquidationERC721, and in the liquidation callback the helper re-supplied all the Doodles and borrowed again, after which the liquidation cleared the collateral flag and the helper withdrew the NFTs, leaving untracked debt. The anchor took 162 WETH from nWETH; the original attacker 0x627a22ff, the same bot, copier 0xef45e3d7 and a withdraw-only variant by 0x0d23156f emptied the remaining 2,001 WETH within 80 minutes.",
+  "targets": [
+    {
+      "address": "0xebe72cdafebc1abf26517dd64b28762df77912a9",
+      "code": "0x50c7a557d408a5f5a7fdbe1091831728ae7eba45",
+      "reset": {
+        "kind": "config",
+        "tx": "0x25e33e04d2e5d92acd91f542a2677045e59b2d6b385e4fa0315a404396bc5c99",
+        "address": "0xebe72cdafebc1abf26517dd64b28762df77912a9",
+        "slot": "0x8af73e61961052005da939556cbb8e4b5130b86532b44272c9c30b0d749fe849"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2409438.73,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "2031.466908938844149345",
+        "usd": 2409010.48
+      },
+      {
+        "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "symbol": "stETH",
+        "amount": "0.37378802105955149",
+        "usd": 428.25
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-07/Omni_exp.sol",
+    "https://immunefi.com/blog/bug-fix-reviews/hack-analysis-omni-protocol-july-2022/"
+  ],
+  "campaign": [
+    "eip155:1:0x05d65e0adddc5d9ccfe6cd65be4a7899ebcb6e5ec7a39787971bcc3d6ba73996",
+    "eip155:1:0x3f5f79664e98f6e994ca5f85a48547ca02f8b60217d87d6962919a2dfd813347",
+    "eip155:1:0x600a0be9731a99b5956ee59f9d68aa72c2aea60ef1d2418ce2d044e29fbabe5e",
+    "eip155:1:0xacbef7e05a6785923c918b9bb09e3904a07122df5dbd42306b48ea374b991bec",
+    "eip155:1:0xddc1d7a9d3b8e5df2a004b6e7f6c9e44772c1d77e3c1365261f8ccdc67c5c0ad",
+    "eip155:1:0x683c02ad0fb7ce0078896891d3648bef41be0b47e1f7cf7f8d6d324ed439621b",
+    "eip155:1:0x7617824fa7dd068ff43b09c412586930c600f43d83638f189a4a4bab622c2ac3",
+    "eip155:1:0x59dd49ed6dd7c1844e678029d2426e2cec35ea4ea1d604b0ca35d39b5fd6b418",
+    "eip155:1:0x01d999b37840bbaaad469795baf627307a6a5cdab772d64b7e3b1ddd06f1550c",
+    "eip155:1:0xbebcd50e9c337c02bfe198ae7d10ffc0aaa8160d2ff4dda9f5a1dcfb4c04dde9",
+    "eip155:1:0xaddf0624e2dcf0bdbba18be77be40b62c9264ff85dfb7244ad36a67029673b82",
+    "eip155:1:0x77f6611b81ffe61fff7bb71e99acab5d1664c355d6161083246565301c2bd84b",
+    "eip155:1:0xa196bd03f8cac3f45fd2ac1f007bd9c2e85e5787403fd34fdae38edaa1b6dc51"
+  ],
+  "notes": [
+    "Anchor: 0x264e16f4 (block 15114361, index 3) is a copy of 0x627a22ff's contract and call (0x11fe65fa) deployed by front-runner 0x00000000c251 in the same block, one block before the attacker's own 0x05d65e0a, which DeFiHackLabs and Immunefi cite; the bot sent its proceeds to Tornado Cash, so it is an unaffiliated exploiter (rule 5). campaign.mjs over the pool from its creation (block 14998212) to block 15200000 finds only plain supply, borrow, repay and withdraw calls from EOAs and the WETH gateway before it; an EOA cannot take the ERC721 callback, so none of them can be the reentrancy.",
+    "Reset: ReservesSetupHelper.configureReserves (0x25e33e04, block 14999895) set the Doodles reserve configuration (slot 52 mapping, Doodles key) from LTV 0 to LTV 30% and liquidation threshold 70%, and enabled WETH borrowing in the same transaction; the exploit needs Doodles as collateral (rule 8 collateral factor). It is later than the proxy's creation with implementation 0x50c7a557 (0xcc1b4e4b, block 14998212, about 6 hours earlier) and the Doodles initReserve (0x0b70cc53, block 14999891); resets.mjs finds no later change to the slots the anchor reads other than reserve indexes and balances.",
+    "Campaign: the attacker 0x627a22ff (0x05d65e0a, 0xbebcd50e, 0xaddf0624), bot 0x00000000c251 (six more, one of which lost almost all its proceeds to the Sushi DOODLE/WETH pair it bought from), copier 0xef45e3d7 (0x3f5f7966, 0x59dd49ed) and 0x0d23156f (0x77f6611b for WETH, 0xa196bd03 for stETH), whose contracts re-enter withdrawERC721 alone (supply and borrow inside the withdraw callback) and whose proceeds also went to Tornado Cash. The attacker's later direct borrows of 24,062.86 USDC and 6,192.22 USDT (0xd7a0b1cd, 0x9fa73ae4) were ordinary loans against 35 ETH it deposited through the WETH gateway (0xfdde0f60) and are not exploits.",
+    "Loss is loss.mjs with victims nWETH 0xa2ea8522 and nstETH 0x7afe133a: 2,031.47 WETH and 0.3738 stETH. nWETH held 2,001.26 WETH before the anchor and none after 0x77f6611b; the 30.2 WETH above that is the attacker's own deposit, left as collateral for its stablecoin loans and then drained by 0x0d23156f, and is not subtracted (rule 11). Part of each drain's proceeds paid the Sushi DOODLE/WETH pair for the NFTX fees. Omni said only its own testing liquidity was in the beta market; press figures of 1,300 ETH or $1.4m count the original attacker's take, not the copycats'."
+  ]
+}

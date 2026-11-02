@@ -1,0 +1,56 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "IPOR Fusion",
+  "name": "IPOR vault admin EIP-7702 delegate executes caller-supplied calls",
+  "summary": "The admin EOA 0xd8a1087d of the legacy IPOR USDC Lending Optimizer vault 0xa91267a2 on Arbitrum had delegated (EIP-7702) to Alpha's reward-compounding utility 0xa3ccb120, whose 0x64b0f06f entry point is callable by anyone and makes the account execute caller-supplied calls. The attacker called it three times: first to have the admin account call its factory 0xf38b195d, which created the fuse 0xeb0d60a1; then to run a vault execute; then to call the vault's configureInstantWithdrawalFuses (restricted to the admin, and unlike later Fusion vaults not checking that the fuse is supported) with that fuse. A 1 USDC withdrawal by its own vault position then ran the fuse, which withdrew 269,217.10 aArbUSDCn and 65,753.79 eUSDC-1 from the vault to the attacker.",
+  "targets": [
+    {
+      "address": "0xd8a1087d6bbcd5533f819a4496a06af452609b99",
+      "code": "0xa3ccb120cd4ce39507edb684d4ed17aa7194f83c",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x6374ade74d741974c88a83703f0f3e5802e5e7c6ce717f483f28b9ac422e1578"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 336516.07,
+    "assets": [
+      {
+        "token": "0x724dc807b04555b71ed48a6896b6f41593b8c637",
+        "symbol": "aArbUSDCn",
+        "amount": "269217.104006",
+        "usd": 269212.54
+      },
+      {
+        "token": "0x0a1ecc5fe8c9be3c809844fcbe615b46a869b899",
+        "symbol": "eUSDC-1",
+        "amount": "65753.79076",
+        "usd": 67303.52
+      },
+      {
+        "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "symbol": "USDC",
+        "amount": "0.01001",
+        "usd": 0.01
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:42161:0x5978d04231c46ae4e37f824c6efb63e65a18588e87028506c6acdbc942d6a301",
+    "eip155:42161:0x238b4e619158432ff5ceb279cfea38007d048af4f59901c7af2efcf32e9671b6",
+    "eip155:42161:0x085787456932f72b7552894ff593e795b49ee72be2db091a62be47c018359268"
+  ],
+  "refs": [
+    "https://ipor.io/news/post-mortem-ipor-usdc-optimizer-arbitrum-vault-exploit-aff11fd01b62",
+    "https://cryptonews.com/news/ipor-labs-loses-336k-in-arbitrum-vault-exploit-vows-full-refund/",
+    "eip155:42161:0xb3688c50ea18e165292657be7cbcaf6a9a56166139eba5a0005b6674a11f2d04",
+    "eip155:42161:0x7734fcc82c9f9a93a7e11d1637307cf03c65935e481398fb32ae968989761c44"
+  ],
+  "notes": [
+    "Cohort: no key was taken. Every attacker step is a transaction from the fresh EOA 0xeca8a633 (funded at block 418616326) to the admin EOA, executing the unverified delegate 0xa3ccb120 that the admin itself deployed (block 404736180) and delegated to; the delegate's entry point performs caller-chosen calls as the admin. The vault behaved as designed for its admin; its missing fuse-support check in configureInstantWithdrawalFuses is why one admin call sufficed, but the anchor did not execute the vault and the vault (created block 249623036, 2024-09-03) is far older than the delegation, so it is not listed.",
+    "Anchor is the defect's first successful use (rule 10): 0x8c53f7f2 made the admin account approve its ARB to and call the attacker's factory, which created the instant-withdrawal fuse 0xeb0d60a1. Three earlier attacker calls to 0x64b0f06f (0x7fe6ac6a, 0x5f4b8fc5, 0x31d30bd9) reverted. The vault execute 0x5978d042 moved 1 USDC of the vault into Aave without loss; 0x238b4e61 installed the fuse; 0x08578745 is the drain. The attacker's later 0x4c657427 call to the admin (0xf6bc208b) made no calls and moved nothing. campaign.mjs does not follow EIP-7702 execution (it reports the target as not executed); instead every log naming the admin EOA in a topic from the delegation (block 404815918) to the anchor was collected: they come only from the admin's own six self-calls of 0x64b0f06f and the attacker's three, and Arbiscan's txlist of the admin shows no other external caller.",
+    "Reset is the admin's type-4 transaction 0x6374ade7 (block 404815918, 2025-11-27) authorising delegation to 0xa3ccb120; the account had no code at the preceding block. Before it the admin only called the vault's execute directly.",
+    "Loss is the vault's depletion in the drain: 269,217.104006 aArbUSDCn sent to the attacker and 65,753.79076 eUSDC-1 Euler shares, which DefiLlama does not price and are valued at the 67,304.659866 USDC the attacker redeemed them for (0xf99d7af1, rule 12); USDC at its block price of 0.99998. loss.mjs also counts the 1.009 aArbUSDCn the vault redeemed to pay the attacker contract's own 1 USDC withdrawal, which is its deposit, not victim assets. The attacker returned 92 ETH and IPOR's DAO topped up the vault (0x7734fcc8 restored 336,580 USDC); recoveries are not subtracted (rule 11)."
+  ]
+}

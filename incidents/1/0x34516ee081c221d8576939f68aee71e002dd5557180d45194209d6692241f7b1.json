@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "The Sandbox",
+  "name": "The Sandbox LAND public _burn lets anyone destroy any parcel",
+  "summary": "The original LAND contract declares _burn(address from, address owner, uint256 id) public and only checks from == owner, both caller-supplied, before setting _owners[id] to 2**160 (unmintable) and emitting Transfer to zero. With the old LAND still holding un-migrated parcels after The Sandbox deployed a replacement contract, the attacker called _burn(0x9cfa73b8, 0x9cfa73b8, 3738) and destroyed that holder's LAND 3738; a copycat burned LAND 16653 of 0x2cf80a3e four hours later.",
+  "targets": [
+    {
+      "address": "0x50f5474724e0ee42d9a4e711ccfb275809fd6d4a",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x001e8ec0f9436eb1544559fc71d6aa9bdfd0c998adff4b3e5e57fa533ed3bdc8"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0x498b681a6b691dbbccae0671f6d2d0848aa9f2eba3db0dc9dd2806377aaa8991",
+    "eip155:1:0xae7da309dac663ba2c1abaa51d1bca499b6094d92abb1d83e8d0ef3747ae1101"
+  ],
+  "loss": {
+    "usd": 22041.12,
+    "assets": [
+      {
+        "token": "0x50f5474724e0ee42d9a4e711ccfb275809fd6d4a",
+        "symbol": "LAND",
+        "amount": "2",
+        "usd": 22041.12
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-02/Sandbox_exp.sol",
+    "https://slowmist.medium.com/the-vulnerability-behind-the-sandbox-land-migration-2abf68933170",
+    "https://medium.com/sandbox-game/the-sandbox-land-smart-contract-migration-4293d235f27f",
+    "eip155:1:0x933d6f66aa2e7e756a6a52bd5c4a65fbebbba667fcd38155341465eb2cdaf449",
+    "eip155:1:0x90795cf0e790d5247e7b957416a80eb03d1371ef7e4ae2394cfde36be8e14b79",
+    "eip155:1:0x01079a277e40bcfbf66df6d7dd7d2ea2f4750beb7be5f8ed0e83fa2072ddb3c9",
+    "eip155:1:0x67c4654d36c3ad1d16fe0dce914995a0a7bb53ff0c00ace66c75e22c80d79282"
+  ],
+  "notes": [
+    "The Sandbox learned of the flaw on 2021-12-25 and fixed it by deploying a new LAND contract (0x5cc5b05a, eip155:1:0x933d6f66, 2022-01-28) with an opt-in migration, not by changing the old one, which stays non-upgradeable and live; the old token kept trading (LooksRare sales at 3.4-3.6 WETH that week) and was the only claim to a parcel not yet migrated, so burns of it are losses. Every successful _burn logs Transfer(from, 0, id), and the old contract logged exactly three from its deployment (block 9048219) to today: the anchor and the two campaign transactions, so the anchor is the first exercise (campaign.mjs itself was capped by the token's transfer volume). The attacker 0x6fb0b915 is an ordinary user with no link to The Sandbox.",
+    "Reset is the old LAND's deployment; it is not a proxy and its code never changed.",
+    "Loss is the two parcels destroyed in February at the old-LAND floor of 3.5 WETH each (LooksRare sales of 3.48 WETH at block 14161098 and 3.51 WETH at block 14163057, refs) times ETH at 3148.73 USD. The Sandbox later minted LAND 3738 on the new contract to the same holder (eip155:1:0x90795cf0, block 14384223), a recovery not subtracted (rule 11); LAND 16653 never appeared on the new contract. The third burn (0xae7da309, May 2022) destroyed LAND 98992 held by the migration contract 0x371f4c6f after the forced migration had already minted its new token (block 14669137) to the owner, so it took nothing of value and is listed only as a campaign exercise."
+  ]
+}

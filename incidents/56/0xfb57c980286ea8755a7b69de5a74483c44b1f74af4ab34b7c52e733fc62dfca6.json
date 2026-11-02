@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Movie Token (MT)",
+  "name": "MT deferred sell burn drains the MT/WBNB pair on a permissionless trigger",
+  "summary": "During MT's deflation phase each sell adds its net amount to pendingBurnAmount, and the next extractFromPoolForLpMining, run by the LP-mining contract 0x139bd2ec whose distributeDailyRewards anyone can call once a day, burns that amount straight out of the MT/WBNB pair 0x037e6eb2 (down to a 21,000 MT floor) and syncs. Buys are banned in that phase, but transfers between two fee-excluded addresses skip every check, and the owner had excluded both the pair and the PancakeSwap router. With 358,681 WBNB flash-borrowed from Moolah, the attack contract minted a dust LP position from 0.2 MT (the referral-binding amount, also exempt), bought 10M MT twice with the router as recipient (496.66 and 717.55 WBNB) and pulled them out with removeLiquidityETHSupportingFeeOnTransferTokens, sold 10M MT inside a flash-swap callback (397.33 WBNB out, pendingBurnAmount +9M), called distributeDailyRewards to burn 6,735,517 MT from the pair, leaving 21,000 MT against about 1,201 WBNB, and sold 10M MT for 1,198.63 WBNB, netting 381.75 WBNB.",
+  "targets": [
+    {
+      "address": "0xb32979f3a5b426a4a6ae920f2b391d885abf4c18",
+      "reset": {
+        "kind": "config",
+        "tx": "0x82890cc11628082b8750129184453b9646dbcbb03afa3cb563c303f3dda11166",
+        "address": "0xb32979f3a5b426a4a6ae920f2b391d885abf4c18",
+        "slot": "0xf"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 242396.6,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "381.746819805990283197",
+        "usd": 242396.6
+      }
+    ]
+  },
+  "refs": [
+    "https://api.llama.fi/hacks"
+  ],
+  "notes": [
+    "Reset is the owner's setLpMiningAddr(0x139bd2ec) (0x82890cc1, block 73928353, 2026-01-03; lpMiningAddr in slot 0xf), 49 blocks after the token's deployment (0x60ee522a): it granted the LP-mining contract the extractFromPoolForLpMining power that burns the deferred amount from the pair (rule 8). The owner's excludeMultipleAccountsFromFee (0x2ede033c, block 84454484, 2026-03-03) set _isExcludedFromFee for the router (slot 0x8c3bf988) and the pair (0x8e214e2e), so pair-to-router swaps bypass the deflation-phase buy ban, which is how the flash-funded attacker obtained the 20M MT it sold. Like setPresale (0xdcc40744, block 84470962, the launch switch), it lifts a trading restriction as a pause does and is not a reset (rule 8), and a holder with enough MT could have run the deferred burn without it; counting it would give an age of 6.4 days.",
+    "The LP-mining contracts 0x139bd2ec (lpMiningAddr, whose distributeDailyRewards called extractFromPoolForLpMining) and 0x048f012b (fee processor) are unverified and not listed: the burn from the pair is MT's _executePendingBurn. lastPoolExtractionTime allows one extraction per UTC day, and the day's extraction had not yet run when the attacker triggered it.",
+    "Earlier exploits: campaign.mjs --outflows over the pair's WBNB from the deployment finds only 0.19 WBNB (0x3cc54920, an LP removal) and dust before the anchor; the later outflows (0x3e8d5c0f, 0xcfa663db and smaller) are LP removals and the deployer's sells into the drained pair.",
+    "Loss is the pair's net WBNB outflow in the anchor (1,595.95 out against 1,214.21 the attacker paid in), equal to the 381.75 WBNB sent to the attacker EOA 0xdb0901a3; the MT burned from or left in the pair is unpriced and not counted."
+  ]
+}

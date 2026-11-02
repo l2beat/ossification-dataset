@@ -1,0 +1,117 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "DGLD",
+  "name": "DGLD transferFrom returns true without moving tokens, minting unbacked DGLD on Base",
+  "summary": "DGLDToken.transferFrom (inherited by DGLDTokenV2 0xae84fb58 behind the DGLD proxy 0xa9299c29) moves only min(balanceOf(from), amount), skips the transfer entirely when the sender holds nothing, and returns true either way. Base's L1StandardBridge depositERC20 pulls the deposit with safeTransferFrom and then tells Base to mint the full requested amount of the L2 token 0xd02f50e1, so a depositor with no DGLD gets DGLD minted on Base for free. The attacker 0x40963a79, after a real 0.001 DGLD test deposit, deposited 0.002 DGLD it did not hold in the anchor; it and four other depositors then bridged 100 to 100M phantom DGLD and sold it into Base's DGLD pools for 162,863 USDC, 24,495 USDT and 4.05 ETH.",
+  "targets": [
+    {
+      "address": "0xa9299c296d7830a99414d1e5546f5171fa01e9c8",
+      "code": "0xae84fb582056920a891b8a01689c34a040f9240f",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x74aac2c6ceb9834b70153c8ba093f9b9ae32674ab3e8480d49437337eea95755"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 195098.24,
+    "assets": [
+      {
+        "chainId": 8453,
+        "token": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "symbol": "USDC",
+        "amount": "162863.434862",
+        "usd": 162863.3
+      },
+      {
+        "chainId": 8453,
+        "token": "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
+        "symbol": "USDT",
+        "amount": "24495.073396",
+        "usd": 24461.27
+      },
+      {
+        "chainId": 8453,
+        "symbol": "ETH",
+        "amount": "4.046380453847756",
+        "usd": 7773.67
+      }
+    ]
+  },
+  "refs": [
+    "https://api.llama.fi/hacks",
+    "https://defillama.com/rwa/asset/dgld"
+  ],
+  "notes": [
+    "Anchor: of the 95 DGLD deposits through Base's L1StandardBridge 0x3154cf16 since block 23000000, the first whose receipt carries no DGLD Transfer to the bridge is 0xa43ac684 (block 24514346, 2026-02-22, 0.002 DGLD by 0x40963a79); its previous 0.001 DGLD deposit (0xe47f20fa) moved real tokens net of the transfer fee. The 20 later phantom deposits by 0x40963a79, 0x3184314d, 0x0cb1f24e, 0xc918a54c, 0x7258cc86 and 0xf169c308 (100 to 1e9 DGLD) are listed, followed by the 45 Base transactions in which these addresses sold the minted DGLD.",
+    "Reset is the proxy's upgrade to DGLDTokenV2 (0x74aac2c6, block 23917615, 2025-12-01); the min(balance, amount) transferFrom is inherited unchanged from the 2022 DGLDToken, but the upgrade re-establishes the code (rule 7). The exploit also needed the Base L2 token 0xd02f50e1, created 2025-12-03 (Base tx 0xdf66da8c); it is not defective and lives on another chain, so it is not listed, and it would move the age by two days.",
+    "Loss is what the attackers realised (rule 12: the phantom DGLD has no backing or market): the USDC, USDT and native ETH the five selling addresses received, net of what they paid, in the Base transactions in which they sent DGLD, priced at DefiLlama's 2026-02-23 prices. DefiLlama reports about 250k USD as DGLD's economic impact as primary LP; pool depletion including arbitrageurs' profits and any later Base-to-Ethereum withdrawals of phantom DGLD were not measured."
+  ],
+  "campaign": [
+    "eip155:1:0x65d635acc0242062de946ca6d2a2bb081530fe5429af72cf6cc1369887afebaf",
+    "eip155:1:0x35c176a71c082a2c6cbac4e25460b028a35f188217a09c61ee029bd1e3428637",
+    "eip155:1:0x3149568c30d3b0b963cf3a595c9fc1116d29569a15a8fe068b5c0cd711363bd2",
+    "eip155:1:0xa5b5d00f370b8a55eda304d3ab133e74e7132595d35e5e43874749b849a7ce0b",
+    "eip155:1:0xda441654e40420014a7c6f6d97f9b4c9b39f0f79f046e8f918d11271da23329f",
+    "eip155:1:0x78d2c71753d296a20d3ad962f0fb205519066321fb6c1b334d311347b1b8950c",
+    "eip155:1:0xf7c7c58633b6ab19606ab0e419db560772ca1da2f3f135b84909a9a75d9d845c",
+    "eip155:1:0x4d6b599c14ad9d718f689e3352be7f44e9cfd3a2533afd92a6f1d6f22a1418a1",
+    "eip155:1:0xb9d407af04d26e5aa7c0bf77671f0496fcf7f0c4c2ffff4d02509f97a3c0f536",
+    "eip155:1:0x8dad1c94d7f82066a95c99e2ee1828154d0736694880da0480ec8dd53bd6c86e",
+    "eip155:1:0xa0cad5ad71480b213403fd082060159a9e3ede4328ea936e60b6d98baa2c51d8",
+    "eip155:1:0x1870fdbdd47437c13e289c337254d4932481a1695499c41205f9975d994879b8",
+    "eip155:1:0xbc5586cf584fd7e36520574dbdc8bec268c31142ccc4614481a77d624d7dd392",
+    "eip155:1:0xc4197598e893b7eba95c67990a74f431ca20fd9c23b276643e1a88b6fdfa16c1",
+    "eip155:1:0xae9193e7c17825252c0cb927bf7633b0708746dbf407863372a2abdcd446a11c",
+    "eip155:1:0x6246464a5c71fb57e951b54c3ef8eea3de7cb1a93012c0900c94b4f64816986c",
+    "eip155:1:0x7adda5a6b48f81804d229c60ff7c025e1fd5b5d90e98d78d6f7841e55928c6ae",
+    "eip155:1:0x4291fc0ab8a2d4925c38e38382e899ad7a09e9106f21e62733f79aeb8ee7bedb",
+    "eip155:1:0x4a71414ea282cc94b2d2b24daf229cdb6d5ae4d27714a670f0188ae1f76502f1",
+    "eip155:1:0x0bbdd8fd902f312565b4ef23c86527c2add6dad9f9fa5dcb36b15e8a78abf3f8",
+    "eip155:8453:0x58336080e357906ef4fc0b2df866633129a97285965c7684e3e8de4181087579",
+    "eip155:8453:0xf1b4d7a52613bb4fa531884dc039b8c4b7455267aeec52d76d1f7be6ec035cd9",
+    "eip155:8453:0x6284ca964acdc98619dc19797e9d1584d67cc13f854ee543d1aba43906a448e7",
+    "eip155:8453:0xed062eac88c2b9878b65a976d7a6252a08917014808c73da02a9a49ba8713f08",
+    "eip155:8453:0xd46ea0c8f68247455887e1d9eaad3058a3cc0759b623c8634fa3d9a7af14f15d",
+    "eip155:8453:0x81533049fddcb204c46b2f02a72904e9bab585fe72658723658cf6aa2786ce56",
+    "eip155:8453:0xb5b9bd97ca37c31a8454d685adcfc5655a32d821cff40cf5c523d3d7482d5429",
+    "eip155:8453:0x11a0b9d953fd91a886b4b9a54d4ea9babcb47fda69f13abce7152e0b904da0db",
+    "eip155:8453:0x2a05844a35f7db4525b3fe01644d2f81eb5ee5750834fd3fabc0426ac9092355",
+    "eip155:8453:0x66d3432fb34c71fa3dbe27889040a42f52f1848cc85c4cb1b71afd3278d77d73",
+    "eip155:8453:0xe4d93c4f8e45d1d093c87711a46e98ec6ef186f57a1b442761e78d1733b23ba1",
+    "eip155:8453:0xba922b3efb88821b4a9cffe5a49c2ca531769eabadc1f8f2002c936367d1e917",
+    "eip155:8453:0x3563e84dfc35b67348559176cb210aa206600fab5e961d48e133234879bec3ec",
+    "eip155:8453:0x4b75b2a78145510879c6085f0216455cabf4ef1b1291807fe6ee7ec6e67c0eb1",
+    "eip155:8453:0x1fc3a7482bfc4e55aae660e1d8cdc4591bbf6e10fa097268c7b8137c1f41741c",
+    "eip155:8453:0x93e8ea300b59460e44c310ba5544f88fa9561bfad3a80925a02d2bd82add905f",
+    "eip155:8453:0xdd6cc31d0a9a2111d4079e6794bd70b4c0480569f29e01e7613159231d5204e9",
+    "eip155:8453:0xb150fe6d6ddf652640e5a36ab2e59c7fff10a42a7182a1a7ef00f87a9a7d3774",
+    "eip155:8453:0xbf9105a9e7e3aa9e2c3078f5829ecf0c8ba179b3586320c787da00d1ff6d47fd",
+    "eip155:8453:0x68979caa1f33102f7afdc2fe8f61eab63b9b79a69c587f671e6ad02f3d1f3d3c",
+    "eip155:8453:0x0df3f6ae3da1e67a273c230b0102dadc42d29b3a2568600b4969b9f0e648666c",
+    "eip155:8453:0x85cf7131bc6ac75dbe8c6171543f6b7fbd5577c1477b72984b79bbd9f339c8f1",
+    "eip155:8453:0xb5cc4310a221910aebaedba8ec5c760d028120f3ac5eb9a787ec9852f280c670",
+    "eip155:8453:0x5419d63267195727485fdba92e9ad0ea4ef04b068d043f73cd2bad33251d5270",
+    "eip155:8453:0xa335c22c56af58a78e34905df09cc1e4adb483727b45d1d079ddfe0d59474b25",
+    "eip155:8453:0xe2588c66ac8482d357d8c5246dbe6036ec8e922d0c32a925c476a577fea54264",
+    "eip155:8453:0xe9115a45e91f8af7add43908937cdb4c06de09ee32d41839f037529781041c42",
+    "eip155:8453:0xff65cb1b0ff57c3bfa44626fc7cee7df48779f10c20c22b6573f943f16e7fafd",
+    "eip155:8453:0x0a3e75fa67f19637acf45e6e3c1707c31d82e0d1d6a465ab09d26bbd4cf0a55c",
+    "eip155:8453:0x173e5330eeec74831ceaa92d269e7ac9a35ea4f5ff033a4acd7b7435bbd294f7",
+    "eip155:8453:0x1234c90bbf1699b04daab9623f66a319bcc213af3f00d1e29583f281eb0acf63",
+    "eip155:8453:0x55eea6a4aa7b256358cd1f669f2ddbbaa3d97745d0b1c72dc6b575d8fc221957",
+    "eip155:8453:0xdbee3b230a274be930f5ba606312706791373825715f2fcb44e614d1e8491ce1",
+    "eip155:8453:0x52b4c80f8cff72df2ea39698aa6363d3f49052f640f53667d1965bbe38d666b5",
+    "eip155:8453:0xd3be857ea03686279042730bb8449282d921f0ad83020eee8a5ba18adbd0f6fc",
+    "eip155:8453:0x2b4f301d1a99ba63c677ec80d513551646bf335ac13108399cbd7b9dc67cbfbd",
+    "eip155:8453:0xf15c108a90128df730bbdd0189b3f5d66a2a1e213c786221f5b93c6b0d746191",
+    "eip155:8453:0xccccce8ef38f65a897e0aa7549947adec61b3028966fc672697b075cc72ff5f0",
+    "eip155:8453:0xce056bc8e4c8287a7d5605d417a0ab49aaeccf961e5482d7735aa36bf1e3852f",
+    "eip155:8453:0x5f30227a50c8e641621858a1abe6c265d64bc2637285be45e829d29bdbe36d45",
+    "eip155:8453:0x6c7e402f1023e235b5c921be6286d8b711b5709b1341726faea462612fe56d85",
+    "eip155:8453:0xfb196599abef90be69c1a5029e8b2376f3de9aa400b867a2e8420c99452ffee7",
+    "eip155:8453:0x165b3859bca2b4ce155e4c04bd595073e3723c24b74a289d0f29decad00a24f9",
+    "eip155:8453:0x4040502f13e44ed4dd44f3d9fd6f4f5f9af3367f32ef01cdcc2a32d47a140b71",
+    "eip155:8453:0x4f6739d24081e193ad7037de25560537aa116c51a2df1d71536ae681c5b24b4a"
+  ]
+}

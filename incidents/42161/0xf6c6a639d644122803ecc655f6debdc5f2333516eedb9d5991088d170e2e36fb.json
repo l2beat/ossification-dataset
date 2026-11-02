@@ -1,0 +1,49 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Pendle",
+  "name": "Pendle Reflector spends its own balance on a caller-chosen market",
+  "summary": "Pendle's Reflector.reflect(inputData) rewrites a router call to spend the Reflector's entire balance: for the SY-input selectors it reads the SY token from the caller-supplied market's readTokens(), approves the router for it and substitutes its full balance, but never checks that the market is a Pendle market. Expired PT-mPendle and PT-stk-ePendle (27MAR2025) left over from router flows sat in the Reflector; the attacker called reflect with swapExactSyForYt on a fake market that named each PT as its SY and a fake limit router in the limit-order data, so the router pulled 1,189.91 PT-mPendle and 291.43 PT-stk-ePendle from the Reflector and handed them to the fake limit router, and the attacker redeemed them after expiry.",
+  "targets": [
+    {
+      "address": "0x5039da22e5126e7c4e9284376116716a91782faf",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x4ed606e94703fb73fa266740704e0c8bcabb0d12f19055c38b12ee62046baf03"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2302.63,
+    "assets": [
+      {
+        "token": "0x4a94091cadd74bdf313b74d58eac908c5fc53704",
+        "symbol": "PT-mPendle-27MAR2025",
+        "amount": "1189.913813071220807926",
+        "usd": 1842.29
+      },
+      {
+        "token": "0x2a18a490ec18b019837f6153269d21a772167292",
+        "symbol": "PT-stk-ePendle-27MAR2025",
+        "amount": "291.426607058787398594",
+        "usd": 440.95
+      },
+      {
+        "token": "0x355ec27c9d4530de01a103fa27f884a2f3da65ef",
+        "symbol": "PT-rsETH-26DEC2024",
+        "amount": "0.004724952491813281",
+        "usd": 19.39
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-08/PendleReflector_exp.sol"
+  ],
+  "campaign": [
+    "eip155:42161:0xa8db9c9ba0dbf53f0c70f072fc2b800477fd621a93268839b23d50d88193b141"
+  ],
+  "notes": [
+    "The Reflector is meant to hold nothing between calls; the PTs reached it as residue of users' router transactions (e.g. 388.04 PT-mPendle in 0xf49e287c, 2025-03-13) and no function let anyone but a reflect caller move them. campaign.mjs --outflows over the Reflector's whole life finds net outflows in only two transactions: the anchor and an MEV bot's sweep of 0.0047 PT-rsETH-26DEC2024 the same way on 2025-10-15, listed as campaign.",
+    "Target is the Reflector only: the router's swapExactSyForYt and limit-order fill behave as designed for whatever market and limit router the caller names. Reset is the Reflector's deployment; it has no owner or upgrade path and resets.mjs finds no change before the anchor.",
+    "PT-mPendle and PT-stk-ePendle are priced by loss.mjs (DefiLlama); PT-rsETH, unpriced, at its post-expiry redemption value of 1 ETH per PT at the sweep's ETH price (4,104 USD). The attacker's exitPostExpToToken redemptions and the 0.738 ETH it bridged out agree with that order of value."
+  ]
+}

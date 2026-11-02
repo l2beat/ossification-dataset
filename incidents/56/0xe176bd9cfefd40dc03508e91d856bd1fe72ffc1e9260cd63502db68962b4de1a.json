@@ -1,0 +1,34 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Zoompro Finance",
+  "name": "Zoompro batch contract batchToken sends its own fUSDT for any caller",
+  "summary": "Zoompro quotes its Zoom token in a project-issued 'fake USDT' (fUSDT 0x62d51aac): its swap contract 0x5a984606 buys and sells Zoom for USDT through two custom pairs, USDT/fUSDT 0xf72fd2a9 and fUSDT/Zoom 0x1c7ecbfc. The team's disperse contract 0x47391071 (unverified) holds fUSDT and its batchToken(address[],uint256[],token) transfers the contract's own balance to any recipients for any caller. The attacker flash-swapped 3,000,000 USDT from PancakeSwap pair 0x7efaef62, bought Zoom through the swap contract, called batchToken to send 1,000,000 fUSDT into the fUSDT/Zoom pair, called sync() on it, and sold the Zoom back, receiving the donated fUSDT's worth out of the USDT/fUSDT pair: 70,160 USDT more than it paid in, 9,000 of which went to the flash-swap fee.",
+  "targets": [
+    {
+      "address": "0x47391071824569f29381dfeaf2f1b47a4004933b",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xa24d747859e7a6d34e70acd0d1012ef8cbebe960cd45dee1a3fa5bddf94979bc"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 70145.15,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "70160.283128930726498344",
+        "usd": 70145.15
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/ZoomproFinance_exp.sol"
+  ],
+  "notes": [
+    "The batch, swap, router and pair contracts are unverified; the mechanism is read from the anchor's trace (batchToken 0x1e69fcc4 makes 0x47391071 call fUSDT.transfer for 1,000,000 fUSDT to 0x1c7ecbfc, then 0xfff6cae9 sync on that pair); resets.mjs finds the anchor reads no storage of 0x47391071, so batchToken checks no owner or allowlist. The target is the batch contract, deployed at block 20944283; the fUSDT it held is a balance, not a reset (rule 8). The swap contract and pairs trade at their reserves and are not counted as defect carriers.",
+    "Earlier batchToken calls (blocks 20944353-20988286) and all later ones in campaign.mjs's 90-day scan come from the deployer 0x883877e7 and two addresses dispersing the project's USDT and Zoom airdrops (0x11cb1c95, which first funded the contract with 14,900 USDT, and 0x6e87fd83); the anchor is the only call by an outsider.",
+    "Loss is the USDT/fUSDT pair's net USDT outflow in the anchor (loss.mjs): it holds the USDT that Zoom buyers paid in. Zoom moves between holders inside the transaction are unpriced and not counted."
+  ]
+}

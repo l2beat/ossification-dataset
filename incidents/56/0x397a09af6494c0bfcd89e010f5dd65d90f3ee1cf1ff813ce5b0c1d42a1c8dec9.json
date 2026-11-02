@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "YYS",
+  "name": "YYS sell contract pays out its LP at the YYS/USDT pair spot price",
+  "summary": "The unverified YYS sell contract 0xcc0f0f41 holds YYS/USDT PancakeSwap LP; its sell(amount) (0xe4849b32) takes YYS from the caller, values it at the live reserves of the pair 0x4200a9b8 and burns enough of its own LP to pay that value, with the pair sending the proceeds straight to the seller. Having registered 63 blocks earlier through the investment call (0xb9b8c246) with 100 USDT, the attacker flash-borrowed 4.75M USDT from the PancakeSwap V3 pool 0x92b7807b, bought 4.22M YYS from the pair to lift the YYS price about 2,450-fold, and sold 38,584 YYS to the contract, which burned 136,390 of its 137,768 LP and paid out 1,018,670 USDT and 18,328 YYS. It then sold its YYS back through the contract, repaid the loan and kept 28,943 USDT.",
+  "targets": [
+    {
+      "address": "0xcc0f0f41f4c4c17493517dd6c6d9dd1adb134fc9",
+      "reset": {
+        "kind": "config",
+        "tx": "0x5ce4b6ad3ae7718f5f5ead31a21379c941ddb75e96ec54abaac6b6be6addb619",
+        "address": "0xcc0f0f41f4c4c17493517dd6c6d9dd1adb134fc9",
+        "slot": "0x1"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 29323.8,
+    "assets": [
+      {
+        "token": "0x4200a9b80b1e84cf94ad8fc28f66195bc3c37f3f",
+        "symbol": "Cake-LP",
+        "amount": "137403.151576350329973505",
+        "usd": 29323.8
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-06/YYS_exp.sol",
+    "eip155:56:0x42d9e7fb1a8afd861abae4af058295c45b22f307bd0165135a74e9faf96b162a"
+  ],
+  "notes": [
+    "In the cohort as a code defect: the payout is the pair's reserve ratio at call time with no TWAP or bound. The contract is unverified; the mechanism is read from the anchor's trace (getReserves, totalSupply and the contract's LP balance read inside sell, then removeLiquidity to the seller).",
+    "Reset is the owner's call 0x66e5f250 (block 39178949, slot 0x1) that pointed the contract at the new YYS token 0xe814cc2b, created at block 39178748; 16 blocks earlier 0xe11f7a6f (slot 0x5) set the pair 0x4200a9b8 as its price and liquidity source. The contract itself was deployed at block 39118718 for a previous token (0xf2e06db0) and pair (0x16e6539a). Later changes resets.mjs lists are a timestamp and the attacker's own registration (0x42d9e7fb, 63 blocks before the anchor), which is setup, not a reset.",
+    "campaign.mjs --outflows over the contract and the pair finds no earlier drain: the contract's LP outflows before the anchor are under 67 LP and the pair's USDT outflows under 63 USDT. After the anchor the contract held about 365 LP; the 60,343 USDT that left the pair one block later (0xb1e7d64c) is EOA 0xf1a5f8b7 removing its own 451,289 LP, and the other later outflows are EOAs selling YYS without flash funds.",
+    "Loss is the contract's 137,403.15 LP, which has no market price; it is valued at what the attacker realised (rule 12), the 29,362 USDT net that left the pair in the anchor (28,943 USDT profit plus the 475 USDT flash fee). At pre-attack reserves the LP held 20,754 USDT and 915,085 YYS, which DefiLlama does not price."
+  ]
+}

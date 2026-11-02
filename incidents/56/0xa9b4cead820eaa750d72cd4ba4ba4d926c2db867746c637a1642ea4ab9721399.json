@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Hold Safe",
+  "name": "Hold_Safe stake and referral rewards valued at Pancake spot price",
+  "summary": "Hold_Safe 0x2496b871 books each Stake(usdtAmount, referrer) in USDT, up to 2,000, credits up to ten upline referrers with USDT-denominated referral rewards, and converts both the stake deposit and the Rewards() payout to HS with PancakeSwap getAmountsOut over HS/WBNB/USDT, a spot price the caller moves in the same transaction. The attacker flash-borrowed 224 WBNB from DODO pool 0x172fcd41, bought HS to lift its price, deployed 70 helper contracts that each staked 2,000 USDT's worth of the now cheap HS in a referral chain, then had 57 of them claim their referral rewards as it sold HS back, so each claim paid out more HS; the contract lost 457.5M HS net and the attacker left with 7.49 BNB. Two other bots then called Rewards() through two of the attacker's helpers (0x4475b11a, 0x28383aee) and took 16.5M HS more.",
+  "targets": [
+    {
+      "address": "0x2496b87189d5ae18d4d83b8a7039b0c8a07d98d4",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x590bd9b8414b23ff0fde02092a67fdfe0603d00896417382bbbc2901e23f9cdd"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 7395.93,
+    "assets": [
+      {
+        "token": "0xf83aa05d3d7a6ca2dce8a5329f7d1be879b215f0",
+        "symbol": "HS",
+        "amount": "474078534.23",
+        "usd": 7395.93
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-06/HoldSafe_exp.sol",
+    "https://t.me/defimon_alerts/1320",
+    "eip155:56:0x082dfaf7cbbe5479463f22b74b0d10b90adac3f99b64cdf70ed37d94d5dd1de7"
+  ],
+  "campaign": [
+    "eip155:56:0x9a815337b2c94476c63554d937b274bc341241c782a2aa5ff379e958f2f69fe4",
+    "eip155:56:0xbe472f21df6e17cbd6efa8e54c0207ffe8b0c7ccaf7463f6cba51f2e80844858"
+  ],
+  "notes": [
+    "In the cohort as a code defect: getTokenAmountFromUSDT() and getUSDTFromTokenAmount() price HS from router getAmountsOut on live reserves, so both the HS a stake costs and the HS a referral reward pays depend on a price the caller moves (rule 1). Reset is Hold_Safe's deployment (0x590bd9b8, block 47462444); token, router and thresholds are set in the constructor and resets.mjs lists after it only users' stake and referral bookkeeping.",
+    "campaign.mjs --outflows over the contract's HS (deployment to 90 days after) finds only direct EOA Rewards() and Claim() calls before the anchor, the largest 17.6M HS. After it, two transactions by other senders drained what the attacker's helpers 0x4475b11a and 0x28383aee (created in the anchor) still had booked: 0x9a815337 (next block, 12.01M HS) and 0xbe472f21 (4.53M HS net); they are copycats of the same booking (rule 4). Later outflows are small user claims.",
+    "Loss is the contract's net HS outflow per transaction (loss.mjs): 457,539,519.34 + 12,011,052.51 + 4,527,962.38 HS. HS has no DefiLlama price, so it is valued at what the sales realised (rule 12): the HS/WBNB pair's net 11.0965 BNB outflow in the anchor (7,153.49 USD, of which 7.49 BNB to the attacker and 3.59 BNB to the HS token's own fee swap), the first copycat's later sale of 11.59M HS for 0.2891 BNB (0x082dfaf7, 185.57 USD) and the second copycat's 0.0883 BNB (56.87 USD). The HS the helpers staked stays in the contract and is netted within the anchor (rule 11)."
+  ]
+}

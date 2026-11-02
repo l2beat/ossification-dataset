@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Wall Street Pepe",
+  "name": "WEPE PresaleV5 buyWithEth priced from Uniswap V3 slot0",
+  "summary": "The Wall Street Pepe presale (proxy 0x9a15bb3a, PresaleV5 implementation 0x09c135aa) prices buyWithEth(amount, stake) with fetchPrice(), which in dynamic-sale mode divides the amount by the square of slot0's sqrtPriceX96 of the WEPE/WETH 0.3% Uniswap V3 pool 0xa3c2076e and adds 5%, so the sale price is a spot price the buyer can move in the same transaction. The attacker flash-borrowed 502.97M WEPE from the 1% pool 0x9dedf5bb, sold it into the 0.3% pool for 7.64 ETH, then ran 201 rounds of buyWithEth at the depressed quote (85.14M WEPE for 1.299 ETH in the first, about 20M WEPE for 0.3 ETH in later ones) and sold each lot back into the same pool. The presale paid out 6,376,682,519 WEPE for 61.30 ETH to its payment wallet 0x570dd8d9; the attacker bought back the loan, repaid it, and kept 2.3157 ETH.",
+  "targets": [
+    {
+      "address": "0x9a15bb3a8fec8d0d810691bafe36f6e5d42360f7",
+      "code": "0x09c135aacd4a82b08890e930dfdc3143b4578d45",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xb8d6eb921c6d7ef2848bc6fdfb163f25cf10c2b2ceb18705dfb1dcace63d51e8"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 267989.54,
+    "assets": [
+      {
+        "token": "0xccb365d2e11ae4d6d74715c680f56cf58bf4bf10",
+        "symbol": "WEPE",
+        "amount": "6376682519",
+        "usd": 267989.54
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-08/PresaleV5_exp.sol",
+    "https://t.me/defimon_alerts/1688",
+    "eip155:1:0xeccf88b06b8fbf540037a751e29c3872e0f40c161c08afa0b6a6931793a2812f"
+  ],
+  "notes": [
+    "In the cohort as a code defect: getV3Price() reads slot0 of one pool with no TWAP or bound, and buyWithEth sells at that quote (rule 1). Reset is the upgrade to 0x09c135aa (0xb8d6eb92, block 21994149), the latest of six implementations; setDynamicSaleState had already set V3Pool to 0xa3c2076e with dynamicSaleState true before it (both unchanged across the upgrade), and resets.mjs finds only maxTokensToSell and the directTotalTokensSold counter changing after it.",
+    "The owner upgraded the proxy three times about 1,700 blocks after the anchor (0x4d1203b2, 0x592126d2, 0xeccf88b0 in refs), the last to 0xe64fe6ca. campaign.mjs --outflows over the presale's WEPE finds no other large outflow: the largest earlier ones (424M, 400M, 204M WEPE) are EOA buyWithEth or ERC-4337 purchases paying 2.4-13.5 ETH directly, and none followed the anchor before the fix.",
+    "Loss is the 6,376,682,519 WEPE that left the presale. DefiLlama prices it at 432,977 USD (0.0000679), but the attacker's sales crashed the pool (DefiLlama 0.0000344 an hour later), so it is valued at what those sales realised (rule 12): the two pools' net ETH outflow, 61.2990 ETH from 0xa3c2076e and 2.3157 ETH from 0x9dedf5bb, together 63.6147 ETH at 4,212.70 USD. The 61.30 ETH the presale's payment wallet received is not subtracted (rule 11); the attacker kept only the 2.3157 ETH (9,755 USD), the figure DeFiHackLabs reports.",
+    "Separate from the Wall Street Memes presale incident (incidents/56/0x5a475a73...): that BSC presale priced sales through the Uniswap V3 quoter in another contract and was exploited by another party in April 2024; this is a different implementation on Ethereum exploited on its own (rule 4)."
+  ]
+}

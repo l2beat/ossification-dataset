@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Wall Street Memes",
+  "name": "WSM presale buyWithBNB priced from a Uniswap V3 spot quote",
+  "summary": "The WSM presale (PresaleBSCV5 behind proxy 0xfb071837) prices buyWithBNB(amount) with fetchPrice(), which asks the Uniswap V3 quoter for quoteExactOutputSingle on the WBNB/WSM 0.3% pool, a spot price the buyer can move in the same transaction. The attacker flash-borrowed 5M WSM from the 1% pool, sold it into the 0.3% pool to crash the quote, bought 2,770,000 WSM from the presale for 2.88 BNB, swapped back to repay the loan and kept 2,516,938 WSM, which it sold one block later for 36.44 BNB. A copycat contract repeated the trick 25 hours later (0x9f8162f9), buying 497,633 WSM for 0.005 BNB.",
+  "targets": [
+    {
+      "address": "0xfb071837728455c581f370704b225ac9eabdfa4a",
+      "code": "0xc0afd0e40bb3dcaebd9451aa5c319b745bf792b4",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x3667be597d93eff0fa678b267931685e70fae1b3c1d1f0d94651562a13d47def"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 29960.55,
+    "assets": [
+      {
+        "token": "0x62694d43ccb9b64e76e38385d15e325c7712a735",
+        "symbol": "WSM",
+        "amount": "3267633",
+        "usd": 29960.55
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x9f8162f9007fdf62c33d5cbd3304d0505b171479f569284005c64c31980c2e52"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-04/WSM_exp.sol",
+    "eip155:56:0xcc9bd2121d07adf0150bb384400c310e05ea75c96f56a51271ecd23aa2519009"
+  ],
+  "notes": [
+    "In the cohort as a code defect: fetchPrice() hard-codes a single-pool quoter call as the sale price, with no TWAP or bound. Reset is the upgrade to PresaleBSCV5 0xc0afd0e4 (block 35958588). The later changePaymentWallet and setMaxTokensToSell calls change where payments go and the sale cap, not the pricing; setSaleTokenQuoterSeeder, which set the sale token, quoter and dynamic sale, ran before the upgrade.",
+    "Loss is the 3,267,633 WSM that left the presale in both transactions at DefiLlama's block prices; the BNB it was paid went to the payment wallet and is not subtracted (rule 11). The anchor attacker's sale of its 2.52M WSM (0xcc9bd212, one block later) realised 36.44 BNB, about 92% of their market value, so the market price stands (rule 12). The presale's six largest earlier outflows (232k-1.02M WSM, campaign.mjs --outflows) are direct EOA buyWithUSDT or buyWithBNB calls (7.2-20.5 BNB) with no swap or flash loan around them, so ordinary purchases."
+  ]
+}

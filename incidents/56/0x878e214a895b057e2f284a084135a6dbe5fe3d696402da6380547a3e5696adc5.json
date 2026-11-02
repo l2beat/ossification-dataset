@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SAS",
+  "name": "SAS burns already-sold tokens again from the SAS/WBNB pair",
+  "summary": "SAS treats a transfer to its PancakeSwap pair as a sell: _autoSell swaps the seller's tokens into the SAS/WBNB pair 0x2e456142 through the router, and transfer then adds the full amount to sellBurn, which the next ordinary transfer by anyone burns from the pair's balance and syncs, so tokens that were already sold into the pool are removed from it a second time. With 200,000 WBNB flash-borrowed from Moolah, the attack contract bought 203.78M SAS for 674.84 WBNB, had helper 0xaea09fce send 122.27M SAS to the pair (auto-sold for 660.20 WBNB, sellBurn += 122.27M), had helper 0x6402170b make a dust transfer that burned 122.27M SAS from the pair, and sold its remaining 81.51M SAS through its contract 0xe66e3807 for 34.83 WBNB, a 20.19 WBNB net drain of the pair.",
+  "targets": [
+    {
+      "address": "0xbfa266aeb18d34ef4f8749fc7a1b2064af3d91c6",
+      "reset": {
+        "kind": "config",
+        "tx": "0xb2cda61dd927ca3afa5947df89a75abae4aad037d96fb4f48feaae9bf0ded6e5",
+        "address": "0xbfa266aeb18d34ef4f8749fc7a1b2064af3d91c6",
+        "slot": "0x1c"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 12110.33,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "20.194632450524216125",
+        "usd": 12110.33
+      }
+    ]
+  },
+  "refs": [
+    "https://api.llama.fi/hacks"
+  ],
+  "notes": [
+    "Reset is setPancakeSwapPair (0xb2cda61d, block 89998829, 2026-04-01), which stored the pair in pancakeSwapPair (slot 0x1c), the address whose transfers trigger _autoSell and whose balance _burnFromPair debits; the token was deployed 24 minutes earlier (0xad2ac337, block 89995792). The admin's setAllUserSellEnabled(true) (0x9c7200dd, block 90107274, nine blocks before the anchor) opened _autoSell to every holder; it is a trading switch like a pause flag, so it is not counted as a reset (rule 8). Later changes the exploit read (rewardAddress, burnInterval, recorded LP value) do not affect the double burn.",
+    "Earlier exploits: campaign.mjs --outflows over the pair's WBNB from the pair setting finds no outflow before the anchor; the later ones are 0.05 WBNB sells.",
+    "0xe66e3807, which received the final 34.83 WBNB and forwarded 14.64 WBNB to the attack contract, was deployed a minute before the attack contract by 0xf6621a06 and is treated as the attacker's; the attack contract's own WBNB in and out nets to zero. Loss is the pair's net WBNB outflow (loss.mjs); SAS removed from the pair is unpriced."
+  ]
+}

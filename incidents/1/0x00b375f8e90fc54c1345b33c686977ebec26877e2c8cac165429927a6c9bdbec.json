@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "0x0 Privacy DEX",
+  "name": "0x0DEX swapOnWithdrawal swaps a stale _lastWithdrawal amount",
+  "summary": "OxODexPool.withdraw() stores the withdrawn amount in _lastWithdrawal only for Swap-type withdrawals and pays Direct-type ones straight to the recipient, while swapOnWithdrawal() calls withdraw() and then swaps whatever _lastWithdrawal holds, whatever wType the caller passed. In its constructor the attack contract flash-loaned 11 WETH, force-sent 0.0036 ETH to round the pool's balance, deposited 10 ETH into a ring with its own key and swap-withdrew it to set _lastWithdrawal to 10 ETH, then four times deposited 0.1 ETH and called swapOnWithdrawal with a Direct withdrawal: each paid its 0.1 ETH back and also swapped 9.97 ETH of other users' deposits to USDC for it, emptying the pool's 39.9964 ETH.",
+  "targets": [
+    {
+      "address": "0x3d18ad735f949febd59bbfcb5864ee0157607616",
+      "code": "0x6128d5f7c64dab48a1c66f9d62eaefa1d5aa03ed",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xf6b82b2748207dc3b550867cba33f60f1b21c5662b81e5ce74f4d215e99b9f05"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 66271.52,
+    "assets": [
+      {
+        "symbol": "ETH",
+        "amount": "42.9514",
+        "usd": 66271.52
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x27149da50f46d5b06698848f356d0b30a58792619b6a918afcb96eefe96aff82",
+    "eip155:1:0x3f32ce7765648a7080a319f1a2eb05fb7d340bb0989a72cb723a62d6162442d4",
+    "eip155:1:0x9b74cbf202bbfb785036d1bf0a3e6127c70f2b7e4231b2642080fdee00bf6943"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-09/0x0DEX_exp.sol",
+    "https://0x0ai.notion.site/0x0ai/0x0-Privacy-DEX-Exploit-25373263928b4f18b31c438b2a040e33",
+    "eip155:1:0x56d2a2310e3a426beb82fc276de33e6a231073105c7fa6af91336770bbc58ce8"
+  ],
+  "notes": [
+    "Target is the pool proxy running implementation 0x6128d5f7, which upgrade 0xf6b82b27 (block 17409452) installed; the PoC's 'vulnerable contract' 0x29d2bcf0 is the implementation deployed after the exploit (block 18123127) and installed by 0x56d2a231 (block 18123181), the fix. No other proxy was ever upgraded to 0x6128d5f7 or its predecessor 0x416599a9 (Upgraded logs, blocks 17366599-18123181).",
+    "Earlier exploits: every Swap(tokenOut, amount, amountIn) the pool emitted from creation to the fix (630 events from block 17380912, 613 before the anchor) has amountIn at most the withdrawn amount except the anchor's four (0.1 ETH withdrawn, 9.97 ETH swapped) and three later transactions by the same attacker EOA 0xcf28e9b8 (blocks 18117336-18121633), each withdrawing its own 0.1 ETH deposit Direct and swapping another user's stale 0.982 ETH; they are the campaign. campaign.mjs on swapOnWithdrawal (0x79319fbb) from the reset to the fix traced 2,037 of 2,317 candidates (capped below block 17415709, which the Swap scan covers): every earlier call paid out at most the withdrawn amount, mostly relayed by 0x000097d4.",
+    "Loss is the pool's ETH that was not the attacker's: its whole 39.9964 ETH balance before the anchor (the attacker's 10.0036 ETH input and 4 x 0.1009 deposits went back out as its own swap, its Direct withdrawals and fees), plus 0.985 ETH (0.982 swapped and 0.003 relayer fee) in each campaign transaction, 42.9514 ETH in all, priced per transaction as loss.mjs does ($1,540.90 to $1,595.95). loss.mjs counts 1.085 ETH per campaign transaction because it includes the 0.1 ETH Direct withdrawal of the attacker's own deposit made in a separate earlier transaction (rule 11 excludes it); the slot 3 (_lastWithdrawal) writes resets.mjs lists after the upgrade are ordinary withdrawals, live values (rule 8)."
+  ]
+}

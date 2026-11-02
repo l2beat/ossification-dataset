@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MEV bot 0x28d949fd",
+  "name": "MEV bot 0x28d949fd runs its DODO flash-loan callback for any initiator",
+  "summary": "The unverified bot's DPPFlashLoanCall (0xd5b99797) acts on any DODO flash loan whose assetTo is the bot, without checking that the bot started it, and follows the initiator's data. The attacker's contract repeatedly borrowed 16.78 USDT from the DODO pool 0x3058ef90 with assetTo set to the bot; each callback swapped the borrowed USDT for 16.78 USDC in pool 0xc9f93163, sent the USDC to the attacker's contract and repaid the loan from the bot's own USDT, draining 1,342.17 USDT in the anchor and 1,325.39 USDT in the attacker's next transaction.",
+  "targets": [
+    {
+      "address": "0x28d949fdfb5d9ea6b604fa6fee3d6548ea779f17",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x3e4ff29ca956b25f492deb59a351ab3bbb557afd71ab3560802e142791d9e081"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0xf4d2f5e6a7fbf53c9a457322107e4dc839f224f239619cdd8e9584bd73fbd799",
+    "eip155:1:0x5384ccaac7daf4026129b5cb2b68f74a71a03ef23b7437c6aa52babbd5b2007d",
+    "eip155:1:0x5e0fc53d953859ad2969ec99f94c7757a097cd6c28e73ba6846430fa6ac4bcc8",
+    "eip155:1:0xf64d21ed56037cc4c62300bc083951b621bd8136ee4e06af3a4a79c28187c8cc",
+    "eip155:1:0xabb4fbfba829f57be729462ceba6633989bebf8ef7f871d948d150e76c449304"
+  ],
+  "loss": {
+    "usd": 2673.53,
+    "assets": [
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "2670.866452",
+        "usd": 2673.53
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2022-12/MEVbot_0x28d9_exp.sol"
+  ],
+  "notes": [
+    "Mechanism from the exploit trace, as the bot is unverified. Victim is the bot operator 0x37c6ca7b, which deployed the bot and is the only sender of its 321 direct transactions (0xfb17cb7e).",
+    "Every token movement of the bot from its deployment to the chain head (Etherscan tokentx, 2,440 transfers) was grouped by transaction: outside the operator's own transactions the bot only received USDT deposits until the anchor, so the anchor (index 0 of block 16157843) is the first exploit. The attacker 0xb61e7f19 repeated it in the next transaction of the same block, and four transactions on 2026-10-16 (by 0x3e4033d1, c0ffeebabe twice, and 0xa45d0f76) took another 3.30 USDT.",
+    "Loss is the bot's USDT outflow in the six transactions, priced by loss.mjs."
+  ]
+}

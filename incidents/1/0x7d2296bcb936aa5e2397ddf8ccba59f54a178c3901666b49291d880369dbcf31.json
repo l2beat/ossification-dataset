@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Bacon Protocol",
+  "name": "Bacon Protocol lend() reentrancy through the bHOME ERC777 mint hook",
+  "summary": "Bacon's lending pool (proxy 0xb8919522, implementation 0x781ad73f) is itself the ERC777 bHOME token: lend() pulls USDC, mints bHOME proportionally and only then adds the amount to poolLent, and the ERC777 mint calls the recipient's tokensReceived hook in between. The attacker flash-swapped 6.36M USDC from the Uniswap USDC/WETH pair, called lend(2.12M) and re-entered lend twice from the hook, each nested mint priced against the stale poolLent, then redeemed all 8.47M bHOME for 7.34M USDC, keeping 976,925 USDC of the pool's cash; a copycat repeated it with four nested lends of 200k an hour later.",
+  "targets": [
+    {
+      "address": "0xb8919522331c59f5c16bdfaa6a121a6e03a91f62",
+      "code": "0x781ad73f140815763d9a4d4752daf9203361d07d",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x1428f1cb3223a5c81a93f0b1fa97f88edba6af9eb6776d530988613ac7ffa8fd"
+      }
+    }
+  ],
+  "campaign": [
+    "eip155:1:0xf3bd801f5a75ec8177af654374f2901b5ad928abcc0a99432fb5a20981e7bbd1"
+  ],
+  "loss": {
+    "usd": 1014617.37,
+    "assets": [
+      {
+        "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "amount": "1014257.346974",
+        "usd": 1014617.37
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-03/Bacon_exp.sol",
+    "https://www.certik.com/blog/bacon-protocol-incident-anaylsis",
+    "eip155:1:0x1fed7733a7cd7f2f799792d42f8f9e1ac6db46af0aadb8d2707049c2c6d1f26a"
+  ],
+  "notes": [
+    "The implementation 0x781ad73f is unverified; the mechanism is read from the anchor's trace (lend 0xa6aa57ce calling the attacker's tokensReceived 0x0023de29, which calls lend again, three levels deep, then redeem 0xdb006a75) and from the later verified Pool16 source, whose lend() still mints before updating poolLent. Reset is the proxy's Upgraded event to 0x781ad73f (block 14088638); the next upgrade (0x1fed7733, block 14328014, refs) came after both exploits and is taken as the fix.",
+    "Loss is the pool's net USDC outflow per transaction, the flash-loaned deposits netting out: 976,924.997605 USDC in the anchor and 37,332.349369 USDC in the copycat (0xf3bd801f, by 0x88827d32, unaffiliated). Re-entry needs a contract caller with a tokensReceived hook: campaign.mjs over the proxy's whole life (from block 12916875) finds no earlier lend through a contract, and all 83 earlier pool USDC outflows are borrow (0xadf459ca) or redeem calls sent straight to the pool by EOAs, plus one redeem through a Gnosis Safe."
+  ]
+}

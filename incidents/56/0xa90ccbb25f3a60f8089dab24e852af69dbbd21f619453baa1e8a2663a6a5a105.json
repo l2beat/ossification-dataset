@@ -1,0 +1,44 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "TiFi",
+  "name": "TiFi lending pool replacement oracle reads PancakeSwap TIFI/WBNB spot reserves",
+  "summary": "After the December 2022 exploit TiFi's owner pointed LendingPool 0x8a6f7834 at a new, unverified GetPrice 0xad3c1f6d (setGetPrice, 0xe375095e), whose getTokenToBNBPrice reads the reserves of the PancakeSwap TIFI/WBNB pair 0xb62bb233, so the pool still values TIFI collateral at a spot price a borrower moves in the same transaction. In September 2024 EOA 0x46458632, through contract 0x8f921e27 and a fresh helper, flash-borrowed WBNB, deposited 55 WBNB and borrowed 1.9T TIFI, pumped TIFI in the pair, deposited TIFI as collateral at the inflated quote and borrowed the pool's 55 WBNB, then sold 1.2T TIFI into the pair, repaid the loans and kept 14.75 BNB, leaving both positions behind; the pool lost 1.71T TIFI net.",
+  "targets": [
+    {
+      "address": "0x8a6f7834a9d60090668f5db33fec353a7fb4704b",
+      "reset": {
+        "kind": "config",
+        "tx": "0xe375095ece1d0ac52148d4feab37579359cfc07fb691a7357b6256a33f58c498",
+        "address": "0x8a6f7834a9d60090668f5db33fec353a7fb4704b",
+        "slot": "0x5"
+      }
+    },
+    {
+      "address": "0xad3c1f6d7b204ee364bcf47f66588ab0c4e9bd2c",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xd2002fe614e7d8d16bd72a03df9e7706be4d4257f07fd1bc0a9ba624d7a7f49a"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 18560.34,
+    "assets": [
+      {
+        "token": "0x17e65e6b9b166fb8e7c59432f0db126711246bc0",
+        "symbol": "TIFI",
+        "amount": "1710000000000",
+        "usd": 18560.34
+      }
+    ]
+  },
+  "refs": [
+    "eip155:56:0xe375095ece1d0ac52148d4feab37579359cfc07fb691a7357b6256a33f58c498"
+  ],
+  "notes": [
+    "A separate incident from the December 2022 record (incidents/56/0x1c5272ce...), whose fix was this oracle replacement (rule 4): that exploit used GetPrice 0x9d1fc5ad's read of TiFi's own DEX (BUSD/WBNB) to inflate BUSD collateral; this one uses the replacement GetPrice 0xad3c1f6d, other code, reading a PancakeSwap pair to inflate TIFI collateral, 21 months later by an unrelated attacker.",
+    "Targets: the LendingPool, whose collateral valuation trusts the oracle, with its reset the setGetPrice call that installed 0xad3c1f6d in slot 5 (0xe375095e, block 23810020; an oracle change, rule 8), and GetPrice 0xad3c1f6d itself, deployed 263 blocks earlier (0xd2002fe6). resets.mjs shows after setGetPrice only setReservePercent (slot 8, 5% to 20%, which sizes reserves, not collateral), two setPoolStatus changes and live accounting; GetPrice's two read slots never changed.",
+    "Earlier exploits: every TiFi LendingPool token outflow from block 23810000 to the anchor (Etherscan tokentx, 2,503 transfers) belongs to a direct EOA call (deposit, withdraw, borrow, repayByShare, liquidate, withdrawReserve) except zero-value spam transfers and one 123-unit transfer of an unrelated 'USDT' token; the anchor is the first contract-driven outflow. The attacker's later calls to 0x8f921e27 that day moved nothing out of the pool.",
+    "Loss is the pool's net 1.71T TIFI outflow at DefiLlama's block price (loss.mjs); the WBNB nets to zero within the transaction and the 55 WBNB the attacker left as collateral is not subtracted (rule 11). The market absorbed the sale: the pair's spot TIFI price fell about 7% across the transaction, so the market price stands (rule 12); the attacker realised 19.06 BNB from the pair for 1.2T TIFI and kept the rest."
+  ]
+}

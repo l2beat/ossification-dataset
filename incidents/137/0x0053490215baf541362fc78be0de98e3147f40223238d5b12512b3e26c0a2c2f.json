@@ -1,0 +1,64 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Midas Capital",
+  "name": "Midas Curve LP oracle read-only reentrancy on the stMATIC-f market",
+  "summary": "Midas' Polygon pool with the Jarvis jFIAT markets (comptroller 0xd265ff7e) priced its new WMATIC-stMATIC Curve LP collateral market (0x23f43c10, 70% collateral factor) through CurveLpTokenPriceOracleNoRegistry (0xacf3e1c6), which reads the pool's get_virtual_price (and its underlyings' prices from the MasterPriceOracle) without checking the pool's reentrancy lock. During remove_liquidity the Curve pool burns the LP supply and sends native MATIC before its balances reflect the withdrawal, so get_virtual_price read from the receive callback is inflated. The attacker deposited 131,863.80 stMATIC-f as collateral, flash-loaned WMATIC to add 71.85M WMATIC to the pool, removed the 22.57M LP it got, and in the MATIC callback borrowed 296,187.58 jCHF, 425,500 jEUR, 50,000 jGBP and 50,204.77 agEUR against the inflated collateral; once the price normalised it liquidated part of its own position through a fresh contract and kept the rest of the borrow as bad debt.",
+  "targets": [
+    {
+      "address": "0xacf3e1c6f2d6ff12b8aee44413d6834774b3f7a3",
+      "code": "0x3803527dcd92ac3e72a0a164db82734daba47fac",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xcf7604d0adab3863d01b487c51948c4a5b377e5c5c9d5887b5faa48536141bf8"
+      }
+    },
+    {
+      "address": "0x23f43c1002eeb2b146f286105a9a2fc75bf770a4",
+      "code": "0xcd2fbfc27bed05010c192d4595222e4da5ae6aaa",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0xf6555d197b1b1063005c876c6c4fbae6eee60ecf956d7a997b1847a4685a45dc"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 798845.91,
+    "assets": [
+      {
+        "token": "0x4e3decbb3645551b8a19f0ea1678079fcb33fb4c",
+        "symbol": "jEUR",
+        "amount": "368057.5",
+        "usd": 398771.9
+      },
+      {
+        "token": "0xbd1463f02f61676d53fd183c2b19282bff93d099",
+        "symbol": "jCHF",
+        "amount": "273973.508934636525780410",
+        "usd": 295739.97
+      },
+      {
+        "token": "0x767058f11800fba6a682e73a6e79ec5eb74fac8c",
+        "symbol": "jGBP",
+        "amount": "45250",
+        "usd": 55354.78
+      },
+      {
+        "token": "0xe0b52e49357fd4daf2c15e02058dce6bc0057db4",
+        "symbol": "agEUR",
+        "amount": "45435.312436214831478203",
+        "usd": 48979.27
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-01/Midas_exp.sol",
+    "https://twitter.com/peckshield/status/1614774855999844352",
+    "https://twitter.com/BlockSecTeam/status/1614864084956254209"
+  ],
+  "notes": [
+    "Targets: the LP oracle carries the defect and the market made it exploitable. The oracle proxy has run implementation 0x3803527d since 0x14169122 (block 35961068); it registered the stMATIC-f pool (poolOf and underlyings, 0x3a80781a, block 36340036) and the MasterPriceOracle 0xb9e1c2b0 first routed stMATIC-f to it in 0xcf7604d0 (block 36340051), the oracle's reset; later MasterPriceOracle calls rewrote the same value. The market was created and listed with a 0.7 collateral factor in 0xea171888 (block 37985738) and switched to the plugin delegate 0xcd2fbfc2 with Beefy plugin 0xeaa782fa in 0xf6555d19 (block 37986451), which sets the age; its supply cap (0x6ed1dda0) only bounds the loss.",
+    "The oracle implementation 0x3803527d is unverified; its reads (get_virtual_price on pool 0xfb6fe780 and two MasterPriceOracle price calls, no lock check) are taken from the anchor's trace.",
+    "Earlier exploits: campaign.mjs from the market's creation finds only the two admin transactions before the anchor; after it there are users' redeems (0x25ed5a51) and admin implementation changes. The attacker's only earlier transactions are funding and an unrelated contract deployment.",
+    "Loss is each borrowed market's net outflow in the anchor, after the 22,214.07 jCHF, 57,442.5 jEUR, 4,750 jGBP and 4,769.45 agEUR the attacker repaid in its own liquidation in the same transaction, priced by loss.mjs at DefiLlama prices. The attacker sold these for 758,205.89 USDC (5% below), which is within the rule-12 margin either way. The stMATIC-f it left as collateral was its own deposit and is not counted."
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Schnoodle",
+  "name": "SchnoodleV9 _spendAllowance divides the amount by the reflection rate",
+  "summary": "SchnoodleV9 (implementation 0xeac2a259 behind the SNOOD proxy) overrides ERC777 _spendAllowance to pass _getStandardAmount(amount), dividing the already-standard amount by the reflection rate, so the amount checked against the allowance rounds to zero and transferFrom moves any holder's SNOOD for any caller. In the anchor, generalized bot 0x07197a25 (EOA 0x06ac16ff) called SNOOD.transferFrom(0x7545dbf1, SNOOD/WETH pair, 75.95m SNOOD) with zero allowance and swapped it for 0.2249 WETH. Two and a half hours later the attack contract 0x273521f6 (EOA 0x180ea086), in its constructor, pulled all but 1 wei of the pair's SNOOD to itself, called sync(), returned the tokens and swapped out the pair's 104.047 WETH; later pulls took SNOOD from a buyer and 755.9b SNOOD from the treasury.",
+  "targets": [
+    {
+      "address": "0xd45740ab9ec920bedbd9bab2e863519e59731941",
+      "code": "0xeac2a259f3ebb8fd1097aeccaa62e73b6e43d5bf",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x9b2220887ca9c82ab282f6e32db384b525687673ef0810e5411bb85b6d66a296"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 115736.16,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "104.321926841794889463",
+        "usd": 107137.46
+      },
+      {
+        "token": "0xd45740ab9ec920bedbd9bab2e863519e59731941",
+        "symbol": "SNOOD",
+        "amount": "758569217849.766042873644662961",
+        "usd": 8598.7
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0x9a6227ef97d7ce75732645bd604ef128bb5dfbc1bfbe0966ad1cd2870d45a20e",
+    "eip155:1:0x920a0f291a3a889f01bbd78618edba077f885e842ca29360db3c0c285728d4e5",
+    "eip155:1:0x4d5cc6961ba3ab13489804a93387c843897f7f35ceabd9f1cb4e8c138e3a2327",
+    "eip155:1:0xfcbe7351d23db51405f626b4a84c0c07f285174f813f5aaa0219770759146f51"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-06/Snood_exp.sol",
+    "https://kalzak.github.io/2022/08/20/Post-Exploit-Analysis-Schoodle.html",
+    "https://vishvesh-rao.github.io/posts/Detailed-Postmortem-of-Uniswap-v2-Schnoodle-exploit"
+  ],
+  "notes": [
+    "Reset is ProxyAdmin's upgrade of the SNOOD proxy to SchnoodleV9 0xeac2a259 (block 14982558). The same _spendAllowance override was already in 0xdd47f7cb, installed at block 14982351 (0x96579e47); 0xeac2a259 only moved the maintenance() helper, and per rule 7 the later upgrade to the executed code is the reset. Later changes up to the anchor are RoleRevoked calls on locked accounts and balance writes; the OwnershipTransferred at block 14983626 is after the anchor and is a new holder of the owner role (rule 8). The proxy was never upgraded again, so the defect was not fixed.",
+    "Anchor: campaign.mjs from block 14982351 finds 0xc9057c69 as the first transferFrom by a non-holder after the V9 upgrade; allowance(0x7545dbf1, 0x07197a25) was 0 at block 14983108 and 0x7545dbf1 is an ordinary trader with no tie to the bot. The bot's only SNOOD transaction in blocks 14982300-14990000 is this one. 0x9a6227ef (the DeFiHackLabs PoC transaction, block 14983664) is the main drain and is in campaign.",
+    "Campaign: 0x920a0f29 (bot 0x00aad598 of EOA 0x0000000a5aab) pulled 113,233 SNOOD from 0x5bf7cfd6, who had bought SNOOD after the drain, and sold it for 0.05 WETH; 0x4d5cc696 pulled 1.1e-7 SNOOD from the same holder (a dust probe); 0xfcbe7351 (block 15440755) pulled 755.94b SNOOD from treasury 0x78fc40ca with zero allowance. campaign.mjs to the chain head found no other transferFrom by a non-holder: the remaining exercises are the pair's swaps, router pulls of the sender's own tokens and transfers.",
+    "Loss is loss.mjs with victims 0x7545dbf1, the pair 0x0f6b0960, 0x5bf7cfd6 and treasury 0x78fc40ca, netting victims per transaction: 104.32 WETH (0.2249 in the anchor, 104.047 in the main drain, 0.05 in 0x920a0f29) plus 2.62b SNOOD priced by DefiLlama ($8,598.70, nearly all of it the pair's SNOOD that the token's transfer fees moved to the farming fund 0x76d8057a and 0x6d257d2d during the main drain's round trip). The treasury's 755.94b SNOOD is counted at $0: DefiLlama has no price by then, the pair was already empty, and 0x3fb7501f never moved the tokens (rule 12)."
+  ]
+}

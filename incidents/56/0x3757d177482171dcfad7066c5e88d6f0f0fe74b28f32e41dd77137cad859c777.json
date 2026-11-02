@@ -1,0 +1,65 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Annex Finance",
+  "name": "Annex Liquidator pancakeCall accepts any pair and caller-chosen aTokens",
+  "summary": "The Annex Liquidator's pancakeCall(sender, amount0, amount1, data) checked only that msg.sender was a PancakeSwap factory pair, not that the Liquidator had started the swap, and took repayAToken and seizeAToken from the caller's data: it approved the received amount to repayAToken, called its liquidateBorrow and seizeAToken.redeem, and repaid the pair amount*1000/997+1 from its own balance. The attacker created a pair of a self-minted token and WBNB with 7.95 flash-borrowed WBNB, had it swap 7.23 WBNB to the Liquidator with data naming the attack contract as both aTokens, pulled the approved WBNB in the fake liquidateBorrow, collected the Liquidator's 7.25 WBNB repayment back out of its pair, and repeated it within five minutes for the Liquidator's USDC, ETH, BUSD and USDT.",
+  "targets": [
+    {
+      "address": "0xe65e970f065643ba80e5822edff483a1d75263e3",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xb3913c06e4a70d85ed3b55658a4d2c23161e4f00e017b01696ced11b7d4e6063"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 2978.3,
+    "assets": [
+      {
+        "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "symbol": "WBNB",
+        "amount": "7.225851763293057027",
+        "usd": 1969.65
+      },
+      {
+        "token": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "symbol": "USDC",
+        "amount": "562.271673437995557086",
+        "usd": 563.34
+      },
+      {
+        "token": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "symbol": "ETH",
+        "amount": "0.201221871839812373",
+        "usd": 244.25
+      },
+      {
+        "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "symbol": "BUSD",
+        "amount": "101.249592077087815401",
+        "usd": 101.45
+      },
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "99.513258074341207608",
+        "usd": 99.61
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:56:0x42c5b11429ba698a8cf4d7f9537adfa90f8cb1755fb03d34591ff0b4ba95f89c",
+    "eip155:56:0xbe435c2d043bc1bddde9c0904fc7f3a6c017b961ccb30fc6ee39bc0b674dba5a",
+    "eip155:56:0x2775ed2f68504208ee72efe8dc1182b7140e654ab8cef5d29209aa2592e5f93c",
+    "eip155:56:0x4d1b4e3e104acec945c6e1fc61fc696d2f7bd5ba30db587fad5e883e959df5cf"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/Annex_exp.sol",
+    "https://twitter.com/AnciliaInc/status/1593690338526273536"
+  ],
+  "notes": [
+    "The Liquidator (deployed 2022-11-17 by 0x50086caf, which funded it and is its recipient) liquidated Annex Finance positions through Pancake flash swaps; its liquidateS entry is public and was used by several liquidators before the attack. Its token history shows no outflow before the anchor other than liquidations and the owner's withdraw of 7.23 WBNB (0xf540334c), which it deposited back 20 blocks later; the attacker 0x40fb8d32 then emptied every token it held in five transactions from the same attack contract, listed as campaign.",
+    "Reset is the deployment; the contract is not upgradeable and resets.mjs finds no change before the anchor.",
+    "Loss is each token's outflow from the Liquidator, priced by loss.mjs."
+  ]
+}

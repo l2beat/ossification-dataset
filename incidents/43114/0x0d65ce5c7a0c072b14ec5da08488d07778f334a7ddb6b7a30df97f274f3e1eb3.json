@@ -1,0 +1,72 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Zabu Finance",
+  "name": "ZABU MasterChef credits deflationary SPORE deposits at the sent amount",
+  "summary": "Zabu Finance's MasterChef 0xf61b4f98 credits deposit(pid, amount) with the amount sent rather than the amount received, and withdraw pays out the credited amount, so pool 38 (SPORE, which burns and redistributes part of every transfer) holds less than its users are credited. After staking a little SPORE through helper 0x0e65fb2c (0xf76b37ed), the attacker's contract 0x5c9ad7b8 flash-swapped SPORE from the Pangolin SPORE/WAVAX and SPORE/PNG pairs and looped deposit(38)/withdraw(38) until the farm's 386,475,355,518,186 SPORE was gone, leaving its own stake as nearly the whole pool supply. Twenty blocks later its helper harvested 4.53 billion ZABU of rewards (0x8b3042e5) and sold them into seven Pangolin and Trader Joe ZABU pairs for 6,652.91 AVAX, 180,633.88 USDT.e, 53,424.08 AVE, 11,979.47 JOE and 10,750.77 PNG, bridged out as 201.45 WETH.e.",
+  "targets": [
+    {
+      "address": "0xf61b4f980a1f34b55bbf3b2ef28213efcc6248c4",
+      "reset": {
+        "kind": "config",
+        "tx": "0xc7e0cec16c760cf62216806ebd2df187718e9b27269f98224b3b4de6a4e17f46",
+        "address": "0xf61b4f980a1f34b55bbf3b2ef28213efcc6248c4",
+        "call": "0x081e3eda"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 685678.24,
+    "assets": [
+      {
+        "token": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+        "symbol": "WAVAX",
+        "amount": "6662.907890401003995863",
+        "usd": 372043.95
+      },
+      {
+        "token": "0xc7198437980c041c805a1edcba50c1ce5db95118",
+        "symbol": "USDT.e",
+        "amount": "180633.879446",
+        "usd": 181288.76
+      },
+      {
+        "token": "0x6e7f5c0b9f4432716bdd0a77a3601291b9d9e985",
+        "symbol": "SPORE",
+        "amount": "386118004844969.3",
+        "usd": 47309.71
+      },
+      {
+        "token": "0x78ea17559b3d2cf85a7f9c2c704eda119db5e6de",
+        "symbol": "AVE",
+        "amount": "53424.078509526139524582",
+        "usd": 37968.32
+      },
+      {
+        "token": "0x6e84a6216ea6dacc71ee8e6b0a5b7322eebc0fdd",
+        "symbol": "JOE",
+        "amount": "11979.466306833987094984",
+        "usd": 24003.24
+      },
+      {
+        "token": "0x60781c2586d68229fde47564546784ab3faca982",
+        "symbol": "PNG",
+        "amount": "10750.771429714203735697",
+        "usd": 23064.26
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:43114:0x8b3042e55a63f39bb388240a089cf4d51e59abe7cb0bff303c6dbb19eaeb75ac",
+    "eip155:43114:0xd21cf40c492bf37887edb560389e0bc26382b64300f1f82d5250e7def7c7b237"
+  ],
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-09/ZABU_exp.sol",
+    "https://slowmist.medium.com/brief-analysis-of-zabu-finance-being-hacked-44243919ea29",
+    "eip155:43114:0xf76b37ed46c218d4b791e9769b139c3e1f43d1888f37ff0a647c7a8bb58528fb"
+  ],
+  "notes": [
+    "The farm is unverified; the defect is read from the anchor, where each deposit(38, x)/withdraw(38, x) pair returns x while the farm received less, until balanceOf(farm) for SPORE falls from 386,475,355,518,186 at block 4178714 to 0.000000002. Reset is pool 38's listing: the timelock 0xec9afd2d's executeTransaction calling add(100, SPORE, ...) (0xc7e0cec1, block 3702692) raised poolLength from 38 to 39; the farm itself was deployed in 0x006a0de2 (block 3302158) and its ownership moved to the timelock in 0x86329c99. A later timelock add of another pool (0x2e590b96, block 3974348) only raised totalAllocPoint, which scales ZABU emissions and so the loss size, not the defect (rule 8).",
+    "The anchor is the drain, not the attacker's earlier stake 0xf76b37ed (block 4177751), an ordinary 0.36 trillion SPORE deposit. No earlier transaction took more than 5% of the farm's SPORE apart from one user's withdrawal of their own stake at block 3711068, and campaign.mjs --outflows over the farm since deployment shows only ordinary withdrawals and harvests (largest earlier ZABU outflow 1.47m against the anchor campaign's 4.53bn).",
+    "Loss is the SPORE the farm lost, minus the attacker's own 357,350,673,217 SPORE stake (priced at loss.mjs's block-time SPORE rate), plus the non-ZABU reserves the seven ZABU pairs paid for the attacker's ZABU in 0x8b3042e5 and 10 AVAX more from Pangolin ZABU/AVAX in 0xd21cf40c (block 4972820; WAVAX here sums both). The reward ZABU, whose price the dump crashed, is valued at what it realised (rule 12); about 854.6 million ZABU stayed with the attacker unsold. The SPORE/WAVAX and SPORE/PNG pairs the attacker flash-swapped from were repaid in full and gained, so they are not victims. DefiLlama's 3.2m USD values the ZABU at its pre-crash price."
+  ]
+}

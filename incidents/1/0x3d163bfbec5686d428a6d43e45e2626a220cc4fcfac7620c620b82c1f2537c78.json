@@ -1,0 +1,39 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "Abracadabra",
+  "name": "Abracadabra xSUSHI cauldron borrow checks solvency against the cached exchange rate",
+  "summary": "Abracadabra's xSUSHI cauldron (CauldronMediumRiskV1 clone 0xbb02a884) checks borrow() solvency in its solvent modifier against the stored exchangeRate, which only updateExchangeRate(), liquidate() or a cook action refreshes; borrow never refreshes it. The stored rate dated from block 15902535 (0.388 xSUSHI per MIM) while the oracle had moved to 0.534 after xSUSHI fell. The attacker flash-loaned 450,000 xSUSHI from BentoBox, added 418,286 xSUSHI shares as collateral, borrowed 808,638 MIM (LogBorrow amount) at the stale rate, called updateExchangeRate(), liquidated 682,091 borrow parts of its own position, withdrew its remaining collateral and MIM, bought back xSUSHI for the flash-loan fee and kept 110,911 MIM; a copycat repeated it the next day.",
+  "targets": [
+    {
+      "address": "0xbb02a884621fb8f5bfd263a67f58b65df5b090f3",
+      "code": "0x4a9cb5d0b755275fd188f87c0a8df531b0c7c7d2",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0x3ac5ff390e2fde2aaf167c96d37464d6000ab56b6fd769e8dafe606442ecb6b3"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 129331.9,
+    "assets": [
+      {
+        "token": "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3",
+        "symbol": "MIM",
+        "amount": "129333.378015564705170921",
+        "usd": 129331.9
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-11/Kashi_exp.sol",
+    "https://eigenphi.substack.com/p/casting-a-magic-spell-on-abracadabra"
+  ],
+  "campaign": [
+    "eip155:1:0x096865cbb622723ab32ff6fd2be5f782e13c66da156041b6a2db15b64c6eb9f5"
+  ],
+  "notes": [
+    "Target is the cauldron clone; its code is the CauldronMediumRiskV1 master 0x4a9cb5d0 and it ages from its BentoBox.deploy (rule 9), with no route change since. Later changes resets.mjs lists are accrual totals and the exchangeRate refresh at block 15902535 (a live oracle value, rule 8).",
+    "Earlier exploits: campaign.mjs over the cauldron's whole history (1,645 candidates, not capped) and a log scan of every transaction with LogBorrow, LogExchangeRate, LogRepay and LogRemoveCollateral on it find no earlier borrow followed by a rate refresh and self-liquidation; ordinary borrows stopped at block 13500882. The other two clones of the same master (0x6ff9061b, 0xffbf4892) show no such transaction to block 23,000,000. Only 0x096865cb (block 15934008, contract 0x6af31ef0) repeats it; the rest after the anchor are plain updateExchangeRate calls.",
+    "Loss is BentoBox's MIM depletion in the two transactions (the cauldron's MIM held there), 111,329.13 and 18,004.24 MIM; the 475 xSUSHI flash-loan fees BentoBox gained are not subtracted (rule 11)."
+  ]
+}

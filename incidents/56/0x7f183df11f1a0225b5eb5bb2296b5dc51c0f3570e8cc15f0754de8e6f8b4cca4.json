@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SpaceGodzilla",
+  "name": "SpaceGodzilla public swap and liquify functions trade the token contract's balances at any price",
+  "summary": "The SpaceGodzilla token exposes swapTokensForOther(amount), which sells that amount of the contract's own SpaceGodzilla for USDT through PancakeSwap with amountOutMin 0, and swapAndLiquifyStepv1(), which adds the contract's whole SpaceGodzilla and USDT balances as liquidity with zero minimums; anyone can call both, so the contract trades at whatever price the caller has set. With 2.95M USDT flash-borrowed from 16 pools, the attacker had the contract dump 69.1B of its tokens, bought nearly all the pair's SpaceGodzilla, called swapAndLiquifyStepv1 so the contract added its 30,395 USDT at the distorted ratio, then sold the SpaceGodzilla back for 2.98M USDT and kept 25,378.76 USDT. A second round six hours later (0x67ba949a) took another 3,501 USDT from the contract.",
+  "targets": [
+    {
+      "address": "0x2287c04a15bb11ad1358ba5702c1c95e2d13a5e0",
+      "reset": {
+        "kind": "config",
+        "tx": "0x131b9561124cfb48ea350a423b487c17e610d22e126866de0e5c89b3e1cfcade",
+        "address": "0x2287c04a15bb11ad1358ba5702c1c95e2d13a5e0",
+        "slot": "0xb"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 33887.77,
+    "assets": [
+      {
+        "token": "0x55d398326f99059ff775485246999027b3197955",
+        "symbol": "USDT",
+        "amount": "33879.961865586719525201",
+        "usd": 33887.77
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-07/SpaceGodzilla_exp.sol",
+    "https://mobile.twitter.com/BlockSecTeam/status/1547456591900749824",
+    "https://medium.com/numen-cyber-labs/spacegodzilla-attack-event-analysis-d29a061b17e1"
+  ],
+  "campaign": [
+    "eip155:56:0x67ba949a3fa10bea9ab78b6bb0866bef81370c269debcbae920692bc2081bdeb"
+  ],
+  "notes": [
+    "In the cohort as a code defect: two public functions move the contract's own balances through the pair with zero slippage bounds, so the size of what the contract gives up is set by a spot price the caller moves in the same transaction.",
+    "Reset is the owner's changeSwapWarp (0x131b9561, block 19450523, slot 0xb), 99 blocks after the token's deployment (0xa9f188ca): swapTokensForOther routes the USDT through that warp contract and reverts without it. No later change of the contract's code or configuration precedes the anchor.",
+    "campaign.mjs --outflows over the contract's USDT finds no earlier drain: before the anchor the largest outflow is 166.87 USDT, the automatic liquify on ordinary transfers. The second round 0x67ba949a was sent by EOA 0xc5adb4cd but paid 773.74 USDT to the anchor attacker 0x00a62eb0. Later outflows of 200-780 USDT are the owner 0xe1fc9cd1 withdrawing.",
+    "Loss is the USDT that left the token contract in both rounds (30,378.84 and 3,501.12; rule 11). It went into the pair as liquidity minted to the owner 0xe1fc9cd1, and the attacker then drew 26,152 USDT of it out; the 4.9k USD the pair kept is a recovery of the owner's LP and is not subtracted. DeFiHackLabs' 25,378 is the anchor's profit."
+  ]
+}

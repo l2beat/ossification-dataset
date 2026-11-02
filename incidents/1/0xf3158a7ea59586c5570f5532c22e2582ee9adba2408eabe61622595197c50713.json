@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "NowSwap",
+  "name": "NowSwap pair swap K check scales balances by 10000 but reserves by 1000",
+  "summary": "NowSwap's WETH/USDT pair 0x9536a784, an unverified fork of NimbusPair, checks the swap invariant with balances scaled by 10000 but reserves by 1000, so a swap only has to leave 1% of the reserve product (DeFiHackLabs' root cause). The attack contract 0xa14660a3, created by EOA 0x5676e585 in 0xe8a689ba, called swap 60 times alternating tokens, each time taking a third of the reserve and paying a tenth of it back in the callback (first round 52.76 WETH out, 5.28 WETH back). It left 0.0036 WETH and 12.08 USDT of the pool's 158.29 WETH and 535,718.80 USDT, and the attacker sent 310 ETH to Tornado Cash.",
+  "targets": [
+    {
+      "address": "0x9536a78440f72f5e9612949f1848fe5e9d4934cc",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf4213bee1c2304c82b32989f0b51c6d1fb3569a969375ee2cc1a8be1d125e9d0"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1075267.94,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "158.288436714707236153",
+        "usd": 538140.8
+      },
+      {
+        "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "symbol": "USDT",
+        "amount": "535706.723113",
+        "usd": 537127.14
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2021-09/NowSwap_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1438100688215560192"
+  ],
+  "notes": [
+    "The pair's bytecode is unverified (17,946 bytes, 'NowSwap' error strings); the defect is read from the anchor: every one of its 60 swaps lowers the reserve product to 70% of its prior value, which a correctly scaled check forbids. Reset is the pair's creation by NowSwap factory 0xa556e2d7's createPair (0xf4213bee, block 11979203); resets.mjs shows only reserve updates afterwards.",
+    "Earlier exploits: across all 1,815 Sync events of the pair since creation, no swap before the anchor lowered the reserve product by more than 0.05%, and none after it through block 13900000. campaign.mjs --outflows shows the only outflows larger than the anchor's are the main LP 0xe7ef19e6's own removeLiquidityETHWithPermit burns (0xcb42ec96, block 12369200; 0xcd2a1f4c, block 12510581).",
+    "Separate incident from the Nimbus drains: the same EOA drained two NimbusPair deployments of Nimbus's own factories (0xf39f0b0b on 0xa0771dfe, 0x5908622c on 0xa0ff0e69) about 14 hours earlier (blocks 13225126 and 13225517), but NowSwap is another codebase: factory 0xa556e2d7 was deployed by 0x106fce8a with feeToSetter 0x68876951, unrelated to Nimbus's 0xb7c32046, and the pair bytecode differs. The DeFiHackLabs NowSwap PoC replays its idea against Nimbus pair 0xa0ff0e69, but its loss figure (158.28 WETH and 535,706 USDT) and named contract 0xa14660a3 are this transaction.",
+    "Loss is the pair's net outflow priced by loss.mjs; all of it went to the attack contract and on to the EOA."
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "OKC",
+  "name": "OKC MinerPool pays LP rewards pro rata to instantaneous LP balances",
+  "summary": "The unverified OKC MinerPool 0x36016c4f distributes its OKC to the holders of the USDT/OKC PancakeSwap LP 0x9cc7283d whenever it receives BNB, each share sized by the holder's LP balance over the LP total supply at that moment, so LP minted with borrowed funds in the same transaction collects almost the whole distribution. The attacker borrowed about 2.75M USDT through five DODO pools and a PancakeSwap V3 flash loan, bought 28,108 OKC with 130k USDT, added it with 1.88M USDT as liquidity for 225,706 LP (about 93% of the supply) held by a fresh helper contract, sent the MinerPool 1 wei, which paid that helper 77,891 OKC, then removed the liquidity, sold all its OKC and kept 6,268 USDT.",
+  "targets": [
+    {
+      "address": "0x36016c4f0e0177861e6377f73c380c70138e13ee",
+      "reset": {
+        "kind": "config",
+        "tx": "0xf07761b5aacb9d16f36d39cf9dcc9d57b402daaec2a6786dcce697eed20cf09f",
+        "address": "0x36016c4f0e0177861e6377f73c380c70138e13ee",
+        "slot": "0xcb34c14ff74c030999ce97b1fc7ed044143f9cec3855f7bfab3693a97d61eb79"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 6518.1,
+    "assets": [
+      {
+        "token": "0xabba891c633fb27f8aa656ea6244dedb15153fe0",
+        "symbol": "OKC",
+        "amount": "78163.608536925745878454",
+        "usd": 6518.1
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-11/OKC_exp.sol",
+    "https://lunaray.medium.com/okc-project-hack-analysis-0907312f519b"
+  ],
+  "notes": [
+    "In the cohort as a code defect: the reward share is the holder's LP balance at distribution time with no snapshot or holding period, and anyone can trigger a distribution, so a flash-funded LP position takes the pool. The contract is unverified; the mechanism is read from the anchor's trace (LP totalSupply and per-holder balanceOf reads, then an OKC transfer to each holder from the 0x95b82e46 holder list).",
+    "Reset is the deployer's addAdmin(OKC token) on the MinerPool (0xf07761b5, block 33459147), 16 blocks after its deployment (0xbb4aabcb): the token's transfers, which the attack needs, call the pool's withdrawTo (0x205c2878), which in the anchor also paid the attacker's other helper 272.65 OKC. The pool was 4.5 hours old at the anchor.",
+    "Every earlier MinerPool outflow (Etherscan tokentx from its deployment) is under 1.3 OKC, paid during ordinary router liquidity adds; no later transaction repeats the drain.",
+    "Loss is the 78,163.61 OKC the pool paid the attacker's two helper contracts; the other 3,140 OKC of the same distribution went to existing LP holders as designed and is not counted. OKC has no market price, so it is valued at what the attacker realised (rule 12): the USDT/OKC pair lost 6,518.10 USDT net, the attacker's 6,268.10 USDT plus a 250 USDT flash-loan fee."
+  ]
+}

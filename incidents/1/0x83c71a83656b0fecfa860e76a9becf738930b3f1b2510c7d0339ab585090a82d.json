@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "unverified_0xb3094734",
+  "name": "MEV bot uniswapV3SwapCallback pays any caller",
+  "summary": "The unverified trading bot 0xb3094734 implemented uniswapV3SwapCallback(amount0Delta, amount1Delta, data) without checking that msg.sender was a genuine Uniswap V3 pool: it read msg.sender.token0() and transferred the positive delta of that token to msg.sender. The attacker's contract, whose token0() returned WETH, called the callback with amount0Delta 0.36e18 and received 0.36 WETH, then repeated it against the operator's identical bot 0xa89f6d04 for 0.3 WETH.",
+  "targets": [
+    {
+      "address": "0xb3094734fe249a7b0110dc12d66f6c404ada28cb",
+      "reset": {
+        "kind": "deployment",
+        "tx": "0xf7bdd57a3294f396b44b178814806be13cb066df78a0cdfddb41f93e98918ca8"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 1583.06,
+    "assets": [
+      {
+        "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "amount": "0.66",
+        "usd": 1583.06
+      }
+    ]
+  },
+  "campaign": [
+    "eip155:1:0xf93db4cdee0ed2af06067a9c953ebc62dd17f70be37961636c42d698cc23e932"
+  ],
+  "refs": [
+    "https://x.com/TenArmorAlert/status/1831637553415610877",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-09/unverified_a89f_exp.sol"
+  ],
+  "notes": [
+    "0xb3094734 (deployer 0x7ac8d212) and 0xa89f6d04 (deployer 0xc4d03774, created block 20668219) have the same 20,331-byte runtime except the embedded operator address, so the second drain is the same defect in a sibling deployment (rule 4); only 0xb3094734 is a target because the anchor executed only it.",
+    "campaign.mjs over both bots, from 0xa89f6d04's creation to the chain head, finds every earlier callback call coming from the VISTADOG/WETH pool 0x5c98482b during the bots' own trades, and no exercise after the attacker's two; the attacker 0xfe51ffcd sent no other transactions.",
+    "Reset is the deployment; the bot is not upgradeable and resets.mjs finds no change before the anchor."
+  ]
+}

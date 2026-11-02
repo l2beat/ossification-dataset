@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "SellToken",
+  "name": "SellToken shorts opened and settled at the router's getAmountsOut spot quote",
+  "summary": "The SellToken router 0x57db1912 lets anyone short a listed token: ShortStart(coin, addr, terrace) records the entry as PancakeSwap getAmountsOut(bnb, [WBNB, coin]) and withdraw(token) pays bnb times the current quote over the entry by having its Minerals vault 0x8d190c70 sell up to a tenth of its token balance for BNB to the caller. Both quotes are the live pair, and setTokenPrice() only requires the open to be within 5% of a price the caller recorded 30 seconds earlier the same way. After such a recording round, the attacker flash-borrowed 1,906 WBNB from three DODO pools, bought 3.58M SELLC with 500 WBNB, opened a 64.76 BNB SELLC short, sold the SELLC back to crash the quote and closed the short, so Minerals sold 1,938,034 SELLC for 119.29 WBNB to it; it kept 99.55 BNB and ran three more rounds, and two copycats followed.",
+  "targets": [
+    {
+      "address": "0x57db19127617b77c8abd9420b5a35502b59870d6",
+      "reset": {
+        "kind": "config",
+        "tx": "0x99b9c2a719ef8d0de061622492d4ebd23f3116469bbe667427f29f1ac10a64cf",
+        "address": "0x8d190c70937493046a464440d28f126a4e42ef7f",
+        "call": "0x1a788a02000000000000000000000000a645995e9801f2ca6e2361edf4c2a138362bade4"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 88124.81,
+    "assets": [
+      {
+        "token": "0xa645995e9801f2ca6e2361edf4c2a138362bade4",
+        "symbol": "SELLC",
+        "amount": "6139323.535569345884569474",
+        "usd": 88124.81
+      }
+    ]
+  },
+  "refs": [
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2023-05/SellToken_exp.sol",
+    "https://twitter.com/BlockSecTeam/status/1657324561577435136",
+    "eip155:56:0x4512e62d797b1d9a47c165f8d907a6f0d6ca6e9d038f5839f66c7a5f8a161025"
+  ],
+  "campaign": [
+    "eip155:56:0xca4e97a3221026c4fd271a342e7ff21ab4006e15da7b3801e8c44d66780fe8d6",
+    "eip155:56:0xd877c0c2852ee688706a3899e7233a32c57ecef7616afe97b74aaff1b58964bd",
+    "eip155:56:0x7d04e953dad4c880ad72b655a9f56bc5638bf4908213ee9e74360e56fa8d7c6a",
+    "eip155:56:0xc404ab0377144e73f78038fa4cb8314b6977a945916035815d5f6f131f61165a",
+    "eip155:56:0xd616da45d081e4562387d5913a44c3b95342418a4e37d9dab0a74a58ce4b8e86"
+  ],
+  "notes": [
+    "In the cohort as a code defect: entry and exit of a short are both spot getAmountsOut quotes of one pair, with no TWAP; the 5% setTokenPrice check compares against another spot quote the caller can reproduce.",
+    "Separate incident from the SellToken miner record (incidents/56/0xe968e648..., June 2023) and the SELLC StakingRewards record (0x59ed06fd...): same developer and price helpers, but a different contract (router 0x57db1912 and its Minerals vault, deployed by EOA 0x20d815e4 at block 26912183) and a different function, exploited separately (rule 4).",
+    "Reset is SELLC's listing in the short market: setPool(SELLC, WBNB, 500,000, 0, 1) by the SELLC deployer 0x4b9ad0ed (0x99b9c2a7, block 27340614) set Minerals' pair[SELLC] to WBNB, without which ShortStart rejects the coin; it is 15 days after the router's deployment. The later router and Minerals slot changes resets.mjs lists are users' short positions and the attacker's own setTokenPrice.",
+    "The DeFiHackLabs transaction 0x7d04e953 is the attacker's fourth and last round. Its EOA 0x1581262f (also a SELLC StakingRewards copycat) alternated setTokenPrice rounds (0x1f9031c3 with 1.8 BNB, e.g. 0x4512e62d, each costing it 1.0-1.3 BNB) with exploit rounds 0x893453b1, 0xca4e97a3, 0xd877c0c2 and 0x7d04e953 within 200 blocks; copycats 0xa12183ff (0xc404ab03) and 0x4c1f9028 (0xd616da45) repeated it four to five hours later. All 682 earlier Minerals outflows (Etherscan tokentx, full history) are EOAs calling minerWithdraw or withdraw directly, so no earlier flash-funded round exists.",
+    "Loss is the 6,139,324 SELLC that Minerals lost in the six transactions, valued at what their sale realised (rule 12): the SELLC/WBNB pair 0x358efc59 lost 284.54 WBNB net in them. DefiLlama's prices would give 155.4k USD, but the pair held only 553 WBNB against 7.5M SELLC, so the market could not absorb that amount. The attackers' recording rounds paid the pair about 4.7 BNB, not subtracted. Minerals' later payouts to EOA short holders who profited from the crash (e.g. 0x665435f7) are not counted."
+  ]
+}
