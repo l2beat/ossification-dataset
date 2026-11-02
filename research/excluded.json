@@ -178,7 +178,7 @@
   "bouncebit:2026-08-19:bouncebit-chain-level-unauthorized-transfers": {
     "name": "BounceBit chain-level unauthorized transfers",
     "date": "2026-08-19",
-    "rule": "offchain",
+    "rule": "non-evm",
     "reason": "DefiLlama records BounceBit as classification 'Access Control', targetType 'Chain', language 'Go', $3.0m. SlowMist's entry (2026-08-19, citing x.com/bouncebit/article/2090785561800061430) says an attacker exploited a protocol-level authorization flaw in the Evmos stack to move about 286.5M native BB from nine mainnet accounts in 14 transactions, with no keys or signatures compromised. BounceBit then sunset the L1 and reissued BB on BNB Chain from a pre-attack snapshot. The defect is in the chain's Go node/Cosmos-SDK modules, not in deployed EVM contract code. The 14 transactions were not enumerated onchain (no BounceBit RPC configured)."
   },
   "bsc:2021-09-19:pnetwork-pbtc-bridge-forged-event-drain-september-2021": {
@@ -2254,7 +2254,7 @@
   "harmony:2026-08-11:harmony-cross-shard-receipt-replay-mint": {
     "name": "Harmony cross-shard receipt replay ONE mint",
     "date": "2026-08-11",
-    "rule": "offchain",
+    "rule": "non-evm",
     "reason": "QuillAudits, Rekt and SlowMist report that the attacker replayed used cross-shard receipts (and possibly an empty-signature quorum bug for old blocks) in Harmony's node software to mint billions of ONE without a matching debit; validators stopped it with emergency release v2026.1.1, which changed the quorum calculation, and the chain was rolled back to before the exploit. The defect is in the Go consensus and cross-shard code, not in executed EVM contracts.",
     "refs": [
       "https://hacked.slowmist.io/",
@@ -2311,7 +2311,7 @@
   "kiichain:2026-08-22:kiichain-cosmos-evm-staking-precompile-underflow": {
     "name": "KiiChain Cosmos EVM staking precompile underflow",
     "date": "2026-08-22",
-    "rule": "offchain",
+    "rule": "non-evm",
     "reason": "SlowMist reports that the attacker abused bugs in the shared Cosmos EVM module (an arithmetic underflow in the staking precompile's balance write-back after delegation, combined with vesting-account handling), deploying a contract to a vesting account and repeating it 18 times to drain about 148.3m KII; KiiChain halted at block 9355723. The precompile is Go node software, not executed EVM bytecode, as in the MANTRA exclusion.",
     "refs": [
       "https://hacked.slowmist.io/",
@@ -2327,7 +2327,7 @@
   "mantra:2026-08-20:mantra-chain-cosmos-evm-underflow": {
     "name": "MANTRA Chain Cosmos EVM module underflow",
     "date": "2026-08-20",
-    "rule": "offchain",
+    "rule": "non-evm",
     "reason": "SlowMist: an unsigned integer underflow in the upstream Cosmos EVM Go module let the attacker transfer ~720.9m MANTRA from MANTRA-managed addresses; the chain was halted and patched in v8.4.0. The defect is node software, not executed EVM code.",
     "refs": [
       "https://hacked.slowmist.io/",
@@ -3015,7 +3015,7 @@
   "tac:2026-08-22:tac-cosmos-evm-precompile-drain": {
     "name": "TAC Cosmos EVM precompile drain",
     "date": "2026-08-22",
-    "rule": "offchain",
+    "rule": "non-evm",
     "reason": "SlowMist reports that the attacker used a vulnerability in the shared Cosmos EVM precompile layer to drain about 2.985b TAC (about $7.5m) from a single account; TAC confirmed it was a drain, not a mint, that the flaw is not in TAC-specific code, and halted the chain at block 24,671,475. The precompile is node software, not executed EVM contract code. Separate from the May 2026 TON-side exclusion.",
     "refs": [
       "https://hacked.slowmist.io/",
@@ -3359,5 +3359,29 @@
     "date": "2025-04-15",
     "rule": "keys",
     "reason": "Halborn (https://www.halborn.com/blog/post/explained-the-zksync-hack-april-2025) and ZKsync's confirmation reported by blocmates (https://www.blocmates.com/news-posts/zksync-reports-5m-token-loss-from-compromised-airdrop-admin-account) show the private key of admin 0x842822c797049269A3c29464221995C56da5587D, which controlled three airdrop distributor contracts, was compromised and used to call the admin-only sweepUnclaimed() and mint about 111m unclaimed ZK (about 5m USD); 90% was later returned under a bounty. The admin function behaved as designed for its key holder."
+  },
+  "eip155:56:0x793f2278ec1cda63b2d57b198d1d3a23ea5ca6e5a3b5f9b69cb29fce6d8a55fa": {
+    "name": "THORSwap TSAggregatorGeneric drains of approvals granted to the aggregator itself",
+    "date": "2025-06-10",
+    "rule": "no-defect",
+    "reason": "TSAggregatorGeneric 0xb6fa6f1dcd686f4a573fd243a6fabb4ba36ba98c (BSC, verified, immutable) swapIn pulls the input from the caller through THORSwap's token transfer proxy and then calls a caller-chosen swapRouter with caller-supplied data, refusing only the transfer proxy as target: the arbitrary call is the aggregator's design, and the approvals THORSwap asks for go to the proxy, which that call cannot reach. On 2025-05-28 (blocks 50457615-50461986) 15 wallets approved the aggregator itself. From 2025-06-10 the MEV bot 0x0000000000004f3d (contract 0x000000000000e59f, eip155:56:0x793f2278) and others, including the DeFiHackLabs transaction 0x077ea419 (Defimon alert 1277), called swapIn with amount 0 and a token as swapRouter to transferFrom those wallets, about 11.9k USD of DAI, USDT, ADA, USDC, LTC and ETH through 2026-10-20. As with the SquidMulticall, LZMultiCall, MulticallWithETH, Multicall3 and BeefyZapRouter exclusions, the loss came from approvals the protocol never asks for, not from a defect in the executed code.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-06/TSAggregatorGeneric_exp.sol",
+      "https://t.me/defimon_alerts/1277",
+      "eip155:56:0x077ea419bd5f0a20dc8f3da1281fbc96d6893201ebfd237742d01ae00a78e610"
+    ]
+  },
+  "eip155:56:0x05e70058b670fcb2db59f378e702f683bbe0fa72e445e829eca8c341a82dfd8b": {
+    "name": "0x Settler BASIC-action approval drains",
+    "date": "2024-10-08",
+    "rule": "no-defect",
+    "reason": "0x Settler instances are meant to receive tokens within a call through AllowanceHolder or Permit2, and 0x documents that users should never approve a Settler directly; the BASIC action, which has a Settler transferFrom any token for any caller, works as designed. Owners nonetheless approved Settlers directly and bots drained them. Settler instances were enumerated from the 0x Deployer 0x00000000000004533fe15556b1e086bb1a72ceae on 13 chains and every Approval naming one as spender was traced for a transferFrom of the owner by that Settler in a transaction the owner did not send. The earliest drain found is BSC 0x05e70058 (2024-10-08 12:24 UTC), bot 0x000f0fc1 pulling 5,971.39 USDT and 30.50 SOL from 0xb69a8fab through Settler 0x068ba5d0; mainnet alone has 1,449 drains, about 1.38M USD at DefiLlama prices (1.27M of it from 634 back-runs of 0x382ffce2's 601 approve transactions), among them the 2025-03-11 USDT drain 0x4e2f5bcc (3,008 USDT through MainnetSettler 0x0d0e364a) and the 308,453,642 HOLD drain 0xfab5912f through Settler 0x70bf6634, which an earlier exclusion misread as a truncation artifact. As with the SquidMulticall, LZMultiCall, MulticallWithETH, Multicall3, BeefyZapRouter and THORSwap TSAggregatorGeneric exclusions, the loss came from approvals the protocol never asks for, not from a defect in the executed code.",
+    "refs": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2025-03/ZeroExSettler_exp.sol",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-11/MainnetSettler_exp.sol",
+      "https://t.me/defimon_alerts/599",
+      "eip155:1:0x4e2f5bccc5d428c39cd93c64dcd2502d5cf05fb30892c753475155d498ef5887",
+      "eip155:1:0xfab5912f858b3768b7b7d312abcc02b64af7b1e1b62c4f29a2c1a2d1568e9fa2"
+    ]
   }
 }

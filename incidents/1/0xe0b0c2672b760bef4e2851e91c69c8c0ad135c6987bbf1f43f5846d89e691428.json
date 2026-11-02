@@ -2,20 +2,22 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Revest Finance",
   "name": "Revest FNFT mint reentrancy re-prices a fresh FNFT series",
-  "summary": "Revest.mintAddressLock mints a new FNFT series through FNFTHandler.mint, which calls the recipient's onERC1155Received before incrementing fnftsCreated, and Revest has no reentrancy guard. Inside the callback for a 360,000-unit, zero-deposit series (id 1028), the attacker called depositAdditionalToFNFT(1027, 1e18, 1) on its own 2-unit series; splitting off a new series took getNextId(), still 1028, and TokenVault.handleMultipleDeposits rewrote 1028's depositAmount to 1 RENA per unit, so withdrawFNFT(1028, 360,001) paid out 360,000 RENA for one deposited. The same contract repeated it for 715M BLOCKS, 580 LYXe and 7.7M ECO within 70 blocks, emptying those assets from the TokenVault.",
+  "summary": "Revest.mintAddressLock mints a new FNFT series through FNFTHandler.mint, which calls the recipient's onERC1155Received before incrementing fnftsCreated, and Revest has no reentrancy guard. Inside the callback for a 360,000-unit, zero-deposit series (id 1028), the attacker called depositAdditionalToFNFT(1027, 1e18, 1) on its own 2-unit series; splitting off a new series took getNextId(), still 1028, and TokenVault.handleMultipleDeposits rewrote 1028's depositAmount to 1 RENA per unit, so withdrawFNFT(1028, 360,001) paid out 360,000 RENA for one deposited. The same contract repeated it for 715M BLOCKS, 580 LYXe and 7.7M ECO within 70 blocks, taking 97-99.9% of each from the TokenVault.",
   "targets": [
     {
       "address": "0x2320a28f52334d62622cc2eafa15de55f9987ed9",
       "reset": {
         "kind": "upgrade",
-        "tx": "0xc64620ec4d063b61b560ea86341780bb53cdb78b3622f57aa8bc7f0c1db8e9f8"
+        "tx": "0x3f4db62f751321fdefe551a10a8b4152061a7c2336d5279ec03412770f87c7a2"
       }
     },
     {
       "address": "0xe952bda8c06481506e4731c4f54ced2d4ab81659",
       "reset": {
-        "kind": "upgrade",
-        "tx": "0xc64620ec4d063b61b560ea86341780bb53cdb78b3622f57aa8bc7f0c1db8e9f8"
+        "kind": "config",
+        "tx": "0x3f4db62f751321fdefe551a10a8b4152061a7c2336d5279ec03412770f87c7a2",
+        "address": "0xd721a90dd7e010c8c5e022cc0100c55ac78e0fc4",
+        "call": "0xf97e7d74"
       }
     }
   ],
@@ -60,7 +62,7 @@
     "https://blocksecteam.medium.com/revest-finance-vulnerabilities-more-than-re-entrancy-1609957b742f"
   ],
   "notes": [
-    "Revest, FNFTHandler, TokenVault and LockManager were deployed in blocks 13290542-13290587 and only became one system when the AddressRegistry 0xd721a90d was wired to them (0xc64620ec, block 13290609); FNFTHandler.mint is onlyRevestController and Revest finds the handler and vault through the registry, so that registry write is the reset of both targets. Its later change (block 13348463) repoints the rewards handler, which only receives fees, and FNFTHandler slot 8 is the fnftsCreated counter.",
+    "Revest, FNFTHandler, TokenVault and LockManager were deployed in blocks 13290542-13290587 and only became one system when the AddressRegistry 0xd721a90d was wired to them (0xc64620ec, block 13290609); FNFTHandler.mint is onlyRevestController and Revest finds the handler and vault through the registry, so the registry's Revest entry is what lets the two targets run together. setRevest later pointed that entry to RevestRemap contracts (0x31804267, 0xa99b9d5f) and back to Revest 0x2320a28f several times between blocks 13348464 and 13680614; the last return, 0x3f4db62f (block 13680614; getRevest() is 0xa99b9d5f at the block before), resets both targets: Revest as a registry route change (rule 7) and FNFTHandler as a change of its controller, read through getRevest() (rule 8). The registry's other later change (block 13348463) repoints the rewards handler, which only receives fees, and FNFTHandler slot 8 is the fnftsCreated counter.",
     "The defect's two halves are Revest's unguarded depositAdditionalToFNFT/mintAddressLock and FNFTHandler.mint's late counter increment; TokenVault 0xa81bd16a, which held the assets and accepted the overwrite, is the victim.",
     "Of the 1,503 transactions campaign.mjs traced into Revest or FNFTHandler from deployment to block 14600000, only the anchor and the three campaign transactions call Revest from inside an FNFTHandler.mint callback; the rest are ordinary locks, deposits and withdrawals (Staking 0xbcbb435c and vesting 0x86eaf259 included).",
     "Loss is the TokenVault's outflow in the four transactions of attacker contract 0xb480ac72 (sender 0xef967ece). RENA and LYXe are at DefiLlama prices. BLOCKS has no price and ECO's DefiLlama quote (1.08 USD) is not what the market paid: the attacker sold 715M BLOCKS for 554.99 ETH (0xa0ff4e05, 0x8e2259d6, 0xd2eaffc4) and 7.7M ECO for 34.66 ETH (0x22224231) within hours, so both are valued at those proceeds (rule 12)."

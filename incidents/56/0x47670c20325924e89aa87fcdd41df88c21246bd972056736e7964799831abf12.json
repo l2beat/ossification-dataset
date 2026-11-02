@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "Beta Finance presale",
   "name": "PresaleBEP20 public set() redirects presale proceeds",
-  "summary": "PresaleBEP20.deposit() mints 68.2 BETA per BNB to the depositor and forwards the BNB to withdrawAddress, with its time checks commented out and a 100 BNB cap per msg.sender, while set(address) changing withdrawAddress has no access control. The attacker flash-borrowed 100 WBNB from DODO, called set() to make its helper 0xc8a060bb the withdraw address, and pushed the same 100 BNB through 70 fresh depositor contracts, minting 6,820.03 BETA each (477,401.8 BETA) while every deposit came straight back; it sold 470,401.8 BETA into the BETA/WBNB pair for 1.922 WBNB and 7,000 BETA into the BETA/BUSD pair for 46.47 BUSD, and repaid the loan.",
+  "summary": "PresaleBEP20.deposit() mints 68.2 BETA per BNB to the depositor and forwards the BNB to withdrawAddress, with its time checks commented out and a 100 BNB cap per msg.sender, while set(address) changing withdrawAddress has no access control. The attacker flash-borrowed 100 WBNB from DODO and pushed the same 100 BNB through 70 fresh depositor contracts, each of which called set() to make the attacker's helper 0xc8a060bb the withdraw address before depositing, minting 6,820.03 BETA each (477,401.8 BETA) while every deposit came straight back; it sold 470,401.8 BETA into the BETA/WBNB pair for 1.922 WBNB and 7,000 BETA into the BETA/BUSD pair for 46.47 BUSD, and repaid the loan.",
   "targets": [
     {
       "address": "0x760c2aaa22220f24b9343b2a91a62dd664953853",
@@ -15,29 +15,36 @@
     }
   ],
   "loss": {
-    "usd": 1286.74,
+    "usd": 1293.61,
     "assets": [
       {
         "token": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         "symbol": "WBNB",
-        "amount": "1.921686798824852706",
-        "usd": 1240.31
+        "amount": "1.933075532749210875",
+        "usd": 1247.04
       },
       {
         "token": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
         "symbol": "BUSD",
-        "amount": "46.474821659738262175",
-        "usd": 46.43
+        "amount": "46.616687631213856185",
+        "usd": 46.57
       }
     ]
   },
+  "campaign": [
+    "eip155:56:0xb01d145f24c34315cb11d54884b75490dc0084d7bcbc1ea0acfb6f9cb9cdd028",
+    "eip155:56:0x689021064d5f30a96c6e0374319fb606b5c7514fe38163a72dab3fc03dfc458e",
+    "eip155:56:0x7c9fff317bf6c7fdabd3325bcd690cc1ce577dda1c33892cf1d510c6064a1d01",
+    "eip155:56:0x1e04e550b0502cf01b8936551ae476732f3a3f0a68810c674f206e7c8e94b67c",
+    "eip155:56:0xb7897e72c01422e22483559ead45c1fa39ef75daaf976caaa852a37193a31db9"
+  ],
   "refs": [
     "https://t.me/defimon_alerts/1092",
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2025-05/BetaPresale_exp.sol"
   ],
   "notes": [
     "Reset: the presale was deployed on 2021-04-14 (0x3475f743) and BETA 0x2410f237 granted it minting with addMinter in 0xf72710c2 37 blocks later (minter mapping slot), the latest change the exploit needed (a mint grant, rule 8); the only later presale state change is the deployer's 0.001 BNB test deposit (0x0bdb570b).",
-    "Earlier exploits: the presale's Deposited log shows only that 2021 test deposit before the anchor's 70 deposits and none in the two million blocks after it; Etherscan lists no other direct transaction to the presale. The anchor is the only exploit.",
-    "Loss is the BNB and BUSD the two BETA pairs lost in the anchor (loss.mjs net flows: 0xb238a09d -1.9217 WBNB, 0x0096f850 -46.47 BUSD), all of which the attacker kept; the minted BETA had no other market and is valued at that sale (rule 12). The recycled flash-loaned BNB is not a victim asset."
+    "Earlier exploits: the presale's Deposited log shows only that 2021 test deposit before the anchor's 70 deposits; Etherscan lists no other direct transaction to the presale. Campaign: five repeats with 70 deposits each on 2026-08-06 (blocks 114361591-114361599), the first a contract creation by 0xecc001e9 and the rest by copier bots through 0x7067db79 and 0x4eaae06e; the pairs had only dust left to give.",
+    "Loss is the BNB and BUSD the two BETA pairs lost over the anchor and the campaign (loss.mjs net flows: 0xb238a09d -1.9331 WBNB, 0x0096f850 -46.62 BUSD; the anchor's 1.9217 WBNB and 46.47 BUSD went to its attacker); the minted BETA had no other market and is valued at that sale (rule 12). The recycled flash-loaned BNB is not a victim asset."
   ]
 }

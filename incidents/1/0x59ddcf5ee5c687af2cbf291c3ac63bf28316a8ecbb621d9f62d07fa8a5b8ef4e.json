@@ -2,7 +2,7 @@
   "$schema": "../../schema/incident.schema.json",
   "protocol": "MEV bot 0xbadc0de",
   "name": "MEV bot 0xbadc0de dYdX callFunction executes caller-supplied calls",
-  "summary": "The MEV bot 0xbadc0de (a proxy delegating to 0xdd6bd08c) handles dYdX SoloMargin's callFunction callback by executing calls encoded in the action's data without checking that the bot started the operation. The attacker's contract 0x6554ff0f called SoloMargin.operate with a single Call action on its own account naming the bot as callee and data encoding WETH.approve(0x6554ff0f, max); the bot granted the allowance, and 14 blocks later the attacker's transferFrom took the bot's 1,101.65 WETH. A copycat later used the same callback for the bot's leftover MLP, VEE and GUSD.",
+  "summary": "The MEV bot 0xbadc0de (a proxy delegating to 0xdd6bd08c) handles dYdX SoloMargin's callFunction callback by executing calls encoded in the action's data without checking that the bot started the operation. The attacker's contract 0x6554ff0f called SoloMargin.operate with a single Call action on its own account naming the bot as callee and data encoding WETH.approve(0x6554ff0f, 56,372,227 WETH); the bot granted the allowance, and 14 blocks later the attacker's transferFrom took the bot's 1,101.65 WETH. Copycats later used the same callback for the bot's leftover MLP, VEE, GUSD and MNTO.",
   "targets": [
     {
       "address": "0xbadc0defafcf6d4239bdf0b66da4d7bd36fcf05a",
@@ -14,13 +14,19 @@
     }
   ],
   "loss": {
-    "usd": 1529018.76,
+    "usd": 1529104.28,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "1101.650251927809373491",
         "usd": 1528972.3
+      },
+      {
+        "token": "0x97a9bac06f90940bce9caec2b880ff17707519e4",
+        "symbol": "MNTO",
+        "amount": "23.991663932771460709",
+        "usd": 85.52
       },
       {
         "token": "0xe22020f47b7378dfedcedd2c81d4137c22fe1152",
@@ -46,7 +52,9 @@
     "eip155:1:0x631d206d49b930029197e5e57bbbb9a4da2eb00993560c77104cd9f4ae2d1a98",
     "eip155:1:0x869469a7bf7f4f215f4a97320b9fb6e1ac6b520e8dfbd37e0d4880d45d54c0f1",
     "eip155:1:0x4521da2250191b74a66787884c7ac88354d0241416363f2a56c44415fcdcb4a1",
-    "eip155:1:0x9013eb6174638bf241163d6915c17a4d13697c155a5ad8f3fd4589cfc4b287b1"
+    "eip155:1:0x9013eb6174638bf241163d6915c17a4d13697c155a5ad8f3fd4589cfc4b287b1",
+    "eip155:1:0x37da2685c50d838e7f8e154e2231a0b57aa006c070bfcb4e6f026b91848e613a",
+    "eip155:1:0xc0faf03db20d1d80a62b1b45e5480958c1b180718187423943368776fc3af98c"
   ],
   "refs": [
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2022-09/MEVbadc0de_exp.sol",
@@ -54,9 +62,9 @@
     "https://santandersecurityresearch.github.io/blog/0xbaDc0dE"
   ],
   "notes": [
-    "Anchor is the approval transaction 0x59ddcf5e, the defect's first use (the DeFiHackLabs PoC forks at its block); the transferFrom that moved the WETH (0x631d206d) is in campaign. The bot's code is unverified: the trace shows SoloMargin calling the bot's callFunction (0x8b418713), the bot delegating to 0xdd6bd08c and then calling WETH.allowance, WETH.approve(0x6554ff0f, max) and the attacker contract. Its only storage reads are the implementation slot, slot 3 (holding SoloMargin, written by the bot's own trade 0x05b06779 at block 15623336) and slot 4; slot 3 is a value the bot's own trading pushes, not a reset (rule 8).",
+    "Anchor is the approval transaction 0x59ddcf5e, the defect's first use (the DeFiHackLabs PoC forks at its block); the transferFrom that moved the WETH (0x631d206d) is in campaign. The bot's code is unverified: the trace shows SoloMargin calling the bot's callFunction (0x8b418713), the bot delegating to 0xdd6bd08c and then calling WETH.allowance, WETH.approve(0x6554ff0f, 56,372,227.27 WETH, 1,000 times a value in the attacker's calldata) and the attacker contract. Its only storage reads are the implementation slot, slot 3 (holding SoloMargin, written by the bot's own trade 0x05b06779 at block 15623336), slot 4 and a slot-2 mapping entry keyed by SoloMargin (zero before the anchor); slot 3 is a value the bot's own trading pushes, not a reset (rule 8).",
     "Reset is the operator's 0x5f850252 call (0xc4a8c93f, block 13823543) that wrote the implementation 0xdd6bd08c into the bot's slot 0, 352 blocks after the factory created the bot; slot 0 never changed again. The other route changes resets.mjs lists are its probes reverting on slot 3, not code changes.",
-    "Earlier exploits: every SoloMargin LogCall naming the bot as callee from its creation (block 13823191) to block 15700000 has the bot as account owner (66 logs, its own flash loans) except the anchor and three by 0x000000000000df8c (sender 0x000000000002e33d) at blocks 15627362-15627702, which drained the leftover MLP, VEE and GUSD and are in campaign.",
-    "Loss is the bot's depletion with loss.mjs: 1,101.65 WETH plus about $46 of the three small tokens."
+    "Earlier exploits: every SoloMargin LogCall naming the bot as callee from its creation (block 13823191) to block 15700000 has the bot as account owner (66 logs, its own flash loans) except the anchor and three by 0x000000000000df8c (sender 0x000000000002e33d) at blocks 15627362-15627702, which drained the leftover MLP, VEE and GUSD and are in campaign. After that window, 0x24adfc37 used the same callback through 0xb527b0a5 to have the bot approve its MNTO (0x37da2685, block 15726280) and took 23.99 MNTO with transferFrom (0xc0faf03d); both are in campaign.",
+    "Loss is the bot's depletion with loss.mjs: 1,101.65 WETH plus about $132 of four small tokens."
   ]
 }
