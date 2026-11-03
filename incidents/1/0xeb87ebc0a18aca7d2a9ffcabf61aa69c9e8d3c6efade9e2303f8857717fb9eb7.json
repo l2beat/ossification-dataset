@@ -14,13 +14,13 @@
     }
   ],
   "loss": {
-    "usd": 879314.3928134907,
+    "usd": 879314.39,
     "assets": [
       {
         "token": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "symbol": "WETH",
         "amount": "502.669307441013616084",
-        "usd": 879314.3928134907
+        "usd": 879314.39
       }
     ]
   },
@@ -31,7 +31,7 @@
   "notes": [
     "LendingPoolAddressesProvider.setLendingPoolImpl moved the proxy from 0x6b75a3b072369bee8f873477266ac168beb73dab to the defect-bearing LendingPool 0x46bea99d977f269399fb3a4637077bb35f075516. It is the only Upgraded event on the proxy before the exploit and the EIP-1967 implementation slot confirms the transition at this block.",
     "Measured from Sturdy's own reserve accounting across the single exploit transaction. The WETH aToken 0xb1ebf8f77ae002d487e7bde22c6180be0af6a3d4 holds 513.367301825658717226 WETH at block 17460609 and 10.697994384645101142 at block 17460610, a fall of exactly 502.669307441013616084 WETH, while variableDebtWETH 0xe1ee5b789ba4ea5287999034fdf293361b53e024 total supply rises by the same 502.669307441013616084 and aWETH total supply is unchanged at 2317.920159523297738032, so no depositor share was minted or burned and the whole amount left the reserve as new debt. getUserAccountData at block 17460610 returns totalCollateralETH 0 for all five borrowing attacker contracts, so the debt is entirely uncollateralised; their variableDebtWETH balances are still outstanding and accruing at blocks 17470000, 17600000 and 18000000, so nothing was recovered. The attacker's own realised take was smaller, 442.455138966650236044 ETH net to the EOA in the same transaction, the widely reported 442 ETH; the roughly 60 WETH difference is Balancer and Curve slippage and a 1 ETH transfer to 0x690b9a9e9aa1c9db991c7721a92d351db4fac990, which does not reduce gross victim depletion. The 285,000 WETH Balancer flash loan and the Aave v3 flash loan are attacker-supplied inputs and are excluded.",
-    "The age basis is the implementation change that installed this LendingPool runtime, not the proxy's own creation at block 16091428 (which would give 16,616,508 s) and not the creation of the artifact six blocks earlier at 16621095 (10,225,488 s). The BALWSTETHWETHOracle 0x232a8829570058a693d1d9c4f4f8d52c9691f5ea whose latestAnswer() is read mid-exit was deployed at block 16542524, older than this artifact; it is described in the review note rather than carried as a second target so the single loss is not attributed twice.",
-    "This is the same class as the Conic and dForce records already in the dataset: a reentrancy guard that exists in the deployed system but is not applied on the path the attacker used. Here the guard is Sturdy's own _validateOracle, and the unguarded entry point is setUserUseReserveAsCollateral."
+    "The age basis is the implementation change that installed this LendingPool runtime, not the proxy's own creation at block 16091428 (which would give 16,616,508 s) and not the creation of the artifact six blocks earlier at 16621095 (10,225,488 s). The BALWSTETHWETHOracle 0x232a8829570058a693d1d9c4f4f8d52c9691f5ea whose latestAnswer() is read mid-exit was deployed at block 16542524, older than this artifact; it is not a target because the defect is the LendingPool's missing _validateOracle call, not the oracle, and as the older contract it would not set the age.",
+    "This is the same class as the Conic and dForce incidents: a reentrancy guard that exists in the deployed system but is not applied on the path the attacker used. Here the guard is Sturdy's own _validateOracle, and the unguarded entry point is setUserUseReserveAsCollateral."
   ]
 }
