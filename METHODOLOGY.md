@@ -49,6 +49,8 @@ every critical change, so the score errs conservative.
    holder of an unchanged role, live values such as balances, prices,
    accumulators or parameters an automated agent pushes, and values that
    only change the loss size do not; granting that agent its powers does.
+   A cap or limit is a threshold even when lifted from zero; a switch,
+   launch flag or start time that turns a path on is pause state.
 9. Shared code ages from when the exploited context started running it: a
    clone from its creation, a proxy, beacon or diamond user from the route
    change, never from the template's deployment. An account created shortly

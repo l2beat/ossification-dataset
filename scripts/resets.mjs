@@ -3,8 +3,9 @@
  * reader can confirm the recorded reset is the latest relevant one: creation
  * and re-creation of the address, changes of the delegation route the exploit
  * took (replaying its call into the target), storage the exploit read that
- * changed after the reset, and events since the reset. Live counters show up
- * too; judging them is left to the reader.
+ * changed after the reset, and events since the reset. The contract a config
+ * reset names is watched with the target; --watch adds more. Live counters show
+ * up too; judging them is left to the reader.
  *
  *   node scripts/resets.mjs incidents/<chainId>/<tx>.json [--watch 0xa,0xb]
  *
@@ -279,7 +280,8 @@ async function analyse(target) {
   }
 
   // 3. Storage the exploit read on the route and watched contracts, changed between the reset and the exploit.
-  const accounts = unique([address, ...(route?.hops.map((hop) => hop.to) ?? []), ...watch])
+  const watched = unique([...watch, ...(reset.address ? [reset.address] : [])])
+  const accounts = unique([address, ...(route?.hops.map((hop) => hop.to) ?? []), ...watched])
   const slots = accounts.flatMap((owner) => Object.keys(account(prestate, owner)?.storage ?? {}).map((slot) => [owner, word(slot)]))
   if (prestate) say(`storage read by the exploit: ${slots.length} slots in ${accounts.length} contracts`)
   const changed = (await pool(slots, 8, async ([owner, slot]) => {
@@ -312,7 +314,7 @@ async function analyse(target) {
 
   // 4. Events from the target and watched contracts since the reset, by topic.
   if (R < X) {
-    const events = await logs({ address: unique([address, ...watch]) }, R, X - 1, EVENTS).catch((error) => (say(`events: ${error.message}`), []))
+    const events = await logs({ address: unique([address, ...watched]) }, R, X - 1, EVENTS).catch((error) => (say(`events: ${error.message}`), []))
     const groups = new Map()
     for (const log of events) {
       const key = `${lower(log.address)} ${log.topics[0] ?? 'anonymous'}`
