@@ -31,6 +31,7 @@ const PUBLIC_RPC = {
   122: 'https://explorer-node.fuse.io',
   250: 'https://rpcapi.fantom.network',
   288: 'https://mainnet.boba.network',
+  314: 'https://filfox.info/rpc/v1',
   1868: 'https://rpc.soneium.org',
   204: 'https://opbnb-mainnet-rpc.bnbchain.org',
   369: 'https://rpc.pulsechain.com',

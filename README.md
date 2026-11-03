@@ -29,7 +29,8 @@ scripts/build-site.mjs                render site/template.html with dist/ for G
    the summary, every target with its reset, the loss by asset, refs, and a
    note for each choice a reader could question. The lead's source belongs
    in `refs`. Texts state the incident and its evidence, not how the lead
-   was found.
+   was found: name public sources (DeFiHackLabs, DefiLlama, a post-mortem);
+   a repo tool's result may be cited, its limits not.
 3. Check it with the tools: `resets.mjs` for the latest reset,
    `campaign.mjs` for the earliest exploit and the campaign, `loss.mjs` for
    the loss. Run `npm run derive -- <file>` until it reports no failures,
@@ -79,7 +80,9 @@ CI runs `npm test` on every change; it is offline and fails when `dist/`
 was not rebuilt after a claim changed. Deriving needs archive RPCs and runs
 locally: rebuild with `npm run build` before opening a pull request, and
 reviewers re-derive changed records with `npm run build -- --only <files>`
-and `git diff dist`.
+and `git diff dist`. `npm run build` derives every record whose claims
+changed in the working tree, so contributors sharing a tree build in
+separate worktrees.
 
 ## Consumers
 
