@@ -11,7 +11,7 @@ the figures are at https://l2beat.github.io/ossification-dataset/.
 incidents/<chainId>/<exploitTx>.json  one incident's claims (schema/incident.schema.json)
 dist/incidents.json                   one row per incident with its derived onchain facts, by age
 dist/curve.json                       the ages L2BEAT's score uses, ascending
-research/queue.json                   leads and drafts awaiting research
+research/queue.json                   leads awaiting research
 research/excluded.json                leads outside the cohort, with the rule they fail
 scripts/derive.mjs                    derive and check one record's facts onchain
 scripts/resets.mjs                    every change before the exploit that could reset the age
@@ -28,7 +28,8 @@ scripts/build-site.mjs                render site/template.html with dist/ for G
 2. Write `incidents/<chainId>/<exploitTx>.json` for its earliest exploit:
    the summary, every target with its reset, the loss by asset, refs, and a
    note for each choice a reader could question. The lead's source belongs
-   in `refs`.
+   in `refs`. Texts state the incident and its evidence, not how the lead
+   was found.
 3. Check it with the tools: `resets.mjs` for the latest reset,
    `campaign.mjs` for the earliest exploit and the campaign, `loss.mjs` for
    the loss. Run `npm run derive -- <file>` until it reports no failures,
@@ -40,16 +41,18 @@ scripts/build-site.mjs                render site/template.html with dist/ for G
 
 ## Research files
 
-Both files are keyed by the exploit transaction id when known, otherwise by
-the lead's source, such as a DeFiHackLabs path. A lead is handled once its
-source appears in the `refs` of an incident or of one of these entries.
+Both files are keyed by the exploit transaction id when known
+(`eip155:<chainId>:<tx>`), otherwise by `<chain>:<date>:<slug>`, with
+`unknown` for a chain no source names. One entry covers one incident. A lead
+is handled once its source appears in the `refs` of an incident or of one of
+these entries.
 
 - `queue.json`: `name`, `missing` (what research is left), and optionally
-  `date`, `refs`, `note`, and `draft` with the record's fields so far.
+  `date`, `refs` and `note`.
 - `excluded.json`: `name`, `rule`, `reason`, and optionally `date`, `refs`.
   The rule names what the lead fails: `keys`, `privileged`, `market`,
-  `offchain` or `no-defect` (rule 1), `no-exploit` (rule 2), `no-loss`
-  (rule 3), `attacker-code` (rule 10), `non-evm`.
+  `offchain`, `no-defect` or `non-evm` (rule 1), `no-exploit` (rule 2),
+  `no-loss` (rule 3), `attacker-code` (rule 10).
 
 ## Commands
 
@@ -59,8 +62,6 @@ a claim the chain contradicts fails. Deriving needs an RPC per chain:
 `RPC_URL_FOR_CHAIN_<id>`, or the variables listed in `scripts/rpc.mjs`.
 Traces and historical state need an archive node; without them a check is
 listed as unverified, not failed.
-Ad-hoc scripts against these RPCs should send a user-agent header; some
-providers reject Python's default.
 
 ```bash
 npm test                      # offline: schema, research files, dist freshness

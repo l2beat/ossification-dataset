@@ -19,7 +19,7 @@ import { pool } from './rpc.mjs'
 export const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = path.join(ROOT, 'dist')
 
-export const serialize = (value) => `${JSON.stringify(value, null, 2)}\n`
+const serialize = (value) => `${JSON.stringify(value, null, 2)}\n`
 
 export function readIncidents(root = ROOT) {
   const records = []
@@ -37,7 +37,7 @@ export function readIncidents(root = ROOT) {
   return records
 }
 
-export const claimsKey = ({ targets, campaign }) =>
+const claimsKey = ({ targets, campaign }) =>
   createHash('sha256').update(JSON.stringify({ targets, campaign })).digest('hex')
 
 function row({ id, chainId, tx, record }, facts, key) {

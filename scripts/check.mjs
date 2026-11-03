@@ -72,11 +72,13 @@ export function checkRecord({ path: file, chainId, tx, record }, errors) {
 }
 
 // Why a lead is outside the cohort: which methodology rule it fails.
-export const EXCLUSION_RULES = ['keys', 'privileged', 'market', 'offchain', 'no-defect', 'no-exploit', 'no-loss', 'attacker-code', 'non-evm']
+const EXCLUSION_RULES = ['keys', 'privileged', 'market', 'offchain', 'no-defect', 'no-exploit', 'no-loss', 'attacker-code', 'non-evm']
 const REF = /^(https?:\/\/\S+|eip155:[1-9][0-9]*:0x[0-9a-f]{64})$/
+// The exploit transaction when known, else <chain>:<date>:<slug>.
+const LEAD = /^(eip155:[1-9][0-9]*:0x[0-9a-f]{64}|[a-z0-9-]+:\d{4}(-\d{2}){0,2}:[a-z0-9][a-z0-9-]*)$/
 const RESEARCH = {
   'excluded.json': { fields: ['name', 'date', 'rule', 'reason', 'refs'], required: ['name', 'rule', 'reason'] },
-  'queue.json': { fields: ['name', 'date', 'refs', 'note', 'draft', 'missing'], required: ['name', 'missing'] },
+  'queue.json': { fields: ['name', 'date', 'refs', 'note', 'missing'], required: ['name', 'missing'] },
 }
 
 export function checkResearch(root, incidentIds, errors) {
@@ -86,6 +88,7 @@ export function checkResearch(root, incidentIds, errors) {
   for (const [name, { fields, required }] of Object.entries(RESEARCH))
     for (const [id, entry] of Object.entries(files[name])) {
       const at = `research/${name}: ${id}`
+      if (!LEAD.test(id)) errors.push(`${at}: key must be eip155:<chainId>:<exploit tx> or <chain>:<date>:<slug>`)
       for (const key of Object.keys(entry)) if (!fields.includes(key)) errors.push(`${at} has unknown field ${key}`)
       for (const key of required) if (!entry[key]) errors.push(`${at} needs ${key}`)
       for (const ref of entry.refs ?? []) if (!REF.test(ref)) errors.push(`${at} ref ${ref} is not a URL or transaction id`)
