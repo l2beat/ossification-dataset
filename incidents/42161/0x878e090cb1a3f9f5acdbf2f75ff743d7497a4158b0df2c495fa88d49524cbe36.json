@@ -1,0 +1,73 @@
+{
+  "$schema": "../../schema/incident.schema.json",
+  "protocol": "MixedSwapRouter",
+  "name": "MixedSwapRouter swap callback pays the payer named in caller-supplied data",
+  "summary": "MixedSwapRouter's V3 swap callbacks pay the payer named in the callback data to the caller, and check the pool named there only through its own token0() and token1(). Implementation 0x4c1f10e8 let anyone call algebraSwapCallback directly: the attacker's contract 0xbf868720 named itself as pool and a user who had approved the router as payer, so the router transferred 1,889.97 ARB from that user to it, and 278.89 USDC.e from a second approver minutes later. The upgrade to 0xe0419db6 under three hours later required the call to come from the named pool during a router swap, but the router still accepted any caller-listed contract exposing fee(), token0() and token1() as a V3 pool, so on 2024-05-31 the same attacker swapped from a contract constructor (which skips the router's contract whitelist) through its own fake pool, whose callback named the first victim as payer, and took 293,182 WINR. Two other senders repeated the fake-pool pull on the remaining approvals until December 2024.",
+  "targets": [
+    {
+      "address": "0xe3e98241cb99af7a452e94b9cf219aaa766e0869",
+      "code": "0x4c1f10e8c2df08109d6c58c224750d88e56f8f6a",
+      "reset": {
+        "kind": "upgrade",
+        "tx": "0x6ccfddc013e3ed506b181e6cbb890da5c5e6181c9f00178540f011b8b53208ae"
+      }
+    }
+  ],
+  "loss": {
+    "usd": 18401.53,
+    "assets": [
+      {
+        "token": "0xd77b108d4f6cefaa0cae9506a934e825becca46e",
+        "symbol": "WINR",
+        "amount": "293182.421809175367609122",
+        "usd": 16071.67
+      },
+      {
+        "token": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "symbol": "ARB",
+        "amount": "1889.96806049461479943",
+        "usd": 1828.48
+      },
+      {
+        "token": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+        "symbol": "USDC",
+        "amount": "422.298459",
+        "usd": 422.2
+      },
+      {
+        "token": "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
+        "symbol": "GMX",
+        "amount": "2.55170121792798407",
+        "usd": 79.18
+      }
+    ]
+  },
+  "refs": [
+    "https://x.com/ChainAegis/status/1796484286738227579",
+    "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/b3719ce7fb93ee6f743853ede9471e1a8bed1de0/src/test/2024-05/MixedSwapRouter_exp.sol",
+    "eip155:42161:0x19db94b7149dc8b8184e4f50150295533504e2af0b978691b8f8d52de49ae7a7"
+  ],
+  "campaign": [
+    "eip155:42161:0x79fe7f09e969dda924c222b4d1a4d4b7928af3eb0a592c5aa36d7bd42726dd54",
+    "eip155:42161:0xf57f041cb6d8a10e11edab50b84e49b59ff834c7d114d1e049cedd654c36194d",
+    "eip155:42161:0x163b0838beee8a1a8d5a1f83c8f31f3805940cf97257d06ad0c0dad2c03287fd",
+    "eip155:42161:0xac99dab541ac61ba9c1e7949ed740b8de62175d7f1d397113905f43adab942ba",
+    "eip155:42161:0x1f029659f84ca9749045369f0d9c51fc5b6d6900e356cb268b3b960a7d912da3",
+    "eip155:42161:0x6f24988b3c1a4120bc61e634373468e59122b3763e781d9dc1705fa8627854a4",
+    "eip155:42161:0x52045b89998fdb348f5984a478cc5a58f6f55564785127b1b376b6e7c2d3a391",
+    "eip155:42161:0x436bd0a4101f27c9a1189b9bd8095d74d4f888038cd05b988f93fb14d325a567",
+    "eip155:42161:0x5f13c0490e722bcff8696ff98892df6e8965720408d6d8913ac0922822894c0b",
+    "eip155:42161:0xbd91d262287156599b9807e1bbb6672ef292beda38b51889c7a1cca312469f7e",
+    "eip155:42161:0x16ef27197fb610d54ca0d16be402f30c25d7124bfc8879ef4813703412b9bba9",
+    "eip155:42161:0x9289c7972c14b20d1d0c02b7513c0e2aef81e1a1168d95c490d2516cd349296c",
+    "eip155:42161:0xb09c364ca39cb1c44d8f8989f5ad07a43c46ebbc41e72170cfe7602e171f4479",
+    "eip155:42161:0xebb762bd1c816bc5606080e0230723bc34257ee14bb92ecef63f64fe9fb2992b"
+  ],
+  "notes": [
+    "One incident across the upgrades: every implementation since the proxy's creation (0xd195b35e, block 211038234) pays the payer named in the callback data and validates the named pool only through its own token0() and token1(). The upgrade to 0xe0419db6 (0x19db94b7, block 211903248) added the reentrancy guard and the msg.sender == data.pool check but left pools caller-listed, so the fake-pool exploit of 2024-05-31 (0xf57f041c) is the same defect on a partial fix, sent by the same EOA 0xfeef1128.",
+    "The anchor ran implementation 0x4c1f10e8, installed by upgrade 0x6ccfddc0 (block 211734904), and the age is taken from that upgrade (rule 7); nothing on the router changed between it and the anchor. The 2024-05-31 and later transactions ran 0x58637aaa (upgrade 0x3d5865b1, block 215606695).",
+    "The router emits no event of its own; its pulls show as Approval logs naming it as spender. From the proxy's creation to 0xf57f041c those logs come from two owners, 0xb6d566c4 (ARB, GMX, WINR) and 0xcbebcccf (USDC.e), and the only transfers out of them in those tokens not sent by the owner are 0x878e090c, 0x79fe7f09 and 0xf57f041c; campaign.mjs --outflows finds no transaction in which the router lost tokens. 0x878e090c is the earliest exploit.",
+    "The campaign is every pull on those allowances by a sender other than the owner, through block 520800678 (2026-11): the attacker's 0x79fe7f09 (278.89 USDC.e), 0xf57f041c (293,182 WINR) and 0x163b0838 (0.79 GMX); eight constructor pulls by 0xd6b298dd from June to September 2024 (0.000002 to 53.55 USDC.e); and three by 0xb893d315 in November and December 2024 (21.70 and 68.17 USDC.e, 1.76 GMX). 0x79fe7f09 called the callback directly like the anchor; the others ran the fake-pool route on 0x58637aaa. No owner approved the router after 0xf57f041c.",
+    "Loss is the two approvers' depletion across the campaign at DefiLlama's price (loss.mjs with both as victims). The attacker sold 240,716 WINR over the next days at about the same rate (e.g. 116,591 WINR for 6,061.75 USDT in 0x09182eb8)."
+  ]
+}

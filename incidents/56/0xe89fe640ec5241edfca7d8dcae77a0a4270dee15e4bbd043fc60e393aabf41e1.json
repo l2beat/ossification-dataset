@@ -9,20 +9,20 @@
       "code": "0xd948279f89bd3198d9e81f4bf3a44ea558225c68",
       "reset": {
         "kind": "config",
-        "tx": "0xaf80d0e29c66f53223b544f5d025e9b160589e1941da425c28b70b9a4d7d786e",
+        "tx": "0xc33f470df405a94f670ce5c528372c30dea1ab771c3311086f0e1ce7773761a2",
         "address": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
-        "slot": "0x1f8"
+        "slot": "0x1fb"
       }
     }
   ],
   "loss": {
-    "usd": 301279.5528158876,
+    "usd": 301279.55,
     "assets": [
       {
         "token": "0x55d398326f99059ff775485246999027b3197955",
         "symbol": "USDT",
         "amount": "301279.552815887592509194",
-        "usd": 301279.5528158876
+        "usd": 301279.55
       },
       {
         "token": "0xfec7d27525cc4efde5b785eeb5e37df90e9cd1d5",
@@ -36,7 +36,7 @@
     "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/ad353ba25fbb897c56d64c28ce92ee10ac68cad2/src/test/2026-05/AROS_exp.sol"
   ],
   "notes": [
-    "Reset is setLPPair (slot 0x1f8), the latest change the exploit needed: the claims drain and sync lpPair. It follows the proxy's creation with implementation 0xd948279f and the whitelisting of feeRecipient, which let the buy pass the R1 hook. The per-tx and daily claim caps raised later only bound claim size, and tradingRestricted is a gate.",
+    "Reset is setReferralPool (0xc33f470d, slot 0x1fb), the latest change the exploit needed: claimYield pays the referral and dividend pools, whose pointers were unset until setDividendPool (0xbbd628f5, slot 0x1fc) and setReferralPool, so no claim could run before them (rule 8). They follow setLPPair (0xaf80d0e2, slot 0x1f8; the claims drain and sync lpPair). setLPPair follows the proxy's creation with implementation 0xd948279f and the whitelisting of feeRecipient, which let the buy pass the R1 hook. Claims were open from initialize, which set the claim signer, and ran under the per-tx and daily caps the owner added after setLPPair (first claim 0x0bf38595, block 100588052) before those caps were raised, so the raises only bound claim size and are no first activation (rule 8). tradingRestricted, switched on 18 blocks after setLPPair, only blocks buys, and the attacker bypassed it through the whitelisted feeRecipient.",
     "Victim depletion is the AROS/USDT pair's USDT, at par; the attacker's purchase leg and flash-loan principals net out and fees are not deducted. The 622,117,209 AROS also drained, mostly to feeRecipient, is left unvalued because the transaction destroyed the token's only market.",
     "The 38 earlier pair-to-feeRecipient buys were sent by the feeRecipient Safe itself; no other transaction exercised the drain before the exploit."
   ]

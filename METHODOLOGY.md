@@ -8,8 +8,10 @@ every critical change, so the score errs conservative.
 
 1. A vulnerability in executed EVM code, or in persistent onchain state the
    code relies on, caused the loss. Compromised keys, privileged actions
-   working as designed, market moves and offchain systems do not qualify; a
-   privileged action counts only when the state it set created a
+   working as designed, market moves, offchain systems and chain node
+   software (precompiles, consensus) do not qualify, nor does an
+   arbitrary-call path spending approvals the protocol never asked users to
+   grant; a privileged action counts only when the state it set created a
    vulnerability that a later transaction exploited.
 2. A successful onchain transaction exercised it.
 3. Victims lost at least $1,000 in assets, stolen or permanently locked.
@@ -18,9 +20,10 @@ every critical change, so the score errs conservative.
 
 4. An incident is one vulnerability in one codebase, from its first
    successful exploit until the fix. Repeats, copycats, and one campaign
-   against sibling deployments of a template or on other chains belong to it.
-   Another vulnerability, or the same bug in another codebase exploited
-   separately, is another incident.
+   against sibling deployments of a template or on other chains belong to it,
+   as does a redeploy that fixed only part of the flaw. Another
+   vulnerability, or the same bug in another codebase exploited separately,
+   is another incident.
 5. The anchor is the earliest successful exploit transaction by a party not
    affiliated with the protocol; finding it includes scanning the code's
    history for earlier exploits. A rescue is affiliated only when its
@@ -49,6 +52,10 @@ every critical change, so the score errs conservative.
    holder of an unchanged role, live values such as balances, prices,
    accumulators or parameters an automated agent pushes, and values that
    only change the loss size do not; granting that agent its powers does.
+   A change that first makes the exploited path usable resets the age: a
+   cap or limit lifted from zero, a launch flag or start time, enabling
+   trading, claims or deposits, a launch tax lifted from a blocking value.
+   Pausing and unpausing after the path had run is pause state.
 9. Shared code ages from when the exploited context started running it: a
    clone from its creation, a proxy, beacon or diamond user from the route
    change, never from the template's deployment. An account created shortly
